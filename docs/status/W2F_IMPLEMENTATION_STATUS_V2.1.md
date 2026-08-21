@@ -1,11 +1,13 @@
-# W2F Implementation Status
+# W2F Implementation Status — V2.1 Snapshot
 
 **Export Package Format:** `.wtf` (`application/x-wtf`)  
-
 **Implementation Baseline:** V2 Baseline + V2.1 Addendum + NODE-00 Contracts  
 **Architecture Status:** FROZEN FOR IMPLEMENTATION  
 **Current Node:** NODE-01 — Monorepo Foundation  
+**Current State:** IN PROGRESS / BLOCKED  
 **Date:** 2026-08-21
+
+> Canonical live status is `docs/IMPLEMENTATION_STATUS.md`. This file is a compatibility/status snapshot and must not override the canonical status file.
 
 ## Baseline Documents
 
@@ -13,75 +15,39 @@
 2. `docs/ACCEPTANCE_CONTRACT_V2.md`
 3. `docs/CAPTURE_SEMANTICS.md`
 4. `docs/KNOWN_LIMITATIONS.md`
-5. `docs/baseline/Web2Figma_W2F_Development_Implementation_Plan_V2_Baseline.md` (reassembled canonical form)
+5. `docs/baseline/Web2Figma_W2F_Development_Implementation_Plan_V2_Baseline.md`
 6. `docs/baseline/Web2Figma_W2F_Architecture_V2.1_Addendum.md`
 7. `docs/adr/ADR-0000-architecture-baseline-freeze.md`
 
-## Core V2.1 Schema Reservations
+## Progress
 
-- Token Graph
-- Structural Fingerprint
-- Incremental Merge Metadata
-- Scroll Root Model
-- Composed Tree Mapping
-- Geometry Precision Policy
+- NODE-00 — DONE / PASS / merged in PR #3
+- NODE-01 — IN PROGRESS / PR #4
+- NODE-02+ — TODO
 
-## Main Roadmap
+## NODE-01 Implemented
 
-| NODE | Name | Status |
-|---|---|---|
-| 00 | Product Baseline & Acceptance Contract | DONE |
-| 01 | Monorepo Foundation | READY |
-| 02 | W2F File Spec V2 | TODO |
-| 03 | W2F IR V2 | TODO |
-| 04 | Stable Identity & Source Mapping | TODO |
-| 05 | Browser Extension Shell | TODO |
-| 06 | Source Providers & Offline | TODO |
-| 07 | Region Selector & Redaction | TODO |
-| 08 | Standard DOM Capture | TODO |
-| 09 | CDP High Fidelity Adapter | TODO |
-| 10 | Text / Inline / Pseudo Capture | TODO |
-| 11 | CSS Cascade & Authored Semantics | TODO |
-| 12 | Media / Container / Environment Capture | TODO |
-| 13 | Asset Resolver | TODO |
-| 14 | Pixel Ground Truth & Raster Engine | TODO |
-| 15 | Multi-Viewport Responsive Capture | TODO |
-| 16 | Responsive Inference Engine | TODO |
-| 17 | Base Layout Analyzer | TODO |
-| 18 | Table Layout Engine | TODO |
-| 19 | Render Tree Optimizer | TODO |
-| 20 | Compositing & Fallback Boundary | TODO |
-| 21 | W2F Packager | TODO |
-| 22 | Figma Plugin Shell & File Intake | TODO |
-| 23 | Secure Parser & Migration | TODO |
-| 24 | Figma Capability Resolver | TODO |
-| 25 | Basic Figma Renderer | TODO |
-| 26 | Text / Font / Asset / Paint Renderer | TODO |
-| 27 | Figma Responsive Layout Renderer | TODO |
-| 28 | Hybrid Native / Raster Renderer | TODO |
-| 29 | Visual / Structure / Editability QA | TODO |
-| 30 | Responsive / Determinism / Performance QA | TODO |
-| 31 | Real-world Compatibility & Release Candidate | TODO |
+- pnpm/Turborepo workspace foundation
+- Node.js 24 LTS policy
+- TypeScript/ESLint/Prettier/Vitest baseline
+- browser-extension shell
+- figma-plugin shell
+- shared-utils proof package
+- `.wtf` constants and tests
+- GitHub Actions CI workflow
+- local static JSON/YAML/ESM validation
 
-## NODE-00 Deliverables
+## Current Blocker
 
-- [x] Product baseline
-- [x] P0/P1/P2 scope
-- [x] non-goals
-- [x] acceptance metrics and release gates
-- [x] capture semantics
-- [x] known limitations
-- [x] architecture freeze ADR
-- [x] `.wtf` format contract
+GitHub Actions cannot currently execute even a minimal `ubuntu-latest` diagnostic job in this repository. The diagnostic contains only `echo`, `node --version`, and `npm --version`, so the blocker is classified as repository/Actions execution-environment level rather than W2F source code.
 
-## Architecture Rule
+Until Actions executes jobs, the project cannot generate/commit the first `pnpm-lock.yaml` through CI or validate the required frozen-lockfile pipeline.
 
-Do not create a V3 or expand the architecture again unless an implementation blocker, material platform/API change, security incompatibility, or non-compatible schema requirement requires it and an ADR is accepted.
+## Exit Criteria Remaining
 
-## Blockers
+- GitHub Actions runner executes successfully
+- `pnpm-lock.yaml` committed
+- CI uses `pnpm install --frozen-lockfile`
+- lint/typecheck/test/build/format all pass
 
-None.
-
-## Next Action
-
-Execute `NODE-01 — Monorepo Foundation`.
+Do not advance to NODE-02 until these gates pass.

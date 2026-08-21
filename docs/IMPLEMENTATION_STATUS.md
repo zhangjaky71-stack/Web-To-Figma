@@ -10,8 +10,8 @@
 
 | NODE | Name | Status | Validation | Commit/PR |
 |---|---|---|---|---|
-| 00 | Product Baseline & Acceptance Contract | DONE | PASS — contract/DoD review | `feat/node-00-product-baseline` |
-| 01 | Monorepo Foundation | READY | - | - |
+| 00 | Product Baseline & Acceptance Contract | DONE | PASS | PR #3 merged |
+| 01 | Monorepo Foundation | IN PROGRESS / BLOCKED | Local static validation PASS; GitHub Actions runner unavailable | PR #4 |
 | 02 | W2F File Spec V2 | TODO | - | - |
 | 03 | W2F IR V2 | TODO | - | - |
 | 04 | Stable Identity & Source Mapping | TODO | - | - |
@@ -47,67 +47,60 @@
 
 `NODE-01 — Monorepo Foundation`
 
-NODE-00 implementation is complete on its feature branch and ready for integration.
+## NODE-01 Implemented
 
-## NODE-00 Deliverables
+- [x] pnpm workspace
+- [x] Turborepo task graph
+- [x] Node.js 24 LTS policy
+- [x] strict shared TypeScript baseline
+- [x] ESLint flat config
+- [x] Prettier config
+- [x] `apps/browser-extension` compile/test shell
+- [x] `apps/figma-plugin` compile/test shell
+- [x] `packages/shared-utils` proof package
+- [x] `.wtf` extension/MIME constants protected by tests
+- [x] GitHub Actions CI workflow
+- [x] local JSON/YAML/ESM static validation
 
-- [x] `docs/PRODUCT_BASELINE_V2.md`
-- [x] `docs/ACCEPTANCE_CONTRACT_V2.md`
-- [x] `docs/KNOWN_LIMITATIONS.md`
-- [x] `docs/CAPTURE_SEMANTICS.md`
-- [x] `docs/IMPLEMENTATION_STATUS.md`
+## NODE-01 Validation
 
-## NODE-00 Contract Decisions
+Local assistant container validation:
 
-- [x] Current implementation baseline frozen as V2 + V2.1 + NODE-00 contracts.
-- [x] Export/import package extension fixed as `.wtf`.
-- [x] MIME fixed as `application/x-wtf`.
-- [x] `W2F` remains product/project/internal namespace, not the file extension.
-- [x] Capture unit fixed as Current Rendered Application State.
-- [x] Full Page distinguished from whole-site crawling.
-- [x] Document, scroll-root and region capture semantics defined.
-- [x] P0/P1/P2 and non-goals defined.
-- [x] Eight core product-quality dimensions defined.
-- [x] Release gates made measurable.
-- [x] Raster-only implementations explicitly prevented from passing editability/structure gates.
-- [x] Security/privacy baseline defined.
-- [x] Known browser/Figma limitations documented.
-- [x] Architecture expansion frozen unless an implementation blocker, material platform change, security incompatibility or incompatible schema need is proven through ADR.
+- JSON parse: **PASS**
+- YAML parse: **PASS**
+- `eslint.config.mjs` syntax: **PASS**
+- repository/workspace structure review: **PASS**
 
-## NODE-00 Validation
+The assistant execution container has no npm-registry network access, so dependency installation cannot be completed locally.
 
-Contract-level review result: **PASS**.
+GitHub Actions diagnostics:
 
-Validation checks completed:
+- CI run `32477712350`: failure before lockfile artifact
+- CI run `32477835968`: failure before lockfile artifact
+- CI run `32477926703`: failure
+- minimal runner-only Diagnostic run `32477926786`: failure
 
-1. Product scope is testable and bounded.
-2. P0/P1/P2 separation is explicit.
-3. `.wtf` package format is used consistently in NODE-00 contracts.
-4. Acceptance metrics include visual, geometry, text, asset, structure, editability, responsive and raster dimensions.
-5. Determinism/security/privacy/scale gates are defined.
-6. Known limitations do not silently weaken declared P0 behavior.
-7. Capture semantics distinguish current app state, full page, scroll roots and region capture.
-8. NODE-01 can proceed without another architecture baseline revision.
-
-Automated repository/toolchain tests begin in NODE-01 when the monorepo test/lint/typecheck infrastructure is created.
+The minimal diagnostic contains only `echo`, `node --version`, and `npm --version`. Because that also fails, the current blocker is classified as **repository/GitHub Actions execution environment unavailable**, not a W2F source-code failure.
 
 ## Blockers
 
-None.
+1. GitHub Actions cannot currently execute even a trivial `ubuntu-latest` job in this repository.
+2. Therefore CI cannot generate the first `pnpm-lock.yaml` artifact.
+3. NODE-01 cannot satisfy the frozen-lockfile CI gate until the repository Actions environment executes jobs.
+
+The connected GitHub toolset can inspect/re-run Actions runs but does not expose repository Actions policy/billing/runner settings, so this blocker cannot be corrected in-chat through the current connector.
+
+## Exit Criteria Remaining
+
+- [ ] GitHub Actions runner executes a trivial job
+- [ ] `pnpm-lock.yaml` generated and committed
+- [ ] CI switched to `pnpm install --frozen-lockfile`
+- [ ] lint passes
+- [ ] typecheck passes
+- [ ] tests pass
+- [ ] build passes
+- [ ] format check passes
 
 ## Next
 
-`NODE-01 — Monorepo Foundation`
-
-Expected NODE-01 outputs include:
-
-- pnpm workspace;
-- Turborepo;
-- TypeScript baseline;
-- ESLint/Prettier;
-- Vitest;
-- root build/lint/typecheck/test scripts;
-- `apps/browser-extension`;
-- `apps/figma-plugin`;
-- initial shared package structure;
-- CI baseline.
+Do **not** advance canonical implementation status to NODE-02 until NODE-01 exit criteria pass.

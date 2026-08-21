@@ -1,0 +1,700 @@
+
+```text
+packages/figma-capability-resolver
+```
+
+输入：
+
+```text
+IR feature
++
+node type
++
+parent context
++
+current Figma API capability
+```
+
+输出：
+
+```text
+NATIVE
+EMULATED
+ABSOLUTE
+WRAPPER
+RASTER
+UNSUPPORTED
+```
+
+例如：
+
+```text
+IR wants FILL
+↓
+Is node valid Auto Layout child?
+YES → FILL
+NO
+↓
+Can wrapper support FILL?
+YES → wrapper
+NO
+↓
+fixed + constraints
+```
+
+避免业务 Renderer 散布大量 API 条件判断。
+
+---
+
+# 34. Capability Registry
+
+```ts
+interface W2FCapabilityRegistry {
+  grid: CapabilityState
+  gridSpan: CapabilityState
+  minMaxSizing: CapabilityState
+  svgImport: CapabilityState
+  textMixedStyles: CapabilityState
+  absoluteInAutoLayout: CapabilityState
+  imageTransform: CapabilityState
+}
+```
+
+CapabilityState：
+
+```text
+native
+emulated
+partial
+unsupported
+```
+
+---
+
+# 35. Compositing Dependency Analyzer
+
+新增：
+
+```text
+packages/compositing-engine
+```
+
+针对：
+
+```text
+mix-blend-mode
+backdrop-filter
+filter
+mask
+opacity group
+isolation
+```
+
+分析：
+
+```text
+某节点的最终视觉
+是否依赖兄弟/父背景
+```
+
+如果依赖：
+
+```text
+fallback boundary
+```
+
+必须提升到正确 compositing subtree。
+
+---
+
+# 36. Minimal Fallback Boundary
+
+目标：
+
+```text
+最小安全回退边界
+```
+
+不是：
+
+```text
+最小 DOM 节点
+```
+
+例如：
+
+```text
+Hero
+├ Background
+├ WebGL
+├ Title
+└ CTA
+```
+
+WebGL 可单独 fallback。
+
+但：
+
+```text
+BlendLayer
+```
+
+与 Background 强合成时：
+
+```text
+fallback = Background + BlendLayer subtree
+```
+
+所有 promote 都写：
+
+```text
+reason
+```
+
+---
+
+# 37. Pixel Ground Truth
+
+V2 将 Pixel Reference 升级为正式核心数据。
+
+`.wtf` 至少必须包含：
+
+```text
+viewport reference
+```
+
+High Fidelity Full Page：
+
+```text
+full page tiled reference
+```
+
+作用：
+
+```text
+未来任何 Renderer 版本
+→ 都能和 Capture 时真实页面比较
+```
+
+---
+
+# 38. Raster Tiling
+
+统一 tile size：
+
+```text
+2048 x 2048 默认
+```
+
+可配置。
+
+超大：
+
+```text
+page reference
+fallback
+canvas
+webgl
+```
+
+全部走统一 Tile Model。
+
+---
+
+# 39. Asset Model
+
+继续使用 SHA-256 去重。
+
+支持：
+
+```text
+img
+srcset/currentSrc
+CSS url
+data URL
+blob URL
+SVG
+canvas raster
+video frame
+fallback
+reference
+```
+
+资产缺失：
+
+```text
+native fetch
+→ alternate provider
+→ screenshot fallback
+→ placeholder + diagnostic
+```
+
+---
+
+# 40. CSS Image 扩展
+
+Parser 至少识别：
+
+```text
+url()
+image-set()
+linear-gradient()
+repeating-linear-gradient()
+radial-gradient()
+repeating-radial-gradient()
+conic-gradient()
+cross-fade()
+mask-image
+border-image
+```
+
+不要求全部 Native。
+
+但：
+
+```text
+recognized
+→ capability decision
+```
+
+而不是：
+
+```text
+parse fail
+→ disappear
+```
+
+---
+
+# 41. Pseudo 扩展
+
+除：
+
+```text
+::before
+::after
+```
+
+增加：
+
+```text
+::marker
+```
+
+对：
+
+```text
+::first-letter
+::first-line
+```
+
+优先通过 Text Runs/Fragments 表达。
+
+---
+
+# 42. Virtualized List
+
+新增检测：
+
+```text
+virtual scrolling
+```
+
+V2 基础策略：
+
+```text
+capture rendered DOM only
++
+diagnostic
+```
+
+Advanced：
+
+```text
+Virtual DOM Stitcher
+```
+
+滚动：
+
+```text
+snapshot
+→ match rows
+→ merge
+```
+
+避免把无限数据集误判成普通完整页面。
+
+---
+
+# 43. Infinite Scroll
+
+发现 document height 持续增长时：
+
+UI：
+
+```text
+Infinite page detected.
+
+Capture:
+● Currently loaded content
+○ Load N more screens
+○ Select a region
+```
+
+禁止无限自动滚动。
+
+---
+
+# 44. Region Capture V2
+
+区域框选仍然支持：
+
+- free rectangle；
+- smart element；
+- keyboard adjust；
+- edge auto-scroll；
+- intersection tree；
+- root clip。
+
+增加：
+
+```text
+Exclude Area / Redaction
+```
+
+作为可选工具。
+
+---
+
+# 45. Redaction
+
+用户可在捕获前标记：
+
+```text
+Do not capture
+```
+
+输出：
+
+```text
+redacted node
+```
+
+显示：
+
+```text
+solid placeholder
+```
+
+或完全跳过。
+
+默认安全规则：
+
+- password value 永不保存；
+- auth token 不保存；
+- cookies 不保存；
+- local/session storage 不保存；
+- request authorization headers 不保存。
+
+---
+
+# 46. `.wtf` V2 Container
+
+内部建议：
+
+```text
+document.wtf
+├ manifest.json
+├ document.json
+├ source-graph.json
+├ render-tree.json
+├ styles.json
+├ assets.json
+├ responsive.json
+├ states.json
+├ diagnostics.json
+├ source/
+│  ├ cascade.json
+│  └ metadata.json
+├ assets/
+├ preview/
+├ fallback/
+└ checksums.json
+```
+
+---
+
+# 47. `.wtf` Compatibility Contract
+
+manifest 增加：
+
+```ts
+interface CompatibilityInfo {
+  formatVersion: string
+  schemaVersion: string
+  writerVersion: string
+  minReaderVersion: string
+  assetCodecVersion: string
+  capabilities: string[]
+}
+```
+
+例如：
+
+```json
+{
+  "formatVersion": "2.0.0",
+  "schemaVersion": "2.0.0",
+  "writerVersion": "0.8.1",
+  "minReaderVersion": "0.8.0",
+  "assetCodecVersion": "1",
+  "capabilities": [
+    "source-tree",
+    "render-tree",
+    "stable-identity",
+    "responsive-snapshots",
+    "pixel-ground-truth",
+    "raster-tiles"
+  ]
+}
+```
+
+---
+
+# 48. Future Signature 预留
+
+V2 可只定义 optional：
+
+```text
+signature?
+```
+
+暂不强制签名。
+
+Checksums 负责：
+
+```text
+integrity
+```
+
+Signature 未来负责：
+
+```text
+authenticity
+```
+
+两者不混淆。
+
+---
+
+# 49. Figma Import Workflows
+
+支持：
+
+## A. Choose File
+
+```text
+W2F Plugin
+→ Choose .wtf
+```
+
+## B. Drop while Plugin Active
+
+```text
+Run W2F
+→ Drop .wtf into Canvas
+```
+
+必须明确：
+
+> Figma Plugin API 不等同 OS file association；插件未运行时，不能把“.wtf 拖入 Figma 自动启动 W2F”作为 V2 验收要求。
+
+---
+
+# 50. Figma Partial Import
+
+V2 增加：
+
+```text
+Import:
+● Whole Page
+○ Selected Sections
+```
+
+Outline：
+
+```text
+☑ Header
+☑ Hero
+☐ Testimonials
+☑ Pricing
+☐ Footer
+```
+
+因此 `.wtf` 的 Section Detection 不是纯装饰。
+
+---
+
+# 51. Large Page Import Protection
+
+Import 前估算：
+
+```text
+Nodes
+Images
+Raster Area
+Estimated Complexity
+```
+
+例如：
+
+```text
+This file contains 38,420 render nodes.
+
+Import Mode:
+● Balanced
+○ Full Fidelity
+○ Simplified
+○ Select Sections
+```
+
+避免无提示把超大型页面塞入 Figma。
+
+---
+
+# 52. Import Modes
+
+## High Fidelity
+
+- 更积极保留视觉；
+- text fragment 更细；
+- unsupported 更快 fallback。
+
+## Balanced
+
+默认。
+
+## Design Friendly
+
+- wrapper reduction 更强；
+- decorative merge；
+- 更少 fragment；
+- 更适合后续编辑。
+
+三个模式：
+
+```text
+共享同一 .wtf
+```
+
+差异在 Renderer Policy。
+
+---
+
+# 53. Figma Render Transaction
+
+```text
+BEGIN
+↓
+__W2F_IMPORTING__
+↓
+Render
+↓
+Validate
+↓
+Commit
+or
+Rollback
+```
+
+任何 fatal error：
+
+```text
+remove temp root
+```
+
+不污染用户文件。
+
+---
+
+# 54. Figma Render Pipeline
+
+```text
+Parse
+↓
+Migrate
+↓
+Capability Resolve
+↓
+Create Root
+↓
+Create Containers
+↓
+Load Assets
+↓
+Resolve Fonts
+↓
+Create Text
+↓
+Apply Paint
+↓
+Apply Auto Layout/Grid
+↓
+Apply Absolute/Constraints
+↓
+Apply Z-order
+↓
+Apply PluginData
+↓
+Geometry Validation
+↓
+Correction
+↓
+Commit
+```
+
+---
+
+# 55. Figma Source Mapping
+
+每个重要 RenderNode 写：
+
+```text
+w2f.renderNodeId
+w2f.sourceStableIds
+w2f.documentId
+w2f.captureId
+w2f.renderStrategy
+w2f.layoutConfidence
+```
+
+完整 Source Graph 不塞 pluginData。
+
+---
+
+# 56. Visual QA V2
+
+不再只做整页 Pixel Diff。
+
+三级：
+
+```text
+Page
+Section
+Node
+```
+
+指标：
+
+- pixel diff；
+- SSIM；
+- geometry；
+- text bounds；
+- paint；
+- asset；
+- hierarchy；
+- responsive。
+
+---
+
+# 57. Editability Score

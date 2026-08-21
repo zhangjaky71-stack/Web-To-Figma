@@ -1,0 +1,700 @@
+- `figmaX/Y`：相对 Figma parent；
+- 所有核心 IR geometry 使用 CSS px；
+- DPR 只用于像素截图与 bitmap。
+
+不要把：
+
+```text
+CSS px
+device px
+Figma logical px
+```
+
+混为一套坐标。
+
+### 区域捕获归一化
+
+如果选择：
+
+```text
+selection.x = 320
+selection.y = 900
+```
+
+SelectionRoot 导出后：
+
+```text
+SelectionRoot.x = 0
+SelectionRoot.y = 0
+```
+
+子节点：
+
+```text
+local = documentBounds - selectionOrigin
+```
+
+部分越界节点通过 root clip 裁切。
+
+---
+
+# 11. 浏览器插件权限策略
+
+默认 Standard Build：
+
+```json
+{
+  "manifest_version": 3,
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "downloads",
+    "storage"
+  ],
+  "optional_host_permissions": [
+    "http://*/*",
+    "https://*/*",
+    "file:///*"
+  ]
+}
+```
+
+原则：
+
+- 默认优先 `activeTab`；
+- 不无条件要求 `<all_urls>`；
+- 只有资产跨域抓取确有需要时再请求 host permission；
+- file URL 单独提示用户授权。
+
+High Fidelity Build 可增加：
+
+```json
+{
+  "permissions": [
+    "debugger"
+  ]
+}
+```
+
+`debugger` 模式必须在 UI 明确解释：
+
+- 为什么需要；
+- 什么时候使用；
+- 完成捕获后立即 detach。
+
+---
+
+# 12. 浏览器插件运行模块
+
+## 12.1 Popup
+
+负责：
+
+- 当前页面状态；
+- URL 类型；
+- 当前 capture mode；
+- Full Page；
+- Select Region；
+- Quality；
+- file scheme permission 状态；
+- capture progress；
+- error summary。
+
+## 12.2 Service Worker
+
+负责：
+
+- extension lifecycle；
+- tab 协调；
+- scripting 注入；
+- optional host permission；
+- downloads；
+- CDP attach/detach；
+- 跨域 asset fetch；
+- capture job 管理。
+
+Service Worker 不保存大型 Capture 状态作为唯一来源，因为 MV3 worker 可能挂起。
+
+大型任务状态应：
+
+- 由 Content Script / Offscreen Document / IndexedDB 维持；
+- 或任务分块并有恢复逻辑。
+
+## 12.3 Content Script
+
+负责：
+
+- 页面 DOM 访问；
+- selection overlay；
+- Standard Capture；
+- computed style；
+- geometry；
+- 页面 freeze/unfreeze；
+- lazy load 触发；
+- message bridge。
+
+## 12.4 Page Bridge
+
+必要时注入 MAIN world，用来处理 isolated world 不方便获取的数据。
+
+严格限制：
+
+- 不执行远程代码；
+- 不 eval 页面返回代码；
+- 只使用预打包 bridge；
+- 消息必须带 requestId 和 type；
+- 校验消息来源。
+
+---
+
+# 13. 两种 Capture Adapter
+
+统一接口：
+
+```ts
+interface CaptureAdapter {
+  prepare(ctx: CaptureContext): Promise<void>
+  captureDocument(ctx: CaptureContext): Promise<RawDocumentSnapshot>
+  capturePixels(ctx: CaptureContext): Promise<PixelSnapshot>
+  cleanup(ctx: CaptureContext): Promise<void>
+}
+```
+
+实现：
+
+```text
+StandardCaptureAdapter
+CDPCaptureAdapter
+```
+
+## 13.1 StandardCaptureAdapter
+
+优势：
+
+- 权限轻；
+- Chrome Store 更容易接受；
+- 普通网站覆盖率高。
+
+数据来源：
+
+- DOM API；
+- `getComputedStyle()`；
+- `getBoundingClientRect()`；
+- `Range.getClientRects()`；
+- CSSOM（可访问时）；
+- content script；
+- extension asset fetch。
+
+## 13.2 CDPCaptureAdapter
+
+高保真模式建议使用：
+
+- `DOMSnapshot.captureSnapshot`；
+- `Page.getLayoutMetrics`；
+- `Page.captureScreenshot`；
+- `Network`；
+- `CSS`；
+- `Runtime`。
+
+其价值：
+
+- iframe；
+- flattened Shadow DOM；
+- post-layout text boxes；
+- whitelist computed styles；
+- paint order；
+- DOM rects；
+- 浏览器真实完整页面 screenshot。
+
+注意：
+
+- DOMSnapshot 目前属于 CDP Experimental domain；
+- CDP tip-of-tree 可能变化；
+- 封装 Adapter，不让 CDP 类型渗透到 W2F IR。
+
+---
+
+# 14. Full Page Capture Pipeline
+
+完整页面流程必须固定为：
+
+```text
+Preflight
+ ↓
+Freeze
+ ↓
+Wait Fonts
+ ↓
+Stabilize Layout
+ ↓
+Lazy-load Sweep
+ ↓
+Snapshot Geometry
+ ↓
+Capture DOM
+ ↓
+Capture Text
+ ↓
+Capture Styles
+ ↓
+Resolve Assets
+ ↓
+Analyze Layout
+ ↓
+Capture Pixel Reference
+ ↓
+Build IR
+ ↓
+Validate IR
+ ↓
+Pack W2F
+ ↓
+Download
+ ↓
+Restore Page
+```
+
+## 14.1 Preflight
+
+检查：
+
+- `document.readyState`；
+- URL scheme；
+- Chrome internal page；
+- PDF viewer；
+- extension page；
+- browser protected page；
+- viewport；
+- document dimensions；
+- node rough count；
+- maximum capture size。
+
+禁止对以下页面误报“成功”：
+
+```text
+chrome://
+chrome-extension://
+edge://
+部分 browser internal pages
+```
+
+应返回明确错误：
+
+```text
+W2F_E_UNSUPPORTED_SCHEME
+```
+
+## 14.2 Freeze
+
+捕获前注入高优先级样式：
+
+```css
+*,
+*::before,
+*::after {
+  animation-play-state: paused !important;
+  transition: none !important;
+  caret-color: transparent !important;
+}
+```
+
+不要永久修改 DOM。
+
+保存原状态：
+
+- scroll x/y；
+- active element；
+- inline styles；
+- temporary nodes；
+- selection。
+
+捕获结束无论成功或失败都在 `finally` 中恢复。
+
+## 14.3 Fonts Ready
+
+```ts
+await document.fonts.ready
+```
+
+再增加稳定检测：
+
+连续多次读取关键 layout metrics，如果：
+
+```text
+width/height/node positions
+```
+
+在一定窗口内无变化，才进入正式 capture。
+
+## 14.4 Lazy Loading Sweep
+
+实现可控滚动：
+
+```text
+0
+↓
+viewportHeight * 0.8
+↓
+viewportHeight * 1.6
+↓
+...
+↓
+document bottom
+```
+
+每步：
+
+- 等待 requestAnimationFrame；
+- 等待短暂 network settle；
+- 检查 document height 是否增长。
+
+必须有：
+
+- 最大滚动轮数；
+- 最大页面高度；
+- 最大等待时间；
+- infinite-scroll 检测。
+
+无限列表禁止无止境加载。
+
+建议：
+
+```text
+maxLazyLoadScreens = 50
+maxDocumentHeight = configurable
+```
+
+---
+
+# 15. Region Selector
+
+## 15.1 交互
+
+进入选择模式后：
+
+- 页面盖一层透明 overlay；
+- 鼠标按下生成 selection；
+- 拖动更新矩形；
+- 显示尺寸；
+- 支持滚动；
+- 支持边缘自动滚动；
+- Esc 取消；
+- Enter 确认；
+- 方向键微调；
+- Shift + 方向键 10px；
+- 可选智能吸附。
+
+## 15.2 智能吸附
+
+鼠标移动时：
+
+```text
+document.elementsFromPoint(x, y)
+```
+
+筛选：
+
+- 不可见；
+- 0x0；
+- overlay 自己；
+- pointer-events none 可视元素仍可作为候选；
+- 超大 root 节点降低优先级。
+
+计算候选 DOM rect 与 selection edge 距离。
+
+在 threshold 内吸附。
+
+## 15.3 自由框选和元素选择必须并存
+
+模式：
+
+```text
+Free Rectangle
+Smart Element
+```
+
+Free Rectangle 是硬要求，因为用户可能需要跨越多个 DOM 分支。
+
+Smart Element 是加速体验。
+
+## 15.4 节点收集
+
+使用 rectangle intersection：
+
+```ts
+function intersects(a: Rect, b: Rect): boolean
+```
+
+规则：
+
+- 完全不相交：忽略；
+- 完全包含：完整节点；
+- 部分相交：保留节点，但 root clip；
+- ancestor 必须保留以维持层级，但可标记 `structuralOnly`。
+
+不要简单：
+
+```text
+只抓 selection 里的最深节点
+```
+
+否则层级和样式上下文会丢失。
+
+---
+
+# 16. DOM Capture
+
+## 16.1 可见节点过滤
+
+删除条件不能过度激进。
+
+候选不可见：
+
+- `display:none`；
+- `visibility:hidden`；
+- `content-visibility:hidden`；
+- opacity 0 且没有可见 descendants；
+- 无 box 且无可见文字/子节点。
+
+但以下不能直接删：
+
+- 0x0 parent 但有 positioned children；
+- overflow container；
+- transform ancestor；
+- stacking context ancestor；
+- clip/mask ancestor。
+
+## 16.2 DOM 遍历
+
+Standard：
+
+- TreeWalker；
+- Element；
+- Text；
+- ShadowRoot；
+- template 内容按策略；
+- slot 分配。
+
+不要直接序列化整个 `outerHTML` 当主数据源。
+
+## 16.3 Shadow DOM
+
+Open Shadow Root：
+
+```text
+element.shadowRoot
+```
+
+遍历并在 IR 中保留来源。
+
+Closed Shadow Root：
+
+- Standard 无法可靠取得；
+- CDP 模式处理；
+- 否则 raster fallback。
+
+## 16.4 iframe
+
+同源：
+
+- 可递归。
+
+跨域：
+
+Standard：
+- 尝试 all-frames content injection；
+- 需要相应 host permission；
+- 如果仍无法获取，局部 screenshot fallback。
+
+CDP：
+- 通过 DOMSnapshot document/frame 数据重建。
+
+---
+
+# 17. Text Capture
+
+网页文字不是“一个 HTMLElement = 一个 TextNode”。
+
+必须至少支持：
+
+```text
+DOM Text Node
+→ Text Runs
+→ Line Fragments
+```
+
+## 17.1 标准模式
+
+对 Text Node：
+
+```ts
+const range = document.createRange()
+range.selectNodeContents(textNode)
+range.getClientRects()
+```
+
+保存：
+
+- text；
+- source node；
+- rects；
+- inherited typography；
+- parent；
+- white-space；
+- text transform；
+- direction；
+- writing mode。
+
+## 17.2 IR
+
+```ts
+interface W2FText {
+  content: string
+  runs: W2FTextRun[]
+  fragments?: W2FTextFragment[]
+}
+
+interface W2FTextRun {
+  start: number
+  end: number
+  styleId: string
+}
+
+interface W2FTextFragment {
+  start: number
+  end: number
+  bounds: Rect
+  baseline?: number
+}
+```
+
+## 17.3 Figma 重建策略
+
+提供 3 个内部策略：
+
+### semantic
+
+单 TextNode，优先编辑体验。
+
+### balanced
+
+尽量单 TextNode；误差超过阈值再拆 run/line。
+
+### pixel
+
+按 line fragment 拆多个 TextNode，优先像素对齐。
+
+V1 UI 可只提供：
+
+```text
+High Fidelity
+Balanced
+Editable
+```
+
+默认 Balanced。
+
+---
+
+# 18. Computed CSS Capture
+
+不保存所有 CSSStyleDeclaration。
+
+建立 whitelist。
+
+## 18.1 Geometry
+
+- width
+- height
+- min/max width
+- min/max height
+- top/right/bottom/left
+- box-sizing
+- transform
+- transform-origin
+
+## 18.2 Layout
+
+- display
+- position
+- float
+- clear
+- flex-direction
+- flex-wrap
+- flex-grow
+- flex-shrink
+- flex-basis
+- order
+- justify-content
+- align-items
+- align-self
+- align-content
+- gap
+- row-gap
+- column-gap
+- grid-template-columns
+- grid-template-rows
+- grid-auto-flow
+- grid-column
+- grid-row
+- place-items
+
+## 18.3 Spacing
+
+- margin 4 sides
+- padding 4 sides
+
+## 18.4 Paint
+
+- color
+- background-color
+- background-image
+- background-size
+- background-position
+- background-repeat
+- border styles/colors/widths
+- border-radius
+- opacity
+- box-shadow
+- filter
+- backdrop-filter
+- mix-blend-mode
+
+## 18.5 Text
+
+- font-family
+- font-size
+- font-weight
+- font-style
+- font-stretch
+- font-feature-settings
+- line-height
+- letter-spacing
+- text-align
+- text-decoration
+- text-transform
+- text-overflow
+- white-space
+- word-break
+- direction
+- writing-mode
+
+## 18.6 Clipping
+
+- overflow-x/y
+- clip-path
+- mask-image
+- mask-size
+- mask-position
+
+---
+
+# 19. 样式去重
+
+大型页面不能给每个节点重复保存完整 computed styles。
+
+算法：
+
+```text
+normalized style object
+  ↓

@@ -1,0 +1,700 @@
+```
+
+不能伪造 authored value。
+
+---
+
+# 12. CSS Length Semantic Model
+
+禁止一开始就把所有长度压成 px。
+
+```ts
+type CSSLength =
+  | { type: "px"; value: number }
+  | { type: "percent"; value: number }
+  | { type: "em"; value: number }
+  | { type: "rem"; value: number }
+  | { type: "viewport"; unit: "vw"|"vh"|"vmin"|"vmax"; value: number }
+  | { type: "keyword"; value: string }
+  | { type: "expression"; raw: string }
+```
+
+保留：
+
+```text
+calc()
+min()
+max()
+clamp()
+fit-content()
+minmax()
+```
+
+Computed pixel 单独保存：
+
+```text
+resolvedPx
+```
+
+---
+
+# 13. Environment Snapshot
+
+`.wtf` 保存页面运行环境：
+
+```ts
+interface CaptureEnvironment {
+  browserName: string
+  browserVersion: string
+  platform: string
+  language: string
+  direction: "ltr" | "rtl"
+  colorScheme: "light" | "dark"
+  reducedMotion: boolean
+  viewportWidth: number
+  viewportHeight: number
+  dpr: number
+  pageZoom: number
+}
+```
+
+原因：
+
+- 字体；
+- scrollbar；
+- DPR；
+- locale；
+- dark mode；
+- layout。
+
+这些都会影响最终视觉。
+
+---
+
+# 14. Theme / Dark Mode
+
+V2 Schema 支持状态：
+
+```ts
+type VisualState =
+  | "current"
+  | "light"
+  | "dark"
+```
+
+首版 UI：
+
+```text
+Theme:
+● Current
+○ Light
+○ Dark
+```
+
+以后可：
+
+```text
+Capture Both
+```
+
+---
+
+# 15. UI State Model 预留
+
+虽然 V2 首版仍以“当前静态状态”为主，但 Schema 预留：
+
+```text
+hover
+focus
+active
+checked
+disabled
+open
+selected
+```
+
+```ts
+interface W2FStateSnapshot {
+  id: string
+  name: string
+  pseudoStates?: string[]
+}
+```
+
+未来可：
+
+```text
+Button
+→ Figma Component Variants
+```
+
+---
+
+# 16. Capture Determinism
+
+动态页面必须定义“捕获哪一帧”。
+
+默认：
+
+```text
+freeze current visual state
+```
+
+可选高级模式：
+
+```text
+reset CSS animations to initial
+```
+
+保存：
+
+```text
+animationCaptureMode
+```
+
+对：
+
+- CSS animation；
+- transition；
+- carousel；
+- video；
+- Lottie；
+- animated canvas。
+
+确保 Benchmark 可重复。
+
+---
+
+# 17. Browser Source Provider 架构
+
+新增独立层：
+
+```ts
+interface SourceProvider {
+  getEntryDocument(): Promise<SourceDocument>
+  resolve(url: string): Promise<ResolvedResource>
+  getCapabilities(): SourceCapabilities
+}
+```
+
+实现：
+
+```text
+HttpPageProvider
+FileTabProvider
+LocalFolderProvider
+```
+
+以后：
+
+```text
+MHTMLProvider
+```
+
+---
+
+# 18. Offline Local Folder Provider
+
+支持真实离线网站：
+
+```text
+site/
+├ index.html
+├ css/
+├ js/
+├ fonts/
+└ images/
+```
+
+流程：
+
+```text
+用户选择本地站点/HTML
+→ 建立 LocalFolderProvider
+→ 相对 URL resolution
+→ CSS/font/image 读取
+→ 捕获
+```
+
+注意：
+
+浏览器扩展对本地文件访问有用户授权要求。
+
+V2 产品必须有：
+
+```text
+Offline Source Capability Check
+```
+
+不是 silent fail。
+
+---
+
+# 19. Browser Capture Adapters
+
+统一：
+
+```text
+StandardCaptureAdapter
+CDPCaptureAdapter
+```
+
+两者最终都必须进入：
+
+```text
+RawSnapshot Normalizer
+```
+
+禁止 Renderer 知道数据来自 Standard 还是 CDP。
+
+---
+
+# 20. CDP 隔离原则
+
+CDP DOMSnapshot 很有价值，但属于浏览器实现细节，不允许直接写入最终 `.wtf` 主结构。
+
+流程：
+
+```text
+CDP raw
+→ Adapter
+→ W2F Raw Snapshot
+→ Normalizer
+```
+
+这样未来：
+
+```text
+Firefox capture
+Safari capture
+Playwright capture
+```
+
+仍然可复用。
+
+---
+
+# 21. DOM Capture
+
+继续支持：
+
+- Element；
+- Text；
+- open Shadow DOM；
+- iframe；
+- Pseudo；
+- form controls；
+- visibility；
+- geometry；
+- paint order；
+- containing block metadata。
+
+Source Graph 保留来源完整性。
+
+---
+
+# 22. Table Layout Engine
+
+新增专项模块：
+
+```text
+packages/table-layout-engine
+```
+
+支持：
+
+```text
+table
+thead
+tbody
+tfoot
+tr
+td
+th
+caption
+rowspan
+colspan
+border-collapse
+border-spacing
+table-layout
+```
+
+## 22.1 Figma 策略
+
+简单表格：
+
+```text
+Grid
+```
+
+或：
+
+```text
+Vertical Table
+├ Horizontal Row
+│ ├ Cell
+│ └ Cell
+```
+
+复杂：
+
+```text
+rowspan / colspan
+→ Grid / Absolute hybrid
+```
+
+如果 table 视觉和 Figma Grid 算法偏差高：
+
+```text
+preserve semantic cell hierarchy
++
+absolute geometry
+```
+
+不要无条件 Raster。
+
+---
+
+# 23. Inline Formatting Engine
+
+新增专项模块：
+
+```text
+packages/inline-layout-engine
+```
+
+覆盖：
+
+- inline；
+- inline-block；
+- line box；
+- baseline；
+- vertical-align；
+- sup/sub；
+- text-indent；
+- white-space；
+- word-break；
+- overflow-wrap；
+- hyphens；
+- direction；
+- RTL；
+- CJK；
+- Emoji；
+- ligature；
+- variable font。
+
+目标不是重新实现 Chromium shaping，而是：
+
+```text
+捕获浏览器最终 line fragment
++
+保留语义 text runs
++
+选择合适 Figma 策略
+```
+
+---
+
+# 24. Text Strategies
+
+三种：
+
+## Editable
+
+尽量单 TextNode。
+
+## Balanced
+
+默认。
+
+根据 Browser line fragments 校正 Figma。
+
+## Pixel
+
+按 line fragment 拆分，优先视觉。
+
+`.wtf` 保存足够数据，使导入模式可在 Figma 端选择。
+
+---
+
+# 25. Font Model 升级
+
+保存：
+
+```text
+font-family
+font-style
+font-weight
+font-stretch
+font-variation-settings
+font-feature-settings
+postscript metadata if known
+font source metadata
+font fingerprint if available
+```
+
+## 25.1 默认不嵌入字体
+
+原因：
+
+- 版权；
+- 再分发授权；
+- Figma 仍不一定能直接使用 WebFont bytes 作为 TextNode font。
+
+## 25.2 Missing Font UI
+
+```text
+Original:
+ABC Display Medium
+
+Available:
+Inter Medium
+
+Strategy:
+● Substitute
+○ Preserve Geometry
+○ Rasterize Text
+```
+
+---
+
+# 26. Box Model Normalizer
+
+统一规定：
+
+> W2F geometry 的主 box 为 Browser Border Box。
+
+保存：
+
+```text
+contentBox
+paddingBox
+borderBox
+margin extents
+```
+
+Figma Frame：
+
+```text
+width/height = borderBox
+padding = CSS padding
+```
+
+避免 content-box / border-box 混乱。
+
+---
+
+# 27. Effective Spacing Analyzer
+
+专门处理：
+
+```text
+margin collapse
+negative margin
+distributed spacing
+normal flow whitespace
+```
+
+不要直接：
+
+```text
+margin-bottom + margin-top
+```
+
+而应使用 Browser resolved geometry 得出：
+
+```text
+effectiveGap
+```
+
+Auto Layout gap 使用 resolved result。
+
+---
+
+# 28. Layout Inference Engine
+
+输入：
+
+```text
+Cascade
++
+Computed style
++
+Source Graph
++
+Geometry
++
+Responsive snapshots
+```
+
+输出：
+
+```text
+W2F Layout Model
+```
+
+优先证据：
+
+```text
+Author rules
+> Multi snapshot behavior
+> Computed style
+> Geometry inference
+```
+
+---
+
+# 29. FILL / HUG / FIXED 推断
+
+## FILL
+
+证据：
+
+- `width:100%`；
+- flex-grow；
+- stretch；
+- `% / vw`；
+- left+right constraints；
+- 多 snapshot 中随 parent 成比例变化。
+
+## HUG
+
+证据：
+
+- max-content；
+- fit-content；
+- inline-flex；
+- container geometry≈children+padding；
+- 多 snapshot 中内容变化而 container 跟随。
+
+## FIXED
+
+证据：
+
+- authored fixed px；
+- 多 snapshot 尺寸稳定；
+- min=max；
+- intrinsic image；
+- 明确 fixed track。
+
+每个结果：
+
+```text
+confidence
+reasons[]
+```
+
+---
+
+# 30. Responsive Cross-Snapshot Mapper
+
+新增核心模块：
+
+```text
+packages/responsive-engine
+```
+
+职责：
+
+- Stable Node Matching；
+- breakpoint detection；
+- visibility transitions；
+- width behavior；
+- order changes；
+- layout mode changes；
+- grid column changes；
+- typography scaling；
+- parent reassignment detection。
+
+例如：
+
+```text
+1440:
+Nav links visible
+
+390:
+Nav links hidden
+Hamburger visible
+```
+
+标记：
+
+```text
+responsive structural variant
+```
+
+V2 首版 Figma 不强行模拟结构性 breakpoint。
+
+但必须把信息保存并报告。
+
+---
+
+# 31. Render Tree Optimizer
+
+新增：
+
+```text
+packages/render-tree-optimizer
+```
+
+执行：
+
+1. remove meaningless wrappers；
+2. preserve semantic boundaries；
+3. preserve stacking boundaries；
+4. preserve clip boundaries；
+5. combine decorative nodes when safe；
+6. limit anonymous depth；
+7. build meaningful section outline。
+
+输出：
+
+```text
+RenderTree
+```
+
+---
+
+# 32. Section Detection
+
+确定性规则优先：
+
+```text
+header
+nav
+main
+section
+article
+aside
+footer
+```
+
+补充 geometry：
+
+- top-level block；
+- large visual separation；
+- semantic heading grouping。
+
+输出：
+
+```text
+Document
+├ Header
+├ Hero
+├ Features
+├ Pricing
+└ Footer
+```
+
+用途：
+
+- Figma layer；
+- partial import；
+- QA；
+- large page outline。
+
+---
+
+# 33. Figma Capability Resolver
+
+新增核心模块：

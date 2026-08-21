@@ -1,0 +1,149 @@
+- hierarchy；
+- Auto Layout。
+
+## Scenario 2
+
+```text
+网页框选 3 个卡片
+→ .wtf
+→ Figma
+```
+
+检查：
+
+- root size；
+- clip；
+- partial nodes；
+- hierarchy；
+- local coordinates。
+
+## Scenario 3
+
+```text
+打开本地 file://index.html
+→ Full Page
+→ .wtf
+→ Figma
+```
+
+检查：
+
+- local CSS；
+- images；
+- relative paths；
+- file permission。
+
+## Scenario 4
+
+```text
+包含 Canvas/WebGL
+```
+
+检查：
+
+- 周围 native；
+- Canvas local raster；
+- 无整页降级。
+
+## Scenario 5
+
+```text
+Figma root width 1440 → 1100
+```
+
+检查：
+
+- responsive local behavior；
+- FILL/HUG/FIXED；
+- grid/flex；
+- min/max。
+
+---
+
+# 99. V1 最终 Definition of Done
+
+只有以下全部满足，才称为 V1：
+
+- Browser Extension 可安装；
+- Figma Plugin 可运行；
+- Full Page 成功；
+- Region 成功；
+- file:// 成功；
+- `.wtf` 有正式 V1 schema；
+- `.wtf` 可版本校验；
+- assets 本地化；
+- Scene Graph 层级稳定；
+- text editable；
+- SVG vector 优先；
+- Flex 原生；
+- Grid 基础原生；
+- absolute；
+- FILL/HUG/FIXED；
+- constraints；
+- min/max；
+- local raster fallback；
+- Figma choose；
+- Figma canvas drop（插件运行时）；
+- import transaction / rollback；
+- diagnostics；
+- benchmark；
+- visual score；
+- performance baseline；
+- security review；
+- docs 完整。
+
+---
+
+# 100. 后续执行指令
+
+后续正式进入开发时，应从：
+
+```text
+NODE-00 — Product Baseline & ADR
+```
+
+开始。
+
+完成 NODE-00 后立即更新：
+
+```text
+docs/IMPLEMENTATION_STATUS.md
+```
+
+再进入：
+
+```text
+NODE-01 — Monorepo Foundation
+```
+
+不要直接从 Chrome 页面抓取代码开始，因为如果 `.wtf File Spec` 和 `W2F IR` 未冻结，浏览器端和 Figma 端很容易形成两套不兼容的数据模型。
+
+---
+
+# 结论
+
+本项目最关键的不是“把网页截图放进 Figma”，而是建立一个稳定的：
+
+```text
+Web Rendering State
+        ↓
+W2F Intermediate Representation
+        ↓
+Portable .wtf Container
+        ↓
+Figma Scene Reconstruction
+```
+
+并在转换中执行：
+
+```text
+Native First
++ Semantic Hierarchy
++ Responsive Inference
++ Visual Validation
++ Minimal Raster Fallback
+```
+
+只要从一开始严格把 Capture、IR、File Spec、Renderer、Visual QA 分层，浏览器端与 Figma 端就能长期演进，而不会在复杂网页面前退化成一次性的截图工具。
+
+**建议下一步直接实施 NODE-00，不再继续扩写概念文档；NODE-00 完成后按本总纲逐节点推进实际工程。**

@@ -1,0 +1,700 @@
+# Web2Figma（W2F）双端插件开发实施总纲 V2 Baseline
+
+> **状态：APPROVED BASELINE / 后续唯一实施基线**  
+> **版本：V2.0**  
+> **日期：2026-08-21**  
+> **适用范围：Browser Extension + `.wtf` Portable Format + Figma Plugin + QA/Benchmark Tooling**  
+> **V1 状态：已被本 V2 完整取代；后续开发、测试、验收均以本文件为准。**
+
+---
+
+# 0. 为什么升级到 V2
+
+V1 已经完成了“网页 → `.wtf` → Figma”基本技术闭环设计，但如果目标是用于真实生产，而不是 Demo，还存在几个会直接影响底层协议和后期可维护性的结构性缺口：
+
+1. 只保存当前 viewport，不足以可靠推断跨 breakpoint 响应式；
+2. DOM Tree 直接映射 Figma 会产生大量无意义 wrapper；
+3. 随机 node id 无法支撑稳定回溯、重抓和未来增量更新；
+4. 只有 computed CSS，不足以理解 `% / vw / flex-grow / media / container query` 的真实语义；
+5. Figma Auto Layout 不是完整 CSS Layout Engine，需要显式 Capability Resolver；
+6. Table、Inline Formatting、文字行盒和 baseline 需要专门处理；
+7. mix-blend/filter 等合成效果会改变 Raster Fallback 的最小安全边界；
+8. 单纯 Pixel Similarity 会奖励“整页截图”，必须同时度量可编辑性和结构质量；
+9. `file://` 只是离线网页的一种，需要 Local Folder / Local Site Source Provider；
+10. `.wtf` 需要为版本兼容、未来状态、响应式快照、稳定身份和增量更新提前留出正式字段。
+
+因此 V2 的核心变化不是“增加更多 CSS 支持”，而是把 W2F 从：
+
+```text
+DOM Capture Tool
+```
+
+升级成：
+
+```text
+Web Rendering Translation Engine
+```
+
+---
+
+# 1. 最终产品定义
+
+W2F 包含三个主要产品面和一个共享内核：
+
+```text
+W2F Capture
+    └ Browser Extension
+
+W2F Portable Format
+    └ .wtf
+
+W2F for Figma
+    └ Figma Plugin
+
+W2F Core
+    ├ Source Graph
+    ├ Semantic IR
+    ├ Render Tree
+    ├ Layout Engine
+    ├ Responsive Engine
+    ├ Asset Engine
+    └ Diagnostics / QA
+```
+
+用户工作流：
+
+```text
+在线/离线网页
+      ↓
+完整页面 / 选择区域
+      ↓
+Browser Capture
+      ↓
+.wtf
+      ↓
+Figma Plugin
+      ↓
+真实 Figma 图层
+      ↓
+视觉接近原网页
++ 结构可理解
++ 文本/图片/SVG 可编辑
++ 支持场景局部响应式合理
+```
+
+---
+
+# 2. V2 核心产品原则
+
+## 2.1 Native First
+
+能可靠映射的内容必须生成 Figma 原生节点。
+
+## 2.2 Semantic Hierarchy
+
+不追求 100% 复制 DOM wrapper，而追求：
+
+```text
+网页语义结构正确
++
+源 DOM 可回溯
++
+Figma 图层可理解
+```
+
+## 2.3 Responsive Evidence First
+
+响应式不能只靠当前尺寸猜测。
+
+优先级：
+
+```text
+Author CSS Evidence
+→ Multi-Viewport Evidence
+→ Geometry Inference
+→ Conservative Fallback
+```
+
+## 2.4 Minimal Fallback
+
+无法可靠原生还原时：
+
+```text
+只回退最小不可还原区域
+```
+
+而不是整页截图。
+
+## 2.5 Deterministic
+
+同一稳定 Fixture 多次 Capture 应尽可能得到：
+
+```text
+一致 node identity
+一致 scene structure
+一致 asset hash
+一致 layout decision
+```
+
+## 2.6 Local First
+
+默认不上传网页内容。
+
+## 2.7 Inspectable
+
+所有关键决策必须可解释：
+
+```text
+为什么是 FILL？
+为什么降级 absolute？
+为什么 raster？
+为什么字体被替换？
+```
+
+---
+
+# 3. 最终验收不再只有“像不像”
+
+V2 使用 8 个核心质量指标：
+
+| 指标 | 目标方向 |
+|---|---|
+| Visual Fidelity | 高 |
+| Geometry Fidelity | 高 |
+| Text Fidelity | 高 |
+| Asset Fidelity | 高 |
+| Structure Fidelity | 高 |
+| Editable Area Ratio | 高 |
+| Responsive Fidelity | 高 |
+| Raster Area Ratio | 低 |
+
+建议 Release Target：
+
+```text
+Visual Fidelity:
+  Level 1/2 fixtures >= 99%
+  Real-world median >= 95~98%
+
+Geometry Fidelity:
+  >= 98%
+
+Editable Area Ratio:
+  >= 90% supported pages
+
+Structure Fidelity:
+  >= 95% benchmark fixtures
+
+Responsive Fidelity:
+  >= 90% supported responsive fixtures
+
+Raster Area Ratio:
+  越低越好，并按页面类型记录
+```
+
+任何单一指标都不能代表最终质量。
+
+---
+
+# 4. V2 总体架构
+
+```text
+                         Web Source
+                             │
+                 ┌───────────┴───────────┐
+                 │                       │
+           HTTP/HTTPS Page          Offline Source
+                 │               file:// / Local Folder
+                 └───────────┬───────────┘
+                             ▼
+                      Source Provider
+                             │
+                             ▼
+                     Capture Adapter
+              ┌──────────────┴──────────────┐
+              │                             │
+           Standard                     CDP Pro
+              │                             │
+              └──────────────┬──────────────┘
+                             ▼
+                       Raw Snapshot
+                             │
+       ┌─────────────────────┼─────────────────────┐
+       ▼                     ▼                     ▼
+     DOM                 CSS Cascade             Assets
+       │                     │                     │
+       ├─ Text               ├─ Computed           ├─ Image
+       ├─ Shadow             ├─ Authored           ├─ SVG
+       ├─ iframe             ├─ Media              ├─ Font metadata
+       └─ Pseudo             ├─ Container          └─ Raster source
+                             └─ Custom props
+       └─────────────────────┬─────────────────────┘
+                             ▼
+                        Source Graph
+                             │
+                 Stable Identity Assignment
+                             │
+                             ▼
+                    Responsive Snapshots
+                             │
+                 Cross Snapshot Matching
+                             │
+                             ▼
+                    Semantic W2F IR
+                             │
+             ┌───────────────┴───────────────┐
+             ▼                               ▼
+        Source Tree                    Render Optimizer
+                                             │
+                                             ▼
+                                         Render Tree
+                                             │
+                           ┌─────────────────┼─────────────────┐
+                           ▼                 ▼                 ▼
+                       Native Plan       Emulation Plan     Raster Plan
+                           │                 │                 │
+                           └─────────────────┼─────────────────┘
+                                             ▼
+                                           .wtf
+                                             │
+                                      Secure Parser
+                                             │
+                                     Schema Migration
+                                             │
+                                     Capability Resolver
+                                             │
+                  ┌──────────────────────────┼──────────────────────────┐
+                  ▼                          ▼                          ▼
+              Figma Native               Emulated                 Raster
+                  │                          │                          │
+                  └──────────────────────────┼──────────────────────────┘
+                                             ▼
+                                        Figma Scene
+                                             │
+                                   Geometry Validation
+                                             │
+                                      Visual QA
+                                             │
+                                     Structure QA
+                                             │
+                                    Responsive QA
+```
+
+---
+
+# 5. Source Tree 与 Render Tree 双树模型
+
+这是 V2 最重要的变化之一。
+
+## 5.1 Source Tree
+
+目标：
+
+> 尽可能忠实保留网页来源结构和回溯信息。
+
+包括：
+
+- DOM 节点；
+- Text 节点；
+- Pseudo 节点；
+- Shadow DOM；
+- iframe；
+- source selector；
+- authored style trace；
+- stable identity。
+
+示例：
+
+```text
+div.app
+└ div.page
+  └ div.wrapper
+    └ section.hero
+      └ div.inner
+        ├ h1
+        └ p
+```
+
+## 5.2 Render Tree
+
+目标：
+
+> 生成真正适合 Figma 使用的层级。
+
+例如：
+
+```text
+Hero
+└ Content
+  ├ Heading
+  └ Description
+```
+
+## 5.3 Wrapper Removal 条件
+
+节点只有在确认以下属性都不影响最终渲染/布局时才允许被折叠：
+
+- 无独立 paint；
+- 无 padding/border；
+- 无 clipping；
+- 无 transform；
+- 无 opacity stacking；
+- 无 mix-blend；
+- 无 mask；
+- 无 z-index stacking boundary；
+- 无独立 Auto Layout 价值；
+- 无语义 section 边界；
+- 不承担 scroll/position containing block；
+- 不承担 grid/flex layout 必要关系。
+
+## 5.4 保留映射
+
+RenderNode：
+
+```ts
+interface RenderNode {
+  id: string
+  sourceNodeIds: string[]
+}
+```
+
+一个 RenderNode 可以对应多个无意义 Source Wrapper。
+
+因此：
+
+```text
+Figma 图层简单
+≠
+源信息丢失
+```
+
+---
+
+# 6. Stable Node Identity
+
+V2 禁止把随机 NanoID 作为唯一身份。
+
+必须区分：
+
+```text
+captureNodeId
+stableNodeId
+```
+
+## 6.1 captureNodeId
+
+本次文件内部唯一即可。
+
+## 6.2 stableNodeId
+
+用于跨 Capture 关联。
+
+候选输入：
+
+```text
+source origin
+semantic DOM ancestry
+tag
+role
+stable id attr
+stable data attributes
+meaningful class signature
+sibling structural signature
+text/content fingerprint
+asset fingerprint
+```
+
+避免使用：
+
+- React 随机 hydration id；
+- CSS Modules hash；
+- 自动生成时间戳；
+- Tailwind 超长 class 串作为唯一标识。
+
+## 6.3 Stable Identity Score
+
+```ts
+interface StableIdentity {
+  id: string
+  confidence: number
+  evidence: string[]
+}
+```
+
+例如：
+
+```json
+{
+  "id": "sid_b83...",
+  "confidence": 0.92,
+  "evidence": [
+    "id=site-header",
+    "role=banner",
+    "stable-parent"
+  ]
+}
+```
+
+## 6.4 未来用途
+
+V1/V2 首版可以只写入，不实现同步。
+
+以后可支持：
+
+```text
+重新 Capture
+→ compare stableNodeId
+→ changed / added / removed
+→ update existing Figma import
+```
+
+---
+
+# 7. Document Identity 与 Capture Identity
+
+`.wtf` 增加：
+
+```ts
+interface DocumentIdentity {
+  documentId: string
+  sourceFingerprint: string
+}
+
+interface CaptureIdentity {
+  captureId: string
+  capturedAt: string
+}
+```
+
+同网页多次 Capture：
+
+```text
+documentId 相同或高置信匹配
+captureId 不同
+```
+
+为未来增量更新做准备。
+
+---
+
+# 8. Multi-Viewport Responsive Snapshot
+
+V2 把多视口能力正式纳入核心架构。
+
+## 8.1 Capture Modes
+
+浏览器 UI：
+
+```text
+Responsive Capture
+
+● Current Viewport
+○ Common Breakpoints
+○ Custom
+```
+
+Common 默认候选：
+
+```text
+1440
+1280
+1024
+768
+390
+```
+
+实际默认可根据性能和产品体验缩减为：
+
+```text
+1440 / 768 / 390
+```
+
+## 8.2 Snapshot Schema
+
+```ts
+interface ResponsiveSnapshot {
+  id: string
+  viewport: {
+    width: number
+    height: number
+    dpr: number
+  }
+  rootNodeId: string
+  environmentRef: string
+  stateRef?: string
+}
+```
+
+## 8.3 Cross-Snapshot Matching
+
+通过 stableNodeId：
+
+```text
+Node at 1440
+   ↕
+Node at 768
+   ↕
+Node at 390
+```
+
+分析：
+
+- visibility；
+- bounds；
+- parent；
+- order；
+- display；
+- grid tracks；
+- flex direction；
+- font size；
+- gap；
+- padding。
+
+## 8.4 推断结果
+
+```ts
+interface ResponsiveRule {
+  targetStableNodeId: string
+  property: string
+  ranges: ResponsiveRange[]
+  confidence: number
+  evidence: string[]
+}
+```
+
+---
+
+# 9. Media Query Capture
+
+需要收集：
+
+```text
+@media
+```
+
+特别是：
+
+- width；
+- min/max-width；
+- height；
+- orientation；
+- prefers-color-scheme；
+- prefers-reduced-motion。
+
+保存：
+
+```ts
+interface MediaRuleTrace {
+  query: string
+  activeInSnapshotIds: string[]
+  affectedProperties: string[]
+}
+```
+
+V2 首版不要求在 Figma 中完整模拟 Media Query，但必须：
+
+```text
+保留
+识别
+参与推断
+```
+
+---
+
+# 10. Container Query
+
+必须捕获：
+
+```text
+container-type
+container-name
+@container
+```
+
+原因：
+
+> Container Query 更接近 Figma 中“组件随父容器变化”的局部响应式语义。
+
+IR：
+
+```ts
+interface ContainerQueryInfo {
+  containerName?: string
+  containerType?: string
+  conditions: string[]
+  affectedStableNodeIds: string[]
+}
+```
+
+Figma 当前不能完整执行 CSS Container Query，因此 V2 策略：
+
+```text
+当前 Snapshot → Native Layout
++
+规则 Metadata
++
+多 Snapshot Evidence
+```
+
+未来可扩展到 Component/Variant。
+
+---
+
+# 11. CSS Cascade Trace
+
+Computed CSS 仍是像素真值的重要来源，但不足以推断响应式语义。
+
+因此关键属性保存 Cascade Trace。
+
+## 11.1 重点属性
+
+```text
+display
+position
+width
+height
+min-width
+max-width
+min-height
+max-height
+margin
+padding
+gap
+flex*
+grid*
+top/right/bottom/left
+transform
+font*
+color/background
+```
+
+## 11.2 Trace
+
+```ts
+interface PropertyCascadeTrace {
+  property: string
+  computedValue: string
+  winningRule?: RuleRef
+  candidates?: RuleRef[]
+  variables?: VariableTrace[]
+}
+```
+
+## 11.3 支持来源
+
+- inline style；
+- stylesheet rule；
+- inherited；
+- custom property；
+- media；
+- container；
+- important；
+- browser computed result。
+
+Standard 模式能取得多少就保存多少。
+
+CDP Pro 提供更完整匹配信息。
+
+拿不到时：
+
+```text
+traceConfidence = low

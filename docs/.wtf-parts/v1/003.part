@@ -1,0 +1,700 @@
+stable key ordering
+  ↓
+hash
+  ↓
+style table
+```
+
+例如：
+
+```json
+{
+  "styleId": "sty_8f31",
+  "fontSize": 16,
+  "color": "#111111",
+  "display": "flex"
+}
+```
+
+多个节点：
+
+```text
+node.styleRef = sty_8f31
+```
+
+同理：
+
+- paint table；
+- text style table；
+- effect table；
+- asset table。
+
+---
+
+# 20. Author CSS Hints
+
+只存 computed pixels 会丢掉响应式语义。
+
+例如：
+
+```css
+width: 100%;
+```
+
+`getComputedStyle()` 可能只剩：
+
+```text
+1180px
+```
+
+因此必须尽力保存 authored hints。
+
+来源：
+
+1. inline style；
+2. CSSStyleRule；
+3. matched rules；
+4. CSS custom properties；
+5. CDP CSS domain；
+6. 元素属性。
+
+保存：
+
+```ts
+interface AuthoredLayoutHints {
+  width?: string
+  height?: string
+  minWidth?: string
+  maxWidth?: string
+  flex?: string
+  flexBasis?: string
+  gridTemplateColumns?: string
+  margin?: string
+  padding?: string
+  positionOffsets?: string[]
+  customProperties?: Record<string, string>
+}
+```
+
+如果跨域 CSSOM 因安全限制读不到：
+
+```text
+sourceConfidence = low
+```
+
+不伪造 author value。
+
+---
+
+# 21. Responsive Layout Inference Engine
+
+核心目标：
+
+```text
+CSS/DOM/Geometry
+       ↓
+Figma Layout Model
+```
+
+## 21.1 输出模型
+
+```ts
+type W2FSizing = "FIXED" | "HUG" | "FILL"
+
+interface W2FLayout {
+  mode:
+    | "none"
+    | "horizontal"
+    | "vertical"
+    | "grid"
+    | "absolute"
+
+  widthSizing: W2FSizing
+  heightSizing: W2FSizing
+
+  minWidth?: number
+  maxWidth?: number
+  minHeight?: number
+  maxHeight?: number
+
+  padding: Insets
+  gap?: number
+  rowGap?: number
+  columnGap?: number
+
+  mainAlign?: string
+  crossAlign?: string
+
+  absolute?: {
+    left?: number
+    right?: number
+    top?: number
+    bottom?: number
+  }
+
+  constraints?: {
+    horizontal: string
+    vertical: string
+  }
+
+  confidence: number
+  reasons: string[]
+}
+```
+
+## 21.2 FIXED 判断
+
+强证据：
+
+- authored `px`；
+- 固定 replaced element intrinsic size；
+- min=max；
+- parent resize 不应扩展；
+- absolute 双边未同时约束。
+
+## 21.3 FILL 判断
+
+强证据：
+
+- width 100%；
+- `flex-grow > 0`；
+- flex child 在 cross axis stretch；
+- grid flexible track；
+- left+right 同时约束；
+- viewport relative width；
+- parent-child 几何关系几乎填满。
+
+## 21.4 HUG 判断
+
+强证据：
+
+- width auto + shrink-to-fit；
+- `max-content`；
+- inline-flex；
+- fit-content；
+- container 尺寸≈children extents + padding。
+
+## 21.5 不确定时
+
+```text
+confidence < threshold
+→ FIXED/absolute snapshot preserving
+```
+
+禁止为了“Auto Layout 好看”而破坏视觉。
+
+---
+
+# 22. Flexbox → Figma
+
+映射示意：
+
+| CSS | Figma |
+|---|---|
+| flex-direction: row | HORIZONTAL |
+| column | VERTICAL |
+| gap | itemSpacing |
+| padding | padding* |
+| justify-content | primaryAxisAlignItems |
+| align-items | counterAxisAlignItems |
+| flex-grow | child FILL |
+| width: max-content | HUG |
+| fixed px | FIXED |
+| wrap | layoutWrap / fallback |
+
+### margin
+
+Figma Auto Layout 与 CSS margin 不完全等价。
+
+策略顺序：
+
+1. 能折叠进 parent padding/gap → 合并；
+2. 对单 child margin → wrapper frame；
+3. negative margin / overlap → absolute；
+4. 复杂 margin collapsing → snapshot geometry 优先。
+
+---
+
+# 23. CSS Grid → Figma Grid
+
+Figma 当前已支持 `layoutMode = "GRID"`，因此基础 Grid 优先原生映射。
+
+支持优先级：
+
+### A 级
+
+- fixed tracks；
+- fr tracks；
+- basic auto flow；
+- row/column gap；
+- explicit cell；
+- simple span。
+
+### B 级
+
+- minmax；
+- auto；
+- hug-like tracks；
+- mixed fixed/flex。
+
+### C 级
+
+以下情况先降级到 absolute：
+
+- subgrid；
+- named areas 与复杂重排；
+- heavy overlap；
+- negative grid lines 特殊组合；
+- 浏览器和 Figma track 算法误差超过阈值。
+
+算法原则：
+
+> 先验证结果，而不是因为“网页用了 Grid”就强制生成 Figma Grid。
+
+---
+
+# 24. Absolute / Fixed / Sticky
+
+## 24.1 absolute
+
+转为：
+
+```text
+layoutPositioning = ABSOLUTE
+```
+
+并根据 offsets 推断 constraints。
+
+## 24.2 fixed
+
+完整页面 capture 有两种语义：
+
+- Visual Snapshot：按捕获时位置；
+- Page Semantic：固定在 viewport。
+
+Figma 没有网页 scrolling fixed 的完全对应，因此 V1：
+
+- 放在 Root Frame 中；
+- 使用 absolute；
+- plugin data 标记 `sourcePosition=fixed`；
+- Visual fidelity 优先。
+
+## 24.3 sticky
+
+根据当前 capture 状态：
+
+- 保存 authored sticky；
+- 保存实际 resolved position；
+- Figma 侧按 resolved geometry；
+- plugin data 记录 sticky metadata。
+
+---
+
+# 25. Stacking Context / Z Order
+
+必须保存：
+
+- DOM order；
+- paint order；
+- z-index；
+- stacking context；
+- positioned state；
+- opacity stacking；
+- transform stacking；
+- isolation。
+
+Figma Layer Order：
+
+```text
+back → front
+```
+
+不能简单按 DOM children 顺序 append。
+
+Render 时：
+
+```text
+parent
+  ↓
+children sort by normalized paint order
+  ↓
+append / insertChild
+```
+
+---
+
+# 26. Asset Resolver
+
+统一 Asset 接口：
+
+```ts
+interface W2FAsset {
+  id: string
+  sha256: string
+  kind:
+    | "image"
+    | "svg"
+    | "font"
+    | "fallback"
+    | "preview"
+
+  mime: string
+  byteLength: number
+  width?: number
+  height?: number
+  sourceUrl?: string
+  localPath: string
+}
+```
+
+## 26.1 去重
+
+```text
+bytes
+ ↓
+SHA-256
+ ↓
+asset id
+```
+
+相同资源只保存一次。
+
+## 26.2 `<img>`
+
+保存：
+
+- currentSrc；
+- natural width/height；
+- display bounds；
+- object-fit；
+- object-position；
+- alt；
+- image bytes。
+
+## 26.3 srcset / picture
+
+不能只保存 DOM `src`。
+
+必须读取：
+
+```text
+img.currentSrc
+```
+
+当前视觉所用资源作为 primary。
+
+同时可保留 source metadata。
+
+## 26.4 CSS Background
+
+解析：
+
+- url；
+- gradient；
+- multiple layer；
+- repeat；
+- position；
+- size；
+- attachment。
+
+## 26.5 data URL
+
+直接 decode。
+
+## 26.6 blob URL
+
+优先：
+
+- page-context fetch；
+- bridge；
+- 转 ArrayBuffer。
+
+失败：
+
+- clip screenshot fallback。
+
+---
+
+# 27. SVG
+
+优先保留源 SVG。
+
+流程：
+
+```text
+inline/external SVG
+   ↓
+resolve
+   ↓
+sanitize
+   ↓
+normalize viewport
+   ↓
+asset.svg
+   ↓
+Figma createNodeFromSvg
+```
+
+安全处理：
+
+- 去 script；
+- 去 event handler；
+- 限制 foreignObject；
+- 外部 URL 资源预解析；
+- 不执行任何 embedded JS。
+
+复杂 SVG 如果导入后视觉误差过高：
+
+```text
+vector import
+  ↓ QA fail
+raster fallback
+```
+
+---
+
+# 28. Canvas / WebGL / Video
+
+全部采用“局部像素捕获”。
+
+## 28.1 Canvas
+
+可读 canvas：
+
+```text
+toBlob / toDataURL
+```
+
+不可读/tainted：
+
+```text
+Page screenshot clip
+```
+
+## 28.2 WebGL
+
+不解析 draw calls。
+
+```text
+element rect
+→ screenshot clip
+```
+
+## 28.3 Video
+
+捕获当前显示帧。
+
+如果 CORS 或 DRM 无法读：
+
+- screenshot clip；
+- 不绕过 DRM；
+- 不尝试提取媒体源。
+
+---
+
+# 29. Pixel Reference 与 Raster Tiling
+
+Figma Image 对单张图尺寸存在限制，因此所有超大 bitmap 必须做 tile。
+
+建议统一：
+
+```text
+maxRasterTile = 2048 or 4096
+```
+
+保守默认：
+
+```text
+2048 × 2048
+```
+
+完整页面 reference：
+
+```text
+page
+├─ tile 0,0
+├─ tile 0,1
+├─ tile 1,0
+└─ ...
+```
+
+Fallback node 同理。
+
+Tile metadata：
+
+```ts
+interface RasterTile {
+  assetRef: string
+  x: number
+  y: number
+  width: number
+  height: number
+  scale: number
+}
+```
+
+Figma Renderer：
+
+```text
+FallbackFrame
+ ├ tile
+ ├ tile
+ └ tile
+```
+
+---
+
+# 30. `.wtf` 打包
+
+Pipeline：
+
+```text
+IR validate
+ ↓
+Assets validate
+ ↓
+Deduplicate
+ ↓
+Generate manifest
+ ↓
+Generate checksums
+ ↓
+ZIP
+ ↓
+Blob
+ ↓
+download
+```
+
+文件名：
+
+```text
+<title>-YYYYMMDD-HHmmss.wtf
+```
+
+非法字符清洗。
+
+## 30.1 大文件策略
+
+建议：
+
+- soft warning：100 MB；
+- default max：200 MB；
+- configurable hard stop：500 MB；
+- asset count hard limit；
+- node count hard limit；
+- decompressed byte limit。
+
+超限时提示用户：
+
+- 选区域；
+- 开启 Fast Mode；
+- 关闭 preview full tiles；
+- 降低 fallback scale。
+
+---
+
+# 31. Figma Plugin 运行模型
+
+分为：
+
+## Main Sandbox
+
+负责：
+
+- Figma API；
+- 创建节点；
+- 字体加载；
+- selection；
+- viewport；
+- pluginData；
+- drop event。
+
+## UI iframe
+
+负责：
+
+- 文件选择；
+- ArrayBuffer；
+- unzip；
+- schema validation；
+- preview；
+- diagnostics；
+- 重计算；
+- visual compare 数据处理。
+
+Main 和 UI 使用 versioned message protocol。
+
+---
+
+# 32. Figma 插件 UI
+
+基础界面：
+
+```text
+┌─────────────────────────────────┐
+│ W2F                             │
+│                                 │
+│ Drop a .wtf file here           │
+│             or                  │
+│ [ Choose .wtf ]                 │
+│                                 │
+│ Import mode                     │
+│ ● Balanced                      │
+│ ○ High Fidelity                 │
+│ ○ Editable                      │
+│                                 │
+│ [ Import ]                      │
+└─────────────────────────────────┘
+```
+
+导入中：
+
+```text
+Reading file
+Validating
+Assets
+Fonts
+Containers
+Text
+Effects
+Layout
+Finishing
+```
+
+结束：
+
+```text
+Imported: 4,283 nodes
+Native: 4,140
+Fallback: 143
+Missing fonts: 2
+Warnings: 8
+```
+
+---
+
+# 33. Canvas Drop
+
+Figma 插件启动期间注册：
+
+```ts
+figma.on("drop", async (event) => {
+  const file = event.files.find(f =>
+    f.name.toLowerCase().endsWith(".wtf")
+  )
+
+  if (!file) return true
+
+  const bytes = await file.getBytesAsync()
+
+  // parse/import
+  // root positioned around event.absoluteX / absoluteY
+
+  return false
+})
+```
+
+必须理解产品边界：
+
+> Figma 插件 API 可以在插件运行时处理外部文件 drop；但 `.wtf` 不能像操作系统文件关联那样自动唤醒一个尚未运行的 Figma 插件。

@@ -14,7 +14,13 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.22.0
+          run_install: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -22,10 +28,9 @@ jobs:
           node-version: 24
           package-manager-cache: false
 
-      - name: Enable pnpm via Corepack
+      - name: Verify toolchain
         run: |
-          corepack enable
-          corepack prepare pnpm@11.22.0 --activate
+          node --version
           pnpm --version
 
       - name: Install dependencies

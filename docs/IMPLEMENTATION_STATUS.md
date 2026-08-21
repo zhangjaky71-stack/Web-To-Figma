@@ -11,7 +11,7 @@
 | NODE | Name | Status | Validation | Commit/PR |
 |---|---|---|---|---|
 | 00 | Product Baseline & Acceptance Contract | DONE | PASS | PR #3 merged |
-| 01 | Monorepo Foundation | IN PROGRESS / BLOCKED | Local static validation PASS; GitHub Actions runner unavailable | PR #4 |
+| 01 | Monorepo Foundation | IN PROGRESS / BLOCKED | Local structural/runtime validation PASS; GitHub Actions runner unavailable | PR #4 |
 | 02 | W2F File Spec V2 | TODO | - | - |
 | 03 | W2F IR V2 | TODO | - | - |
 | 04 | Stable Identity & Source Mapping | TODO | - | - |
@@ -58,9 +58,15 @@
 - [x] `apps/browser-extension` compile/test shell
 - [x] `apps/figma-plugin` compile/test shell
 - [x] `packages/shared-utils` proof package
+- [x] source-only `tsconfig.build.json` for each executable package
+- [x] shared-utils exports aligned to `dist/index.js` + `dist/index.d.ts`
 - [x] `.wtf` extension/MIME constants protected by tests
+- [x] dependency-free `scripts/validate-foundation.mjs`
 - [x] GitHub Actions CI workflow
 - [x] local JSON/YAML/ESM static validation
+- [x] local dependency-free foundation validator PASS
+- [x] local TypeScript runtime smoke PASS
+- [x] toolchain compatibility review against current official package support
 
 ## NODE-01 Validation
 
@@ -70,25 +76,33 @@ Local assistant container validation:
 - YAML parse: **PASS**
 - `eslint.config.mjs` syntax: **PASS**
 - repository/workspace structure review: **PASS**
+- `node scripts/validate-foundation.mjs`: **PASS**
+- zero-dependency TypeScript runtime smoke: **PASS**
+- `.wtf` extension/MIME behavior: **PASS**
+- browser-extension app id: **PASS**
+- Figma-plugin app id: **PASS**
 
-The assistant execution container has no npm-registry network access, so dependency installation cannot be completed locally.
+Current toolchain compatibility was also rechecked: TypeScript 6.0.3 is within the current typescript-eslint supported TypeScript range (`>=4.8.4 <6.1.0`), and typescript-eslint supports ESLint 10.
+
+The assistant execution container has no ordinary npm-registry network access, so dependency installation cannot be completed locally.
 
 GitHub Actions diagnostics:
 
 - CI run `32477712350`: failure before lockfile artifact
 - CI run `32477835968`: failure before lockfile artifact
 - CI run `32477926703`: failure
-- minimal runner-only Diagnostic run `32477926786`: failure
+- Diagnostic run `32477926786`, attempt 1: failure
+- Diagnostic run `32477926786`, attempt 2: failure with no workflow steps executed
 
-The minimal diagnostic contains only `echo`, `node --version`, and `npm --version`. Because that also fails, the current blocker is classified as **repository/GitHub Actions execution environment unavailable**, not a W2F source-code failure.
+The minimal diagnostic contains only `echo`, `node --version`, and `npm --version`. Attempt 2 was accepted, queued and started, then failed within seconds while returning `steps=[]`. The current blocker therefore remains classified as **private-repository GitHub Actions execution environment unavailable**, not a W2F source-code/dependency failure.
 
 ## Blockers
 
-1. GitHub Actions cannot currently execute even a trivial `ubuntu-latest` job in this repository.
+1. GitHub Actions cannot currently execute even a trivial `ubuntu-latest` job in this private repository.
 2. Therefore CI cannot generate the first `pnpm-lock.yaml` artifact.
 3. NODE-01 cannot satisfy the frozen-lockfile CI gate until the repository Actions environment executes jobs.
 
-The connected GitHub toolset can inspect/re-run Actions runs but does not expose repository Actions policy/billing/runner settings, so this blocker cannot be corrected in-chat through the current connector.
+The connected GitHub toolset can inspect/re-run Actions runs but does not expose repository Actions billing/runner policy settings, so the platform-level blocker cannot be corrected directly through the current connector.
 
 ## Exit Criteria Remaining
 

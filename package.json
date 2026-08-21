@@ -14,7 +14,8 @@
     "typecheck": "turbo run typecheck",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build"
+    "validate:foundation": "node scripts/validate-foundation.mjs",
+    "check": "pnpm validate:foundation && pnpm lint && pnpm typecheck && pnpm test && pnpm build"
   },
   "devDependencies": {
     "eslint": "10.8.1",

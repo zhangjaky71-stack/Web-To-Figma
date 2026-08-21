@@ -6,15 +6,15 @@ export default tseslint.config(
       "**/dist/**",
       "**/coverage/**",
       "**/node_modules/**",
-      "docs/.wtf-parts/**"
-    ]
+      "docs/.wtf-parts/**",
+    ],
   },
   ...tseslint.configs.recommended,
   {
     files: ["**/*.ts", "**/*.tsx"],
     rules: {
-      "@typescript-eslint/consistent-type-imports": ["error", { "prefer": "type-imports" }],
-      "@typescript-eslint/no-explicit-any": "error"
-    }
-  }
+      "@typescript-eslint/consistent-type-imports": ["error", { prefer: "type-imports" }],
+      "@typescript-eslint/no-explicit-any": "error",
+    },
+  },
 );

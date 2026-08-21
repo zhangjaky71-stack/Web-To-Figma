@@ -1,0 +1,700 @@
+## High Fidelity
+
+- 更积极做 text fragment；
+- unsupported 更快 fallback；
+- reference pixel 优先。
+
+## Editable
+
+- 尽量 native；
+- 更少 fallback；
+- 容忍少量视觉误差。
+
+三个 mode 只改变策略阈值，不改变 `.wtf` 原始数据。
+
+---
+
+# 74. Layout Confidence 示例
+
+Flex：
+
+```text
+display:flex                      +0.50
+children geometry single axis     +0.15
+gap matches                       +0.10
+padding matches                   +0.10
+authored flex-direction           +0.10
+overlap                           -0.30
+negative margins                  -0.20
+```
+
+最终 clamp：
+
+```text
+0..1
+```
+
+阈值示意：
+
+```text
+>= 0.80 native autolayout
+0.55~0.80 native + validation
+< 0.55 absolute snapshot
+```
+
+最终参数需通过 benchmark 调整，不要硬编码散落在代码中。
+
+---
+
+# 75. Layout Analyzer 可解释性
+
+每个决策保存 reasons：
+
+```json
+{
+  "mode": "vertical",
+  "confidence": 0.94,
+  "reasons": [
+    "computed display:flex",
+    "flex-direction:column",
+    "child centers aligned",
+    "uniform gap:16px"
+  ]
+}
+```
+
+后期调试非常重要。
+
+---
+
+# 76. Fallback Boundary 算法
+
+不要动不动 fallback 整个父 container。
+
+原则：
+
+```text
+找最小不可还原子树
+```
+
+如果一个 hero：
+
+```text
+Hero
+├ background
+├ WebGL decoration  ← fallback
+├ title
+└ button
+```
+
+只 fallback WebGL。
+
+但如果 blending 强依赖整个 Hero compositing：
+
+```text
+fallback boundary may promote to Hero
+```
+
+promote 必须记录 reason。
+
+---
+
+# 77. Asset Missing 策略
+
+Asset fetch 失败：
+
+1. 当前屏幕中能截图 → raster；
+2. screenshot 不可得 → placeholder；
+3. diagnostic；
+4. 不让整个 import fail。
+
+Placeholder：
+
+```text
+Frame
+  "Missing Asset"
+```
+
+但 High Fidelity mode 优先区域 screenshot。
+
+---
+
+# 78. Visual Diff 区域回溯
+
+每个 Figma node 保留 W2F nodeId。
+
+Pixel diff 发现：
+
+```text
+x,y,w,h
+```
+
+通过空间索引找到相交 IR nodes：
+
+```text
+diff rect
+↓
+R-tree / interval index
+↓
+candidate nodes
+```
+
+输出：
+
+```text
+possible cause:
+node w2f_318 text bounds mismatch
+```
+
+V2 可自动修。
+
+---
+
+# 79. 空间索引
+
+大页面 selection 和 diff 建议使用简单空间索引。
+
+初期可用：
+
+- sorted rect list；
+- grid buckets。
+
+后续节点 > 10k 可换：
+
+- R-tree。
+
+不要在用户拖动 selection 时每 mousemove O(N) 全遍历 20k 节点。
+
+---
+
+# 80. Capture Job 状态机
+
+```ts
+type CaptureState =
+  | "idle"
+  | "preparing"
+  | "selecting"
+  | "stabilizing"
+  | "capturing-dom"
+  | "capturing-assets"
+  | "analyzing-layout"
+  | "capturing-pixels"
+  | "packing"
+  | "downloading"
+  | "done"
+  | "failed"
+  | "cancelled"
+```
+
+UI 只通过状态机展示，不自己猜状态。
+
+---
+
+# 81. Import Job 状态机
+
+```ts
+type ImportState =
+  | "idle"
+  | "reading"
+  | "validating"
+  | "migrating"
+  | "loading-assets"
+  | "loading-fonts"
+  | "creating-nodes"
+  | "applying-layout"
+  | "correcting"
+  | "finalizing"
+  | "done"
+  | "failed"
+  | "cancelled"
+```
+
+---
+
+# 82. Message Protocol
+
+Browser extension 多 context 通信必须 versioned。
+
+```ts
+interface Message<T> {
+  protocol: "w2f-extension"
+  version: 1
+  requestId: string
+  type: string
+  payload: T
+}
+```
+
+Figma main ↔ UI 也使用类似协议。
+
+禁止随处：
+
+```ts
+postMessage({ foo: 123 })
+```
+
+长期会失控。
+
+---
+
+# 83. Cancellation
+
+用户可以取消：
+
+- selection；
+- asset capture；
+- import。
+
+所有长任务使用：
+
+```text
+AbortController
+```
+
+如果某 API 不支持 abort：
+
+每 batch 检查 cancelled flag。
+
+取消后：
+
+- Browser cleanup；
+- Figma rollback。
+
+---
+
+# 84. Build Variants
+
+建议：
+
+```text
+W2F Standard
+W2F High Fidelity
+```
+
+开发期可以同仓库不同 manifest：
+
+```text
+manifest.standard.json
+manifest.high-fidelity.json
+```
+
+生产是否合并一个包，等 Chrome Store 权限体验验证后决定。
+
+---
+
+# 85. 浏览器兼容路线
+
+V1：
+
+```text
+Chrome
+Edge
+```
+
+因为 Chromium MV3 共性高。
+
+V2：
+
+- Firefox；
+- Safari。
+
+W2F IR 不改变，只增加新的 Capture Adapter。
+
+---
+
+# 86. 响应式 V2 预留：Multi-Viewport Snapshot
+
+V1 保存 current breakpoint。
+
+V2 可增加：
+
+```text
+1440 snapshot
+1024 snapshot
+768 snapshot
+375 snapshot
+```
+
+`.wtf`：
+
+```text
+responsiveSnapshots[]
+```
+
+通过多 viewport 对比可推断：
+
+- media query breakpoint；
+- hide/show；
+- nav collapse；
+- grid column changes；
+- typography change。
+
+因此 V1 Schema 应预留可扩展 capability，但不要提前实现全部逻辑。
+
+---
+
+# 87. 后续 Design System 提取预留
+
+V2/V3 可建立：
+
+```text
+重复结构 hash
+↓
+component candidate
+```
+
+提取：
+
+- Button；
+- Card；
+- Input；
+- Nav；
+- Modal；
+- colors；
+- type scale；
+- spacing scale。
+
+但 V1 不自动转 Figma Component，避免误判破坏页面。
+
+---
+
+# 88. 开发验收总表
+
+| 项目 | V1 验收 |
+|---|---|
+| Full Page | 必须 |
+| Region | 必须 |
+| Online | 必须 |
+| Offline file:// | 必须 |
+| .wtf | 必须 |
+| Figma choose | 必须 |
+| Figma drop while plugin active | 必须 |
+| DOM hierarchy | 必须 |
+| Text editable | 必须（fallback 有例外） |
+| Images offline | 必须 |
+| SVG vector | 优先 |
+| Flex | 必须 |
+| Basic Grid | 必须 |
+| Absolute | 必须 |
+| FILL/HUG/FIXED | 必须 |
+| min/max | 必须 |
+| Shadow DOM | P1 |
+| iframe | P1 / fallback |
+| Canvas/WebGL | fallback |
+| Visual QA | 必须 |
+| AI | V1 禁止 |
+
+---
+
+# 89. 第一阶段实际实施顺序
+
+真正开始编码时，建议第一批只执行：
+
+```text
+NODE-00
+NODE-01
+NODE-02
+NODE-03
+```
+
+此时不要急着做 Capture。
+
+第一批结束必须拿到：
+
+```text
+1. 可工作的 Monorepo
+2. W2F File Spec
+3. W2F IR
+4. Validator
+5. Sample .wtf fixture
+```
+
+然后第二批：
+
+```text
+NODE-04 ~ NODE-13
+```
+
+把浏览器端彻底打通：
+
+```text
+Web → .wtf
+```
+
+第三批：
+
+```text
+NODE-14 ~ NODE-20
+```
+
+打通：
+
+```text
+.wtf → Figma
+```
+
+第四批：
+
+```text
+NODE-21 ~ NODE-24
+```
+
+才开始做：
+
+```text
+质量
+性能
+兼容
+发布
+```
+
+这样最不容易返工。
+
+---
+
+# 90. 第一个真正的 Vertical Slice
+
+在完整开发所有 CSS 之前，先建立一个端到端最小闭环：
+
+Fixture：
+
+```html
+<div style="
+  display:flex;
+  gap:16px;
+  padding:24px;
+">
+  <img ... />
+  <div>
+    <h2>Hello</h2>
+    <p>World</p>
+  </div>
+</div>
+```
+
+目标：
+
+```text
+Browser
+→ capture
+→ .wtf
+→ Figma
+→ Frame Auto Layout
+   ├ Image
+   └ Frame Vertical
+      ├ Text
+      └ Text
+```
+
+这个 Vertical Slice 必须在 NODE-16~19 间尽早跑通。
+
+它证明整个架构不是纸上谈兵。
+
+---
+
+# 91. 技术债控制规则
+
+禁止为了“先跑起来”出现：
+
+```text
+浏览器端写死 Figma node type
+Figma 端解析 DOM HTML
+任意 JSON 无 schema
+CSS parser 到处 regex
+不同模块重复颜色解析
+不同模块各写一套 Rect
+```
+
+统一公共类型：
+
+```text
+Rect
+Insets
+RGBA
+Matrix
+Length
+AssetRef
+NodeId
+StyleId
+```
+
+---
+
+# 92. Benchmark Gate
+
+进入 Release Candidate 前：
+
+```text
+pnpm benchmark
+```
+
+必须输出：
+
+```text
+Total fixtures
+Passed
+Failed
+
+Visual median
+Visual p10
+Geometry median
+Fallback ratio
+Capture duration p95
+Import duration p95
+```
+
+如果关键指标下降：
+
+CI fail 或至少阻止 release。
+
+---
+
+# 93. 兼容性问题分类
+
+每个 Bug 分类：
+
+```text
+CAPTURE
+STYLE
+TEXT
+ASSET
+LAYOUT
+FIGMA_RENDER
+FONT
+PIXEL
+PERFORMANCE
+SECURITY
+```
+
+这样后期不会所有问题都变成“Figma 导入不准”。
+
+---
+
+# 94. Debug Bundle
+
+开发版可以导出：
+
+```text
+capture-debug.zip
+├ raw-snapshot.json
+├ normalized-ir.json
+├ manifest.json
+├ diagnostics.json
+└ reference.png
+```
+
+注意 Debug Bundle 可能含网页内容，只在用户明确导出时生成。
+
+---
+
+# 95. 发布前安全检查
+
+- Chrome permissions 最小化；
+- debugger 权限说明；
+- file scheme 明确；
+- CSP；
+- no remote code；
+- no eval；
+- SVG sanitizer；
+- archive limits；
+- form redaction；
+- no cookies；
+- privacy policy；
+- dependency audit；
+- npm lockfile；
+- source maps 处理；
+- error 不泄露敏感数据。
+
+---
+
+# 96. 关键官方能力基线
+
+截至本文基线日期，需要依赖并持续关注以下官方能力：
+
+## Chrome
+
+- Manifest V3。
+- `chrome.scripting`。
+- `activeTab`。
+- optional host permissions。
+- `chrome.extension.isAllowedFileSchemeAccess()`。
+- `chrome.debugger`。
+- CDP DOMSnapshot。
+- CDP Page.captureScreenshot。
+
+## Figma
+
+- `figma.on("drop")` / DropFile。
+- `DropFile.getBytesAsync()`。
+- `figma.createImage()`。
+- `figma.createNodeFromSvg()`。
+- `figma.loadFontAsync()`。
+- `figma.listAvailableFontsAsync()`。
+- `layoutMode`：NONE / HORIZONTAL / VERTICAL / GRID。
+- `layoutSizingHorizontal/Vertical`：FIXED / HUG / FILL。
+- minWidth / maxWidth / minHeight / maxHeight。
+- `exportAsync()`。
+
+---
+
+# 97. 参考官方文档
+
+Chrome:
+
+- Manifest / permissions  
+  https://developer.chrome.com/docs/extensions/develop/concepts/declare-permissions
+- activeTab  
+  https://developer.chrome.com/docs/extensions/develop/concepts/activeTab
+- chrome.scripting  
+  https://developer.chrome.com/docs/extensions/reference/api/scripting
+- chrome.debugger  
+  https://developer.chrome.com/docs/extensions/reference/api/debugger
+- CDP DOMSnapshot  
+  https://chromedevtools.github.io/devtools-protocol/tot/DOMSnapshot/
+- CDP Page  
+  https://chromedevtools.github.io/devtools-protocol/tot/Page/
+
+Figma:
+
+- Plugin API  
+  https://developers.figma.com/docs/plugins/
+- How Plugins Run  
+  https://developers.figma.com/docs/plugins/how-plugins-run/
+- Drop event  
+  https://developers.figma.com/docs/plugins/api/properties/figma-on/
+- Figma global API  
+  https://developers.figma.com/docs/plugins/api/figma/
+- Auto Layout layoutMode  
+  https://developers.figma.com/docs/plugins/api/properties/nodes-layoutmode/
+- Layout sizing  
+  https://developers.figma.com/docs/plugins/api/properties/nodes-layoutsizinghorizontal/
+- Images  
+  https://developers.figma.com/docs/plugins/working-with-images/
+- Async / export  
+  https://developers.figma.com/docs/plugins/async-tasks/
+
+---
+
+# 98. 最终工程验收场景
+
+必须用真实工作流验收，而不只单测。
+
+## Scenario 1
+
+```text
+打开在线营销官网
+→ Full Page
+→ .wtf
+→ Figma
+```
+
+检查：
+
+- 完整页面；
+- header；
+- hero；
+- cards；
+- footer；
+- image；
+- SVG；
+- text；

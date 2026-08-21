@@ -1,0 +1,699 @@
+
+因此 UX 设计：
+
+```text
+Run W2F Plugin
+→ Keep panel open
+→ Drop .wtf anywhere on canvas
+```
+
+或者：
+
+```text
+Drop into plugin UI
+```
+
+---
+
+# 34. W2F Secure Parser
+
+绝不能“解压就信任”。
+
+## 34.1 文件校验
+
+依次：
+
+1. extension；
+2. ZIP signature；
+3. manifest 存在；
+4. magic；
+5. version；
+6. schema；
+7. paths；
+8. checksums；
+9. size；
+10. asset mime。
+
+## 34.2 Zip Slip
+
+禁止：
+
+```text
+../
+/absolute/path
+C:\
+```
+
+虽然 Figma UI 通常只在内存解压，也必须做 path normalization。
+
+## 34.3 Zip Bomb
+
+限制：
+
+- file count；
+- total uncompressed size；
+- compression ratio；
+- single file size；
+- nested archive 不自动展开。
+
+## 34.4 HTML/JS
+
+Figma Importer：
+
+- 不执行 `.wtf` HTML；
+- 不执行 `.wtf` JS；
+- 不 eval；
+- SVG 必须 sanitize；
+- JSON 只做数据。
+
+---
+
+# 35. Figma Renderer 架构
+
+```text
+W2FDocument
+ ↓
+RenderContext
+ ↓
+Pass 1: create nodes
+ ↓
+Pass 2: parent hierarchy
+ ↓
+Pass 3: geometry
+ ↓
+Pass 4: paint
+ ↓
+Pass 5: text
+ ↓
+Pass 6: auto layout
+ ↓
+Pass 7: absolute/constraints
+ ↓
+Pass 8: stacking
+ ↓
+Pass 9: plugin metadata
+ ↓
+Finalize
+```
+
+为什么多 pass：
+
+- Figma Auto Layout 修改 parent 会影响 child；
+- 字体加载异步；
+- image assets 需要 hash；
+- z-order 最好最后统一；
+- 先创建后关联更容易处理 forward reference。
+
+---
+
+# 36. DOM → Figma Node Mapping
+
+| W2F | Figma |
+|---|---|
+| document | Frame |
+| container | Frame |
+| text | Text |
+| image | Rectangle + Image Fill |
+| svg | Vector subtree |
+| canvas | Rectangle + Image Fill |
+| video | Rectangle + Image Fill |
+| iframe | Frame / Fallback |
+| pseudo | Frame / Text / Vector |
+| form-control | Frame + Text or fallback |
+
+默认不使用 Group 作为主要布局节点。
+
+原因：
+
+- Frame 更接近 DOM container；
+- 支持 clipping；
+- Auto Layout；
+- fills/strokes；
+- constraints；
+- min/max；
+- plugin data。
+
+---
+
+# 37. Root Frame
+
+命名：
+
+```text
+🌐 <Page Title>
+```
+
+保存 pluginData：
+
+```text
+w2f.formatVersion
+w2f.sourceUrl
+w2f.captureAt
+w2f.viewportWidth
+w2f.viewportHeight
+w2f.importId
+```
+
+Root Frame：
+
+- size = captured document/selection；
+- clipsContent 根据 capture type；
+- 不自动变成 Auto Layout；
+- 子级依照页面结构。
+
+---
+
+# 38. Layer Naming
+
+命名优先级：
+
+```text
+aria-label
+↓
+role + semantic name
+↓
+id
+↓
+meaningful class
+↓
+tag
+↓
+fallback node type
+```
+
+例如：
+
+```text
+header#site-header
+nav.main-nav
+img.product-cover
+h2.product-title
+button.checkout
+```
+
+去掉：
+
+- Tailwind 超长 class 链；
+- CSS-in-JS hash 噪声；
+- framework 随机 ID。
+
+完整 source selector 存 pluginData，不必全部作为 layer name。
+
+---
+
+# 39. Figma Paint Mapping
+
+## 39.1 Background Color
+
+CSS RGBA → SolidPaint。
+
+## 39.2 Gradient
+
+尽量映射：
+
+- linear-gradient；
+- radial-gradient；
+- conic-gradient → angular gradient（如果视觉可接受）。
+
+多个 background layer：
+
+```text
+fills[]
+```
+
+不支持的 repeat pattern：
+
+- tiled image fill；
+- 或 fallback。
+
+## 39.3 Border
+
+统一边框：
+
+```text
+strokes
+strokeWeight
+```
+
+四边不同：
+
+- 若 Figma API 能直接表达 → 使用；
+- 否则生成内部 edge shapes；
+- 或复杂情况 fallback。
+
+## 39.4 Radius
+
+映射四角。
+
+## 39.5 Shadow
+
+CSS box-shadow：
+
+```text
+outer → DROP_SHADOW
+inset → INNER_SHADOW
+```
+
+多 shadow → 多 effects。
+
+---
+
+# 40. Overflow / Clip / Mask
+
+`overflow:hidden`：
+
+```text
+Frame.clipsContent = true
+```
+
+clip-path：
+
+- rect/rounded shapes 尽量 native；
+- polygon/path → Vector Mask；
+- complex CSS shape → SVG/vector；
+- unsupported → raster。
+
+Mask 不能导致 DOM 层级不可理解。
+
+---
+
+# 41. Figma Text Renderer
+
+## 41.1 字体解析
+
+读取：
+
+```text
+font-family stack
+font-weight
+font-style
+```
+
+查询 Figma available fonts。
+
+匹配评分：
+
+```text
+family exact
++ style exact
++ weight exact
++ local preference
+```
+
+## 41.2 Font Fallback
+
+顺序：
+
+1. exact family + exact style；
+2. exact family + nearest style；
+3. configured mapping；
+4. generic fallback；
+5. raster text fallback（仅 High Fidelity 必要时）。
+
+## 41.3 字体映射表
+
+配置：
+
+```json
+{
+  "-apple-system": "Inter",
+  "BlinkMacSystemFont": "Inter",
+  "Arial": "Arial"
+}
+```
+
+映射表必须可覆盖。
+
+## 41.4 文字尺寸校正
+
+创建 TextNode 后比较：
+
+```text
+expected bounds
+vs
+figma bounds
+```
+
+误差超过阈值：
+
+1. 调 text box width；
+2. 调 lineHeight；
+3. 调 letterSpacing；
+4. 拆 line fragments；
+5. 最后 fallback。
+
+不要通过无限调整 fontSize 破坏语义。
+
+---
+
+# 42. Image Renderer
+
+```ts
+const image = figma.createImage(bytes)
+const rect = figma.createRectangle()
+
+rect.fills = [{
+  type: "IMAGE",
+  imageHash: image.hash,
+  scaleMode: "FILL"
+}]
+```
+
+根据 CSS：
+
+| CSS object-fit | Figma |
+|---|---|
+| cover | FILL |
+| contain | FIT |
+| fill | stretch/crop strategy |
+| none | explicit size/transform |
+
+对于 object-position：
+
+需要计算 ImagePaint transform/crop。
+
+---
+
+# 43. SVG Renderer
+
+默认：
+
+```ts
+figma.createNodeFromSvg(svg)
+```
+
+生成后：
+
+- 归一化 bounds；
+- 应用 node transform；
+- 命名；
+- pluginData；
+- 必要时 flatten 只作为显式策略，不默认 flatten。
+
+---
+
+# 44. Figma Auto Layout 映射
+
+## 44.1 Frame
+
+```text
+mode horizontal
+→ layoutMode = HORIZONTAL
+
+vertical
+→ VERTICAL
+
+grid
+→ GRID
+```
+
+## 44.2 Sizing
+
+```text
+IR FIXED → layoutSizing... = FIXED
+IR HUG   → HUG
+IR FILL  → FILL
+```
+
+要遵守 API 适用条件：
+
+- HUG 只在允许的节点/上下文；
+- FILL 只在 Auto Layout child。
+
+设置属性前先建立 parent-child 关系。
+
+## 44.3 min/max
+
+如果有：
+
+```text
+minWidth
+maxWidth
+minHeight
+maxHeight
+```
+
+直接映射到支持的 auto-layout frame/child。
+
+## 44.4 应用顺序
+
+避免 Auto Layout 改写 geometry：
+
+```text
+create parent
+→ append children
+→ set frame size
+→ set layoutMode
+→ set padding/gap
+→ set child sizing
+→ set min/max
+→ set absolute children
+→ final geometry check
+```
+
+必要时使用中间 fixed geometry，最后切换 Auto Layout。
+
+---
+
+# 45. Visual Fidelity Correction
+
+Renderer 不能只“一次生成”。
+
+需要：
+
+```text
+expected IR geometry
+      ↓
+render
+      ↓
+measure Figma nodes
+      ↓
+compare
+      ↓
+repair
+```
+
+## 45.1 修复类型
+
+- text width；
+- auto layout gap；
+- child fill；
+- image crop；
+- vector bounds；
+- border；
+- shadow；
+- absolute offsets。
+
+## 45.2 不可修复
+
+如果 native rendering 连续 N 次超过阈值：
+
+```text
+mark node unstable
+→ local fallback
+```
+
+避免无限循环。
+
+---
+
+# 46. Visual Benchmark Harness
+
+## 46.1 Reference
+
+Browser side：
+
+```text
+reference screenshot
+```
+
+## 46.2 Figma Result
+
+导入 fixture 后：
+
+```text
+rootFrame.exportAsync(PNG)
+```
+
+## 46.3 对比
+
+至少：
+
+- pixel diff；
+- geometry diff；
+- text geometry；
+- node count；
+- hierarchy；
+- asset fidelity；
+- layout semantic score。
+
+## 46.4 指标
+
+建议：
+
+```text
+Visual Similarity
+Geometry Fidelity
+Text Fidelity
+Color Fidelity
+Structure Fidelity
+Responsive Fidelity
+Fallback Ratio
+Import Duration
+Memory Peak
+```
+
+## 46.5 目标
+
+基础 fixture：
+
+```text
+Visual similarity >= 99%
+Geometry >= 99%
+```
+
+真实页面集合：
+
+```text
+Visual similarity >= 95~98%
+```
+
+并且：
+
+```text
+Fallback area ratio
+```
+
+越低越好。
+
+---
+
+# 47. Responsive Fidelity Test
+
+不能只测试原尺寸。
+
+每个 fixture 导入后，测试 root/section resize：
+
+```text
+1440
+→ 1280
+→ 1024
+→ 768
+```
+
+检查：
+
+- FILL 是否扩展；
+- HUG 是否保持内容；
+- fixed element 是否保持；
+- grid 是否重排；
+- min/max；
+- overflow；
+- absolute constraints。
+
+注意：
+
+W2F 不承诺在 Figma 中完整模拟 CSS media query。
+
+V1 “局部自适应一致”的定义：
+
+> 在当前 captured breakpoint 内，对 Flex/Grid/percentage/min-max/auto 等可推断关系做合理 Figma 响应式映射。
+
+真正跨 breakpoint 的 media-query 行为列入 V2 Responsive Snapshot Set。
+
+---
+
+# 48. Diagnostics
+
+每个 node 可产生：
+
+```ts
+interface W2FDiagnostic {
+  code: string
+  severity: "info" | "warning" | "error"
+  nodeId?: string
+  message: string
+  detail?: unknown
+}
+```
+
+示例：
+
+```text
+W2F_W_FONT_SUBSTITUTED
+W2F_W_RASTER_FALLBACK
+W2F_W_GRID_DOWNGRADED
+W2F_W_CROSS_ORIGIN_IFRAME
+W2F_E_CORRUPT_ARCHIVE
+W2F_E_UNSUPPORTED_VERSION
+W2F_E_FILE_TOO_LARGE
+```
+
+---
+
+# 49. 性能策略
+
+## 49.1 Capture
+
+不要每个节点反复调用高成本 DOM API。
+
+策略：
+
+- 一次遍历；
+- 批量 style；
+- 缓存 computed style；
+- style hash；
+- geometry snapshot 后不继续读写交叉；
+- 避免 layout thrashing。
+
+顺序：
+
+```text
+READ phase
+→ COMPUTE phase
+→ TEMP WRITE phase
+```
+
+不要：
+
+```text
+read → write → read → write
+```
+
+## 49.2 Figma
+
+按 batch：
+
+```text
+100~300 nodes
+```
+
+必要时把主逻辑拆为多个 await boundary，让 UI 更新进度。
+
+缓存：
+
+- loaded fonts；
+- created image hashes；
+- shared paint conversion；
+- vector asset。
+
+---
+
+# 50. 页面规模策略
+
+建议等级：
+
+| Node Count | 策略 |
+|---:|---|
+| < 2,000 | Normal |
+| 2,000–5,000 | Normal |
+| 5,000–10,000 | Chunked |
+| 10,000–20,000 | Warning + Chunked |
+| 20,000–50,000 | Simplify 建议 |
+| > 50,000 | 需要用户确认/区域导出建议 |
+
+不是硬性产品限制，可经 benchmark 调整。
+
+---
+
+# 51. 隐私和安全

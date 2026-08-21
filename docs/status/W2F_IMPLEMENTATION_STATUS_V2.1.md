@@ -2,15 +2,20 @@
 
 **Export Package Format:** `.wtf` (`application/x-wtf`)  
 
-**Implementation Baseline:** V2 Baseline + V2.1 Addendum  
+**Implementation Baseline:** V2 Baseline + V2.1 Addendum + NODE-00 Contracts  
 **Architecture Status:** FROZEN FOR IMPLEMENTATION  
-**Current Node:** NODE-00 — Product Baseline & Acceptance Contract  
+**Current Node:** NODE-01 — Monorepo Foundation  
 **Date:** 2026-08-21
 
 ## Baseline Documents
 
-1. `Web2Figma_W2F_Development_Implementation_Plan_V2_Baseline.md`
-2. `Web2Figma_W2F_Architecture_V2.1_Addendum.md`
+1. `docs/PRODUCT_BASELINE_V2.md`
+2. `docs/ACCEPTANCE_CONTRACT_V2.md`
+3. `docs/CAPTURE_SEMANTICS.md`
+4. `docs/KNOWN_LIMITATIONS.md`
+5. `docs/baseline/Web2Figma_W2F_Development_Implementation_Plan_V2_Baseline.md` (reassembled canonical form)
+6. `docs/baseline/Web2Figma_W2F_Architecture_V2.1_Addendum.md`
+7. `docs/adr/ADR-0000-architecture-baseline-freeze.md`
 
 ## Core V2.1 Schema Reservations
 
@@ -25,8 +30,8 @@
 
 | NODE | Name | Status |
 |---|---|---|
-| 00 | Product Baseline & Acceptance Contract | READY |
-| 01 | Monorepo Foundation | TODO |
+| 00 | Product Baseline & Acceptance Contract | DONE |
+| 01 | Monorepo Foundation | READY |
 | 02 | W2F File Spec V2 | TODO |
 | 03 | W2F IR V2 | TODO |
 | 04 | Stable Identity & Source Mapping | TODO |
@@ -58,10 +63,25 @@
 | 30 | Responsive / Determinism / Performance QA | TODO |
 | 31 | Real-world Compatibility & Release Candidate | TODO |
 
+## NODE-00 Deliverables
+
+- [x] Product baseline
+- [x] P0/P1/P2 scope
+- [x] non-goals
+- [x] acceptance metrics and release gates
+- [x] capture semantics
+- [x] known limitations
+- [x] architecture freeze ADR
+- [x] `.wtf` format contract
+
 ## Architecture Rule
 
-Do not create a V3 or expand the architecture again unless an implementation blocker or a material platform/API change requires it.
+Do not create a V3 or expand the architecture again unless an implementation blocker, material platform/API change, security incompatibility, or non-compatible schema requirement requires it and an ADR is accepted.
+
+## Blockers
+
+None.
 
 ## Next Action
 
-Execute `NODE-00`.
+Execute `NODE-01 — Monorepo Foundation`.

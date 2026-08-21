@@ -22,7 +22,7 @@
 ## Progress
 
 - NODE-00 — DONE / PASS / merged in PR #3
-- NODE-01 — IN PROGRESS / PR #4
+- NODE-01 — IN PROGRESS / PR #4 / blocker #5
 - NODE-02+ — TODO
 
 ## NODE-01 Implemented
@@ -33,13 +33,27 @@
 - browser-extension shell
 - figma-plugin shell
 - shared-utils proof package
+- source-only `tsconfig.build.json` configs
 - `.wtf` constants and tests
+- dependency-free foundation validator
 - GitHub Actions CI workflow
-- local static JSON/YAML/ESM validation
+
+## Validation Completed
+
+- JSON/YAML/ESM static validation — PASS
+- dependency-free foundation validator — PASS
+- zero-dependency TypeScript runtime smoke — PASS
+- `.wtf` extension/MIME behavior — PASS
+- browser/Figma app-id smoke — PASS
+- toolchain compatibility review — PASS
 
 ## Current Blocker
 
-GitHub Actions cannot currently execute even a minimal `ubuntu-latest` diagnostic job in this repository. The diagnostic contains only `echo`, `node --version`, and `npm --version`, so the blocker is classified as repository/Actions execution-environment level rather than W2F source code.
+Tracked in GitHub issue **#5 — BLOCKER: GitHub Actions jobs fail before first step**.
+
+GitHub Actions cannot currently execute even a minimal `ubuntu-latest` diagnostic job in this private repository. The diagnostic contains only `echo`, `node --version`, and `npm --version`; a manual retry was accepted/queued/started and still failed with no workflow steps executed. The latest NODE-01 CI run also returns `steps=null`.
+
+Therefore the blocker is classified as private-repository GitHub Actions execution-environment level rather than W2F source code.
 
 Until Actions executes jobs, the project cannot generate/commit the first `pnpm-lock.yaml` through CI or validate the required frozen-lockfile pipeline.
 
@@ -48,6 +62,10 @@ Until Actions executes jobs, the project cannot generate/commit the first `pnpm-
 - GitHub Actions runner executes successfully
 - `pnpm-lock.yaml` committed
 - CI uses `pnpm install --frozen-lockfile`
-- lint/typecheck/test/build/format all pass
+- lint passes
+- typecheck passes
+- Vitest passes
+- build passes
+- format check passes
 
-Do not advance to NODE-02 until these gates pass.
+Do not advance to NODE-02 until issue #5 is resolved and these gates pass.

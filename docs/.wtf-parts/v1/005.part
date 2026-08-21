@@ -1,0 +1,699 @@
+默认原则：
+
+```text
+Local First
+```
+
+V1：
+
+- 网页内容不上传服务器；
+- `.wtf` 本地生成；
+- `.wtf` 本地导入；
+- 不采集 cookies 作为文件内容；
+- 不保存 LocalStorage/SessionStorage；
+- 不保存用户密码；
+- password input value 强制清空；
+- auth token 不写入 `.wtf`；
+- request headers 不持久化。
+
+敏感 input：
+
+```text
+type=password
+autocomplete=current-password
+```
+
+一律：
+
+```text
+value = ""
+redacted = true
+```
+
+其他表单值建议提供：
+
+```text
+Capture current form values: OFF by default
+```
+
+---
+
+# 52. W2F 文件数据安全
+
+即使用户自己生成的 `.wtf`，Figma Importer 也按“不可信文件”处理：
+
+- schema validation；
+- size limit；
+- path validation；
+- SVG sanitize；
+- no JS；
+- no HTML execution；
+- no network request by default；
+- checksum；
+- MIME sniffing；
+- decompression limit。
+
+---
+
+# 53. 测试 Fixture 体系
+
+## Level 1 — 基础
+
+- text；
+- image；
+- background；
+- border；
+- radius；
+- shadow；
+- opacity；
+- SVG。
+
+## Level 2 — Layout
+
+- row flex；
+- column flex；
+- nested flex；
+- gap；
+- padding；
+- fixed；
+- absolute；
+- overflow；
+- grid。
+
+## Level 3 — Product UI
+
+- navbar；
+- hero；
+- card grid；
+- pricing；
+- form；
+- dashboard；
+- modal；
+- sidebar。
+
+## Level 4 — Complex CSS
+
+- transform；
+- pseudo；
+- mask；
+- gradient；
+- sticky；
+- clip-path；
+- mix blend；
+- nested scroll。
+
+## Level 5 — Browser Edge Cases
+
+- iframe；
+- cross-origin iframe；
+- Shadow DOM；
+- canvas；
+- WebGL；
+- video；
+- lazy loading；
+- infinite list；
+- local file。
+
+每个 fixture：
+
+```text
+fixture.html
+expected.json
+reference.png
+notes.md
+```
+
+---
+
+# 54. Browser E2E 测试
+
+Playwright：
+
+```text
+launch extension
+↓
+open fixture
+↓
+invoke capture
+↓
+download .wtf
+↓
+validate archive
+↓
+compare IR
+```
+
+验证：
+
+- manifest；
+- node count；
+- assets；
+- text；
+- geometry；
+- style hashes；
+- fallback；
+- file size。
+
+---
+
+# 55. Figma 测试策略
+
+Figma Plugin API 不完全等同普通浏览器自动化环境。
+
+分层：
+
+## Unit
+
+对 `figma-renderer` 使用 adapter/interface mock。
+
+## Contract
+
+检查：
+
+```text
+IR → Renderer Instructions
+```
+
+## Manual Dev Plugin
+
+真实 Figma：
+
+- 选择 .wtf；
+- drop；
+- font；
+- image；
+- SVG；
+- layout；
+- export。
+
+## Benchmark
+
+真实导出 PNG 后进入 compare pipeline。
+
+---
+
+# 56. 失败恢复
+
+Browser capture 失败：
+
+```text
+cleanup()
+restore page
+show error
+keep diagnostics
+```
+
+绝不能留下：
+
+- disabled animation CSS；
+- overlay；
+- scroll changed；
+- pointer events blocked。
+
+Figma import 失败：
+
+- 创建临时 root；
+- 所有新节点都放临时 root；
+- success 后 rename；
+- fatal error 时删除临时 root；
+- 不留下半个页面污染用户文件。
+
+---
+
+# 57. Import Transaction
+
+概念：
+
+```text
+BEGIN IMPORT
+  ↓
+Create temporary root:
+  "__W2F_IMPORTING__"
+  ↓
+Render
+  ↓
+Validate
+  ↓
+Commit:
+  rename + select + viewport
+OR
+Rollback:
+  remove root
+```
+
+---
+
+# 58. PluginData
+
+每个重要 Figma node 写：
+
+```text
+w2f.nodeId
+w2f.sourceKind
+w2f.sourceTag
+w2f.sourceSelector
+w2f.renderStrategy
+w2f.layoutConfidence
+```
+
+但不要把完整 IR 全塞 pluginData。
+
+pluginData 适合：
+
+- identity；
+- debug；
+- sync key。
+
+---
+
+# 59. Import Report
+
+完成后：
+
+```text
+W2F Import Complete
+
+Source:
+https://example.com
+
+Nodes:
+4,832
+
+Native:
+4,701
+
+Raster fallback:
+131
+
+Missing fonts:
+2
+
+Warnings:
+12
+
+Visual confidence:
+97.8%
+```
+
+支持展开：
+
+```text
+Missing Fonts
+Fallback Nodes
+Unsupported CSS
+Grid Downgrades
+Asset Failures
+```
+
+点击 diagnostic 可选中对应 Figma node，作为后期体验增强。
+
+---
+
+# 60. NODE 开发路线
+
+---
+
+## NODE-00 — Product Baseline & ADR
+
+### 目标
+
+冻结 V1 范围和核心架构。
+
+### 工作
+
+- 建立 README；
+- 建立产品目标；
+- 非目标；
+- glossary；
+- ADR template；
+- Architecture V1；
+- 文件协议原则；
+- acceptance metrics。
+
+### 产物
+
+```text
+docs/PRODUCT_BASELINE.md
+docs/ARCHITECTURE_V1.md
+docs/adr/ADR-0001-w2f-ir.md
+docs/adr/ADR-0002-local-first.md
+docs/IMPLEMENTATION_STATUS.md
+```
+
+### DoD
+
+- 所有后续 NODE 有编号；
+- Scope 明确；
+- “完美导入”有量化定义；
+- Native vs Fallback 原则写死。
+
+---
+
+## NODE-01 — Monorepo Foundation
+
+### 目标
+
+搭起可构建、可测试的工程。
+
+### 工作
+
+- pnpm workspace；
+- Turborepo；
+- TS config；
+- ESLint；
+- Prettier；
+- Vitest；
+- apps/packages；
+- CI；
+- dev/build/test/lint commands。
+
+### Scripts
+
+```text
+pnpm dev
+pnpm build
+pnpm test
+pnpm lint
+pnpm typecheck
+pnpm benchmark
+```
+
+### DoD
+
+- Browser app 能 build；
+- Figma app 能 build；
+- shared package 可互相引用；
+- CI 全绿。
+
+---
+
+## NODE-02 — W2F File Spec V1
+
+### 目标
+
+正式定义 `.wtf`。
+
+### 工作
+
+- manifest schema；
+- archive paths；
+- checksums；
+- size limits；
+- MIME；
+- versioning；
+- migration；
+- zip security。
+
+### 产物
+
+```text
+docs/W2F-FILE-SPEC-V1.md
+packages/w2f-schema
+```
+
+### Tests
+
+- valid archive；
+- missing manifest；
+- invalid version；
+- bad checksum；
+- zip traversal；
+- duplicate path；
+- oversized asset。
+
+### DoD
+
+Browser/Figma 都引用同一 schema。
+
+---
+
+## NODE-03 — W2F IR V1
+
+### 目标
+
+Scene Graph 定型。
+
+### 工作
+
+- node；
+- layout；
+- paint；
+- effects；
+- text；
+- asset；
+- sourceRef；
+- diagnostics；
+- serialization。
+
+### DoD
+
+至少 20 个手工 IR fixtures 能 roundtrip：
+
+```text
+object
+→ JSON
+→ validate
+→ object
+```
+
+---
+
+## NODE-04 — Browser Extension Shell
+
+### 目标
+
+Chrome MV3 插件能运行。
+
+### 工作
+
+- manifest；
+- popup；
+- service worker；
+- content script；
+- message protocol；
+- active tab；
+- error handling。
+
+### UI
+
+两个主按钮先可用：
+
+```text
+Export Full Page
+Select Region
+```
+
+### DoD
+
+本地 load unpacked 后可在普通页面建立 capture job。
+
+---
+
+## NODE-05 — Permission & Offline File
+
+### 目标
+
+在线/离线访问权限闭环。
+
+### 工作
+
+- activeTab；
+- optional host permissions；
+- file scheme detect；
+- file URL settings guidance；
+- protected URL errors。
+
+### Tests
+
+- https；
+- http；
+- file allowed；
+- file denied；
+- chrome://。
+
+### DoD
+
+离线页面状态明确，不静默失败。
+
+---
+
+## NODE-06 — Region Selector
+
+### 目标
+
+完成可用框选。
+
+### 工作
+
+- overlay；
+- rectangle；
+- auto scroll；
+- smart snap；
+- keyboard；
+- cancel；
+- confirm；
+- coordinate normalize。
+
+### Tests
+
+- scroll page；
+- zoom；
+- nested scroll；
+- selection partially intersects；
+- high DPR。
+
+### DoD
+
+返回稳定 SelectionBounds。
+
+---
+
+## NODE-07 — Standard DOM Capture
+
+### 目标
+
+建立第一版 DOM/geometry snapshot。
+
+### 工作
+
+- traversal；
+- visibility；
+- bounds；
+- hierarchy；
+- element metadata；
+- Shadow DOM open；
+- iframe same-origin；
+- source paths。
+
+### DoD
+
+Level-1/2 fixture hierarchy > 99% 正确。
+
+---
+
+## NODE-08 — Text / Pseudo / Advanced DOM
+
+### 目标
+
+补齐文字和合成节点。
+
+### 工作
+
+- Text Node；
+- Range rects；
+- line fragments；
+- ::before；
+- ::after；
+- form current visual；
+- slots；
+- iframe fallback metadata。
+
+### DoD
+
+文字不再依赖 HTMLElement 粗粒度盒子。
+
+---
+
+## NODE-09 — CSS Normalizer
+
+### 目标
+
+完成 style whitelist 和标准化。
+
+### 工作
+
+- computed CSS；
+- authored hints；
+- color parser；
+- length parser；
+- transform parser；
+- gradient parser；
+- style dedup/hash。
+
+### Tests
+
+大量 property fixture。
+
+### DoD
+
+同样 style 生成相同 stable hash。
+
+---
+
+## NODE-10 — Asset Resolver
+
+### 目标
+
+把视觉资源打包离线。
+
+### 工作
+
+- img；
+- currentSrc；
+- CSS url；
+- SVG；
+- data；
+- blob；
+- cross-origin asset request；
+- SHA256；
+- dedup；
+- MIME sniff。
+
+### DoD
+
+断网后 `.wtf` 内资源仍完整。
+
+---
+
+## NODE-11 — Pixel Capture & Fallback
+
+### 目标
+
+建立 reference 和局部 fallback。
+
+### 工作
+
+- viewport screenshot；
+- full page screenshot；
+- region clip；
+- element fallback；
+- tiling；
+- DPR normalize。
+
+### DoD
+
+Canvas/WebGL fixture 可作为局部 bitmap 保存。
+
+---
+
+## NODE-12 — Layout Analyzer
+
+### 目标
+
+从 Web Layout 生成 W2F layout model。
+
+### 工作
+
+- flex；
+- grid；
+- normal flow；
+- absolute；
+- fill/hug/fixed；
+- min/max；
+- confidence；
+- reasons；
+- downgrade。
+
+### Tests
+
+每个规则必须有独立 fixture。
+
+### DoD
+
+布局推断不是散落在 Renderer 中，而是一个独立 package。
+
+---
+
+## NODE-13 — W2F Packager
+
+### 目标

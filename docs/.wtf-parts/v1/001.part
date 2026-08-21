@@ -1,0 +1,700 @@
+# Web2Figma（W2F）双端插件开发实施总纲 V1
+
+> 文档定位：**可直接作为后续工程开发的实施基线、任务拆解、验收标准和持续迭代依据。**  
+> 目标产品：浏览器端网页采集插件 + Figma 端 `.wtf` 导入插件。  
+> 核心目标：把在线/离线网页保存为本地 `.wtf` 文件，再尽可能高保真地重建为 **可编辑、保留层级、保留局部响应式语义** 的 Figma 图层，而不是简单截图。  
+> 文档版本：V1.0  
+> 基线日期：2026-08-21  
+> 实施原则：**Deterministic Capture → W2F IR → Deterministic Render → Visual QA → Local Fallback**
+
+---
+
+## 0. 文档使用方式
+
+本项目后续实施时，必须把本文件视为当前基线，不建议跳过底层协议直接开发 UI。
+
+推荐执行方式：
+
+1. 严格按 `NODE-00 → NODE-24` 顺序实施。
+2. 每完成一个 NODE：
+   - 更新 `docs/IMPLEMENTATION_STATUS.md`；
+   - 执行本 NODE 的单元测试、集成测试和必要的视觉测试；
+   - 更新 `CHANGELOG.md`；
+   - 提交 Git commit；
+   - 只有 Definition of Done 全部满足后才进入下一个 NODE。
+3. 如果后续发现架构需要改变：
+   - 不直接修改核心行为；
+   - 先新增 ADR（Architecture Decision Record）；
+   - 写明背景、方案、替代方案、影响范围、迁移策略；
+   - 再实施修改。
+4. 所有 `.wtf` 协议字段必须经过 schema 版本控制，不允许前后端以“约定俗成”方式交换无版本 JSON。
+5. 浏览器 Capture Engine 和 Figma Renderer 不直接互相依赖，只通过 `W2F IR + .wtf File Spec` 对接。
+6. 第一阶段禁止引入 AI 参与核心转换。所有布局、资源、样式和回退决策必须可重现、可测试、可调试。
+
+---
+
+# 1. 产品目标
+
+## 1.1 用户工作流
+
+### 工作流 A：完整网页导出
+
+```text
+用户打开网页
+   ↓
+点击浏览器扩展
+   ↓
+点击「导出完整页面」
+   ↓
+插件分析 DOM / CSS / Assets / Layout / Text / Geometry
+   ↓
+生成 page-name.wtf
+   ↓
+用户打开 Figma
+   ↓
+运行 W2F Figma Plugin
+   ↓
+选择 .wtf 或把 .wtf 拖入 Figma Canvas
+   ↓
+Figma Plugin 解包、校验、重建
+   ↓
+得到真实 Figma 图层
+```
+
+### 工作流 B：框选区域导出
+
+```text
+用户打开网页
+   ↓
+点击「选择区域导出」
+   ↓
+网页进入 Selection Mode
+   ↓
+用户拖动框选目标区域
+   ↓
+智能吸附到 DOM 边界（可关闭）
+   ↓
+只捕获与区域相交的有效节点
+   ↓
+建立 SelectionRoot
+   ↓
+保存为 .wtf
+   ↓
+Figma 导入
+   ↓
+得到对应局部 Frame
+```
+
+### 工作流 C：离线网页
+
+```text
+本地 index.html
+   ↓
+Chrome file:// 打开
+   ↓
+W2F 检测 file scheme 权限
+   ↓
+采集本地 DOM + CSS + Assets
+   ↓
+.wtf
+   ↓
+离线导入 Figma
+```
+
+---
+
+# 2. V1 核心验收定义
+
+“完美导入”不能定义为无条件 100% 可编辑，因为 Browser 和 Figma 是两套不同的布局和渲染引擎。
+
+V1 将目标定义为：
+
+> **能可靠映射的网页结构必须生成原生、可编辑的 Figma 节点；无法可靠映射的局部元素使用最小范围 Raster/Vector Fallback，避免整页退化为截图。**
+
+## 2.1 P0 必须支持
+
+- Chrome / Chromium Manifest V3。
+- 在线 `http://` / `https://` 页面。
+- 用户授权后的 `file://` 离线页面。
+- 当前标签页完整文档捕获。
+- 鼠标框选区域捕获。
+- DOM 父子层级。
+- 文本内容。
+- 文本基础样式。
+- 图片。
+- SVG。
+- CSS background color。
+- CSS background image。
+- 基础 gradient。
+- border。
+- border-radius。
+- opacity。
+- box-shadow。
+- overflow hidden。
+- Flexbox。
+- 基础 CSS Grid。
+- 普通文档流。
+- Absolute positioning。
+- Fixed 元素的捕获策略。
+- 页面/区域像素参考图。
+- `.wtf` 本地文件。
+- Figma 插件点击选择 `.wtf`。
+- Figma 插件运行时直接把 `.wtf` 拖入 Canvas。
+- Frame / Text / Rectangle / Vector / Image Fill 重建。
+- FILL / HUG / FIXED 推断。
+- Constraints。
+- min/max size 映射。
+- 局部 unsupported raster fallback。
+- 导入报告。
+- 自动视觉基准测试。
+
+## 2.2 P1 应支持
+
+- `::before` / `::after`。
+- Shadow DOM。
+- iframe。
+- sticky。
+- multi-background。
+- complex border。
+- CSS transforms。
+- CSS filter 的可映射子集。
+- blend mode 的可映射子集。
+- masks 的可映射子集。
+- flex-wrap。
+- 更复杂 CSS Grid track。
+- 文字 mixed styles。
+- 文本 line fragment。
+- input / button / textarea 等表单元素。
+- srcset / picture。
+- blob URL。
+- lazy-loaded images。
+- nested scroll container。
+- repeated component detection（只做结构提示，不自动转组件亦可）。
+
+## 2.3 P2 回退支持
+
+以下元素不强行转换为原生 Figma：
+
+- WebGL。
+- Canvas 内部绘制对象。
+- Video 动态帧。
+- CSS Paint API。
+- custom shader。
+- 复杂 backdrop-filter。
+- 高度依赖浏览器合成器的 blend。
+- 无法解析的第三方 iframe。
+- 浏览器原生控件中无法重建的内部 UA shadow tree。
+
+它们应：
+
+```text
+unsupported node
+      ↓
+最小可行区域截图
+      ↓
+Figma Rectangle + Image Fill
+```
+
+父层级和周边原生元素继续保持可编辑。
+
+---
+
+# 3. 非目标（V1 不做）
+
+为了控制工程复杂度，V1 明确不做：
+
+- Figma → HTML 反向生成。
+- 网页实时双向同步。
+- AI 自动理解页面。
+- AI 自动命名图层。
+- AI 自动组件化。
+- AI 自动修图。
+- 云端账号体系。
+- 云端 `.wtf` 存储。
+- 团队共享。
+- 浏览器历史批量抓取。
+- 自动绕过登录、DRM、权限或跨域安全限制。
+- 执行 `.wtf` 内任何 JavaScript。
+- 在 Figma 中执行原网页 HTML。
+- 保证所有第三方网页 100% 原生可编辑。
+
+---
+
+# 4. 技术架构总览
+
+```text
+┌──────────────────────────────────────────────────────────────┐
+│                        Browser Page                          │
+└──────────────────────────────┬───────────────────────────────┘
+                               │
+                      Capture Coordinator
+                               │
+        ┌──────────────────────┼───────────────────────┐
+        │                      │                       │
+        ▼                      ▼                       ▼
+ DOM Capture            Asset Capture           Pixel Capture
+        │                      │                       │
+        ├─ DOM tree            ├─ Images              ├─ Preview
+        ├─ Shadow DOM          ├─ SVG                 ├─ Fallback
+        ├─ iframe              ├─ CSS images          └─ QA ref
+        ├─ pseudo              └─ Fonts metadata
+        ├─ text runs
+        ├─ computed styles
+        └─ geometry
+        │
+        ▼
+ CSS Normalizer
+        │
+        ▼
+ Layout Analyzer / Responsive Inference
+        │
+        ▼
+┌──────────────────────────────────────────────────────────────┐
+│                       W2F Scene Graph                         │
+│  Semantic + Geometry + Paint + Assets + Layout + Fallback    │
+└──────────────────────────────┬───────────────────────────────┘
+                               │
+                         W2F Packager
+                               │
+                               ▼
+                         document.wtf
+                               │
+                     ┌─────────┴─────────┐
+                     │                   │
+                  Choose               Drop
+                     │                   │
+                     └─────────┬─────────┘
+                               ▼
+                         Figma Plugin
+                               │
+                        Secure Parser
+                               │
+                        Scene Renderer
+             ┌─────────────────┼─────────────────┐
+             ▼                 ▼                 ▼
+          Layout             Paint              Text
+             │                 │                 │
+             └─────────────────┼─────────────────┘
+                               ▼
+                          Figma Nodes
+                               │
+                               ▼
+                          Visual QA
+```
+
+---
+
+# 5. 为什么必须有 W2F IR
+
+禁止浏览器端直接输出“Figma API 命令”。
+
+错误架构：
+
+```text
+Browser DOM
+  ↓
+{ createFrame(), createText(), ... }
+  ↓
+Figma
+```
+
+这种方式会导致：
+
+- Browser Capture 和 Figma API 强耦合；
+- 文件格式无法长期兼容；
+- 无法增加其他 Renderer；
+- 无法对 Capture 和 Render 分别测试；
+- Figma API 更新会污染浏览器端；
+- 无法重放和诊断布局推断。
+
+正确架构：
+
+```text
+Browser
+  ↓
+W2F IR
+  ↓
+.wtf
+  ↓
+Renderer
+  ↓
+Figma
+```
+
+W2F IR 是本项目真正的核心资产。
+
+---
+
+# 6. Monorepo 目录结构
+
+推荐使用 `pnpm + Turborepo + TypeScript`。
+
+```text
+web2figma/
+├─ apps/
+│  ├─ browser-extension/
+│  │  ├─ src/
+│  │  │  ├─ popup/
+│  │  │  ├─ options/
+│  │  │  ├─ service-worker/
+│  │  │  ├─ content/
+│  │  │  ├─ selector/
+│  │  │  ├─ page-bridge/
+│  │  │  └─ capture/
+│  │  ├─ manifest.json
+│  │  └─ vite.config.ts
+│  │
+│  └─ figma-plugin/
+│     ├─ src/
+│     │  ├─ main/
+│     │  │  ├─ index.ts
+│     │  │  ├─ drop-handler.ts
+│     │  │  ├─ render/
+│     │  │  ├─ fonts/
+│     │  │  ├─ layout/
+│     │  │  └─ reports/
+│     │  └─ ui/
+│     │     ├─ App.tsx
+│     │     ├─ import/
+│     │     └─ diagnostics/
+│     ├─ manifest.json
+│     └─ vite.config.ts
+│
+├─ packages/
+│  ├─ w2f-schema/
+│  ├─ w2f-ir/
+│  ├─ w2f-codecs/
+│  ├─ capture-core/
+│  ├─ css-normalizer/
+│  ├─ asset-core/
+│  ├─ layout-engine/
+│  ├─ geometry-engine/
+│  ├─ raster-engine/
+│  ├─ figma-renderer/
+│  ├─ visual-diff/
+│  ├─ diagnostics/
+│  └─ shared-utils/
+│
+├─ tests/
+│  ├─ fixtures/
+│  │  ├─ level-1/
+│  │  ├─ level-2/
+│  │  ├─ level-3/
+│  │  ├─ level-4/
+│  │  └─ level-5/
+│  ├─ unit/
+│  ├─ integration/
+│  └─ e2e/
+│
+├─ benchmarks/
+│  ├─ pages/
+│  ├─ references/
+│  └─ results/
+│
+├─ docs/
+│  ├─ architecture/
+│  ├─ adr/
+│  ├─ nodes/
+│  ├─ W2F-FILE-SPEC-V1.md
+│  ├─ W2F-IR-V1.md
+│  ├─ IMPLEMENTATION_STATUS.md
+│  └─ TROUBLESHOOTING.md
+│
+├─ scripts/
+│  ├─ build-all.ts
+│  ├─ benchmark.ts
+│  ├─ fixture-server.ts
+│  └─ validate-w2f.ts
+│
+├─ package.json
+├─ pnpm-workspace.yaml
+├─ turbo.json
+├─ tsconfig.base.json
+├─ eslint.config.js
+├─ vitest.workspace.ts
+└─ README.md
+```
+
+---
+
+# 7. 推荐依赖
+
+## 7.1 核心
+
+```text
+typescript
+zod
+fflate
+nanoid
+```
+
+建议 `fflate` 用于 `.wtf` ZIP-compatible container：
+
+- 体积小；
+- 浏览器可运行；
+- Figma UI iframe 可运行；
+- 支持 Uint8Array；
+- 可以后续替换成流式 ZIP 实现。
+
+## 7.2 浏览器
+
+```text
+react
+react-dom
+vite
+@types/chrome
+```
+
+## 7.3 Figma
+
+```text
+@figma/plugin-typings
+react
+react-dom
+```
+
+## 7.4 测试
+
+```text
+vitest
+playwright
+pixelmatch
+pngjs
+```
+
+SSIM 可增加独立轻量实现或可靠库。
+
+## 7.5 代码质量
+
+```text
+eslint
+prettier
+typescript-eslint
+```
+
+---
+
+# 8. `.wtf` 文件规范
+
+## 8.1 文件本质
+
+`.wtf`：
+
+> ZIP-compatible binary container + versioned JSON + deduplicated binary assets。
+
+文件扩展名固定：
+
+```text
+.wtf
+```
+
+建议 MIME：
+
+```text
+application/x-wtf
+```
+
+## 8.2 内部目录
+
+```text
+sample.wtf
+├─ manifest.json
+├─ document.json
+├─ styles.json
+├─ assets.json
+├─ diagnostics.json
+├─ source/
+│  ├─ css-authored.json
+│  └─ metadata.json
+├─ assets/
+│  ├─ 00/
+│  │  └─ <sha256>.png
+│  ├─ 13/
+│  │  └─ <sha256>.webp
+│  └─ a7/
+│     └─ <sha256>.svg
+├─ preview/
+│  ├─ thumbnail.webp
+│  ├─ viewport.png
+│  └─ tiles/
+│     ├─ 0-0.png
+│     ├─ 0-1.png
+│     └─ ...
+├─ fallback/
+│  └─ <node-id>/
+│     ├─ tile-0-0.png
+│     └─ ...
+└─ checksums.json
+```
+
+## 8.3 manifest
+
+```ts
+interface W2FManifest {
+  magic: "W2F"
+  formatVersion: string
+  generator: {
+    name: string
+    version: string
+    build: string
+  }
+  capture: {
+    type: "full-page" | "region"
+    mode: "standard" | "high-fidelity"
+    capturedAt: string
+  }
+  source: {
+    type: "http" | "https" | "file"
+    url: string
+    title: string
+    origin?: string
+  }
+  viewport: {
+    width: number
+    height: number
+    devicePixelRatio: number
+    zoom: number
+  }
+  document: {
+    width: number
+    height: number
+    rootNodeId: string
+  }
+  selection?: {
+    x: number
+    y: number
+    width: number
+    height: number
+  }
+  stats: {
+    nodeCount: number
+    textRunCount: number
+    assetCount: number
+    fallbackCount: number
+    compressedBytes: number
+    uncompressedBytes: number
+  }
+  capabilities: string[]
+}
+```
+
+## 8.4 版本规则
+
+采用 SemVer：
+
+```text
+1.0.0
+1.1.0
+2.0.0
+```
+
+原则：
+
+- patch：不改变 schema；
+- minor：增加 optional field；
+- major：破坏兼容。
+
+Figma Importer：
+
+```text
+file version
+   ↓
+version detector
+   ↓
+migrations[]
+   ↓
+current IR
+```
+
+必须允许：
+
+```text
+V1.0 .wtf
+→ V1.3 Importer
+→ 自动迁移
+```
+
+---
+
+# 9. W2F Scene Graph
+
+建议所有捕获结果统一到以下抽象。
+
+```ts
+interface W2FNode {
+  id: string
+  sourceRef?: W2FSourceRef
+
+  kind:
+    | "document"
+    | "container"
+    | "text"
+    | "image"
+    | "svg"
+    | "canvas"
+    | "video"
+    | "iframe"
+    | "pseudo"
+    | "form-control"
+    | "unknown"
+
+  name: string
+  parentId?: string
+  children: string[]
+
+  bounds: Rect
+  localBounds: Rect
+  clip?: Rect
+
+  visibility: VisibilityInfo
+  stacking: StackingInfo
+
+  layout: W2FLayout
+  paint: W2FPaint
+  effects: W2FEffects
+
+  text?: W2FText
+  assetRef?: string
+
+  render: {
+    preferred: "native" | "vector" | "raster"
+    confidence: number
+    fallbackAssetRef?: string
+    reasons: string[]
+  }
+}
+```
+
+## 9.1 SourceRef
+
+```ts
+interface W2FSourceRef {
+  tagName?: string
+  domPath?: string
+  cssSelector?: string
+  idAttribute?: string
+  classList?: string[]
+  role?: string
+  backendNodeId?: number
+  frameId?: string
+}
+```
+
+后续可用于：
+
+- Debug；
+- 显示原 DOM 来源；
+- Visual Diff 回溯；
+- V2 增量同步。
+
+---
+
+# 10. 坐标系统
+
+必须在早期统一坐标定义。
+
+定义：
+
+- `documentX/Y`：相对完整文档左上角；
+- `viewportX/Y`：相对当前 viewport；
+- `localX/Y`：相对 IR parent；

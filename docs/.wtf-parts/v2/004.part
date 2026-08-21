@@ -1,0 +1,700 @@
+
+新增正式指标：
+
+```text
+Native Node Ratio
+Editable Text Ratio
+Vector Preservation Ratio
+Editable Area Ratio
+Raster Area Ratio
+Auto Layout Coverage
+Meaningful Layer Ratio
+```
+
+避免整页截图拿 100% Visual 分。
+
+---
+
+# 58. Structure Quality Score
+
+至少记录：
+
+```text
+Source→Render mapping completeness
+anonymous wrapper count
+average render depth
+semantic section accuracy
+meaningful layer name ratio
+unnecessary frame ratio
+```
+
+---
+
+# 59. Responsive QA
+
+对支持 fixture：
+
+```text
+1440
+→ 1280
+→ 1024
+→ 768
+```
+
+测试：
+
+- FILL；
+- HUG；
+- FIXED；
+- gap/padding；
+- grid；
+- min/max；
+- absolute constraints；
+- hidden/visible metadata；
+- structural breakpoint report。
+
+V2 仍不承诺完整模拟所有 Media Query。
+
+定义：
+
+> 当前 breakpoint 内可编辑布局要合理；跨 breakpoint 行为必须被识别、保存和报告。
+
+---
+
+# 60. Determinism Benchmark
+
+同 fixture：
+
+```text
+Capture 10 times
+```
+
+比较：
+
+```text
+stable identity
+source graph hash
+render tree hash
+asset hash
+layout decision
+diagnostics
+```
+
+动态内容通过 fixture 固定。
+
+---
+
+# 61. Compatibility Matrix
+
+每个真实网站类型：
+
+```text
+marketing
+ecommerce
+news
+docs
+dashboard
+SaaS
+table-heavy admin
+local site
+shadow-dom app
+canvas/webgl
+```
+
+记录：
+
+```text
+Capture
+Assets
+Text
+Layout
+Responsive
+Render
+Fallback
+Performance
+```
+
+---
+
+# 62. 工程结构 V2
+
+```text
+web2figma/
+├ apps/
+│  ├ browser-extension/
+│  └ figma-plugin/
+│
+├ packages/
+│  ├ w2f-schema/
+│  ├ w2f-ir/
+│  ├ source-providers/
+│  ├ capture-core/
+│  ├ standard-capture-adapter/
+│  ├ cdp-capture-adapter/
+│  ├ snapshot-normalizer/
+│  ├ stable-identity/
+│  ├ css-cascade/
+│  ├ css-normalizer/
+│  ├ geometry-engine/
+│  ├ text-engine/
+│  ├ inline-layout-engine/
+│  ├ table-layout-engine/
+│  ├ asset-core/
+│  ├ responsive-engine/
+│  ├ layout-engine/
+│  ├ render-tree-optimizer/
+│  ├ compositing-engine/
+│  ├ raster-engine/
+│  ├ w2f-codecs/
+│  ├ figma-capability-resolver/
+│  ├ figma-renderer/
+│  ├ visual-diff/
+│  ├ structure-qa/
+│  ├ responsive-qa/
+│  ├ diagnostics/
+│  └ shared-utils/
+│
+├ tests/
+├ benchmarks/
+├ docs/
+├ scripts/
+├ package.json
+├ pnpm-workspace.yaml
+└ turbo.json
+```
+
+---
+
+# 63. NODE 路线图 V2
+
+V2 正式使用 **NODE-00 ～ NODE-31**。
+
+---
+
+## NODE-00 — Product Baseline & Acceptance Contract
+
+目标：
+
+- 冻结 V2 目标；
+- 正式定义“完美导入”的工程含义；
+- 定义 8 大质量指标；
+- P0/P1/P2；
+- Non-goals。
+
+产物：
+
+```text
+docs/PRODUCT_BASELINE_V2.md
+docs/ACCEPTANCE_CONTRACT_V2.md
+```
+
+DoD：
+
+- 所有指标可测试；
+- 不使用“100% 所有网页完美”这种不可验收描述。
+
+---
+
+## NODE-01 — Monorepo Foundation
+
+建立：
+
+- pnpm；
+- turbo；
+- TypeScript；
+- lint；
+- test；
+- build；
+- CI；
+- apps/packages。
+
+DoD：
+
+```text
+pnpm build
+pnpm test
+pnpm lint
+pnpm typecheck
+```
+
+全部可执行。
+
+---
+
+## NODE-02 — W2F File Spec V2
+
+定义：
+
+- container；
+- manifest；
+- compatibility；
+- checksums；
+- feature flags；
+- source/render tree；
+- responsive；
+- states；
+- reference tiles；
+- security limits。
+
+DoD：
+
+Browser/Figma 使用同一 schema package。
+
+---
+
+## NODE-03 — W2F IR V2
+
+定义：
+
+- Source Graph；
+- Render Tree；
+- layout；
+- paint；
+- text；
+- assets；
+- states；
+- responsive；
+- diagnostics。
+
+DoD：
+
+roundtrip + migration tests。
+
+---
+
+## NODE-04 — Stable Identity & Source Mapping
+
+实现：
+
+- stableNodeId；
+- confidence；
+- evidence；
+- documentId；
+- captureId；
+- mapping。
+
+DoD：
+
+稳定 fixture 多次 capture 的 stable identity 达标。
+
+---
+
+## NODE-05 — Browser Extension Shell
+
+MV3：
+
+- popup；
+- service worker；
+- content；
+- message protocol；
+- job state。
+
+---
+
+## NODE-06 — Source Providers & Offline
+
+实现：
+
+```text
+HttpPageProvider
+FileTabProvider
+LocalFolderProvider
+```
+
+包括：
+
+- local access；
+- relative URL；
+- permissions；
+- capability check。
+
+---
+
+## NODE-07 — Region Selector & Redaction
+
+实现：
+
+- free rect；
+- smart snap；
+- keyboard；
+- autoscroll；
+- selection root；
+- exclude/redaction。
+
+---
+
+## NODE-08 — Standard DOM Capture
+
+实现：
+
+- DOM；
+- geometry；
+- visibility；
+- open Shadow DOM；
+- iframe；
+- source refs。
+
+---
+
+## NODE-09 — CDP High Fidelity Adapter
+
+实现：
+
+- attach/detach；
+- DOMSnapshot；
+- Page screenshot；
+- layout metrics；
+- paint order；
+- error fallback。
+
+保持独立 build/capability。
+
+---
+
+## NODE-10 — Text / Inline / Pseudo Capture
+
+实现：
+
+- text runs；
+- fragments；
+- baseline；
+- inline；
+- pseudo；
+- marker；
+- form visual。
+
+---
+
+## NODE-11 — CSS Cascade & Authored Semantics
+
+实现：
+
+- computed；
+- authored；
+- variables；
+- media；
+- important；
+- cascade trace；
+- CSS length semantic model。
+
+---
+
+## NODE-12 — Media / Container / Environment Capture
+
+实现：
+
+- media queries；
+- container queries；
+- color scheme；
+- reduced motion；
+- environment snapshot。
+
+---
+
+## NODE-13 — Asset Resolver
+
+实现：
+
+- images；
+- currentSrc；
+- CSS image；
+- SVG；
+- data；
+- blob；
+- hash；
+- dedup。
+
+---
+
+## NODE-14 — Pixel Ground Truth & Raster Engine
+
+实现：
+
+- viewport ref；
+- full-page ref；
+- tiles；
+- node fallback capture；
+- canvas/webgl/video frame。
+
+---
+
+## NODE-15 — Multi-Viewport Responsive Capture
+
+实现：
+
+- responsive snapshot mode；
+- multiple viewport；
+- snapshot orchestration；
+- stable node matching inputs。
+
+---
+
+## NODE-16 — Responsive Inference Engine
+
+实现：
+
+- cross snapshot match；
+- FILL/HUG/FIXED；
+- breakpoint；
+- visibility；
+- layout change；
+- rule confidence。
+
+---
+
+## NODE-17 — Base Layout Analyzer
+
+实现：
+
+- normal flow；
+- flex；
+- grid；
+- absolute；
+- box model；
+- effective spacing；
+- min/max。
+
+---
+
+## NODE-18 — Table Layout Engine
+
+实现：
+
+- table；
+- row；
+- cell；
+- rowspan；
+- colspan；
+- border collapse。
+
+---
+
+## NODE-19 — Render Tree Optimizer
+
+实现：
+
+- wrapper elimination；
+- semantic boundaries；
+- section detection；
+- simplified mode；
+- source mapping。
+
+---
+
+## NODE-20 — Compositing & Fallback Boundary
+
+实现：
+
+- blend；
+- filter；
+- backdrop；
+- mask；
+- compositing dependency；
+- fallback promotion。
+
+---
+
+## NODE-21 — W2F Packager
+
+实现：
+
+- files；
+- manifests；
+- references；
+- feature flags；
+- checksums；
+- zip；
+- download。
+
+到这里完成：
+
+```text
+Web → .wtf
+```
+
+---
+
+## NODE-22 — Figma Plugin Shell & File Intake
+
+实现：
+
+- main/ui；
+- choose；
+- drop；
+- progress；
+- import modes；
+- section outline。
+
+---
+
+## NODE-23 — Secure Parser & Migration
+
+实现：
+
+- schema；
+- version；
+- zip bomb；
+- zip slip；
+- checksum；
+- SVG sanitize；
+- migration。
+
+---
+
+## NODE-24 — Figma Capability Resolver
+
+实现：
+
+```text
+native
+emulated
+wrapper
+absolute
+raster
+```
+
+避免 Renderer 直接硬绑所有 API。
+
+---
+
+## NODE-25 — Basic Figma Renderer
+
+实现：
+
+- root；
+- frames；
+- hierarchy；
+- geometry；
+- naming；
+- pluginData；
+- z-order。
+
+---
+
+## NODE-26 — Text / Font / Asset / Paint Renderer
+
+实现：
+
+- fonts；
+- text；
+- image；
+- SVG；
+- gradient；
+- border；
+- shadow；
+- clip/mask。
+
+---
+
+## NODE-27 — Figma Responsive Layout Renderer
+
+实现：
+
+- Auto Layout；
+- Grid；
+- FILL；
+- HUG；
+- FIXED；
+- min/max；
+- absolute child；
+- constraints；
+- capability downgrade。
+
+---
+
+## NODE-28 — Hybrid Native / Raster Renderer
+
+实现：
+
+- fallback subtree；
+- tiled image；
+- unsupported complex visual；
+- asset missing fallback。
+
+---
+
+## NODE-29 — Visual / Structure / Editability QA
+
+实现：
+
+- Pixel Diff；
+- SSIM；
+- geometry；
+- text；
+- structure；
+- editable area；
+- raster area；
+- layer usability。
+
+---
+
+## NODE-30 — Responsive / Determinism / Performance QA
+
+实现：
+
+- resize tests；
+- repeat capture；
+- 10k/20k nodes；
+- memory；
+- batch；
+- stability。
+
+---
+
+## NODE-31 — Real-world Compatibility & Release Candidate
+
+实现：
+
+- real pages；
+- local site；
+- table-heavy；
+- Shadow DOM；
+- canvas；
+- High Fidelity；
+- Browser package；
+- Figma package；
+- privacy；
+- docs；
+- release notes。
+
+---
+
+# 64. 实施阶段分组
+
+## Phase A — Architecture Foundation
+
+```text
+NODE-00 ~ NODE-04
+```
+
+目标：
+
+```text
+协议和身份不返工
+```
+
+## Phase B — Browser Capture
+
+```text
+NODE-05 ~ NODE-21
+```
+
+目标：
+
+```text
+Web → .wtf
+```
+
+## Phase C — Figma Reconstruction
+
+```text
+NODE-22 ~ NODE-28
+```
+
+目标：
+
+```text
+.wtf → Figma
+```
+
+## Phase D — Product Quality

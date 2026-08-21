@@ -1,0 +1,699 @@
+真正生成 `.wtf`。
+
+### 工作
+
+- manifest；
+- JSON；
+- assets；
+- preview；
+- checksum；
+- ZIP；
+- filename；
+- Chrome download。
+
+### DoD
+
+浏览器点击后得到可通过 `validate-w2f` 的文件。
+
+---
+
+## NODE-14 — Figma Plugin Shell
+
+### 目标
+
+Figma 插件可启动。
+
+### 工作
+
+- manifest；
+- main；
+- UI；
+- message protocol；
+- import progress；
+- drop handler；
+- choose file。
+
+### DoD
+
+能读取 `.wtf` bytes，并显示 manifest summary。
+
+---
+
+## NODE-15 — Secure W2F Parser
+
+### 目标
+
+安全解包和迁移。
+
+### 工作
+
+- version；
+- Zod；
+- checksum；
+- size；
+- zip bomb；
+- SVG sanitize；
+- migration。
+
+### DoD
+
+异常文件不会创建 Figma node。
+
+---
+
+## NODE-16 — Basic Figma Renderer
+
+### 目标
+
+重建基础 Scene Graph。
+
+### 工作
+
+- root；
+- frame；
+- rectangle；
+- hierarchy；
+- geometry；
+- naming；
+- pluginData；
+- z-order。
+
+### DoD
+
+无 Text/Image 也能完整重建 box fixture。
+
+---
+
+## NODE-17 — Text & Font Renderer
+
+### 目标
+
+文字可编辑。
+
+### 工作
+
+- font inventory；
+- font load；
+- mapping；
+- weight/style；
+- mixed runs；
+- geometry correction；
+- missing font report。
+
+### DoD
+
+Level-1 typography fixture 达目标。
+
+---
+
+## NODE-18 — Asset & Paint Renderer
+
+### 目标
+
+图片/SVG/颜色/阴影。
+
+### 工作
+
+- figma.createImage；
+- image fills；
+- object-fit；
+- SVG；
+- gradient；
+- border；
+- radius；
+- shadow；
+- opacity；
+- mask/clip。
+
+### DoD
+
+Level-1 visual similarity 达到门槛。
+
+---
+
+## NODE-19 — Responsive Figma Layout
+
+### 目标
+
+实现网页布局到 Figma Auto Layout/Grid。
+
+### 工作
+
+- horizontal/vertical；
+- grid；
+- FILL；
+- HUG；
+- FIXED；
+- padding；
+- gap；
+- align；
+- constraints；
+- min/max；
+- absolute child。
+
+### DoD
+
+Resize benchmark 达到 Responsive Fidelity 目标。
+
+---
+
+## NODE-20 — Complex Layout & Raster Downgrade
+
+### 目标
+
+让复杂页面“不会崩”。
+
+### 工作
+
+- unsupported detector；
+- fallback subtree boundary；
+- tile renderer；
+- hybrid native/raster；
+- iframe；
+- canvas；
+- webgl；
+- complex filter。
+
+### DoD
+
+Level-5 fixture 不出现整页无意义错位。
+
+---
+
+## NODE-21 — Visual QA Harness
+
+### 目标
+
+建立自动质量度量。
+
+### 工作
+
+- browser ref；
+- Figma export；
+- PNG compare；
+- pixelmatch；
+- SSIM；
+- geometry；
+- report。
+
+### DoD
+
+CI 可生成 benchmark summary。
+
+---
+
+## NODE-22 — Performance & Memory
+
+### 目标
+
+大型页面可用。
+
+### 工作
+
+- style dedup；
+- asset dedup；
+- batch render；
+- progress；
+- capture throttle；
+- memory guard；
+- 10k/20k node benchmark。
+
+### DoD
+
+定义并达到性能 baseline。
+
+---
+
+## NODE-23 — Real-world Compatibility Matrix
+
+### 目标
+
+不只测试自己写的 fixture。
+
+### 页面类型
+
+- landing page；
+- ecommerce；
+- dashboard；
+- documentation；
+- news；
+- complex SaaS；
+- local static site。
+
+### 输出
+
+```text
+docs/COMPATIBILITY_MATRIX.md
+```
+
+每站记录：
+
+- capture；
+- visual；
+- text；
+- assets；
+- layout；
+- fallback；
+- error。
+
+### DoD
+
+形成真实缺陷列表和优先级。
+
+---
+
+## NODE-24 — Release Candidate
+
+### 目标
+
+V1 可交付。
+
+### 工作
+
+Browser：
+
+- icon；
+- manifest；
+- permission copy；
+- privacy；
+- Chrome package。
+
+Figma：
+
+- plugin icon；
+- description；
+- onboarding；
+- error copy；
+- import report；
+- dev/public manifest。
+
+工程：
+
+- README；
+- troubleshooting；
+- file spec；
+- examples；
+- release notes。
+
+### DoD
+
+完整闭环：
+
+```text
+真实网页
+→ .wtf
+→ Figma
+→ 可编辑 + 高还原 + 局部响应式
+```
+
+---
+
+# 61. NODE 状态文件模板
+
+`docs/IMPLEMENTATION_STATUS.md`
+
+```md
+# Implementation Status
+
+| NODE | Name | Status | Tests | Commit |
+|---|---|---|---|---|
+| 00 | Product Baseline | DONE | PASS | abc123 |
+| 01 | Monorepo | IN PROGRESS | - | - |
+| 02 | W2F File Spec | TODO | - | - |
+
+## Current Node
+NODE-01
+
+## Blockers
+None
+
+## Next
+NODE-02
+```
+
+后续用户说“继续”时，应优先：
+
+1. 读取 status；
+2. 找到 Current Node；
+3. 从未完成 checklist 继续；
+4. 不重复已完成工作。
+
+---
+
+# 62. Commit 规范
+
+每个 NODE 至少一个明确 commit：
+
+```text
+feat(node-06): implement region selector
+feat(node-10): add asset resolver
+test(node-12): add flex layout inference fixtures
+fix(node-17): correct text fallback sizing
+docs(node-02): finalize w2f file spec
+```
+
+不要用：
+
+```text
+update
+changes
+fix stuff
+```
+
+---
+
+# 63. Error Code 规范
+
+格式：
+
+```text
+W2F_<LEVEL>_<DOMAIN>_<NAME>
+```
+
+例如：
+
+```text
+W2F_E_FILE_BAD_MAGIC
+W2F_E_FILE_UNSUPPORTED_VERSION
+W2F_E_CAPTURE_PROTECTED_PAGE
+W2F_E_CAPTURE_TOO_LARGE
+W2F_E_ASSET_FETCH
+W2F_E_IMPORT_CORRUPT_ARCHIVE
+
+W2F_W_FONT_MISSING
+W2F_W_LAYOUT_LOW_CONFIDENCE
+W2F_W_GRID_DOWNGRADED
+W2F_W_RASTER_FALLBACK
+```
+
+所有异常不能只抛：
+
+```text
+Something went wrong
+```
+
+---
+
+# 64. Telemetry（如果以后需要）
+
+V1 默认可以完全关闭。
+
+如果以后增加：
+
+只能上传聚合信息：
+
+```text
+app version
+capture mode
+node count
+duration
+error code
+fallback count
+```
+
+禁止默认上传：
+
+- URL；
+- 页面标题；
+- DOM；
+- 文本；
+- 图片；
+- `.wtf`；
+- selector；
+- form content。
+
+---
+
+# 65. 浏览器页面恢复要求
+
+Capture 前后必须做状态 diff。
+
+必须恢复：
+
+- scroll；
+- overflow；
+- temporary style；
+- pointer events；
+- selection overlay；
+- animation state；
+- active element；
+- temporary IDs/classes。
+
+测试必须专门验证：
+
+```text
+capture before screenshot
+vs
+capture cleanup after screenshot
+```
+
+页面不得被插件永久改坏。
+
+---
+
+# 66. High Fidelity CDP 详细流程
+
+```text
+attach(tab)
+↓
+Page.enable
+DOMSnapshot.enable
+Network.enable
+↓
+Page.getLayoutMetrics
+↓
+DOMSnapshot.captureSnapshot({
+  computedStyles: whitelist,
+  includePaintOrder: true,
+  includeDOMRects: true
+})
+↓
+Page.captureScreenshot({
+  captureBeyondViewport: true
+})
+↓
+optional Network/CSS resolution
+↓
+normalize to common RawSnapshot
+↓
+detach
+```
+
+必须：
+
+```ts
+try {
+  await attach()
+  ...
+} finally {
+  await detach()
+}
+```
+
+如果 DevTools 已连接或 attach 被拒绝：
+
+- 不崩；
+- 可以建议回退 Standard；
+- 输出明确 diagnostic。
+
+---
+
+# 67. Standard 与 CDP 数据统一
+
+禁止：
+
+```text
+if standard → IR A
+if CDP → IR B
+```
+
+必须：
+
+```text
+Standard Raw Snapshot ┐
+                      ├→ Snapshot Normalizer → W2F IR
+CDP Raw Snapshot ─────┘
+```
+
+这样 Renderer 不知道 `.wtf` 来自哪种采集模式。
+
+---
+
+# 68. CSS Unit Parser
+
+需要支持保留：
+
+- px；
+- %；
+- em；
+- rem；
+- vw；
+- vh；
+- vmin/vmax；
+- auto；
+- min-content；
+- max-content；
+- fit-content；
+- calc；
+- min；
+- max；
+- clamp。
+
+结构：
+
+```ts
+type CSSLength =
+  | { type: "px"; value: number }
+  | { type: "percent"; value: number }
+  | { type: "viewport"; unit: string; value: number }
+  | { type: "keyword"; value: string }
+  | { type: "expression"; raw: string }
+```
+
+不能看到 `%` 就立刻算成 px 丢掉原值。
+
+---
+
+# 69. 颜色规范
+
+内部统一：
+
+```ts
+interface RGBA {
+  r: number // 0..1
+  g: number
+  b: number
+  a: number
+}
+```
+
+记录：
+
+- computed sRGB；
+- authored string 可 optional 保存。
+
+复杂颜色空间：
+
+```text
+display-p3
+lab
+lch
+oklab
+oklch
+```
+
+浏览器已计算后的最终颜色用于 V1。
+
+如果 Figma 不同色域产生误差，以视觉 QA 发现。
+
+---
+
+# 70. Transform
+
+保存最终 transform matrix。
+
+```ts
+interface Matrix2D {
+  a: number
+  b: number
+  c: number
+  d: number
+  e: number
+  f: number
+}
+```
+
+额外保存：
+
+- transform-origin；
+- authored transform string。
+
+处理：
+
+- translate；
+- scale；
+- rotate；
+- skew；
+- composite matrix。
+
+复杂 3D transform：
+
+- 可做 projected 2D；
+- 误差大则 local raster fallback。
+
+---
+
+# 71. Pseudo Elements
+
+如果：
+
+```css
+::before {
+  content: "";
+}
+```
+
+但有 visible paint：
+
+生成 synthetic pseudo node。
+
+如果：
+
+```css
+content: "NEW";
+```
+
+生成 synthetic text。
+
+Node source：
+
+```text
+kind = pseudo
+sourcePseudo = before/after
+```
+
+保持 paint order。
+
+---
+
+# 72. Form Controls
+
+HTML input 的浏览器原生绘制复杂。
+
+分策略：
+
+### 可重建
+
+- text input；
+- button；
+- textarea；
+- simple checkbox。
+
+重建：
+
+```text
+Frame
+├ background/border
+└ Text
+```
+
+### 不可靠
+
+- date；
+- color；
+- range；
+- browser platform control。
+
+局部 fallback。
+
+敏感 value 规则优先于视觉。
+
+---
+
+# 73. 导入模式定义
+
+## Balanced（默认）
+
+- Native first；
+- 视觉误差大才 fallback；
+- text 适度拆分。

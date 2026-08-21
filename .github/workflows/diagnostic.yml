@@ -1,0 +1,18 @@
+name: Diagnostic
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  runner:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Runner sanity
+        run: |
+          echo "runner-ok"
+          node --version
+          npm --version

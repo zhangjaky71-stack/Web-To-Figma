@@ -18,10 +18,22 @@ assemble() {
     exit 1
   fi
 
-  : > "$output"
-  for part in "${parts[@]}"; do
-    cat "$part" >> "$output"
-  done
+  python3 - "$output" "${parts[@]}" <<'PY'
+import pathlib
+import sys
+
+output = pathlib.Path(sys.argv[1])
+parts = [pathlib.Path(p) for p in sys.argv[2:]]
+with output.open("wb") as out:
+    for part in parts:
+        data = part.read_bytes()
+        out.write(data)
+        # GitHub's text contents API can normalize away a final LF on an
+        # individual staging part. Restore exactly one LF at a part boundary
+        # when it is absent so the canonical Markdown remains lossless.
+        if data and not data.endswith(b"\n"):
+            out.write(b"\n")
+PY
 
   local actual_lines
   actual_lines="$(wc -l < "$output" | tr -d ' ')"

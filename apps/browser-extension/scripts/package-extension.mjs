@@ -1,4 +1,4 @@
-import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
 const appRoot = fileURLToPath(new URL("../", import.meta.url));
@@ -16,15 +16,24 @@ await cp(`${stagingRoot}/runtime`, `${outputRoot}/runtime`, { recursive: true })
 await mkdir(`${outputRoot}/runtime/source-providers`, { recursive: true });
 await cp(sourceProvidersDist, `${outputRoot}/runtime/source-providers`, { recursive: true });
 
-const sourceRuntimePath = `${outputRoot}/runtime/source-runtime.js`;
-const sourceRuntime = await readFile(sourceRuntimePath, "utf8");
-const rewrittenSourceRuntime = sourceRuntime.replaceAll(
-  'from "@w2f/source-providers"',
-  'from "./source-providers/index.js"',
-);
-if (rewrittenSourceRuntime === sourceRuntime) {
-  throw new Error("source-runtime.js did not contain the expected @w2f/source-providers runtime import");
+const runtimeEntries = await readdir(`${outputRoot}/runtime`, { withFileTypes: true });
+let rewrittenImports = 0;
+for (const entry of runtimeEntries) {
+  if (!entry.isFile() || !entry.name.endsWith(".js")) continue;
+  const runtimePath = `${outputRoot}/runtime/${entry.name}`;
+  const source = await readFile(runtimePath, "utf8");
+  const rewritten = source.replaceAll(
+    'from "@w2f/source-providers"',
+    'from "./source-providers/index.js"',
+  );
+  if (rewritten !== source) {
+    rewrittenImports += 1;
+    await writeFile(runtimePath, rewritten, "utf8");
+  }
 }
-await writeFile(sourceRuntimePath, rewrittenSourceRuntime, "utf8");
+
+if (rewrittenImports === 0) {
+  throw new Error("No Browser runtime import of @w2f/source-providers was rewritten");
+}
 
 await rm(stagingRoot, { recursive: true, force: true });

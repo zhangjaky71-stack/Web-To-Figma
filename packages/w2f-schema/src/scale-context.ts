@@ -15,8 +15,7 @@ export interface ScaleContextEvidence {
 }
 
 export type ScaleContextValidationResult =
-  | { ok: true; value: ScaleContext }
-  | { ok: false; errors: string[] };
+  { ok: true; value: ScaleContext } | { ok: false; errors: string[] };
 
 function isPositiveFinite(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value) && value > 0;
@@ -39,7 +38,5 @@ export function validateScaleContext(value: unknown): ScaleContextValidationResu
     }
   }
 
-  return errors.length === 0
-    ? { ok: true, value: value as ScaleContext }
-    : { ok: false, errors };
+  return errors.length === 0 ? { ok: true, value: value as ScaleContext } : { ok: false, errors };
 }

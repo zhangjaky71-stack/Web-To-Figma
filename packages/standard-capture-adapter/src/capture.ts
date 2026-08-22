@@ -689,10 +689,20 @@ export function captureStandardSnapshotInPage(input: StandardCaptureInput): Stan
     environment: {
       viewportWidth: window.innerWidth,
       viewportHeight: window.innerHeight,
-      devicePixelRatio: window.devicePixelRatio,
-      ...(window.visualViewport?.scale === undefined
-        ? {}
-        : { visualViewportScale: window.visualViewport.scale }),
+      scale: {
+        context: {
+          devicePixelRatio: window.devicePixelRatio,
+          ...(window.visualViewport?.scale === undefined
+            ? {}
+            : { visualViewportScale: window.visualViewport.scale }),
+        },
+        browserPageZoomAvailability: "unavailable",
+        cssZoomAvailability: "unavailable",
+        reasons: [
+          "Standard page APIs expose DPR and visual viewport scale but cannot reliably separate browser page zoom from OS display scaling.",
+          "CSS zoom is element-scoped evidence and is intentionally deferred to authored/computed CSS capture.",
+        ],
+      },
     },
     nodes: finalNodes,
     frames: finalFrames,

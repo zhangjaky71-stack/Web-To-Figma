@@ -1,4 +1,5 @@
 import { isSha256, validateRect, validateTokenGraph } from "@w2f/w2f-schema";
+import { validateFrameContext } from "@w2f/w2f-schema/frame-context";
 import { WTF_IR_VERSION } from "./types.js";
 import type {
   WtfIrBundle,
@@ -204,6 +205,14 @@ function validateSourceGraph(
 
     if (nodeValue.geometry !== undefined)
       validateGeometry(nodeValue.geometry, errors, `${path}.geometry`);
+    if (nodeValue.frameContext !== undefined && !validateFrameContext(nodeValue.frameContext).ok) {
+      add(
+        errors,
+        `${path}.frameContext`,
+        "WTF_IR_FRAME_CONTEXT_INVALID",
+        "frameContext must satisfy the shared frame context contract",
+      );
+    }
     if (isNonEmptyString(nodeValue.styleRef)) styleRefs.add(nodeValue.styleRef);
     if (Array.isArray(nodeValue.assetRefs)) {
       for (const assetId of nodeValue.assetRefs) {

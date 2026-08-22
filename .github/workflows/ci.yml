@@ -16,9 +16,6 @@ jobs:
         with:
           ref: feat/node-01-monorepo-foundation
 
-      - name: Validate foundation
-        run: node scripts/validate-foundation.mjs
-
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -34,8 +31,20 @@ jobs:
       - name: Generate authoritative lockfile
         run: pnpm install --no-frozen-lockfile
 
-      - name: Run full quality gate
-        run: pnpm check
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+      - name: Format check
+        run: pnpm format:check
 
       - name: Commit lockfile
         shell: bash

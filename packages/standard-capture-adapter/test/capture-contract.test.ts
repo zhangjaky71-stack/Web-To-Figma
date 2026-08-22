@@ -16,7 +16,7 @@ describe("Standard capture adapter contract", () => {
       "getComputedStyle",
       "scrollWidth",
       "STANDARD_CAPTURE_FRAME_INACCESSIBLE",
-      "document-css-px",
+      "frame-main",
     ]) {
       expect(source).toContain(evidence);
     }

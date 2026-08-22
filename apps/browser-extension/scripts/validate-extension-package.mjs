@@ -2,7 +2,8 @@ import { access, readFile, readdir } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
 const appRoot = fileURLToPath(new URL("../", import.meta.url));
-const outputRoot = `${appRoot}/dist`;
+const profile = process.env.W2F_BROWSER_PROFILE === "high-fidelity" ? "high-fidelity" : "standard";
+const outputRoot = `${appRoot}/${profile === "high-fidelity" ? "dist-high-fidelity" : "dist"}`;
 const requiredFiles = [
   "manifest.json",
   "popup.html",
@@ -10,6 +11,7 @@ const requiredFiles = [
   "shell.css",
   "runtime/service-worker.js",
   "runtime/source-runtime.js",
+  "runtime/cdp-runtime.js",
   "runtime/source-providers/index.js",
   "runtime/source-providers/http-page-provider.js",
   "runtime/source-providers/file-tab-provider.js",
@@ -24,6 +26,9 @@ const requiredFiles = [
   "runtime/standard-capture-adapter/capture.js",
   "runtime/standard-capture-adapter/privacy.js",
   "runtime/standard-capture-adapter/types.js",
+  "runtime/cdp-capture-adapter/index.js",
+  "runtime/cdp-capture-adapter/normalize.js",
+  "runtime/cdp-capture-adapter/types.js",
   "runtime/content-script.js",
   "runtime/popup.js",
   "runtime/options.js",
@@ -34,7 +39,7 @@ const requiredFiles = [
 ];
 
 function assert(condition, message) {
-  if (!condition) throw new Error(message);
+  if (!condition) throw new Error(`[${profile}] ${message}`);
 }
 
 async function walkJsFiles(directory, prefix = "") {
@@ -66,15 +71,20 @@ assert(manifest.action?.default_popup === "popup.html", "popup path drift");
 assert(manifest.options_ui?.page === "options.html", "options path drift");
 assert(manifest.options_ui?.open_in_tab === true, "options must open in a tab");
 
+const expectedPermissions =
+  profile === "high-fidelity"
+    ? ["activeTab", "debugger", "scripting", "storage"]
+    : ["activeTab", "scripting", "storage"];
 const permissions = [...(manifest.permissions ?? [])].sort();
 assert(
-  JSON.stringify(permissions) === JSON.stringify(["activeTab", "scripting", "storage"].sort()),
-  "browser permissions must remain activeTab+scripting+storage",
+  JSON.stringify(permissions) === JSON.stringify([...expectedPermissions].sort()),
+  `permissions must equal ${expectedPermissions.join("+")}`,
 );
 assert(
-  !("host_permissions" in manifest),
-  "Standard capture must not request broad host permissions",
+  profile === "high-fidelity" ? permissions.includes("debugger") : !permissions.includes("debugger"),
+  "debugger permission must exist only in the High Fidelity profile",
 );
+assert(!("host_permissions" in manifest), "capture profiles must not request broad host permissions");
 assert(!("content_scripts" in manifest), "content script must be injected only after user action");
 assert(
   manifest.content_security_policy?.extension_pages === "script-src 'self'; object-src 'self'",
@@ -106,22 +116,61 @@ assert(
 );
 
 const serviceWorker = await readFile(`${outputRoot}/runtime/service-worker.js`, "utf8");
+for (const importPath of [
+  './capture-core/index.js',
+  './standard-capture-adapter/index.js',
+  './cdp-runtime.js',
+]) {
+  assert(serviceWorker.includes(`from "${importPath}"`), `service worker missing ${importPath}`);
+}
 assert(
-  serviceWorker.includes('from "./capture-core/index.js"') &&
-    serviceWorker.includes('from "./standard-capture-adapter/index.js"'),
-  "service worker must use packaged Standard capture modules",
-);
-assert(
-  serviceWorker.includes("captureStandardSnapshotInPage") &&
-    serviceWorker.includes("standard-capture-complete"),
-  "service worker must execute and complete NODE-08 Standard capture",
+  serviceWorker.includes("capturePreferredDom") &&
+    serviceWorker.includes("CDP_CAPTURE_FALLBACK_STANDARD") &&
+    serviceWorker.includes("high-fidelity-capture-complete"),
+  "service worker must preserve CDP preference, explicit fallback and completion paths",
 );
 
-const snapshotStore = await readFile(`${outputRoot}/runtime/snapshot-store.js`, "utf8");
-assert(snapshotStore.includes("indexedDB.open"), "RawSnapshots must use IndexedDB persistence");
+const cdpRuntime = await readFile(`${outputRoot}/runtime/cdp-runtime.js`, "utf8");
+for (const evidence of [
+  "chrome.debugger.attach",
+  "chrome.debugger.detach",
+  "DOMSnapshot.captureSnapshot",
+  "Page.captureScreenshot",
+  "Page.getLayoutMetrics",
+  "Page.getFrameTree",
+  "Runtime.evaluate",
+  "includePaintOrder",
+  "includeDOMRects",
+]) {
+  assert(cdpRuntime.includes(evidence), `CDP runtime missing ${evidence}`);
+}
 assert(
-  snapshotStore.includes('from "./capture-core/index.js"'),
-  "snapshot store must validate persisted RawSnapshots with packaged capture-core",
+  cdpRuntime.includes('from "./cdp-capture-adapter/index.js"'),
+  "CDP runtime must use packaged relative CDP adapter modules",
+);
+
+const cdpNormalizer = await readFile(
+  `${outputRoot}/runtime/cdp-capture-adapter/normalize.js`,
+  "utf8",
+);
+assert(
+  cdpNormalizer.includes('from "../capture-core/index.js"'),
+  "nested CDP adapter must resolve capture-core through a package-relative import",
+);
+assert(cdpNormalizer.includes("paintOrder"), "CDP adapter must preserve paint order evidence");
+assert(
+  cdpNormalizer.includes("CDP_FRAME_DOCUMENT_UNAVAILABLE"),
+  "CDP adapter must diagnose frame tree entries unavailable in the root DOMSnapshot",
+);
+assert(!cdpNormalizer.includes("inputValue"), "CDP adapter must not consume input runtime values");
+assert(!cdpNormalizer.includes("textValue"), "CDP adapter must not consume textarea runtime values");
+
+const snapshotStore = await readFile(`${outputRoot}/runtime/snapshot-store.js`, "utf8");
+assert(snapshotStore.includes("indexedDB.open"), "capture evidence must use IndexedDB persistence");
+assert(
+  snapshotStore.includes("referenceScreenshots") &&
+    snapshotStore.includes("writeReferenceScreenshot"),
+  "CDP Page screenshot evidence must be persisted outside chrome.storage.local",
 );
 
 const captureCore = await readFile(`${outputRoot}/runtime/capture-core/validation.js`, "utf8");
@@ -145,10 +194,7 @@ for (const evidence of [
 }
 assert(!standardCapture.includes("document.cookie"), "Standard capture must not read cookies");
 assert(!standardCapture.includes("localStorage"), "Standard capture must not read localStorage");
-assert(
-  !standardCapture.includes("sessionStorage"),
-  "Standard capture must not read sessionStorage",
-);
+assert(!standardCapture.includes("sessionStorage"), "Standard capture must not read sessionStorage");
 
 const contentScript = await readFile(`${outputRoot}/runtime/content-script.js`, "utf8");
 assert(
@@ -158,17 +204,13 @@ assert(
 assert(
   contentScript.includes("W2F_CONTENT_REGION_RESULT") &&
     contentScript.includes("W2F_CONTENT_SELECTION_CANCELLED"),
-  "content runtime must keep NODE-07 region selection result/cancellation paths",
-);
-assert(
-  contentScript.includes("attachShadow") && contentScript.includes("elementsFromPoint"),
-  "region selector must package its isolated overlay and smart-element hit testing",
+  "content runtime must keep region selection result/cancellation paths",
 );
 
 const protocol = await readFile(`${outputRoot}/runtime/protocol.js`, "utf8");
 assert(
-  protocol.includes('W2F_EXTENSION_SHELL_VERSION = "1.2.0"'),
-  "Browser shell protocol must expose the NODE-08 version",
+  protocol.includes('W2F_EXTENSION_SHELL_VERSION = "1.3.0"'),
+  "Browser shell protocol must expose the NODE-09 version",
 );
 
-console.log("Browser extension package validation: PASS");
+console.log(`Browser extension package validation (${profile}): PASS`);

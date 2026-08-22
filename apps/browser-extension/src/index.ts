@@ -1,3 +1,4 @@
+import { STABLE_IDENTITY_ALGORITHM_VERSION } from "@w2f/stable-identity";
 import { WTF_IR_VERSION } from "@w2f/w2f-ir";
 import { WTF_SCHEMA_VERSION } from "@w2f/w2f-schema";
 
@@ -13,4 +14,8 @@ export function getBrowserWtfSchemaVersion(): string {
 
 export function getBrowserWtfIrVersion(): string {
   return WTF_IR_VERSION;
+}
+
+export function getBrowserStableIdentityAlgorithmVersion(): string {
+  return STABLE_IDENTITY_ALGORITHM_VERSION;
 }

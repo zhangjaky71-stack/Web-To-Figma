@@ -18,7 +18,11 @@ Create a reproducible, CI-enforced TypeScript monorepo foundation for the W2F br
 - Prettier 3.9.6
 - Vitest 4.1.11
 
-TypeScript 6.0.3 is intentionally pinned instead of TypeScript 7 because the current typescript-eslint support range is `>=4.8.4 <6.1.0`; the same typescript-eslint release supports ESLint 10.
+TypeScript 6.0.3 is intentionally pinned instead of moving beyond the current typescript-eslint supported TypeScript range.
+
+See:
+
+`docs/adr/ADR-0001-node-pnpm-toolchain-and-lockfile-policy.md`
 
 ## Workspace
 
@@ -28,107 +32,103 @@ apps/
   figma-plugin/
 packages/
   shared-utils/
-scripts/
-  validate-foundation.mjs
 ```
 
 Domain packages are created by their owning NODE to avoid empty architecture shells.
-
-## Build boundary
-
-Each package has separate configs for development/typecheck and production build:
-
-```text
-tsconfig.json        → source + tests, noEmit typecheck
-tsconfig.build.json  → source only, emits dist
-```
-
-This prevents Vitest/test files from leaking into production `dist` output.
-
-`@w2f/shared-utils` therefore exports:
-
-```text
-./dist/index.js
-./dist/index.d.ts
-```
-
-instead of a test-inclusive `dist/src` tree.
 
 ## Required commands
 
 ```bash
 pnpm install --frozen-lockfile
-pnpm validate:foundation
-pnpm lint
-pnpm typecheck
-pnpm test
-pnpm build
-pnpm format:check
+pnpm check
 ```
 
-## Dependency-free foundation validation
-
-`scripts/validate-foundation.mjs` uses only Node core modules and checks the repository before external packages are available. It validates:
-
-- required workspace/config files exist;
-- Node/pnpm pins remain frozen;
-- workspace globs remain correct;
-- package build/typecheck commands do not drift;
-- source-only build configs exist;
-- shared-utils exports match build output;
-- `.wtf` extension remains `.wtf`;
-- `.wtf` MIME remains `application/x-wtf`.
-
-Local execution result:
+`pnpm check` covers:
 
 ```text
-Foundation validation passed.
+foundation validation
+lint
+typecheck
+test
+build
+format check
 ```
 
-## Additional local runtime smoke
+## Build boundary
 
-Because normal npm-registry access is unavailable in the assistant container, a zero-dependency ESM smoke check was also executed using Node's TypeScript type-stripping support.
-
-Verified at runtime:
-
-- `WTF_FILE_EXTENSION === ".wtf"`;
-- `WTF_MIME_TYPE === "application/x-wtf"`;
-- `capture.WTF` is accepted;
-- legacy `capture.w2f` is rejected;
-- browser-extension app id is stable;
-- Figma-plugin app id is stable.
-
-Result:
+Each executable workspace has:
 
 ```text
-runtime smoke passed
+tsconfig.json       — source + test typecheck context
+tsconfig.build.json — source-only emitted build
 ```
 
-## Other local validation completed
+Tests must not be emitted into production `dist/` output.
 
-- JSON parse: PASS;
-- YAML parse: PASS;
-- `eslint.config.mjs` ESM syntax: PASS;
-- monorepo/workspace structure review: PASS;
-- dependency-version compatibility review: PASS.
+## Validation completed
 
-The assistant execution container cannot access the npm registry, so full dependency installation still requires a functioning external runner.
+The assistant execution container cannot access the npm registry, so the exact pinned dependency graph cannot be installed locally. The following independent checks have passed:
+
+- JSON syntax;
+- YAML syntax;
+- ESM config syntax;
+- dependency-free repository foundation validation;
+- `.wtf` extension and MIME runtime behavior;
+- browser-extension app-id runtime smoke;
+- Figma-plugin app-id runtime smoke;
+- source-only TypeScript build compatibility using the available global TypeScript 5.8.3 compiler;
+- shared-utils output layout (`dist/index.js` + `dist/index.d.ts`);
+- toolchain compatibility review.
+
+The TypeScript 5.8.3 build smoke is supplemental only. Formal completion still requires the pinned TypeScript 6.0.3 toolchain in CI.
+
+## Foundation validator
+
+`scripts/validate-foundation.mjs` runs without third-party dependencies and protects:
+
+- required workspace/config files;
+- Node and pnpm pins;
+- exact NODE-01 tool versions;
+- root quality commands;
+- Turborepo tasks;
+- source-only build config boundaries;
+- shared-utils package export paths;
+- `.wtf` and `application/x-wtf` contract;
+- rejection of obsolete `application/x-w2f` MIME drift in current source/docs;
+- CI Node/pnpm versions;
+- bootstrap-vs-frozen lockfile state.
+
+Before the first lockfile exists, CI is allowed to use `--no-frozen-lockfile` only to generate the authoritative lockfile artifact. Once committed, the validator requires `--frozen-lockfile` and rejects the bootstrap mode.
 
 ## GitHub Actions diagnostic
 
-PR #4 triggers GitHub Actions, but both the real CI job and a minimal diagnostic job fail before any workflow step executes.
+Tracked by:
 
-Observed runs:
+`Issue #5 — BLOCKER: GitHub Actions jobs fail before first step`
+
+The real CI job and a minimal diagnostic containing only:
+
+```text
+echo "runner-ok"
+node --version
+npm --version
+```
+
+fail before any workflow step executes.
+
+Observed evidence includes:
 
 - CI run `32477712350` — failure before lockfile artifact;
 - CI run `32477835968` — failure before lockfile artifact;
 - CI run `32477926703` — failure;
 - Diagnostic run `32477926786`, attempt 1 — failure;
-- Diagnostic run `32477926786`, attempt 2 — failure; `steps=[]`.
+- Diagnostic run `32477926786`, attempt 2 — queued/started then `steps=[]` failure;
+- Diagnostic run `32477926786`, attempt 3 — queued then `steps=null` failure;
+- CI run `32493919394` (#19) — `steps=null` failure;
+- CI run `32494021872` (#20) — `steps=null` failure;
+- CI run `32539554832` (#21) — `steps=null` failure.
 
-Attempt 2 was accepted by GitHub, queued, started, and then failed within seconds without running the single `echo/node/npm` step. This confirms the remaining blocker is at the private-repository GitHub Actions execution environment level rather than inside W2F package installation, source code, lint, tests, or build tasks.
-
-The diagnostic workflow is retained as manual-only so it does not create noise on every PR commit.
+GitHub public status reports Actions operational, so the blocker is classified as repository/account-specific until Actions settings, hosted-runner permission, or private-repository billing/budget proves otherwise.
 
 ## Definition of Done
 
@@ -140,22 +140,17 @@ The diagnostic workflow is retained as manual-only so it does not create noise o
 - [x] browser-extension compile/test shell
 - [x] figma-plugin compile/test shell
 - [x] shared-utils proof package
-- [x] source-only `tsconfig.build.json` configs
+- [x] source-only build configs
 - [x] `.wtf` constants protected by tests
 - [x] dependency-free foundation validator
-- [x] local foundation validator PASS
-- [x] local zero-dependency runtime smoke PASS
+- [x] lockfile bootstrap/frozen policy ADR
 - [x] GitHub Actions CI workflow committed
-- [x] local static JSON/YAML/ESM validation
+- [x] local static/runtime/build-compat validation
 - [ ] GitHub Actions runner executes a trivial workflow
-- [ ] `pnpm-lock.yaml` generated and committed
-- [ ] CI switched to `pnpm install --frozen-lockfile`
-- [ ] lint passes
-- [ ] typecheck passes
-- [ ] Vitest tests pass
-- [ ] build passes
-- [ ] format check passes
+- [ ] authoritative `pnpm-lock.yaml` generated and committed
+- [ ] CI passes with `--frozen-lockfile`
+- [ ] pinned lint/typecheck/test/build/format gates all pass
 
 ## Exit rule
 
-NODE-01 must remain IN PROGRESS until the Actions environment can execute jobs, `pnpm-lock.yaml` is committed, and the frozen-lockfile quality pipeline passes. Do not advance the canonical implementation status to NODE-02 before those gates pass.
+NODE-01 must remain IN PROGRESS until Issue #5 is resolved, `pnpm-lock.yaml` is generated by the pinned pnpm toolchain and committed, and the frozen-lockfile quality pipeline passes. Do not advance canonical implementation status to NODE-02 before those gates pass.

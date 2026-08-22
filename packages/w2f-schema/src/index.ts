@@ -306,8 +306,7 @@ export interface WtfValidationError {
 }
 
 export type WtfValidationResult<T> =
-  | { ok: true; value: T }
-  | { ok: false; errors: WtfValidationError[] };
+  { ok: true; value: T } | { ok: false; errors: WtfValidationError[] };
 
 export interface WtfReaderSupport {
   readerVersion: string;
@@ -324,12 +323,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function addError(
-  errors: WtfValidationError[],
-  path: string,
-  code: string,
-  message: string,
-): void {
+function addError(errors: WtfValidationError[], path: string, code: string, message: string): void {
   errors.push({ path, code, message });
 }
 
@@ -391,14 +385,24 @@ function collectPortablePathErrors(
     addError(errors, target, "WTF_PATH_TOO_LONG", "portable path exceeds the configured limit");
   }
   if (path.includes("\0") || path.includes("\\")) {
-    addError(errors, target, "WTF_PATH_INVALID_CHAR", "portable path contains an invalid character");
+    addError(
+      errors,
+      target,
+      "WTF_PATH_INVALID_CHAR",
+      "portable path contains an invalid character",
+    );
   }
   if (path.startsWith("/") || /^[A-Za-z]:/.test(path)) {
     addError(errors, target, "WTF_PATH_ABSOLUTE", "portable path must be relative");
   }
   const segments = path.split("/");
   if (segments.some((segment) => segment.length === 0 || segment === "." || segment === "..")) {
-    addError(errors, target, "WTF_PATH_TRAVERSAL", "portable path must be normalized without traversal");
+    addError(
+      errors,
+      target,
+      "WTF_PATH_TRAVERSAL",
+      "portable path must be normalized without traversal",
+    );
   }
   if (/^[\u0000-\u001f\u007f]/.test(path) || /[\u0000-\u001f\u007f]/.test(path)) {
     addError(errors, target, "WTF_PATH_CONTROL_CHAR", "portable path contains a control character");
@@ -414,11 +418,7 @@ export function validatePortablePath(
   return errors.length === 0 ? { ok: true, value: path } : { ok: false, errors };
 }
 
-function validateCompatibility(
-  value: unknown,
-  errors: WtfValidationError[],
-  path: string,
-): void {
+function validateCompatibility(value: unknown, errors: WtfValidationError[], path: string): void {
   if (!isRecord(value)) {
     addError(errors, path, "WTF_COMPATIBILITY_TYPE", "compatibility must be an object");
     return;
@@ -526,9 +526,7 @@ function validateRectInto(value: unknown, errors: WtfValidationError[], path: st
 export function validateRect(value: unknown): WtfValidationResult<Rect> {
   const errors: WtfValidationError[] = [];
   validateRectInto(value, errors, "$");
-  return errors.length === 0
-    ? { ok: true, value: value as Rect }
-    : { ok: false, errors };
+  return errors.length === 0 ? { ok: true, value: value as Rect } : { ok: false, errors };
 }
 
 function validateCaptureTarget(value: unknown, errors: WtfValidationError[], path: string): void {
@@ -636,11 +634,7 @@ function validateFeatures(value: unknown, errors: WtfValidationError[], path: st
   }
 }
 
-function validateSecurityLimits(
-  value: unknown,
-  errors: WtfValidationError[],
-  path: string,
-): void {
+function validateSecurityLimits(value: unknown, errors: WtfValidationError[], path: string): void {
   if (!isRecord(value)) {
     addError(errors, path, "WTF_SECURITY_LIMITS_TYPE", "security limits must be an object");
     return;
@@ -830,7 +824,12 @@ export function validateChecksums(
   }
   for (const [path, hash] of Object.entries(checksums)) {
     if (!expected.has(path)) {
-      addError(errors, `$.files.${path}`, "WTF_CHECKSUM_EXTRA", "checksum references an unknown file");
+      addError(
+        errors,
+        `$.files.${path}`,
+        "WTF_CHECKSUM_EXTRA",
+        "checksum references an unknown file",
+      );
     }
     if (typeof hash !== "string" || !isSha256(hash)) {
       addError(
@@ -898,7 +897,10 @@ export function validateContainerEntries(
           "compressedSize must be a non-negative safe integer",
         );
       } else if (entry.uncompressedSize > 0) {
-        const ratio = entry.compressedSize === 0 ? Number.POSITIVE_INFINITY : entry.uncompressedSize / entry.compressedSize;
+        const ratio =
+          entry.compressedSize === 0
+            ? Number.POSITIVE_INFINITY
+            : entry.uncompressedSize / entry.compressedSize;
         if (ratio > limits.maxCompressionRatio) {
           addError(
             errors,
@@ -960,13 +962,17 @@ export function checkReaderCompatibility(
   const schema = parseSemver(manifest.compatibility.schemaVersion);
   if (!format || format[0] !== 2) reasons.push("unsupported format major version");
   if (!schema || schema[0] !== 2) reasons.push("unsupported schema major version");
-  const readerComparison = compareSemver(support.readerVersion, manifest.compatibility.minReaderVersion);
+  const readerComparison = compareSemver(
+    support.readerVersion,
+    manifest.compatibility.minReaderVersion,
+  );
   if (readerComparison === null) reasons.push("invalid reader or minReader semver");
   else if (readerComparison < 0) reasons.push("reader version is below minReaderVersion");
 
   const capabilities = new Set(support.supportedCapabilities);
   for (const capability of manifest.compatibility.capabilities) {
-    if (!capabilities.has(capability)) reasons.push(`unsupported required capability: ${capability}`);
+    if (!capabilities.has(capability))
+      reasons.push(`unsupported required capability: ${capability}`);
   }
   const features = new Set(support.supportedFeatures);
   for (const feature of manifest.features.required) {
@@ -997,7 +1003,12 @@ export function validateTokenGraph(value: unknown): WtfValidationResult<WtfToken
       continue;
     }
     if (typeof token.id !== "string" || token.id.length === 0 || ids.has(token.id)) {
-      addError(errors, `${path}.id`, "WTF_TOKEN_ID_INVALID", "token id must be unique and non-empty");
+      addError(
+        errors,
+        `${path}.id`,
+        "WTF_TOKEN_ID_INVALID",
+        "token id must be unique and non-empty",
+      );
     } else {
       ids.add(token.id);
     }
@@ -1005,10 +1016,20 @@ export function validateTokenGraph(value: unknown): WtfValidationResult<WtfToken
       addError(errors, `${path}.name`, "WTF_TOKEN_NAME_INVALID", "token name must be non-empty");
     }
     if (typeof token.rawValue !== "string") {
-      addError(errors, `${path}.rawValue`, "WTF_TOKEN_RAW_VALUE_INVALID", "rawValue must be a string");
+      addError(
+        errors,
+        `${path}.rawValue`,
+        "WTF_TOKEN_RAW_VALUE_INVALID",
+        "rawValue must be a string",
+      );
     }
     if (!isStringArray(token.references)) {
-      addError(errors, `${path}.references`, "WTF_TOKEN_REFERENCES_INVALID", "references must be strings");
+      addError(
+        errors,
+        `${path}.references`,
+        "WTF_TOKEN_REFERENCES_INVALID",
+        "references must be strings",
+      );
     }
     if (
       typeof token.confidence !== "number" ||
@@ -1016,7 +1037,12 @@ export function validateTokenGraph(value: unknown): WtfValidationResult<WtfToken
       token.confidence < 0 ||
       token.confidence > 1
     ) {
-      addError(errors, `${path}.confidence`, "WTF_CONFIDENCE_INVALID", "confidence must be within 0..1");
+      addError(
+        errors,
+        `${path}.confidence`,
+        "WTF_CONFIDENCE_INVALID",
+        "confidence must be within 0..1",
+      );
     }
   }
   for (const [index, token] of value.tokens.entries()) {

@@ -2,7 +2,7 @@
 
 ## Status
 
-**IN PROGRESS — implementation and cloud functional validation complete; final documentation/CI closeout pending**
+**DONE — final standard read-only frozen-lockfile GitHub Actions PASS**
 
 ## Goal
 
@@ -86,11 +86,11 @@ Absolute local-folder operating-system root paths are not required by the provid
 
 ## Browser local-folder selection
 
-NODE-06 options UI now contains a direct user directory input using `webkitdirectory`.
+NODE-06 options UI contains a direct user directory input using `webkitdirectory`.
 
 It derives root-relative paths from the selected `FileList`, locates an HTML entry document and runs `LocalFolderProvider` capability validation.
 
-The selection is intentionally described as session-local. NODE-06 does not fake persistent filesystem access after the extension page is closed.
+The selection is intentionally session-local. NODE-06 does not fake persistent filesystem access after the extension page is closed.
 
 ## Browser active-tab integration
 
@@ -100,7 +100,7 @@ Added:
 apps/browser-extension/src/runtime/source-runtime.ts
 ```
 
-The service worker now resolves source capability before content-shell injection.
+The service worker resolves source capability before content-shell injection.
 
 Job startup sequence:
 
@@ -124,7 +124,7 @@ W2F_GET_SOURCE_CAPABILITY
 
 ## Persistent source evidence
 
-`CaptureJobState` now supports:
+`CaptureJobState` supports:
 
 ```text
 source?: SourceDescriptor
@@ -199,7 +199,7 @@ packages/source-providers/test/local-folder.test.ts
 - explicit remote resources;
 - duplicate normalized entries.
 
-Browser tests now also cover:
+Browser tests also cover:
 
 - source-provider contract version;
 - `W2F_GET_SOURCE_CAPABILITY` protocol request;
@@ -211,30 +211,37 @@ Browser tests now also cover:
 
 The first PR CI correctly failed frozen installation before the new workspace importer existed.
 
-Controlled bootstrap generated the authoritative lockfile and canonical source formatting in commit:
+Controlled bootstrap generated the authoritative workspace lockfile and canonical formatting. The final canonical-format bot commit was:
 
 ```text
-0331e3d6c8d12898ebbad0c1e6f5ff34a9d4c8b6
+252efa7a27adc42d9c744cd94c78a66d041e585d
 ```
 
-After the lockfile update, standard frozen-lockfile CI reached all functional gates.
+The temporary write-enabled bootstrap workflow was then removed in:
 
-Run `32568086710` passed:
+```text
+09e31c5e1bfb4efde5f3da3222a0329a26cd32ed
+```
 
-- foundation validation;
+Standard read-only GitHub Actions run:
+
+```text
+32570905251
+```
+
+validated that commit with every formal gate **PASS**:
+
+- dependency-free foundation validation;
 - Node.js 24 / pnpm 11.22.0;
-- frozen-lockfile install;
-- lint;
+- `pnpm install --frozen-lockfile`;
+- ESLint;
 - TypeScript 6.0.3 typecheck;
 - source-provider tests;
 - Browser integration tests;
-- full repository tests;
+- full repository Vitest suite;
 - Browser extension build;
-- Browser package validator.
-
-It exposed only canonical formatting differences in two newly edited Browser packaging files.
-
-Run `32568197155` repeated all functional gates successfully after local-folder UI integration and again reduced remaining work to canonical formatting only.
+- Browser package/runtime validator;
+- pinned Prettier 3.9.6 format check.
 
 ## Normative documentation
 
@@ -266,17 +273,17 @@ Run `32568197155` repeated all functional gates successfully after local-folder 
 - [x] source-provider tests pass
 - [x] Browser integration tests pass
 - [x] Browser package validation passes
-- [ ] canonical formatting passes on completed branch
-- [ ] temporary NODE-06 bootstrap workflow removed
-- [ ] final standard read-only frozen-lockfile CI passes
+- [x] canonical formatting passes on completed branch
+- [x] temporary NODE-06 bootstrap workflow removed
+- [x] final standard read-only frozen-lockfile CI passes
 
 ## Exit rule
 
-NODE-06 becomes DONE only after canonical formatting is clean, the temporary bootstrap workflow is removed, and the completed branch passes the standard read-only frozen-lockfile CI.
+Satisfied. NODE-06 is DONE.
 
 ## Next
 
-After completion proceed to:
+Proceed to:
 
 ```text
 NODE-07 — Region Selector & Redaction

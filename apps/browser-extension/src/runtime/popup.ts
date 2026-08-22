@@ -30,7 +30,7 @@ function renderJob(job: CaptureJobState | null): void {
   if (!job) {
     statusElement.textContent = "Ready";
     statusElement.dataset.status = "idle";
-    detailsElement.textContent = "Choose a capture mode to verify the extension shell on this tab.";
+    detailsElement.textContent = "Choose Full page or Select area for the current tab.";
     cancelButton.disabled = true;
     return;
   }
@@ -38,9 +38,12 @@ function renderJob(job: CaptureJobState | null): void {
   statusElement.textContent = job.status;
   statusElement.dataset.status = job.status;
   const page = job.page;
-  detailsElement.textContent = page
-    ? `${page.title || "Untitled page"} · ${page.documentWidth}×${page.documentHeight}`
-    : job.error || `${job.mode} · ${job.phase}`;
+  const region = job.region;
+  detailsElement.textContent = region
+    ? `${region.mode === "smart-element" ? "Smart element" : "Selected area"} · ${Math.round(region.bounds.width)}×${Math.round(region.bounds.height)} CSS px · ${region.exclusions.length} mask${region.exclusions.length === 1 ? "" : "s"}`
+    : page
+      ? `${page.title || "Untitled page"} · ${page.documentWidth}×${page.documentHeight}`
+      : job.error || `${job.mode} · ${job.phase}`;
   cancelButton.disabled = ["completed", "failed", "cancelled"].includes(job.status);
   cancelButton.dataset.jobId = job.jobId;
 }
@@ -54,7 +57,10 @@ async function refreshJob(): Promise<void> {
 async function startJob(mode: CaptureJobMode): Promise<void> {
   fullPageButton.disabled = true;
   regionButton.disabled = true;
-  detailsElement.textContent = "Preparing the current tab…";
+  detailsElement.textContent =
+    mode === "region"
+      ? "Select a region directly on the current page…"
+      : "Preparing the current tab…";
   try {
     const response = await sendRequest({ type: "W2F_START_JOB", mode });
     if (!response.ok) throw new Error(response.error);

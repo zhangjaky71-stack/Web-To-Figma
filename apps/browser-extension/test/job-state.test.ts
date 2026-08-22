@@ -5,6 +5,7 @@ import {
   isTerminalJobStatus,
   transitionCaptureJob,
 } from "../src/runtime/job-state.js";
+import type { RegionSelectionResult } from "../src/runtime/region-selection.js";
 
 describe("browser capture job state", () => {
   it("creates deterministic queued state from supplied job identity and time", () => {
@@ -20,7 +21,7 @@ describe("browser capture job state", () => {
     expect(isCaptureJobState(job)).toBe(true);
   });
 
-  it("preserves source and page evidence across transitions", () => {
+  it("preserves source, page and region evidence across transitions", () => {
     const queued = createCaptureJob("region", "job_region", "2026-08-22T02:00:00.000Z");
     const source = {
       provider: "http-page",
@@ -33,14 +34,33 @@ describe("browser capture job state", () => {
     const running = transitionCaptureJob(
       queued,
       "running",
-      "injecting-content-shell",
+      "selecting-region",
       "2026-08-22T02:00:01.000Z",
       { tabId: 42, source },
     );
+    const region: RegionSelectionResult = {
+      version: "1.0.0",
+      coordinateSpace: "document-css-px",
+      mode: "free-rect",
+      bounds: { x: 100.25, y: 220.5, width: 640.75, height: 480.25 },
+      viewportBounds: { x: 100.25, y: 60.5, width: 640.75, height: 480.25 },
+      selectionRoot: {
+        kind: "document",
+        bounds: { x: 0, y: 0, width: 1440, height: 3200 },
+        clip: { x: 100.25, y: 220.5, width: 640.75, height: 480.25 },
+      },
+      exclusions: [
+        {
+          id: "region_1",
+          kind: "redact",
+          bounds: { x: 180, y: 280, width: 220, height: 60 },
+        },
+      ],
+    };
     const completed = transitionCaptureJob(
       running,
       "completed",
-      "shell-probe-complete",
+      "region-selection-complete",
       "2026-08-22T02:00:02.000Z",
       {
         page: {
@@ -52,19 +72,32 @@ describe("browser capture job state", () => {
           viewportHeight: 900,
           devicePixelRatio: 2,
         },
+        region,
       },
     );
 
     expect(completed.tabId).toBe(42);
     expect(completed.source).toEqual(source);
     expect(completed.page?.documentHeight).toBe(3200);
+    expect(completed.region).toEqual(region);
     expect(isCaptureJobState(completed)).toBe(true);
     expect(isTerminalJobStatus(completed.status)).toBe(true);
   });
 
-  it("rejects malformed persisted source descriptors", () => {
-    const job = createCaptureJob("full-page", "job_source_guard", "2026-08-22T02:00:00.000Z");
+  it("rejects malformed persisted source descriptors and region evidence", () => {
+    const job = createCaptureJob("region", "job_guard", "2026-08-22T02:00:00.000Z");
     expect(isCaptureJobState({ ...job, source: { provider: "file-tab" } })).toBe(false);
+    expect(
+      isCaptureJobState({
+        ...job,
+        region: {
+          version: "1.0.0",
+          coordinateSpace: "document-css-px",
+          mode: "free-rect",
+          bounds: { x: 0, y: 0, width: 0, height: 20 },
+        },
+      }),
+    ).toBe(false);
   });
 
   it("rejects transitions after a terminal state", () => {

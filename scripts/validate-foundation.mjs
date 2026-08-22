@@ -31,6 +31,7 @@ const requiredFiles = [
   "apps/browser-extension/src/index.ts",
   "apps/browser-extension/src/runtime/protocol.ts",
   "apps/browser-extension/src/runtime/job-state.ts",
+  "apps/browser-extension/src/runtime/region-selection.ts",
   "apps/browser-extension/src/runtime/source-runtime.ts",
   "apps/browser-extension/src/runtime/service-worker.ts",
   "apps/browser-extension/src/runtime/content-script.ts",
@@ -58,6 +59,9 @@ const requiredFiles = [
   "packages/source-providers/src/file-tab-provider.ts",
   "packages/source-providers/src/local-folder-provider.ts",
   "packages/source-providers/src/registry.ts",
+  "docs/REGION_SELECTOR_REDACTION_V2.md",
+  "docs/adr/ADR-0007-region-selection-and-redaction-boundary.md",
+  "docs/nodes/NODE-07_REGION_SELECTOR_REDACTION.md",
 ];
 
 function fail(message) {
@@ -226,7 +230,7 @@ if (failures.length === 0) {
   );
   assert(
     !("host_permissions" in browserManifest),
-    "source providers must not introduce broad default host permissions",
+    "region selection must not introduce broad default host permissions",
   );
   assert(
     !("content_scripts" in browserManifest),
@@ -246,6 +250,72 @@ if (failures.length === 0) {
   assert(
     browserSourceRuntime.includes("resolveTabSource"),
     "Browser source runtime must delegate source classification to the shared provider package",
+  );
+
+  const regionSelectionSource = readText("apps/browser-extension/src/runtime/region-selection.ts");
+  assert(
+    regionSelectionSource.includes('W2F_REGION_SELECTION_VERSION = "1.0.0"'),
+    "NODE-07 region-selection contract version drifted",
+  );
+  assert(
+    regionSelectionSource.includes('coordinateSpace: "document-css-px"'),
+    "NODE-07 region geometry must remain document-css-px",
+  );
+  assert(
+    regionSelectionSource.includes('"free-rect"') &&
+      regionSelectionSource.includes('"smart-element"') &&
+      regionSelectionSource.includes('"redact"') &&
+      regionSelectionSource.includes('"exclude"'),
+    "NODE-07 region-selection vocabulary drifted",
+  );
+
+  const browserProtocol = readText("apps/browser-extension/src/runtime/protocol.ts");
+  assert(
+    browserProtocol.includes('W2F_EXTENSION_SHELL_VERSION = "1.1.0"'),
+    "Browser shell protocol must remain at NODE-07 version 1.1.0",
+  );
+  for (const messageType of [
+    "W2F_SELECT_REGION",
+    "W2F_CANCEL_REGION_SELECTION",
+    "W2F_CONTENT_REGION_RESULT",
+    "W2F_CONTENT_SELECTION_CANCELLED",
+  ]) {
+    assert(browserProtocol.includes(messageType), `NODE-07 protocol missing ${messageType}`);
+  }
+
+  const browserContentRuntime = readText("apps/browser-extension/src/runtime/content-script.ts");
+  for (const interactionContract of [
+    "attachShadow",
+    "elementsFromPoint",
+    "selecting-region",
+  ].filter((value) => value !== "selecting-region")) {
+    assert(
+      browserContentRuntime.includes(interactionContract),
+      `NODE-07 content runtime missing ${interactionContract}`,
+    );
+  }
+  assert(
+    browserContentRuntime.includes("W2F_SELECT_REGION") &&
+      browserContentRuntime.includes("W2F_CONTENT_REGION_RESULT"),
+    "NODE-07 content runtime must expose region selection request/result paths",
+  );
+  for (const forbiddenSensitiveApi of ["document.cookie", "localStorage", "sessionStorage"]) {
+    assert(
+      !browserContentRuntime.includes(forbiddenSensitiveApi),
+      `NODE-07 selector must not access ${forbiddenSensitiveApi}`,
+    );
+  }
+
+  const browserPackageValidator = readText(
+    "apps/browser-extension/scripts/validate-extension-package.mjs",
+  );
+  assert(
+    browserPackageValidator.includes('"runtime/region-selection.js"'),
+    "Browser package validator must require compiled NODE-07 region-selection runtime",
+  );
+  assert(
+    browserPackageValidator.includes("W2F_CONTENT_REGION_RESULT"),
+    "Browser package validator must verify the NODE-07 region runtime path",
   );
 
   const sourceProviders = readJson("packages/source-providers/package.json");
@@ -296,6 +366,9 @@ if (failures.length === 0) {
     "docs/CAPTURE_SEMANTICS.md",
     "docs/KNOWN_LIMITATIONS.md",
     "docs/IMPLEMENTATION_STATUS.md",
+    "docs/REGION_SELECTOR_REDACTION_V2.md",
+    "docs/adr/ADR-0007-region-selection-and-redaction-boundary.md",
+    "docs/nodes/NODE-07_REGION_SELECTOR_REDACTION.md",
   ].filter((path) => existsSync(resolve(root, path)));
 
   for (const path of sourceAndCurrentDocFiles) {

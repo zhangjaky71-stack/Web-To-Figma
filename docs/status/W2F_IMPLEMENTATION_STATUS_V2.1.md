@@ -3,8 +3,8 @@
 **Export Package Format:** `.wtf` (`application/x-wtf`)  
 **Implementation Baseline:** V2 Baseline + V2.1 Addendum + NODE-00 Contracts  
 **Architecture Status:** FROZEN FOR IMPLEMENTATION  
-**Current Node:** NODE-07 — Region Selector & Redaction  
-**Current State:** NEXT  
+**Current Node:** NODE-08 — Standard DOM Capture  
+**Current State:** NEXT — blocked only until PR #11 merge  
 **Date:** 2026-08-22
 
 > Canonical live status is `docs/IMPLEMENTATION_STATUS.md`. This file is a compatibility/status snapshot and must not override the canonical status file.
@@ -28,33 +28,38 @@
 - NODE-03 — DONE / IR CI PASS / PR #7 merged
 - NODE-04 — DONE / stable identity CI PASS / PR #8 merged
 - NODE-05 — DONE / Browser MV3 shell CI PASS / PR #9 merged
-- NODE-06 — DONE / source providers & offline CI PASS / PR #10
-- NODE-07 — NEXT
-- NODE-08+ — TODO
+- NODE-06 — DONE / source providers & offline CI PASS / PR #10 merged
+- NODE-07 — DONE / region selector & redaction CI PASS / PR #11 merge pending
+- NODE-08 — NEXT after PR #11 merge
+- NODE-09+ — TODO
 
-## NODE-06 Completed
+## NODE-07 Completed
 
-NODE-06 establishes the shared source-provider layer required by later Browser capture and asset nodes:
+NODE-07 establishes the interactive region-selection/redaction boundary consumed by NODE-08 capture:
 
 ```text
-HttpPageProvider
-FileTabProvider
-LocalFolderProvider
+Free Rectangle
+Smart Element
+Selection Root + Root Clip
+Redact / Exclude
 ```
 
 Implemented behavior includes:
 
-- explicit source capability checks and required user actions;
-- HTTP/file/local-folder relative reference resolution;
-- Chrome file-scheme access preflight;
-- explicit user local-folder selection;
-- root-scoped local folder indexing;
-- local path traversal protection;
-- missing local resource evidence;
-- Browser service-worker source preflight;
-- source descriptor persistence in capture job state;
-- Chrome-resolvable packaging of shared provider runtime modules;
-- validation that no unresolved `@w2f/*` bare runtime import reaches the final extension package.
+- versioned selection contract;
+- unrounded double-precision document CSS-pixel geometry;
+- Free Rectangle drag selection;
+- Smart Element rendered hit testing;
+- lightweight edge snap with `Alt` bypass;
+- keyboard cancel/confirm and 1px / 10px nudge;
+- edge auto-scroll and wheel scrolling while active;
+- selection-root evidence with explicit root clip;
+- Redact and Exclude masks clipped to the selected region;
+- closed-Shadow-DOM interaction overlay;
+- deterministic cleanup and cancellation;
+- service-worker/content protocol integration;
+- region evidence persistence in capture job state;
+- final Browser package/runtime validation.
 
 Browser permissions remain:
 
@@ -64,22 +69,22 @@ scripting
 storage
 ```
 
-No broad host permissions, `<all_urls>`, debugger permission or static content script was added.
+No broad host permissions, `<all_urls>`, debugger permission or static content script was added. NODE-07 does not read cookies, local/session storage, authorization headers, auth tokens or form values, and does not perform NODE-08 DOM serialization.
 
-## NODE-06 Final Validation
+## NODE-07 Final Validation
 
-Temporary bootstrap workflow removed.
+Temporary write-enabled formatter removed.
 
 Final standard read-only frozen-lockfile GitHub Actions run:
 
 ```text
-32570905251
+32577222247
 ```
 
 validated commit:
 
 ```text
-09e31c5e1bfb4efde5f3da3222a0329a26cd32ed
+d342db88388490dcaf3eaab4c3399aaa902dc3d1
 ```
 
 All formal gates passed:
@@ -96,8 +101,8 @@ All formal gates passed:
 
 ## Blockers
 
-None.
+No implementation blocker. PR #11 merge is the only remaining transition gate before NODE-08 implementation.
 
 ## Next
 
-Proceed to `NODE-07 — Region Selector & Redaction` after PR #10 is merged.
+Merge PR #11, then proceed to `NODE-08 — Standard DOM Capture` from the merged `main` baseline.

@@ -58,5 +58,18 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: Capture canonical Prettier output
+        run: pnpm exec prettier --write eslint.config.mjs README.md scripts/validate-foundation.mjs
+
+      - name: Upload formatted files
+        uses: actions/upload-artifact@v4
+        with:
+          name: formatted-files
+          path: |
+            eslint.config.mjs
+            README.md
+            scripts/validate-foundation.mjs
+          if-no-files-found: error
+
       - name: Format check
         run: pnpm format:check

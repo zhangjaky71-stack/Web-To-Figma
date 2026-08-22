@@ -1,4 +1,8 @@
 import type { SourceDescriptor } from "@w2f/source-providers";
+import {
+  isRegionSelectionResult,
+  type RegionSelectionResult,
+} from "./region-selection.js";
 
 export type CaptureJobMode = "full-page" | "region";
 
@@ -24,6 +28,7 @@ export interface CaptureJobState {
   tabId?: number;
   source?: SourceDescriptor;
   page?: PageProbe;
+  region?: RegionSelectionResult;
   error?: string;
 }
 
@@ -73,7 +78,7 @@ export function transitionCaptureJob(
   next: CaptureJobStatus,
   phase: string,
   now: string | Date = new Date(),
-  patch: Pick<CaptureJobState, "tabId" | "source" | "page" | "error"> = {},
+  patch: Pick<CaptureJobState, "tabId" | "source" | "page" | "region" | "error"> = {},
 ): CaptureJobState {
   if (isTerminalJobStatus(current.status)) {
     throw new TypeError(`cannot transition terminal job ${current.jobId} from ${current.status}`);
@@ -88,6 +93,7 @@ export function transitionCaptureJob(
     ...(patch.tabId === undefined ? {} : { tabId: patch.tabId }),
     ...(patch.source === undefined ? {} : { source: patch.source }),
     ...(patch.page === undefined ? {} : { page: patch.page }),
+    ...(patch.region === undefined ? {} : { region: patch.region }),
     ...(patch.error === undefined ? {} : { error: patch.error }),
   };
 }
@@ -103,6 +109,7 @@ export function isCaptureJobState(value: unknown): value is CaptureJobState {
     typeof record.phase === "string" &&
     typeof record.createdAt === "string" &&
     typeof record.updatedAt === "string" &&
-    (record.source === undefined || isSourceDescriptor(record.source))
+    (record.source === undefined || isSourceDescriptor(record.source)) &&
+    (record.region === undefined || isRegionSelectionResult(record.region))
   );
 }

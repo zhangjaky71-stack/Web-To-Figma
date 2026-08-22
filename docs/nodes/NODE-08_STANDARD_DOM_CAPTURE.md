@@ -2,7 +2,13 @@
 
 ## Status
 
-**DONE / PASS — final standard read-only frozen-lockfile CI passed; PR #12 ready to merge**
+**DONE / PASS / MERGED**
+
+PR #12 was squash merged into `main` as:
+
+```text
+7bd71bf95247148414b0eb49e580a297a3667a38
+```
 
 ## Goal
 
@@ -73,9 +79,7 @@ Implemented:
 
 ### Frame-aware IR preservation
 
-`WtfSourceNode` now reserves optional `frameContext`, and IR validation rejects malformed frame context evidence.
-
-This closes the V2.1 iframe/origin isolation gap before NODE-09.
+`WtfSourceNode` reserves optional `frameContext`, and IR validation rejects malformed frame context evidence.
 
 ### Scale model
 
@@ -88,9 +92,7 @@ cssZoom
 visualViewportScale
 ```
 
-Standard capture records directly observable DPR and visual viewport scale. It explicitly marks browser page zoom / document-level CSS zoom evidence unavailable when Standard page APIs cannot reliably separate them.
-
-No fake `browserPageZoom = 1` value is emitted.
+Standard capture records directly observable DPR and visual viewport scale. Browser page zoom / CSS zoom are explicitly marked unavailable when Standard page APIs cannot reliably separate them; no fake values are emitted.
 
 ### Privacy boundary
 
@@ -116,17 +118,7 @@ Browser shell protocol advanced to:
 
 `captureImplemented` and `standardCaptureImplemented` are true.
 
-Full Page runs the Standard DOM adapter instead of the old page-probe-only shell path.
-
-Region mode:
-
-```text
-NODE-07 region selection
-→ bounds/masks
-→ Standard capture
-```
-
-Cancellation is terminal and cannot be overwritten by a late capture completion.
+Full Page runs the Standard DOM adapter. Region mode runs NODE-07 selection first, then sends bounds/masks into the same Standard adapter. Cancellation is terminal and cannot be overwritten by a late capture completion.
 
 ### Persistence
 
@@ -138,7 +130,7 @@ Store: rawSnapshots
 Key: raw-snapshot:<jobId>
 ```
 
-`chrome.storage.local` keeps the compact job state plus `CaptureSnapshotReceipt` only.
+`chrome.storage.local` keeps only compact job state plus `CaptureSnapshotReceipt`.
 
 ### Browser packaging
 
@@ -150,7 +142,7 @@ runtime/capture-core/
 runtime/standard-capture-adapter/
 ```
 
-Top-level workspace imports are rewritten to extension-relative paths. Package validation recursively rejects unresolved `@w2f/*` runtime imports.
+Top-level workspace imports are rewritten to extension-relative paths and package validation rejects unresolved `@w2f/*` runtime imports.
 
 Permissions remain:
 
@@ -162,40 +154,23 @@ storage
 
 No `debugger`, broad host permission or static content script was added.
 
-## Tests and gates
-
-Added/updated:
-
-- capture-core RawSnapshot validation tests;
-- Standard adapter privacy tests;
-- Standard adapter contract tests;
-- Browser protocol tests;
-- Browser job-state receipt tests;
-- Browser snapshot-store tests;
-- Browser package/runtime validation;
-- dependency-free `scripts/validate-node-08.mjs`.
-
-The controlled bootstrap successfully ran full `pnpm check` and committed the authoritative 10-workspace lockfile. A later controlled contract patch also ran full `pnpm check` before writing FrameContext/ScaleContext finalization.
-
-All temporary write-enabled workflows have been removed.
-
 ## Final validation
 
-Final standard read-only GitHub Actions run:
+Implementation + normative docs final branch CI:
 
 ```text
-32582370051
+32583854755
 ```
 
-validated commit:
+validated head:
 
 ```text
-4dc6ccc369dc9f332dd4119e2324e873e6127603
+ec13b1b8d2bffd4581c3a417c85eef5f6c81c94e
 ```
 
 Every formal gate passed:
 
-- dependency-free foundation validation, including NODE-08 contract invariants;
+- dependency-free foundation validation including NODE-08 contract invariants;
 - Node.js 24 / pnpm 11.22.0;
 - `pnpm install --frozen-lockfile`;
 - ESLint;
@@ -204,6 +179,8 @@ Every formal gate passed:
 - deterministic Browser extension build;
 - Browser package/runtime validator;
 - pinned Prettier 3.9.6 format check.
+
+All temporary write-enabled workflows were removed before the final CI.
 
 ## Definition of Done
 
@@ -232,29 +209,13 @@ Every formal gate passed:
 - [x] least-privilege Standard permission boundary
 - [x] authoritative lockfile updated
 - [x] temporary write-enabled workflows removed
-- [x] implementation lint/typecheck/tests/build/format passed
-- [x] final standard read-only frozen-lockfile CI passes with normative docs
+- [x] final standard read-only frozen-lockfile CI passes
 - [x] final validation evidence written back to status
-- [ ] PR #12 merged
+- [x] PR #12 merged
 
 ## Explicit non-goals
 
-NODE-08 does not implement:
-
-- CDP / `chrome.debugger` capture;
-- complete DOMSnapshot/layout-tree CDP evidence;
-- pseudo-element content reconstruction;
-- authored CSS cascade/source-rule extraction;
-- asset localization;
-- pixel ground truth;
-- responsive multi-viewport capture;
-- Figma rendering.
-
-Those remain later NODEs.
-
-## Exit rule
-
-NODE-09 implementation begins only after PR #12 is merged into `main`.
+NODE-08 does not implement CDP capture, complete DOMSnapshot/layout-tree CDP evidence, pseudo-element reconstruction, authored CSS cascade extraction, asset localization, pixel ground truth, responsive multi-viewport capture or Figma rendering. Those remain later NODEs.
 
 ## Next
 

@@ -95,6 +95,47 @@ describe("browser capture job state", () => {
     expect(isTerminalJobStatus(completed.status)).toBe(true);
   });
 
+  it("accepts High Fidelity screenshot references and explicit Standard fallback receipts", () => {
+    const job = createCaptureJob("full-page", "job_cdp", "2026-08-23T00:00:00.000Z");
+    const cdp = transitionCaptureJob(job, "completed", "high-fidelity-capture-complete", new Date(), {
+      capture: {
+        version: "1.0.0",
+        adapter: "cdp",
+        nodeCount: 900,
+        frameCount: 4,
+        scrollContainerCount: 1,
+        diagnosticCount: 0,
+        storageKey: "raw-snapshot:job_cdp",
+        referenceScreenshotKey: "reference-screenshot:job_cdp",
+        capturedAt: "2026-08-23T00:00:01.000Z",
+      },
+    });
+    expect(isCaptureJobState(cdp)).toBe(true);
+    expect(cdp.capture?.referenceScreenshotKey).toBe("reference-screenshot:job_cdp");
+
+    const fallback = transitionCaptureJob(
+      createCaptureJob("full-page", "job_fallback", "2026-08-23T00:00:00.000Z"),
+      "completed",
+      "standard-fallback-complete",
+      new Date(),
+      {
+        capture: {
+          version: "1.0.0",
+          adapter: "standard",
+          nodeCount: 500,
+          frameCount: 1,
+          scrollContainerCount: 1,
+          diagnosticCount: 1,
+          storageKey: "raw-snapshot:job_fallback",
+          capturedAt: "2026-08-23T00:00:01.000Z",
+          fallbackFromCdp: true,
+        },
+      },
+    );
+    expect(isCaptureJobState(fallback)).toBe(true);
+    expect(fallback.capture?.fallbackFromCdp).toBe(true);
+  });
+
   it("rejects malformed persisted source, region and capture evidence", () => {
     const job = createCaptureJob("region", "job_guard", "2026-08-22T02:00:00.000Z");
     expect(isCaptureJobState({ ...job, source: { provider: "file-tab" } })).toBe(false);
@@ -114,13 +155,14 @@ describe("browser capture job state", () => {
         ...job,
         capture: {
           version: "1.0.0",
-          adapter: "standard",
-          nodeCount: -1,
+          adapter: "cdp",
+          nodeCount: 1,
           frameCount: 1,
           scrollContainerCount: 0,
           diagnosticCount: 0,
           storageKey: "raw-snapshot:job_guard",
-          capturedAt: "invalid",
+          referenceScreenshotKey: "",
+          capturedAt: "2026-08-23T00:00:01.000Z",
         },
       }),
     ).toBe(false);

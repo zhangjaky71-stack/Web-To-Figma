@@ -29,6 +29,17 @@ const requiredFiles = [
   "apps/browser-extension/tsconfig.json",
   "apps/browser-extension/tsconfig.build.json",
   "apps/browser-extension/src/index.ts",
+  "apps/browser-extension/src/runtime/protocol.ts",
+  "apps/browser-extension/src/runtime/job-state.ts",
+  "apps/browser-extension/src/runtime/service-worker.ts",
+  "apps/browser-extension/src/runtime/content-script.ts",
+  "apps/browser-extension/src/runtime/popup.ts",
+  "apps/browser-extension/src/runtime/options.ts",
+  "apps/browser-extension/static/manifest.json",
+  "apps/browser-extension/static/popup.html",
+  "apps/browser-extension/static/options.html",
+  "apps/browser-extension/scripts/package-extension.mjs",
+  "apps/browser-extension/scripts/validate-extension-package.mjs",
   "apps/figma-plugin/package.json",
   "apps/figma-plugin/tsconfig.json",
   "apps/figma-plugin/tsconfig.build.json",
@@ -44,9 +55,7 @@ function fail(message) {
 }
 
 function assert(condition, message) {
-  if (!condition) {
-    fail(message);
-  }
+  if (!condition) fail(message);
 }
 
 function readText(path) {
@@ -59,19 +68,13 @@ function readJson(path) {
 
 function walkFiles(relativeDirectory) {
   const absoluteDirectory = resolve(root, relativeDirectory);
-  if (!existsSync(absoluteDirectory)) {
-    return [];
-  }
-
+  if (!existsSync(absoluteDirectory)) return [];
   const files = [];
   for (const entry of readdirSync(absoluteDirectory)) {
     const relativePath = `${relativeDirectory}/${entry}`;
     const absolutePath = resolve(root, relativePath);
-    if (statSync(absolutePath).isDirectory()) {
-      files.push(...walkFiles(relativePath));
-    } else {
-      files.push(relativePath);
-    }
+    if (statSync(absolutePath).isDirectory()) files.push(...walkFiles(relativePath));
+    else files.push(relativePath);
   }
   return files;
 }
@@ -88,7 +91,6 @@ if (failures.length === 0) {
   );
   assert(rootPackage.engines?.node === ">=24 <25", "Node engine must be >=24 <25");
   assert(readText(".nvmrc").trim() === "24", ".nvmrc must pin Node 24");
-
   assert(
     rootPackage.scripts?.["validate:foundation"] === "node scripts/validate-foundation.mjs",
     "validate:foundation script is missing or drifted",
@@ -150,10 +152,23 @@ if (failures.length === 0) {
     "packages/shared-utils",
   ]) {
     const packageJson = readJson(`${directory}/package.json`);
-    assert(
-      packageJson.scripts?.build === "tsc -p tsconfig.build.json",
-      `${directory} build must use tsconfig.build.json`,
-    );
+    const buildCommand = packageJson.scripts?.build ?? "";
+    if (directory === "apps/browser-extension") {
+      assert(
+        buildCommand.includes("tsc -p tsconfig.build.json"),
+        "browser extension build must compile with tsconfig.build.json",
+      );
+      assert(
+        buildCommand.includes("package-extension.mjs") &&
+          buildCommand.includes("validate-extension-package.mjs"),
+        "browser extension build must package and validate the loadable MV3 output",
+      );
+    } else {
+      assert(
+        buildCommand === "tsc -p tsconfig.build.json",
+        `${directory} build must use tsconfig.build.json`,
+      );
+    }
     assert(
       packageJson.scripts?.typecheck === "tsc -p tsconfig.json --noEmit",
       `${directory} typecheck command drifted`,
@@ -180,6 +195,32 @@ if (failures.length === 0) {
       `${directory} build config must exclude tests`,
     );
   }
+
+  const browserManifest = readJson("apps/browser-extension/static/manifest.json");
+  assert(browserManifest.manifest_version === 3, "browser extension must use Manifest V3");
+  assert(
+    browserManifest.background?.service_worker === "runtime/service-worker.js" &&
+      browserManifest.background?.type === "module",
+    "browser extension must use the module service worker entrypoint",
+  );
+  assert(
+    browserManifest.action?.default_popup === "popup.html",
+    "browser extension popup entrypoint drifted",
+  );
+  const browserPermissions = [...(browserManifest.permissions ?? [])].sort();
+  assert(
+    JSON.stringify(browserPermissions) ===
+      JSON.stringify(["activeTab", "scripting", "storage"].sort()),
+    "NODE-05 browser permissions must remain least-privilege activeTab+scripting+storage",
+  );
+  assert(
+    !("host_permissions" in browserManifest),
+    "NODE-05 must not request broad host permissions",
+  );
+  assert(
+    !("content_scripts" in browserManifest),
+    "NODE-05 content bridge must be user-action injected",
+  );
 
   const sharedUtils = readJson("packages/shared-utils/package.json");
   assert(
@@ -226,22 +267,10 @@ if (failures.length === 0) {
   );
 
   if (existsSync(resolve(root, "pnpm-lock.yaml"))) {
-    assert(
-      ci.includes("pnpm install --frozen-lockfile"),
-      "CI must use --frozen-lockfile once pnpm-lock.yaml is committed",
-    );
+    assert(ci.includes("pnpm install --frozen-lockfile"), "CI must use --frozen-lockfile");
     assert(
       !ci.includes("pnpm install --no-frozen-lockfile"),
       "CI must not keep bootstrap --no-frozen-lockfile after lockfile commit",
-    );
-  } else {
-    assert(
-      ci.includes("pnpm install --no-frozen-lockfile"),
-      "bootstrap CI must generate the initial pnpm lockfile",
-    );
-    assert(
-      ci.includes("pnpm-lock.yaml") && ci.includes("actions/upload-artifact@v4"),
-      "bootstrap CI must upload pnpm-lock.yaml",
     );
   }
 }

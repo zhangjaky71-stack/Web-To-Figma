@@ -14,9 +14,9 @@
 | 01 | Monorepo Foundation | DONE | Frozen-lockfile GitHub Actions PASS | PR #4 merged |
 | 02 | W2F File Spec V2 | DONE | Shared schema + frozen-lockfile GitHub Actions PASS | PR #6 merged |
 | 03 | W2F IR V2 | DONE | IR roundtrip/reference validation + frozen-lockfile GitHub Actions PASS | PR #7 merged |
-| 04 | Stable Identity & Source Mapping | DONE | Repeat-capture identity/mapping + frozen-lockfile GitHub Actions PASS | PR #8 |
-| 05 | Browser Extension Shell | NEXT | - | - |
-| 06 | Source Providers & Offline | TODO | - | - |
+| 04 | Stable Identity & Source Mapping | DONE | Repeat-capture identity/mapping + frozen-lockfile GitHub Actions PASS | PR #8 merged |
+| 05 | Browser Extension Shell | DONE | Loadable MV3 package + frozen-lockfile GitHub Actions PASS | PR #9 |
+| 06 | Source Providers & Offline | NEXT | - | - |
 | 07 | Region Selector & Redaction | TODO | - | - |
 | 08 | Standard DOM Capture | TODO | - | - |
 | 09 | CDP High Fidelity Adapter | TODO | - | - |
@@ -45,81 +45,100 @@
 
 ## Current Node
 
-`NODE-05 — Browser Extension Shell`
+`NODE-06 — Source Providers & Offline`
 
-## NODE-04 Completion
+## NODE-05 Completion
 
-NODE-04 implements the deterministic stable identity layer reserved by the frozen V2/V2.1 architecture and NODE-03 IR.
+NODE-05 replaces the compile-only Browser workspace shell with a real Chromium Manifest V3 extension application.
 
-Implemented in `packages/stable-identity`:
+Implemented in `apps/browser-extension`:
 
-- stable algorithm version `1.0.0`;
-- normalized HTTP/file/local-folder/opaque document locators;
-- deterministic `documentId` and `sourceFingerprint`;
-- distinct per-capture `captureId`;
-- deterministic revision identity and optional parent revision linkage;
-- stable node evidence from source scope, semantic ancestry, tag/role, stable ID/data attributes, meaningful classes, normalized text and asset fingerprints;
-- filtering of React/Radix/Headless UI hydration IDs, UUID/timestamp/hash-like runtime values, unstable framework data attributes, CSS-module hashes and utility-class noise;
-- explainable confidence/evidence scoring;
-- lower-confidence structural fallback;
-- deterministic same-capture collision disambiguation;
-- cross-capture `matched` / `added` / `removed` / `ambiguous` mapping;
-- fail-visible ambiguity instead of array-order pairing;
-- immutable application of stable identities to NODE-03 Source Graph nodes;
-- explicit reporting of unmapped Source Nodes and unused assignments.
+- Manifest V3 source manifest;
+- module background service worker;
+- popup with Full page / Select area shell actions;
+- options/status surface;
+- typed runtime message protocol;
+- persistent capture-job state in `chrome.storage.local`;
+- user-action content bridge injection through `chrome.scripting`;
+- page probe evidence for URL/title/document size/viewport/DPR;
+- deterministic extension build and packaging pipeline;
+- loadable unpacked output in `apps/browser-extension/dist`;
+- package/security validation;
+- Browser integration with NODE-02 schema, NODE-03 IR and NODE-04 stable identity packages.
 
-Browser Extension now consumes `@w2f/stable-identity` through the workspace rather than defining app-local identity logic.
-
-## NODE-04 Validation
-
-The first real cloud validation found an `exactOptionalPropertyTypes` incompatibility in normalized signal typing. It was corrected without weakening strict TypeScript settings.
-
-The controlled bootstrap then passed and wrote canonical Prettier formatting plus the authoritative workspace lockfile.
-
-The bootstrap workflow was removed and standard read-only CI restored with:
+NODE-05 permission posture is intentionally minimal:
 
 ```text
+activeTab
+scripting
+storage
+```
+
+There are no broad default host permissions and no always-on static content scripts. File/local-folder source permissions are deferred to NODE-06; debugger/CDP permissions are deferred to NODE-09.
+
+## NODE-05 Validation
+
+The first cloud run exposed an obsolete NODE-01 assumption that the Browser build script must equal a raw `tsc` command. The dependency-free foundation validator was evolved to accept and verify the real extension package pipeline while preserving TypeScript and MV3 invariants.
+
+The real Browser shell then passed:
+
+- foundation validation;
+- frozen-lockfile installation;
+- ESLint;
+- TypeScript 6.0.3 typecheck;
+- 11 Browser shell/job/protocol tests;
+- full repository Vitest suite;
+- deterministic Browser build;
+- Browser extension package/security validator;
+- repository build;
+- pinned Prettier 3.9.6 format check.
+
+The temporary formatting workflow was removed and standard read-only CI restored:
+
+```text
+permissions:
+  contents: read
+
 pnpm install --frozen-lockfile
 ```
 
-GitHub Actions run `32566068160` passed on commit:
+Final read-only GitHub Actions run:
 
 ```text
-d7882c58deecfdfffa6b6d2187dddcee58c5e5b9
+32567397560
 ```
 
-Validated gates:
+validated commit:
 
-- foundation validation: **PASS**;
-- Node.js 24 / pnpm 11.22.0: **PASS**;
-- frozen-lockfile install: **PASS**;
-- lint: **PASS**;
-- TypeScript 6.0.3 typecheck: **PASS**;
-- Vitest: **PASS**;
-- build: **PASS**;
-- Prettier format check: **PASS**.
+```text
+e3f284875c0e2977048fb25823fe2dc4c4a018e5
+```
+
+with every formal gate **PASS**.
 
 Normative documentation:
 
-- `docs/STABLE_IDENTITY_SOURCE_MAPPING_V2.md`;
-- `docs/adr/ADR-0004-stable-identity-and-source-mapping.md`;
-- `docs/nodes/NODE-04_STABLE_IDENTITY_SOURCE_MAPPING.md`.
+- `docs/BROWSER_EXTENSION_SHELL_V2.md`;
+- `docs/adr/ADR-0005-browser-extension-mv3-shell-and-permission-boundary.md`;
+- `docs/nodes/NODE-05_BROWSER_EXTENSION_SHELL.md`;
+- `apps/browser-extension/README.md`.
 
-## NODE-04 Exit Criteria
+## NODE-05 Exit Criteria
 
-- [x] document/capture/revision identity implemented
-- [x] stable node evidence and confidence implemented
-- [x] volatile runtime signals filtered
-- [x] deterministic collision handling implemented
-- [x] cross-capture mapping implemented
-- [x] ambiguous duplicate mapping is fail-visible
-- [x] Source Graph identity application implemented
-- [x] repeat-capture stability tests implemented
-- [x] Browser consumes shared identity package
-- [x] authoritative workspace lockfile updated
-- [x] bootstrap workflow removed
-- [x] frozen-lockfile CI restored
-- [x] frozen-lockfile CI passes
+- [x] production Manifest V3 shell
+- [x] popup
+- [x] module service worker
+- [x] content bridge
+- [x] typed message protocol
+- [x] persistent job state
+- [x] least-privilege permission boundary
+- [x] Browser shared-contract integration
+- [x] loadable unpacked extension package
+- [x] deterministic build/package validator
+- [x] Browser shell tests
+- [x] temporary write-enabled workflow removed
+- [x] standard read-only frozen-lockfile CI restored
+- [x] final frozen-lockfile CI passes
 
 ## Blockers
 
@@ -127,6 +146,14 @@ None.
 
 ## Next
 
-Proceed to `NODE-05 — Browser Extension Shell`.
+Proceed to `NODE-06 — Source Providers & Offline`.
 
-NODE-05 owns the production browser-extension shell: Manifest V3, runtime entrypoints, background/service-worker lifecycle, content-script bridge, popup/options UI surfaces, permissions/capability boundaries and extension build packaging. It must consume the file/IR/identity contracts from NODE-02/03/04 instead of redefining them.
+NODE-06 implements the frozen V2 source-provider abstraction and the three required providers:
+
+```text
+HttpPageProvider
+FileTabProvider
+LocalFolderProvider
+```
+
+It must add capability checks, relative-URL resolution and explicit host/local permission behavior without weakening the NODE-05 least-privilege default shell.

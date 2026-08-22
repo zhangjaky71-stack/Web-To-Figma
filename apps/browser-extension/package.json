@@ -4,8 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
-    "lint": "eslint src test --max-warnings=0",
+    "build": "node scripts/clean-extension.mjs && tsc -p tsconfig.build.json && node scripts/package-extension.mjs && node scripts/validate-extension-package.mjs",
+    "validate:package": "node scripts/validate-extension-package.mjs",
+    "lint": "eslint src test scripts --max-warnings=0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run"
   },

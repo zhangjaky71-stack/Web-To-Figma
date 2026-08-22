@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Web-To-Figma Capture",
+  "version": "0.1.0",
+  "description": "Capture web pages into portable .wtf documents for reconstruction in Figma.",
+  "action": {
+    "default_title": "Web-To-Figma Capture",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "runtime/service-worker.js",
+    "type": "module"
+  },
+  "permissions": ["activeTab", "scripting", "storage"],
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}

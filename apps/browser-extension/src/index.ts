@@ -1,6 +1,7 @@
 import { STABLE_IDENTITY_ALGORITHM_VERSION } from "@w2f/stable-identity";
 import { WTF_IR_VERSION } from "@w2f/w2f-ir";
 import { WTF_SCHEMA_VERSION } from "@w2f/w2f-schema";
+import { W2F_EXTENSION_SHELL_VERSION } from "./runtime/protocol.js";
 
 export const BROWSER_EXTENSION_APP_ID = "w2f-browser-extension" as const;
 
@@ -18,4 +19,8 @@ export function getBrowserWtfIrVersion(): string {
 
 export function getBrowserStableIdentityAlgorithmVersion(): string {
   return STABLE_IDENTITY_ALGORITHM_VERSION;
+}
+
+export function getBrowserExtensionShellVersion(): string {
+  return W2F_EXTENSION_SHELL_VERSION;
 }

@@ -108,9 +108,15 @@ async function startShellJob(mode: CaptureJobMode): Promise<CaptureJobState> {
     await writeJobState(job);
     return job;
   } catch (error) {
-    job = transitionCaptureJob(job, "failed", "shell-probe-failed", new Date(), {
-      error: error instanceof Error ? error.message : String(error),
-    });
+    job = transitionCaptureJob(
+      job,
+      "failed",
+      mode === "region" ? "region-selection-failed" : "shell-probe-failed",
+      new Date(),
+      {
+        error: error instanceof Error ? error.message : String(error),
+      },
+    );
     await writeJobState(job);
     return job;
   }

@@ -2,7 +2,7 @@
 
 ## Status
 
-**IN PROGRESS — core selector implementation landed; cloud validation pending**
+**DONE / PASS — final read-only frozen-lockfile CI passed; PR #11 merge pending**
 
 ## Goal
 
@@ -140,6 +140,35 @@ storage
 - region evidence persistence/rejection tests
 - package/runtime validation
 
+## Final validation
+
+The temporary write-enabled formatter has been removed.
+
+Final standard read-only GitHub Actions run:
+
+```text
+32577222247
+```
+
+Validated commit:
+
+```text
+d342db88388490dcaf3eaab4c3399aaa902dc3d1
+```
+
+Every formal gate passed:
+
+- dependency-free foundation validation;
+- Node.js 24 / pnpm 11.22.0;
+- `pnpm install --frozen-lockfile`;
+- ESLint;
+- TypeScript 6.0.3 typecheck;
+- full repository Vitest suite;
+- Browser NODE-07 selection/protocol/job-state tests;
+- deterministic Browser extension build;
+- Browser package/runtime validator;
+- pinned Prettier 3.9.6 format check.
+
 ## Definition of Done
 
 - [x] versioned region-selection contract
@@ -161,20 +190,21 @@ storage
 - [x] popup selection summary
 - [x] package validator knows region runtime
 - [x] permission boundary preserved
-- [ ] dependency-free foundation validator updated for NODE-07 invariants
-- [ ] lint/typecheck/tests pass in GitHub Actions
-- [ ] Browser build/package validator passes in GitHub Actions
-- [ ] pinned Prettier check passes
-- [ ] final standard frozen-lockfile CI passes
-- [ ] PR merged
+- [x] dependency-free foundation validator updated for NODE-07 invariants
+- [x] lint/typecheck/tests pass in GitHub Actions
+- [x] Browser build/package validator passes in GitHub Actions
+- [x] pinned Prettier check passes
+- [x] temporary write-enabled formatter removed
+- [x] final standard frozen-lockfile CI passes
+- [ ] PR #11 merged
 
 ## Exit rule
 
-Do not begin NODE-08 implementation until NODE-07's completed branch passes the standard read-only frozen-lockfile CI and the NODE-07 PR is merged.
+NODE-07 implementation is complete and validated. Do not begin NODE-08 implementation until PR #11 is merged into `main`.
 
 ## Next
 
-After completion:
+After PR #11 merge:
 
 ```text
 NODE-08 — Standard DOM Capture

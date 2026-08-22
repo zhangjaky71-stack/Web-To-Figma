@@ -68,6 +68,12 @@ jobs:
             `    if (owner) {\n      const parentFrameId = documentFrameIds[owner.documentIndex];\n      if (parentFrameId !== undefined) context.parentFrameId = parentFrameId;\n    }\n`,
             "exact optional parent frame typing",
           );
+          normalize = replaceRequired(
+            normalize,
+            `      const masked =\n        input.captureTarget.type === "region" &&\n        bounds !== undefined &&\n        input.captureTarget.exclusions.some((item) => intersects(item.bounds, bounds));\n`,
+            `      const masked =\n        input.captureTarget.type === "region" &&\n        bounds !== undefined &&\n        input.captureTarget.exclusions.some(\n          (item) => item.kind === "redact" && intersects(item.bounds, bounds),\n        );\n`,
+            "separate exclude from redact masking",
+          );
           writeFileSync(normalizePath, normalize, "utf8");
 
           const foundationPath = "scripts/validate-foundation.mjs";

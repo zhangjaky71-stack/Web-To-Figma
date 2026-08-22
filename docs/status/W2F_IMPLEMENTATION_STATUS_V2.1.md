@@ -9,17 +9,6 @@
 
 > Canonical live status is `docs/IMPLEMENTATION_STATUS.md`. This file is a compatibility/status snapshot and must not override the canonical status file.
 
-## Baseline Documents
-
-1. `docs/PRODUCT_BASELINE_V2.md`
-2. `docs/ACCEPTANCE_CONTRACT_V2.md`
-3. `docs/CAPTURE_SEMANTICS.md`
-4. `docs/KNOWN_LIMITATIONS.md`
-5. `docs/baseline/Web2Figma_W2F_Development_Implementation_Plan_V2_Baseline.md`
-6. `docs/baseline/Web2Figma_W2F_Architecture_V2.1_Addendum.md`
-7. `docs/adr/ADR-0000-architecture-baseline-freeze.md`
-8. `docs/adr/ADR-0001-node-pnpm-toolchain-and-lockfile-policy.md`
-
 ## Progress
 
 - NODE-00 — DONE / PASS / PR #3 merged
@@ -31,25 +20,13 @@
 - NODE-06 — DONE / source providers & offline CI PASS / PR #10 merged
 - NODE-07 — DONE / region selector & redaction CI PASS / PR #11 merged
 - NODE-08 — DONE / Standard DOM capture CI PASS / PR #12 merged
-- NODE-09 — DONE / CDP High Fidelity dual-profile CI PASS / PR #13 pending final docs CI/merge
+- NODE-09 — DONE / CDP High Fidelity dual-profile CI PASS / PR #13 ready to merge
 - NODE-10 — NEXT after PR #13 merge
 - NODE-11+ — TODO
 
 ## NODE-09 Snapshot
 
-NODE-09 preserves the NODE-08 adapter-neutral `RawSnapshot` boundary and adds an optional Chrome DevTools Protocol evidence path.
-
-High Fidelity evidence includes:
-
-- `DOMSnapshot.captureSnapshot`;
-- `Page.getLayoutMetrics`;
-- `Page.getFrameTree`;
-- `Page.captureScreenshot`;
-- DPR evaluation;
-- paint order;
-- backend node IDs;
-- browser page zoom / visual viewport evidence;
-- explicit unavailable-frame diagnostics.
+NODE-09 preserves the NODE-08 adapter-neutral `RawSnapshot` boundary and adds an optional Chrome DevTools Protocol evidence path covering DOMSnapshot, layout metrics, frame tree, screenshot, DPR, paint order, backend node IDs and browser scale evidence.
 
 Standard Browser permissions remain:
 
@@ -69,30 +46,21 @@ No broad host permissions or static content scripts are added. CDP capture alway
 
 Reference screenshot evidence is stored in IndexedDB separately from RawSnapshot and compact `chrome.storage.local` job state.
 
-## NODE-09 Code Exit Gate
+## Validation
 
-Final standard read-only frozen-lockfile code/security/build run:
+Code/security/build standard read-only frozen-lockfile run:
 
 ```text
 32586474296
 ```
 
-validated commit:
+Docs/status standard read-only frozen-lockfile run:
 
 ```text
-ef953d3a72f8a070c194423b7d22dd30e1f97737
+32586638192
 ```
 
-All formal gates passed:
-
-- dependency-free foundation validation;
-- frozen lockfile install;
-- lint;
-- strict typecheck;
-- complete tests;
-- Standard Browser build/package validation;
-- High Fidelity Browser build/package validation;
-- format check.
+Both passed the complete repository quality gates, including Standard and High Fidelity Browser package validation.
 
 Normative NODE-09 docs:
 
@@ -102,8 +70,8 @@ Normative NODE-09 docs:
 
 ## Blockers
 
-No implementation blocker remains. Final docs/status standard CI and PR #13 merge are the only transition gates before NODE-10.
+No implementation blocker remains. PR #13 merge is the only transition gate before NODE-10.
 
 ## Next
 
-Merge PR #13 after final docs/status CI, then proceed to `NODE-10 — Text / Inline / Pseudo Capture` from the merged `main` baseline.
+Merge PR #13, then proceed to `NODE-10 — Text / Inline / Pseudo Capture` from the merged `main` baseline.

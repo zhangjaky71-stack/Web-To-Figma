@@ -16,13 +16,14 @@
         <span id="job-status" class="status" data-status="idle">Ready</span>
       </header>
 
+      <p id="source-capability" class="details">Checking current source…</p>
       <p id="job-details" class="details">
-        Choose a capture mode to verify the extension shell on this tab.
+        Choose a capture mode to verify the extension shell on this source.
       </p>
 
       <div class="actions">
-        <button id="capture-full-page" class="primary" type="button">Full page</button>
-        <button id="capture-region" type="button">Select area</button>
+        <button id="capture-full-page" class="primary" type="button" disabled>Full page</button>
+        <button id="capture-region" type="button" disabled>Select area</button>
       </div>
 
       <div class="footer-actions">
@@ -31,7 +32,8 @@
       </div>
 
       <p class="note">
-        NODE-05 validates the extension shell only. Capture engines arrive in later nodes.
+        NODE-06 validates HTTP/file source access and offline resolution. Capture engines arrive in
+        later nodes.
       </p>
     </main>
     <script type="module" src="runtime/popup.js"></script>

@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { getFigmaPluginAppId, getFigmaWtfSchemaVersion } from "../src/index.js";
+import {
+  getFigmaPluginAppId,
+  getFigmaWtfIrVersion,
+  getFigmaWtfSchemaVersion,
+} from "../src/index.js";
 
 describe("figma plugin foundation", () => {
   it("exposes a stable app id", () => {
@@ -8,5 +12,9 @@ describe("figma plugin foundation", () => {
 
   it("uses the shared W2F V2 schema", () => {
     expect(getFigmaWtfSchemaVersion()).toBe("2.0.0");
+  });
+
+  it("uses the shared W2F V2 semantic IR", () => {
+    expect(getFigmaWtfIrVersion()).toBe("2.0.0");
   });
 });

@@ -1,3 +1,4 @@
+import { WTF_IR_VERSION } from "@w2f/w2f-ir";
 import { WTF_SCHEMA_VERSION } from "@w2f/w2f-schema";
 
 export const BROWSER_EXTENSION_APP_ID = "w2f-browser-extension" as const;
@@ -8,4 +9,8 @@ export function getBrowserExtensionAppId(): string {
 
 export function getBrowserWtfSchemaVersion(): string {
   return WTF_SCHEMA_VERSION;
+}
+
+export function getBrowserWtfIrVersion(): string {
+  return WTF_IR_VERSION;
 }

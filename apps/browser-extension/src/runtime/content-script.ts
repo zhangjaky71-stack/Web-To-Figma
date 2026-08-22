@@ -295,7 +295,7 @@
 
     function render(): void {
       setFixedRect(selectionBox, selection);
-      setFixedRect(candidateBox, tool === "smart" && !drag ? candidate?.bounds ?? null : null);
+      setFixedRect(candidateBox, tool === "smart" && !drag ? (candidate?.bounds ?? null) : null);
 
       redactionLayer.replaceChildren();
       for (const exclusion of exclusions) {
@@ -575,11 +575,16 @@
       const completedDrag = drag;
       drag = null;
       stopAutoScroll();
-      if (surface.hasPointerCapture(event.pointerId)) surface.releasePointerCapture(event.pointerId);
+      if (surface.hasPointerCapture(event.pointerId))
+        surface.releasePointerCapture(event.pointerId);
 
       if (completedDrag.kind === "selection") {
         if (!selection || selection.width < 2 || selection.height < 2) selection = null;
-      } else if (draftExclusion && draftExclusion.bounds.width >= 2 && draftExclusion.bounds.height >= 2) {
+      } else if (
+        draftExclusion &&
+        draftExclusion.bounds.width >= 2 &&
+        draftExclusion.bounds.height >= 2
+      ) {
         exclusions.push({
           id: `region_${++exclusionCounter}`,
           kind: draftExclusion.kind,

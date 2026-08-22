@@ -1,9 +1,6 @@
 import type { SourceCapability } from "@w2f/source-providers";
 import type { CaptureJobMode, CaptureJobState, PageProbe } from "./job-state.js";
-import {
-  isRegionSelectionResult,
-  type RegionSelectionResult,
-} from "./region-selection.js";
+import { isRegionSelectionResult, type RegionSelectionResult } from "./region-selection.js";
 
 export const W2F_EXTENSION_SHELL_VERSION = "1.1.0" as const;
 export const W2F_JOB_STORAGE_KEY = "w2f.captureJob.v1" as const;

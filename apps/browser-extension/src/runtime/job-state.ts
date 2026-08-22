@@ -1,8 +1,5 @@
 import type { SourceDescriptor } from "@w2f/source-providers";
-import {
-  isRegionSelectionResult,
-  type RegionSelectionResult,
-} from "./region-selection.js";
+import { isRegionSelectionResult, type RegionSelectionResult } from "./region-selection.js";
 
 export type CaptureJobMode = "full-page" | "region";
 

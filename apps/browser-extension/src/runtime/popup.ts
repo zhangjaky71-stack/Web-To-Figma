@@ -58,7 +58,9 @@ async function startJob(mode: CaptureJobMode): Promise<void> {
   fullPageButton.disabled = true;
   regionButton.disabled = true;
   detailsElement.textContent =
-    mode === "region" ? "Select a region directly on the current page…" : "Preparing the current tab…";
+    mode === "region"
+      ? "Select a region directly on the current page…"
+      : "Preparing the current tab…";
   try {
     const response = await sendRequest({ type: "W2F_START_JOB", mode });
     if (!response.ok) throw new Error(response.error);

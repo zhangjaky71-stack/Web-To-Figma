@@ -10,10 +10,7 @@ import {
 describe("NODE-07 region selection contract", () => {
   it("keeps document geometry at double precision", () => {
     expect(
-      rectFromPoints(
-        { x: 143.3333282470703, y: 18.25 },
-        { x: 511.6666717529297, y: 219.875 },
-      ),
+      rectFromPoints({ x: 143.3333282470703, y: 18.25 }, { x: 511.6666717529297, y: 219.875 }),
     ).toEqual({
       x: 143.3333282470703,
       y: 18.25,

@@ -66,6 +66,12 @@ jobs:
           );
           capture = replaceRequired(
             capture,
+            "      const parent = current.parentElement;",
+            "      const parent: Element | null = current.parentElement;",
+            "strict DOM parent inference",
+          );
+          capture = replaceRequired(
+            capture,
             `    const source = {\n      tagName,\n      namespace: element.namespaceURI ?? undefined,\n      role: element.getAttribute("role") ?? undefined,\n      sourceSelector: sourceSelector(element),\n      ...(masked ? {} : { attributes: sanitizeAttributes(element) }),\n    };`,
             `    const namespace = element.namespaceURI;\n    const role = element.getAttribute("role");\n    const source = {\n      tagName,\n      ...(namespace === null ? {} : { namespace }),\n      ...(role === null ? {} : { role }),\n      sourceSelector: sourceSelector(element),\n      ...(masked ? {} : { attributes: sanitizeAttributes(element) }),\n    };`,
             "exact optional source metadata",

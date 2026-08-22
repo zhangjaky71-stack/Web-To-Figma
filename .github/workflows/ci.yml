@@ -43,7 +43,13 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Apply canonical formatting
-        run: pnpm exec prettier --write apps/browser-extension scripts/validate-foundation.mjs
+        run: >-
+          pnpm exec prettier --write
+          apps/browser-extension
+          scripts/validate-foundation.mjs
+          docs/BROWSER_EXTENSION_SHELL_V2.md
+          docs/adr/ADR-0005-browser-extension-mv3-shell-and-permission-boundary.md
+          docs/nodes/NODE-05_BROWSER_EXTENSION_SHELL.md
 
       - name: Lint
         run: pnpm lint
@@ -66,10 +72,10 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add apps/browser-extension scripts/validate-foundation.mjs
+          git add apps/browser-extension scripts/validate-foundation.mjs docs/BROWSER_EXTENSION_SHELL_V2.md docs/adr/ADR-0005-browser-extension-mv3-shell-and-permission-boundary.md docs/nodes/NODE-05_BROWSER_EXTENSION_SHELL.md
           if git diff --cached --quiet; then
             echo "No formatting changes to commit"
             exit 0
           fi
-          git commit -m "style(node-05): apply canonical extension formatting"
+          git commit -m "style(node-05): apply canonical shell documentation formatting"
           git push origin HEAD:feat/node-05-browser-extension-shell

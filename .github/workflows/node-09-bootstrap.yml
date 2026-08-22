@@ -55,6 +55,7 @@ jobs:
 
           const normalizePath = "packages/cdp-capture-adapter/src/normalize.ts";
           let normalize = readFileSync(normalizePath, "utf8");
+          normalize = normalize.replace("  RawCaptureTarget,\n", "");
           normalize = replaceRequired(
             normalize,
             "  const scrollContainers = [];",

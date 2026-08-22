@@ -11,9 +11,9 @@
 | NODE | Name | Status | Validation | Commit/PR |
 |---|---|---|---|---|
 | 00 | Product Baseline & Acceptance Contract | DONE | PASS | PR #3 merged |
-| 01 | Monorepo Foundation | DONE | GitHub Actions frozen-lockfile quality pipeline PASS | PR #4 |
-| 02 | W2F File Spec V2 | NEXT | - | - |
-| 03 | W2F IR V2 | TODO | - | - |
+| 01 | Monorepo Foundation | DONE | Frozen-lockfile GitHub Actions pipeline PASS | PR #4 merged |
+| 02 | W2F File Spec V2 | DONE | Shared schema + frozen-lockfile GitHub Actions PASS | PR #6 |
+| 03 | W2F IR V2 | NEXT | - | - |
 | 04 | Stable Identity & Source Mapping | TODO | - | - |
 | 05 | Browser Extension Shell | TODO | - | - |
 | 06 | Source Providers & Offline | TODO | - | - |
@@ -45,58 +45,86 @@
 
 ## Current Node
 
-`NODE-02 — W2F File Spec V2`
+`NODE-03 — W2F IR V2`
 
-## NODE-01 Completion
+## NODE-02 Completion
 
-NODE-01 is complete. The monorepo foundation now includes:
+NODE-02 froze the portable `.wtf` V2 protocol before downstream capture/render implementation.
 
-- pnpm workspace and shared lockfile;
-- Turborepo task graph;
-- Node.js 24 LTS policy;
-- strict shared TypeScript configuration;
-- ESLint flat configuration;
-- Prettier configuration;
-- browser-extension compile/test shell;
-- Figma-plugin compile/test shell;
-- shared-utils proof package;
-- source-only build configurations;
-- `.wtf` extension and `application/x-wtf` contract tests;
-- dependency-free foundation validator;
-- authoritative `pnpm-lock.yaml` generated with pnpm 11.22.0;
-- GitHub Actions CI using `pnpm install --frozen-lockfile`.
+Implemented:
 
-## NODE-01 Final Validation
+- shared `packages/w2f-schema` package;
+- `.wtf` / `application/x-wtf` / V2 version constants;
+- container kind and canonical entrypoints;
+- manifest and file-inventory model;
+- compatibility and feature negotiation;
+- `minReaderVersion` enforcement;
+- SHA-256 checksum contract;
+- deterministic canonical JSON;
+- archive-entry and portable-path validation;
+- hard archive/security ceilings;
+- capture-target and double-precision geometry contract;
+- responsive/state/reference-tile reservations;
+- V2.1 Token Graph reservation and validator;
+- V2.1 Structural Fingerprint reservation;
+- V2.1 Revision Metadata reservation;
+- V2.1 Scroll Root reservation;
+- V2.1 Composed Tree reservation;
+- Browser Extension and Figma Plugin both consuming `@w2f/w2f-schema` via `workspace:*`;
+- authoritative workspace lockfile update.
 
-GitHub Actions run `32563563130` on Ubuntu 24.04 completed successfully with the frozen toolchain and lockfile.
+Normative documentation:
 
-Validated gates:
+- `docs/WTF_FILE_SPEC_V2.md`;
+- `docs/adr/ADR-0002-wtf-v2-compatibility-integrity-and-security-contract.md`;
+- `docs/nodes/NODE-02_WTF_FILE_SPEC_V2.md`.
 
-- GitHub-hosted runner: **PASS**
-- foundation validation: **PASS**
-- Node.js 24 setup: **PASS**
-- pnpm 11.22.0 setup: **PASS**
-- frozen-lockfile install: **PASS**
-- lint: **PASS**
-- TypeScript 6.0.3 typecheck: **PASS**
-- Vitest: **PASS**
-- build: **PASS**
-- Prettier format check: **PASS**
+## NODE-02 Validation
 
-The earlier hosted-runner blocker tracked by Issue #5 is resolved and no longer blocks implementation.
+The bootstrap validation established the shared-schema implementation and produced canonical Prettier/lockfile output.
 
-## Exit Criteria
+The bootstrap workflow was then removed and the normal read-only workflow restored with:
 
-- [x] GitHub Actions runner executes
-- [x] authoritative `pnpm-lock.yaml` generated and committed
-- [x] CI uses `pnpm install --frozen-lockfile`
-- [x] foundation validator passes
-- [x] lint passes
-- [x] typecheck passes under TypeScript 6.0.3
-- [x] Vitest passes
-- [x] build passes
-- [x] format check passes
+```text
+pnpm install --frozen-lockfile
+```
+
+GitHub Actions run `32564276456` completed successfully with:
+
+- foundation validation: **PASS**;
+- Node.js 24 setup: **PASS**;
+- pnpm 11.22.0 setup: **PASS**;
+- frozen-lockfile install: **PASS**;
+- lint: **PASS**;
+- TypeScript 6.0.3 typecheck: **PASS**;
+- Vitest: **PASS**;
+- build: **PASS**;
+- Prettier format check: **PASS**.
+
+The `w2f-schema` suite contains 15 protocol/security/integrity tests, and both Browser/Figma workspaces compile and test against the same schema package.
+
+## NODE-02 Exit Criteria
+
+- [x] container contract defined
+- [x] manifest defined
+- [x] compatibility defined
+- [x] checksums/inventory defined
+- [x] feature flags defined
+- [x] source/render/responsive/state/reference entrypoints reserved
+- [x] security limits/path rules defined
+- [x] V2.1 protocol reservations defined
+- [x] Browser and Figma share one schema package
+- [x] workspace lockfile updated
+- [x] bootstrap workflow removed
+- [x] frozen-lockfile CI restored
+- [x] frozen-lockfile CI passes
+
+## Blockers
+
+None.
 
 ## Next
 
-Proceed to `NODE-02 — W2F File Spec V2` using the frozen V2 Baseline + V2.1 Addendum architecture contracts.
+Proceed to `NODE-03 — W2F IR V2`.
+
+NODE-03 owns the complete Source Graph, Render Tree, layout, paint, text, asset, responsive, state and diagnostic IR. It must build on the portable compatibility/integrity boundaries frozen by NODE-02 rather than redefining them.

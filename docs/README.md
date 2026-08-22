@@ -11,14 +11,24 @@ MIME: application/x-wtf
 
 `W2F` remains the product/project/internal namespace name. Only the exported portable file extension is `.wtf`.
 
+The normative V2 portable-format contract is:
+
+```text
+docs/WTF_FILE_SPEC_V2.md
+packages/w2f-schema
+```
+
 ## Current implementation baseline
 
 The active architecture baseline is:
 
 1. `V2 Baseline`
 2. `V2.1 Architecture Addendum`
+3. NODE-00 product and acceptance contracts
 
 Together they define the implementation contract for NODE-00 through NODE-31.
+
+Architecture is frozen for implementation. Do not introduce V3 or expand the architecture again unless an implementation blocker or a material Chrome/Figma platform change requires it.
 
 ## Current documents
 
@@ -26,11 +36,20 @@ Together they define the implementation contract for NODE-00 through NODE-31.
 
 - `docs/baseline/Web2Figma_W2F_Architecture_V2.1_Addendum.md` — approved V2.1 architecture addendum.
 - `docs/.wtf-parts/v2/` — lossless staged parts for `Web2Figma_W2F_Development_Implementation_Plan_V2_Baseline.md`.
-- `docs/.wtf-parts/v1/` — lossless staged parts for the historical `Web2Figma_W2F_Development_Implementation_Plan_V1.md`.
+- `docs/.wtf-parts/v1/` — lossless staged parts for the historical V1 implementation plan.
 
-### Implementation status
+### Active implementation contracts
 
-- `docs/status/W2F_IMPLEMENTATION_STATUS_V2.1.md` — current status; use this going forward.
+- `docs/PRODUCT_BASELINE_V2.md` — frozen product baseline.
+- `docs/ACCEPTANCE_CONTRACT_V2.md` — frozen acceptance contract.
+- `docs/WTF_FILE_SPEC_V2.md` — normative `.wtf` V2 portable-file specification.
+- `docs/IMPLEMENTATION_STATUS.md` — canonical current implementation status.
+- `docs/nodes/` — per-NODE implementation/DoD records.
+- `docs/adr/` — accepted architecture and engineering decisions.
+
+### Historical status
+
+- `docs/status/W2F_IMPLEMENTATION_STATUS_V2.1.md` — architecture-era status before executable NODE implementation tracking moved to `docs/IMPLEMENTATION_STATUS.md`.
 - `docs/status/W2F_IMPLEMENTATION_STATUS_V2.md` — historical V2 status before the V2.1 addendum.
 
 ## Reassemble the two long Markdown documents
@@ -55,12 +74,18 @@ Verification targets:
 | V2 Baseline | 3334 | `f731f4bef9590793bf12bb01a1fe98e9683bb266f682ce01df00b5f35fb0ddb8` |
 | V1 historical plan | 5049 | `4f65c5fb5422ffd1fc394bdfe3ecfc0fe4bd34699bd73ae90064a5a112b64477` |
 
-## Development start point
+## Current development point
 
-Current node:
+Completed:
 
 ```text
 NODE-00 — Product Baseline & Acceptance Contract
+NODE-01 — Monorepo Foundation
+NODE-02 — W2F File Spec V2
 ```
 
-Architecture is frozen for implementation. Do not introduce V3 or expand the architecture again unless an implementation blocker or a material Chrome/Figma platform change requires it.
+Next implementation node:
+
+```text
+NODE-03 — W2F IR V2
+```

@@ -59,10 +59,14 @@ assert(manifest.options_ui?.open_in_tab === true, "options must open in a tab");
 
 const permissions = [...(manifest.permissions ?? [])].sort();
 assert(
-  JSON.stringify(permissions) === JSON.stringify(["activeTab", "scripting", "storage"].sort()),
+  JSON.stringify(permissions) ===
+    JSON.stringify(["activeTab", "scripting", "storage"].sort()),
   "browser permissions must remain activeTab+scripting+storage",
 );
-assert(!("host_permissions" in manifest), "source providers must not request broad host permissions");
+assert(
+  !("host_permissions" in manifest),
+  "source providers must not request broad host permissions",
+);
 assert(
   !("content_scripts" in manifest),
   "content script must be injected only after user action",
@@ -74,7 +78,10 @@ assert(
 
 const popup = await readFile(`${outputRoot}/popup.html`, "utf8");
 const options = await readFile(`${outputRoot}/options.html`, "utf8");
-assert(popup.includes('type="module" src="runtime/popup.js"'), "popup module entrypoint missing");
+assert(
+  popup.includes('type="module" src="runtime/popup.js"'),
+  "popup module entrypoint missing",
+);
 assert(
   options.includes('type="module" src="runtime/options.js"'),
   "options module entrypoint missing",
@@ -84,7 +91,10 @@ const runtimeFiles = await walkJsFiles(`${outputRoot}/runtime`);
 for (const file of runtimeFiles) {
   const source = await readFile(`${outputRoot}/runtime/${file}`, "utf8");
   assert(!/https?:\/\//i.test(source), `remote code URL found in runtime/${file}`);
-  assert(!/from\s+["']@w2f\//.test(source), `unresolved @w2f runtime import found in runtime/${file}`);
+  assert(
+    !/from\s+["']@w2f\//.test(source),
+    `unresolved @w2f runtime import found in runtime/${file}`,
+  );
 }
 
 const sourceRuntime = await readFile(`${outputRoot}/runtime/source-runtime.js`, "utf8");

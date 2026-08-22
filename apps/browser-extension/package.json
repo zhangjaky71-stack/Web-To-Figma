@@ -11,8 +11,10 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@w2f/capture-core": "workspace:*",
     "@w2f/source-providers": "workspace:*",
     "@w2f/stable-identity": "workspace:*",
+    "@w2f/standard-capture-adapter": "workspace:*",
     "@w2f/w2f-ir": "workspace:*",
     "@w2f/w2f-schema": "workspace:*"
   },

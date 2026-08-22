@@ -43,7 +43,9 @@ async function startShellJob(mode: CaptureJobMode): Promise<CaptureJobState> {
     const sourceResolution = await resolveActiveTabSource();
     const { capability, descriptor, tabId } = sourceResolution;
     if (!capability.available || !descriptor) {
-      const action = capability.requiredUserAction ? `; action required: ${capability.requiredUserAction}` : "";
+      const action = capability.requiredUserAction
+        ? `; action required: ${capability.requiredUserAction}`
+        : "";
       throw new Error(`${capability.reason}${action}`);
     }
 

@@ -250,7 +250,8 @@ if (failures.length === 0) {
 
   const sourceProviders = readJson("packages/source-providers/package.json");
   assert(
-    sourceProviders.exports?.["."] === "./dist/index.js" && sourceProviders.types === "./dist/index.d.ts",
+    sourceProviders.exports?.["."] === "./dist/index.js" &&
+      sourceProviders.types === "./dist/index.d.ts",
     "source-providers package export/types contract drifted",
   );
   const sourceProviderIndex = readText("packages/source-providers/src/index.ts");
@@ -260,7 +261,10 @@ if (failures.length === 0) {
     "local-folder-provider",
     "registry",
   ]) {
-    assert(sourceProviderIndex.includes(contract), `source-providers index must export ${contract}`);
+    assert(
+      sourceProviderIndex.includes(contract),
+      `source-providers index must export ${contract}`,
+    );
   }
 
   const sharedUtils = readJson("packages/shared-utils/package.json");

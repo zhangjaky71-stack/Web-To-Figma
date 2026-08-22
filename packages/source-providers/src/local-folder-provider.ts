@@ -31,13 +31,19 @@ function normalizedEntries(entries: readonly LocalFolderEntry[]): Map<string, Lo
 }
 
 function getSelectionError(input: LocalFolderInput): string | null {
-  if (!input.rootId?.trim() || !input.rootName?.trim() || !input.documentPath?.trim() || !input.entries) {
+  if (
+    !input.rootId?.trim() ||
+    !input.rootName?.trim() ||
+    !input.documentPath?.trim() ||
+    !input.entries
+  ) {
     return "A local folder root, entry document, and file list must be selected";
   }
   try {
     const entries = normalizedEntries(input.entries);
     const documentPath = normalizeLocalRelativePath(input.documentPath);
-    if (!entries.has(documentPath)) return `Selected document is not present in the local folder: ${documentPath}`;
+    if (!entries.has(documentPath))
+      return `Selected document is not present in the local folder: ${documentPath}`;
   } catch (error) {
     return error instanceof Error ? error.message : String(error);
   }
@@ -54,11 +60,16 @@ function joinLocalReference(documentPath: string, referencePath: string): string
   return normalizeLocalRelativePath(`${baseDirectory}${referencePath}`);
 }
 
-export class LocalFolderProvider implements SourceProvider<LocalFolderInput, OpenLocalFolderSource> {
+export class LocalFolderProvider implements SourceProvider<
+  LocalFolderInput,
+  OpenLocalFolderSource
+> {
   readonly kind = "local-folder" as const;
 
   getCapability(input: LocalFolderInput): SourceCapability {
-    const hasAnySelection = Boolean(input.rootId || input.rootName || input.documentPath || input.entries);
+    const hasAnySelection = Boolean(
+      input.rootId || input.rootName || input.documentPath || input.entries,
+    );
     if (!hasAnySelection) {
       return {
         provider: this.kind,
@@ -136,7 +147,11 @@ export class LocalFolderProvider implements SourceProvider<LocalFolderInput, Ope
     const relativePath = joinLocalReference(source.documentPath, path);
     return {
       input: reference,
-      locator: buildLocalFolderLocator(source.descriptor.sourceKey!.slice("local-folder:".length), relativePath, suffix),
+      locator: buildLocalFolderLocator(
+        source.descriptor.sourceKey!.slice("local-folder:".length),
+        relativePath,
+        suffix,
+      ),
       scheme: "local-folder:",
       kind: "local-folder",
       resolvable: true,

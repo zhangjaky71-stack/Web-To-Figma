@@ -62,7 +62,10 @@ export class FileTabProvider implements SourceProvider<FileTabInput> {
 
   resolveReference(reference: string, source: SourceDescriptor): ResolvedSourceReference {
     if (source.provider !== this.kind || source.sourceType !== "file" || !source.sourceUrl) {
-      throw new SourceProviderError("invalid-reference", "FileTabProvider received an incompatible source descriptor");
+      throw new SourceProviderError(
+        "invalid-reference",
+        "FileTabProvider received an incompatible source descriptor",
+      );
     }
     return resolveUrlReference(reference, source.baseLocator);
   }

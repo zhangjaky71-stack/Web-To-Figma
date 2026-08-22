@@ -4,12 +4,7 @@ export type SourceProviderKind = "http-page" | "file-tab" | "local-folder";
 export type SourceDocumentType = "http" | "file" | "local-folder";
 export type SourceUserAction = "enable-file-url-access" | "choose-local-folder";
 export type SourceReferenceKind =
-  | "network"
-  | "file"
-  | "local-folder"
-  | "inline"
-  | "blob"
-  | "unsupported";
+  "network" | "file" | "local-folder" | "inline" | "blob" | "unsupported";
 
 export interface SourceCapability {
   provider: SourceProviderKind;
@@ -85,10 +80,7 @@ export interface SourceProvider<TInput, TOpened = SourceDescriptor> {
 export class SourceProviderError extends Error {
   readonly code: SourceCapability["code"] | "invalid-reference" | "path-escapes-root";
 
-  constructor(
-    code: SourceProviderError["code"],
-    message: string,
-  ) {
+  constructor(code: SourceProviderError["code"], message: string) {
     super(message);
     this.name = "SourceProviderError";
     this.code = code;

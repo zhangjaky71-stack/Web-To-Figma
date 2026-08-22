@@ -69,10 +69,16 @@ export function resolveUrlReference(reference: string, baseUrl: string): Resolve
 export function normalizeLocalRelativePath(input: string): string {
   const normalizedInput = input.replaceAll("\\", "/").trim();
   if (!normalizedInput || normalizedInput.includes("\0")) {
-    throw new SourceProviderError("invalid-reference", "Local path must be non-empty and contain no NUL bytes");
+    throw new SourceProviderError(
+      "invalid-reference",
+      "Local path must be non-empty and contain no NUL bytes",
+    );
   }
   if (normalizedInput.startsWith("/") || /^[A-Za-z]:\//.test(normalizedInput)) {
-    throw new SourceProviderError("path-escapes-root", `Absolute local path is not allowed: ${input}`);
+    throw new SourceProviderError(
+      "path-escapes-root",
+      `Absolute local path is not allowed: ${input}`,
+    );
   }
 
   const stack: string[] = [];
@@ -80,7 +86,10 @@ export function normalizeLocalRelativePath(input: string): string {
     if (!segment || segment === ".") continue;
     if (segment === "..") {
       if (stack.length === 0) {
-        throw new SourceProviderError("path-escapes-root", `Local path escapes selected root: ${input}`);
+        throw new SourceProviderError(
+          "path-escapes-root",
+          `Local path escapes selected root: ${input}`,
+        );
       }
       stack.pop();
       continue;
@@ -89,7 +98,10 @@ export function normalizeLocalRelativePath(input: string): string {
   }
 
   if (stack.length === 0) {
-    throw new SourceProviderError("invalid-reference", `Local path resolves to an empty path: ${input}`);
+    throw new SourceProviderError(
+      "invalid-reference",
+      `Local path resolves to an empty path: ${input}`,
+    );
   }
   return stack.join("/");
 }

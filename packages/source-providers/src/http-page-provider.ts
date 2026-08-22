@@ -51,7 +51,10 @@ export class HttpPageProvider implements SourceProvider<HttpPageInput> {
 
   resolveReference(reference: string, source: SourceDescriptor): ResolvedSourceReference {
     if (source.provider !== this.kind || source.sourceType !== "http" || !source.sourceUrl) {
-      throw new SourceProviderError("invalid-reference", "HttpPageProvider received an incompatible source descriptor");
+      throw new SourceProviderError(
+        "invalid-reference",
+        "HttpPageProvider received an incompatible source descriptor",
+      );
     }
     return resolveUrlReference(reference, source.baseLocator);
   }

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   getBrowserExtensionAppId,
   getBrowserExtensionShellVersion,
+  getBrowserSourceProvidersVersion,
   getBrowserStableIdentityAlgorithmVersion,
   getBrowserWtfIrVersion,
   getBrowserWtfSchemaVersion,
@@ -22,6 +23,10 @@ describe("browser extension foundation", () => {
 
   it("uses the shared NODE-04 stable identity algorithm", () => {
     expect(getBrowserStableIdentityAlgorithmVersion()).toBe("1.0.0");
+  });
+
+  it("uses the shared NODE-06 source-provider contract", () => {
+    expect(getBrowserSourceProvidersVersion()).toBe("1.0.0");
   });
 
   it("exposes the NODE-05 browser shell version", () => {

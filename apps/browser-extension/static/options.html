@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Web-To-Figma Capture · Details</title>
+    <link rel="stylesheet" href="shell.css" />
+  </head>
+  <body class="options-shell">
+    <main class="options-panel">
+      <p class="eyebrow">W2F Capture</p>
+      <h1>Extension shell details</h1>
+      <p class="details">
+        NODE-05 establishes the Manifest V3 runtime, message protocol, content bridge and persistent job
+        state. Capture providers and page extraction are implemented by later nodes.
+      </p>
+
+      <section class="info-card">
+        <h2>Runtime</h2>
+        <p id="shell-version">Loading…</p>
+      </section>
+
+      <section class="info-card">
+        <h2>Permission boundary</h2>
+        <p id="permission-summary">Loading…</p>
+      </section>
+
+      <section class="info-card">
+        <h2>Last shell job</h2>
+        <p id="job-summary">Loading…</p>
+      </section>
+
+      <button id="refresh-status" class="primary" type="button">Refresh status</button>
+    </main>
+    <script type="module" src="runtime/options.js"></script>
+  </body>
+</html>

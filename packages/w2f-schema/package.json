@@ -7,6 +7,10 @@
     ".": {
       "types": "./src/index.ts",
       "default": "./dist/index.js"
+    },
+    "./frame-context": {
+      "types": "./src/frame-context.ts",
+      "default": "./dist/frame-context.js"
     }
   },
   "types": "./src/index.ts",

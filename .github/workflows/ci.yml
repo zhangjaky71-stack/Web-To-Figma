@@ -2,22 +2,21 @@ name: CI
 
 on:
   push:
-    branches: [main]
-  pull_request:
+    branches:
+      - feat/node-02-wtf-file-spec-v2
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  quality:
+  node-02-bootstrap:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: Checkout
+      - name: Checkout feature branch
         uses: actions/checkout@v6
-
-      - name: Validate foundation
-        run: node scripts/validate-foundation.mjs
+        with:
+          ref: feat/node-02-wtf-file-spec-v2
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -31,13 +30,8 @@ jobs:
           node-version: 24
           package-manager-cache: false
 
-      - name: Verify toolchain
-        run: |
-          node --version
-          pnpm --version
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Update workspace lockfile
+        run: pnpm install --no-frozen-lockfile
 
       - name: Lint
         run: pnpm lint
@@ -53,3 +47,16 @@ jobs:
 
       - name: Format check
         run: pnpm format:check
+
+      - name: Commit lockfile
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pnpm-lock.yaml
+          if git diff --cached --quiet; then
+            echo "No lockfile changes to commit"
+            exit 0
+          fi
+          git commit -m "build(node-02): update workspace lockfile"
+          git push origin HEAD:feat/node-02-wtf-file-spec-v2

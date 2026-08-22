@@ -42,6 +42,7 @@ export interface RawNode {
   geometry?: RawGeometry;
   visibility?: RawVisibilityEvidence;
   textContent?: string;
+  paintOrder?: number;
 }
 
 export interface RawFrameRecord {
@@ -64,10 +65,31 @@ export type RawCaptureTarget =
       exclusions: RawCaptureExclusion[];
     };
 
+export interface RawLayoutMetricsEvidence {
+  contentSize?: Rect;
+  layoutViewport?: {
+    pageX: number;
+    pageY: number;
+    clientWidth: number;
+    clientHeight: number;
+  };
+  visualViewport?: {
+    offsetX: number;
+    offsetY: number;
+    pageX: number;
+    pageY: number;
+    clientWidth: number;
+    clientHeight: number;
+    scale: number;
+    zoom?: number;
+  };
+}
+
 export interface RawCaptureEnvironment {
   viewportWidth: number;
   viewportHeight: number;
   scale: ScaleContextEvidence;
+  layoutMetrics?: RawLayoutMetricsEvidence;
 }
 
 export interface RawCaptureDiagnostic {

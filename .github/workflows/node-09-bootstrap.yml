@@ -88,6 +88,24 @@ jobs:
             '    "capturePreferredDom",\n',
           );
           writeFileSync(node08Path, node08, "utf8");
+
+          const node09Path = "scripts/validate-node-09.mjs";
+          let node09 = readFileSync(node09Path, "utf8");
+          node09 = node09.replace('    "chrome.debugger.attach",\n', '    "api.attach",\n');
+          node09 = node09.replace('    "chrome.debugger.detach",\n', '    "api.detach",\n');
+          node09 = replaceRequired(
+            node09,
+            '  assert(cdpRuntime.includes("finally"), "CDP debugger detach must be protected by finally");',
+            '  assert(cdpRuntime.includes("debuggerApi") && cdpRuntime.includes("finally"), "CDP debugger API must be locally typed and detach protected by finally");',
+            "typed debugger foundation assertion",
+          );
+          writeFileSync(node09Path, node09, "utf8");
+
+          const packageGatePath = "apps/browser-extension/scripts/validate-extension-package.mjs";
+          let packageGate = readFileSync(packageGatePath, "utf8");
+          packageGate = packageGate.replace('  "chrome.debugger.attach",\n', '  "api.attach",\n');
+          packageGate = packageGate.replace('  "chrome.debugger.detach",\n', '  "api.detach",\n');
+          writeFileSync(packageGatePath, packageGate, "utf8");
           NODE
 
       - name: Apply canonical formatting

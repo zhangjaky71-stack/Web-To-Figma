@@ -16,6 +16,7 @@ import {
   type W2fShellRequest,
   type W2fShellResponse,
 } from "./protocol.js";
+import { resolveActiveTabSource } from "./source-runtime.js";
 
 const SHELL_INFO: W2fShellInfo = {
   shellVersion: W2F_EXTENSION_SHELL_VERSION,
@@ -33,21 +34,23 @@ async function writeJobState(job: CaptureJobState): Promise<void> {
   await chrome.storage.local.set({ [W2F_JOB_STORAGE_KEY]: job });
 }
 
-async function getActiveTabId(): Promise<number> {
-  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-  const tabId = tabs[0]?.id;
-  if (typeof tabId !== "number") throw new Error("No active browser tab is available");
-  return tabId;
-}
-
 async function startShellJob(mode: CaptureJobMode): Promise<CaptureJobState> {
   const jobId = crypto.randomUUID();
   let job = createCaptureJob(mode, jobId);
   await writeJobState(job);
 
   try {
-    const tabId = await getActiveTabId();
-    job = transitionCaptureJob(job, "running", "injecting-content-shell", new Date(), { tabId });
+    const sourceResolution = await resolveActiveTabSource();
+    const { capability, descriptor, tabId } = sourceResolution;
+    if (!capability.available || !descriptor) {
+      const action = capability.requiredUserAction ? `; action required: ${capability.requiredUserAction}` : "";
+      throw new Error(`${capability.reason}${action}`);
+    }
+
+    job = transitionCaptureJob(job, "running", "injecting-content-shell", new Date(), {
+      tabId,
+      source: descriptor,
+    });
     await writeJobState(job);
 
     await chrome.scripting.executeScript({
@@ -66,6 +69,7 @@ async function startShellJob(mode: CaptureJobMode): Promise<CaptureJobState> {
 
     job = transitionCaptureJob(job, "completed", "shell-probe-complete", new Date(), {
       tabId,
+      source: descriptor,
       page: response.page,
     });
     await writeJobState(job);
@@ -92,6 +96,8 @@ async function handleShellRequest(request: W2fShellRequest): Promise<W2fShellRes
   switch (request.type) {
     case "W2F_GET_SHELL_INFO":
       return shellSuccess(request.type, SHELL_INFO);
+    case "W2F_GET_SOURCE_CAPABILITY":
+      return shellSuccess(request.type, (await resolveActiveTabSource()).capability);
     case "W2F_GET_JOB_STATE":
       return shellSuccess(request.type, await readJobState());
     case "W2F_START_JOB":

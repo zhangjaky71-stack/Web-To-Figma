@@ -2,7 +2,7 @@
 
 ## Status
 
-**IN PROGRESS — implementation and contract audit complete; final read-only CI / merge pending**
+**DONE / PASS — final standard read-only frozen-lockfile CI passed; PR #12 ready to merge**
 
 ## Goal
 
@@ -79,7 +79,7 @@ This closes the V2.1 iframe/origin isolation gap before NODE-09.
 
 ### Scale model
 
-Schema now distinguishes:
+Schema distinguishes:
 
 ```text
 devicePixelRatio
@@ -114,7 +114,7 @@ Browser shell protocol advanced to:
 1.2.0
 ```
 
-`captureImplemented` and `standardCaptureImplemented` are now true.
+`captureImplemented` and `standardCaptureImplemented` are true.
 
 Full Page runs the Standard DOM adapter instead of the old page-probe-only shell path.
 
@@ -177,7 +177,33 @@ Added/updated:
 
 The controlled bootstrap successfully ran full `pnpm check` and committed the authoritative 10-workspace lockfile. A later controlled contract patch also ran full `pnpm check` before writing FrameContext/ScaleContext finalization.
 
-Both temporary write-enabled workflows have been removed.
+All temporary write-enabled workflows have been removed.
+
+## Final validation
+
+Final standard read-only GitHub Actions run:
+
+```text
+32582370051
+```
+
+validated commit:
+
+```text
+4dc6ccc369dc9f332dd4119e2324e873e6127603
+```
+
+Every formal gate passed:
+
+- dependency-free foundation validation, including NODE-08 contract invariants;
+- Node.js 24 / pnpm 11.22.0;
+- `pnpm install --frozen-lockfile`;
+- ESLint;
+- TypeScript 6.0.3 typecheck;
+- full repository Vitest suite;
+- deterministic Browser extension build;
+- Browser package/runtime validator;
+- pinned Prettier 3.9.6 format check.
 
 ## Definition of Done
 
@@ -206,9 +232,9 @@ Both temporary write-enabled workflows have been removed.
 - [x] least-privilege Standard permission boundary
 - [x] authoritative lockfile updated
 - [x] temporary write-enabled workflows removed
-- [x] implementation lint/typecheck/tests/build/format passed during controlled validation
-- [ ] final standard read-only frozen-lockfile CI passes with normative docs
-- [ ] final validation evidence written back to status
+- [x] implementation lint/typecheck/tests/build/format passed
+- [x] final standard read-only frozen-lockfile CI passes with normative docs
+- [x] final validation evidence written back to status
 - [ ] PR #12 merged
 
 ## Explicit non-goals
@@ -228,12 +254,7 @@ Those remain later NODEs.
 
 ## Exit rule
 
-Do not begin NODE-09 implementation until:
-
-1. temporary write workflows are absent;
-2. the final NODE-08 branch passes standard read-only `pnpm install --frozen-lockfile` CI;
-3. NODE-08 status/docs reflect that run;
-4. PR #12 is merged.
+NODE-09 implementation begins only after PR #12 is merged into `main`.
 
 ## Next
 

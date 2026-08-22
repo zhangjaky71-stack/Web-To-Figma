@@ -19,6 +19,8 @@ export interface PageProbe {
 export interface CaptureSnapshotReceipt extends RawSnapshotSummary {
   storageKey: string;
   capturedAt: string;
+  referenceScreenshotKey?: string;
+  fallbackFromCdp?: boolean;
 }
 
 export interface CaptureJobState {
@@ -71,7 +73,10 @@ function isCaptureSnapshotReceipt(value: unknown): value is CaptureSnapshotRecei
     typeof record.storageKey === "string" &&
     record.storageKey.length > 0 &&
     typeof record.capturedAt === "string" &&
-    !Number.isNaN(Date.parse(record.capturedAt))
+    !Number.isNaN(Date.parse(record.capturedAt)) &&
+    (record.referenceScreenshotKey === undefined ||
+      (typeof record.referenceScreenshotKey === "string" && record.referenceScreenshotKey.length > 0)) &&
+    (record.fallbackFromCdp === undefined || typeof record.fallbackFromCdp === "boolean")
   );
 }
 

@@ -2,13 +2,13 @@
 
 ## Status
 
-**IN PROGRESS — implementation and bootstrap validation complete; final frozen-lockfile CI pending**
+**DONE — PASS**
 
 ## Goal
 
 Implement the deterministic stable identity and cross-capture source mapping layer reserved by V2/V2.1 and NODE-03.
 
-NODE-04 must make repeated captures correlatable without treating volatile browser/framework runtime IDs as stable truth.
+NODE-04 makes repeated captures correlatable without treating volatile browser/framework runtime IDs as stable truth.
 
 ## Implemented package
 
@@ -22,7 +22,7 @@ Shared algorithm version:
 1.0.0
 ```
 
-The package depends on the shared NODE-02/NODE-03 contracts:
+Dependencies:
 
 ```text
 @w2f/w2f-schema
@@ -33,42 +33,26 @@ The package depends on the shared NODE-02/NODE-03 contracts:
 
 ### Document identity
 
-Implemented normalized logical source locators for:
+Normalized logical source locators are implemented for HTTP, file, local-folder and opaque source keys.
 
-```text
-http
-file
-local-folder
-unknown/opaque source key
-```
+HTTP normalization removes credentials, fragments and tracking parameters while deterministically sorting retained query parameters.
 
-HTTP normalization removes credentials, fragments and tracking parameters while sorting retained query parameters.
-
-`documentId` is derived from the normalized locator.
-
-`sourceFingerprint` additionally accepts root structural evidence.
+`documentId` is derived from the normalized locator. `sourceFingerprint` additionally accepts root structural evidence.
 
 ### Capture identity
 
-`captureId` is derived from:
-
-- document ID;
-- canonical timestamp;
-- capture nonce.
-
-Repeated captures therefore preserve document identity while receiving distinct capture identities.
+`captureId` is derived from document ID, canonical timestamp and capture nonce. Repeated captures preserve document identity while receiving distinct capture identities.
 
 ### Revision identity
 
-Implemented deterministic `revisionId` generation with optional `parentRevisionId`, producing a NODE-02-compatible manifest identity object.
+Deterministic `revisionId` generation supports optional `parentRevisionId` and produces a NODE-02-compatible manifest identity object.
 
 ## Stable node signal normalization
 
-Implemented normalized evidence for:
+Normalized evidence includes:
 
 - source/document scope;
-- namespace/tag;
-- semantic role;
+- namespace/tag and semantic role;
 - stable HTML `id` when accepted;
 - selected stable `data-*` attributes;
 - meaningful class signature;
@@ -77,20 +61,9 @@ Implemented normalized evidence for:
 - asset fingerprints;
 - structural sibling/document position.
 
-## Volatile signal rejection
+Volatile React/Radix/Headless UI/hydration IDs, UUID-like values, timestamps/long digits, hash-like values, unstable framework data attributes, CSS Module hashes, generic utility classes and Tailwind-like utility tokens are filtered before hashing.
 
-Implemented rejection/filtering for:
-
-- React/Radix/Headless UI/hydration-style generated IDs;
-- UUID-like values;
-- long numeric/timestamp-like values;
-- hash-like values;
-- framework-generated unstable `data-*` values;
-- CSS Module hash-like classes;
-- generic layout utility classes;
-- Tailwind-like utility tokens.
-
-## Confidence and evidence
+## Confidence and collision handling
 
 Every assignment writes:
 
@@ -102,17 +75,9 @@ signatureHash
 normalized signals
 ```
 
-High-value semantic attributes increase confidence.
+High-value semantic evidence increases confidence. Structural-only fallback is capped at lower confidence.
 
-Structural-only fallback is capped at lower confidence. Same-capture collision disambiguation also lowers confidence and records explicit evidence.
-
-## Collision handling
-
-`assignStableIdentities` detects duplicate base stable IDs within one capture.
-
-Colliding nodes are deterministically separated with semantic ancestry plus structural position.
-
-If candidates still cannot be deterministically separated, the engine throws rather than using input-array order.
+`assignStableIdentities` detects duplicate base stable IDs within one capture. Colliding nodes are deterministically separated with semantic ancestry plus structural position and their confidence is reduced. If candidates still cannot be separated deterministically, the engine throws rather than using input-array order.
 
 ## Cross-capture mapping
 
@@ -133,8 +98,6 @@ ambiguous
 
 Duplicate stable IDs on either side are reported as `ambiguous`; they are never silently zipped by order.
 
-Mapping output includes previous/current capture node IDs and conservative confidence.
-
 ## Source Graph integration
 
 Implemented:
@@ -144,37 +107,21 @@ applyStableIdentityAssignments
 toStableMappedNodes
 ```
 
-Assignments are applied immutably to NODE-03 `WtfSourceNode.stableIdentity`.
-
-The result explicitly reports:
-
-```text
-unmappedCaptureNodeIds
-unusedAssignments
-```
+Assignments are applied immutably to NODE-03 `WtfSourceNode.stableIdentity` and explicitly report unmapped capture IDs plus unused assignments.
 
 ## Browser integration
 
-Browser Extension now depends on:
+Browser Extension depends on:
 
 ```text
 @w2f/stable-identity: workspace:*
 ```
 
-and exposes `STABLE_IDENTITY_ALGORITHM_VERSION` through its foundation integration test.
-
-Later capture nodes must reuse this package rather than duplicate stable identity logic.
+and exposes `STABLE_IDENTITY_ALGORITHM_VERSION` through its integration test. Later capture nodes must reuse this package rather than duplicate stable identity logic.
 
 ## Tests
 
-Implemented:
-
-```text
-packages/stable-identity/test/identity.test.ts
-packages/stable-identity/test/mapping.test.ts
-```
-
-Coverage includes:
+`packages/stable-identity/test/identity.test.ts` and `mapping.test.ts` cover:
 
 - tracking-only URL drift;
 - normalized document identity;
@@ -193,25 +140,34 @@ Coverage includes:
 
 ## Bootstrap validation
 
-The first real NODE-04 cloud run passed lint and exposed one strict TypeScript `exactOptionalPropertyTypes` incompatibility in normalized optional signal fields.
+The first cloud run exposed one strict TypeScript `exactOptionalPropertyTypes` incompatibility. The normalized signal type was corrected without weakening strict TypeScript settings.
 
-The internal normalized signal type was made explicit without disabling strict TypeScript settings. Fixtures were also kept exact-optional-safe.
-
-The subsequent bootstrap run passed:
-
-- workspace lockfile update;
-- pinned Prettier formatting;
-- lint;
-- TypeScript 6.0.3 typecheck;
-- Vitest;
-- build;
-- format check.
-
-The push-triggered bootstrap wrote canonical formatting and the authoritative workspace lockfile back to the branch. PR head advanced to:
+The subsequent bootstrap passed workspace lockfile update, pinned Prettier formatting, lint, TypeScript 6.0.3 typecheck, Vitest, build and format check. The push-triggered bootstrap committed canonical formatting and the authoritative workspace lockfile; the generated branch head was:
 
 ```text
 c94a98c94aa5fe55670fb77653b78f415a1cb4aa
 ```
+
+## Formal frozen-lockfile validation
+
+The temporary bootstrap workflow was removed and the standard read-only workflow restored with:
+
+```text
+pnpm install --frozen-lockfile
+```
+
+GitHub Actions run `32566068160` completed successfully on commit `d7882c58deecfdfffa6b6d2187dddcee58c5e5b9`.
+
+Passed gates:
+
+- foundation validation: **PASS**;
+- Node.js 24 / pnpm 11.22.0: **PASS**;
+- frozen-lockfile install: **PASS**;
+- lint: **PASS**;
+- TypeScript 6.0.3 typecheck: **PASS**;
+- Vitest: **PASS**;
+- build: **PASS**;
+- Prettier format check: **PASS**.
 
 ## Normative documentation
 
@@ -239,16 +195,16 @@ c94a98c94aa5fe55670fb77653b78f415a1cb4aa
 - [x] Browser consumes shared identity package
 - [x] authoritative lockfile/format bootstrap completed
 - [x] NODE-04 normative docs/ADR written
-- [ ] standard read-only frozen-lockfile CI restored
-- [ ] final frozen-lockfile CI passes on completed NODE-04 head
+- [x] standard read-only frozen-lockfile CI restored
+- [x] frozen-lockfile CI passes
 
 ## Exit rule
 
-NODE-04 becomes DONE only after the temporary bootstrap workflow is removed, the normal read-only `pnpm install --frozen-lockfile` workflow is restored, and the complete branch passes all formal gates.
+Satisfied. NODE-04 is complete.
 
 ## Next
 
-After completion proceed to:
+Proceed to:
 
 ```text
 NODE-05 — Browser Extension Shell

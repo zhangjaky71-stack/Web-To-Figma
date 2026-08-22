@@ -13,6 +13,10 @@ function isFiniteNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
 
+function isPositiveFiniteNumber(value: unknown): value is number {
+  return isFiniteNumber(value) && value > 0;
+}
+
 function isNonNegativeFiniteNumber(value: unknown): value is number {
   return isFiniteNumber(value) && value >= 0;
 }
@@ -52,6 +56,29 @@ function isFrameContext(value: unknown): boolean {
     if (candidate !== undefined && !isNonEmptyString(candidate)) return false;
   }
   return true;
+}
+
+function isScaleContext(value: unknown): boolean {
+  if (!isRecord(value) || !isPositiveFiniteNumber(value.devicePixelRatio)) return false;
+  for (const field of ["browserPageZoom", "cssZoom", "visualViewportScale"] as const) {
+    const candidate = value[field];
+    if (candidate !== undefined && !isPositiveFiniteNumber(candidate)) return false;
+  }
+  return true;
+}
+
+function isScaleAvailability(value: unknown): boolean {
+  return value === "observed" || value === "unavailable" || value === "not-applicable";
+}
+
+function isScaleEvidence(value: unknown): boolean {
+  if (!isRecord(value) || !isScaleContext(value.context)) return false;
+  return (
+    isScaleAvailability(value.browserPageZoomAvailability) &&
+    isScaleAvailability(value.cssZoomAvailability) &&
+    Array.isArray(value.reasons) &&
+    value.reasons.every((reason) => typeof reason === "string")
+  );
 }
 
 function isRawCaptureTarget(value: unknown): boolean {
@@ -117,8 +144,9 @@ function isRawNode(value: unknown): boolean {
   if (value.textContent !== undefined && typeof value.textContent !== "string") return false;
   if (value.source.attributes !== undefined) {
     if (!isRecord(value.source.attributes)) return false;
-    if (!Object.values(value.source.attributes).every((item) => typeof item === "string"))
+    if (!Object.values(value.source.attributes).every((item) => typeof item === "string")) {
       return false;
+    }
   }
   return true;
 }
@@ -148,11 +176,7 @@ export function isRawSnapshot(value: unknown): value is RawSnapshot {
     !isRecord(value.environment) ||
     !isNonNegativeFiniteNumber(value.environment.viewportWidth) ||
     !isNonNegativeFiniteNumber(value.environment.viewportHeight) ||
-    !isFiniteNumber(value.environment.devicePixelRatio) ||
-    value.environment.devicePixelRatio <= 0 ||
-    (value.environment.visualViewportScale !== undefined &&
-      (!isFiniteNumber(value.environment.visualViewportScale) ||
-        value.environment.visualViewportScale <= 0)) ||
+    !isScaleEvidence(value.environment.scale) ||
     !Array.isArray(value.nodes) ||
     !Array.isArray(value.frames) ||
     !Array.isArray(value.scrollContainers) ||
@@ -252,8 +276,9 @@ export function isRawSnapshot(value: unknown): value is RawSnapshot {
   for (const item of value.scrollContainers) {
     if (!isRecord(item)) return false;
     const parent = item.parentScrollContainerId;
-    if (parent !== undefined && (!isNonEmptyString(parent) || !scrollNodeIds.has(parent)))
+    if (parent !== undefined && (!isNonEmptyString(parent) || !scrollNodeIds.has(parent))) {
       return false;
+    }
   }
 
   for (const diagnostic of value.diagnostics) {

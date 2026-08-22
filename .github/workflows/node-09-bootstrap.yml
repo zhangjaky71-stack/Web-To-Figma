@@ -124,6 +124,12 @@ jobs:
           let packageGate = readFileSync(packageGatePath, "utf8");
           packageGate = packageGate.replace('  "chrome.debugger.attach",\n', '  "api.attach",\n');
           packageGate = packageGate.replace('  "chrome.debugger.detach",\n', '  "api.detach",\n');
+          packageGate = replaceRequired(
+            packageGate,
+            `assert(\n  cdpNormalizer.includes('from "../capture-core/index.js"'),\n  "nested CDP adapter must resolve capture-core through a package-relative import",\n);\n`,
+            `assert(\n  !cdpNormalizer.includes("@w2f/"),\n  "nested CDP adapter must not contain unresolved workspace imports",\n);\n`,
+            "type-only CDP capture-core import validation",
+          );
           writeFileSync(packageGatePath, packageGate, "utf8");
           NODE
 

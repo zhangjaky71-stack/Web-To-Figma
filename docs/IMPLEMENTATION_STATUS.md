@@ -19,8 +19,8 @@
 | 06 | Source Providers & Offline | DONE | Source-provider/runtime/package + frozen-lockfile GitHub Actions PASS | PR #10 merged |
 | 07 | Region Selector & Redaction | DONE | Region interaction/runtime/package + frozen-lockfile GitHub Actions PASS | PR #11 merged |
 | 08 | Standard DOM Capture | DONE | RawSnapshot/Standard capture/runtime/package + frozen-lockfile GitHub Actions PASS | PR #12 merged |
-| 09 | CDP High Fidelity Adapter | IN PROGRESS | - | branch `feat/node-09-cdp-high-fidelity-adapter` |
-| 10 | Text / Inline / Pseudo Capture | TODO | - | - |
+| 09 | CDP High Fidelity Adapter | DONE | CDP/dual-profile/runtime/package + frozen-lockfile GitHub Actions PASS | PR #13 ready after final docs CI |
+| 10 | Text / Inline / Pseudo Capture | NEXT | - | - |
 | 11 | CSS Cascade & Authored Semantics | TODO | - | - |
 | 12 | Media / Container / Environment Capture | TODO | - | - |
 | 13 | Asset Resolver | TODO | - | - |
@@ -45,72 +45,109 @@
 
 ## Current Node
 
-`NODE-09 — CDP High Fidelity Adapter`
+`NODE-10 — Text / Inline / Pseudo Capture`
 
-NODE-09 starts from merged NODE-08 `main` commit:
+> NODE-10 implementation begins only after PR #13 is merged into `main`.
+
+## NODE-09 Completion
+
+NODE-09 implements the optional Chrome DevTools Protocol High Fidelity capture path while keeping NODE-08 Standard capture as the least-privilege default/fallback and preserving one shared RawSnapshot boundary.
+
+Delivered:
+
+- `@w2f/cdp-capture-adapter`;
+- Chrome debugger attach/sendCommand/detach runtime;
+- `DOMSnapshot.captureSnapshot` with paint-order and DOM-rect evidence;
+- `Page.getLayoutMetrics`;
+- `Page.getFrameTree`;
+- `Page.captureScreenshot`;
+- separate DPR, browser-page-zoom and visual-viewport evidence;
+- backend node ID and paint-order RawSnapshot evidence;
+- frame-aware normalization and unavailable-frame diagnostics;
+- NODE-07 Region/Redact/Exclude integration;
+- explicit CDP-to-Standard fallback diagnostics;
+- reference screenshot IndexedDB persistence;
+- Standard and High Fidelity manifest/build isolation;
+- recursive Browser runtime import/package validation;
+- dependency-free NODE-09 foundation invariants.
+
+## Permission boundary
+
+Standard build remains:
 
 ```text
-7bd71bf95247148414b0eb49e580a297a3667a38
+activeTab
+scripting
+storage
 ```
 
-The adapter MUST normalize CDP evidence into the same `RawSnapshot` contract introduced by NODE-08. It must not introduce a parallel capture model.
-
-## NODE-08 Completion
-
-PR #12 was squash merged into `main` as:
+High Fidelity adds only:
 
 ```text
-7bd71bf95247148414b0eb49e580a297a3667a38
+debugger
 ```
 
-Final branch CI after status/docs update:
+Neither build adds broad host permissions or static content scripts.
+
+## NODE-09 Validation
+
+The temporary write-enabled bootstrap workflow has been removed. Generated `dist-high-fidelity/` output is excluded from Git.
+
+Final standard read-only code/security/build Exit Gate:
 
 ```text
-32583854755
+32586474296
 ```
 
-validated head:
+validated commit:
 
 ```text
-ec13b1b8d2bffd4581c3a417c85eef5f6c81c94e
+ef953d3a72f8a070c194423b7d22dd30e1f97737
 ```
 
-Every formal gate passed: foundation, Node 24/pnpm 11.22.0, frozen install, lint, TypeScript 6.0.3 typecheck, full tests, Browser build/package validation and Prettier 3.9.6.
+Every formal gate **PASS**:
 
-NODE-08 delivered:
+- NODE-08, NODE-09 and global dependency-free foundation validation;
+- Node.js 24 / pnpm 11.22.0;
+- `pnpm install --frozen-lockfile`;
+- ESLint;
+- TypeScript 6.0.3 strict typecheck;
+- full repository Vitest suite;
+- Standard Browser package build/validation;
+- High Fidelity Browser package build/validation;
+- pinned Prettier 3.9.6 format check.
 
-- shared adapter-neutral RawSnapshot;
-- Standard DOM capture;
-- FrameContext and IR frame preservation;
-- explicit ScaleContext evidence;
-- open Shadow DOM + composed mapping;
-- same-origin iframe traversal + inaccessible-frame diagnostics;
-- scroll-container evidence;
-- Region + Redact/Exclude integration;
-- privacy filtering;
-- Browser full-page/post-region capture;
-- IndexedDB RawSnapshot persistence;
-- Chrome-resolvable packaged capture runtime.
+Normative documentation:
 
-Normative docs:
+- `docs/CDP_HIGH_FIDELITY_ADAPTER_V2.md`;
+- `docs/adr/ADR-0009-cdp-high-fidelity-permission-and-raw-snapshot-boundary.md`;
+- `docs/nodes/NODE-09_CDP_HIGH_FIDELITY_ADAPTER.md`.
 
-- `docs/STANDARD_DOM_CAPTURE_V2.md`;
-- `docs/adr/ADR-0008-adapter-neutral-raw-snapshot-and-standard-capture.md`;
-- `docs/nodes/NODE-08_STANDARD_DOM_CAPTURE.md`.
+## NODE-09 Exit Criteria
 
-## NODE-09 Entry Conditions
-
-- [x] NODE-08 PR #12 merged
-- [x] NODE-08 RawSnapshot contract frozen for adapter normalization
-- [x] FrameContext available
-- [x] ScaleContext available
-- [x] Standard capture remains fallback path
-- [x] NODE-09 branch created from merged `main`
+- [x] same RawSnapshot contract for Standard/CDP
+- [x] CDP platform adapter with safe attach/detach
+- [x] DOMSnapshot/layout metrics/frame tree/screenshot evidence
+- [x] paint order/backend node evidence
+- [x] explicit ScaleContext evidence
+- [x] frame diagnostics without fabricated documents
+- [x] Region/Redact/Exclude semantics
+- [x] explicit Standard fallback
+- [x] screenshot IndexedDB persistence
+- [x] Standard/High Fidelity permission isolation
+- [x] dual-profile package validation
+- [x] authoritative 11-workspace lockfile
+- [x] temporary write-enabled workflow removed
+- [x] generated High Fidelity output excluded from Git
+- [x] standard read-only frozen-lockfile code Exit Gate passed
+- [x] normative documentation written
+- [ ] final docs/status-only standard CI passed
+- [ ] PR #13 merged
 
 ## Blockers
 
-None at NODE-09 entry.
+No implementation, security, test or build blocker remains. Only final docs/status CI and PR #13 merge remain before NODE-10.
 
 ## Next
 
-Implement NODE-09 CDP High Fidelity Adapter against the frozen V2/V2.1 NODE-09 requirements. Standard capture remains available as fallback and comparison evidence.
+Run the final docs/status-only standard CI, merge PR #13, then create NODE-10 from the merged `main` baseline and begin `Text / Inline / Pseudo Capture`.

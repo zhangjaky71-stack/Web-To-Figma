@@ -6,6 +6,8 @@ import {
 
 export interface ActiveTabSourceResolution {
   tabId: number;
+  tabUrl: string;
+  tabTitle?: string;
   capability: SourceCapability;
   descriptor?: SourceDescriptor;
 }
@@ -28,6 +30,8 @@ export async function resolveActiveTabSource(): Promise<ActiveTabSourceResolutio
 
   return {
     tabId: tab.id,
+    tabUrl: tab.url,
+    ...(tab.title === undefined ? {} : { tabTitle: tab.title }),
     capability: resolved.capability,
     ...(resolved.descriptor === undefined ? {} : { descriptor: resolved.descriptor }),
   };

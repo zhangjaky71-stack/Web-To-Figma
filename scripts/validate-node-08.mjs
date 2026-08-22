@@ -22,6 +22,7 @@ function readJson(path) {
 
 const requiredFiles = [
   "packages/w2f-schema/src/frame-context.ts",
+  "packages/w2f-schema/src/scale-context.ts",
   "packages/capture-core/package.json",
   "packages/capture-core/tsconfig.json",
   "packages/capture-core/tsconfig.build.json",
@@ -52,11 +53,40 @@ if (failures.length === 0) {
       schemaPackage.exports?.["./frame-context"]?.default === "./dist/frame-context.js",
     "w2f-schema must expose the frame-context contract",
   );
+  assert(
+    schemaPackage.exports?.["./scale-context"]?.types === "./src/scale-context.ts" &&
+      schemaPackage.exports?.["./scale-context"]?.default === "./dist/scale-context.js",
+    "w2f-schema must expose the scale-context contract",
+  );
 
   const frameContext = readText("packages/w2f-schema/src/frame-context.ts");
   for (const field of ["frameId", "parentFrameId", "origin", "url"]) {
     assert(frameContext.includes(field), `FrameContext missing ${field}`);
   }
+  const scaleContext = readText("packages/w2f-schema/src/scale-context.ts");
+  for (const field of [
+    "devicePixelRatio",
+    "browserPageZoom",
+    "cssZoom",
+    "visualViewportScale",
+    "browserPageZoomAvailability",
+    "cssZoomAvailability",
+  ]) {
+    assert(scaleContext.includes(field), `ScaleContext missing ${field}`);
+  }
+
+  const irTypes = readText("packages/w2f-ir/src/types.ts");
+  assert(
+    irTypes.includes('from "@w2f/w2f-schema/frame-context"') &&
+      irTypes.includes("frameContext?: FrameContext"),
+    "W2F IR SourceNode must preserve optional FrameContext",
+  );
+  const irValidation = readText("packages/w2f-ir/src/validation.ts");
+  assert(
+    irValidation.includes("validateFrameContext") &&
+      irValidation.includes("WTF_IR_FRAME_CONTEXT_INVALID"),
+    "W2F IR must validate captured FrameContext evidence",
+  );
 
   const captureCorePackage = readJson("packages/capture-core/package.json");
   assert(
@@ -68,6 +98,7 @@ if (failures.length === 0) {
     'RAW_SNAPSHOT_VERSION = "1.0.0"',
     'RawCaptureAdapter = "standard" | "cdp"',
     "frameContext: FrameContext",
+    "scale: ScaleContextEvidence",
     "scrollContainers: ScrollContainerInfo[]",
     "diagnostics: RawCaptureDiagnostic[]",
   ]) {
@@ -80,8 +111,9 @@ if (failures.length === 0) {
   );
   assert(
     captureCoreValidation.includes("isRawSnapshot") &&
-      captureCoreValidation.includes("summarizeRawSnapshot"),
-    "capture-core must expose structural validation and summary",
+      captureCoreValidation.includes("summarizeRawSnapshot") &&
+      captureCoreValidation.includes("isScaleEvidence"),
+    "capture-core must validate RawSnapshot structure including scale evidence",
   );
 
   const adapterPackage = readJson("packages/standard-capture-adapter/package.json");
@@ -105,6 +137,8 @@ if (failures.length === 0) {
     "scrollWidth",
     "STANDARD_CAPTURE_FRAME_INACCESSIBLE",
     "isPrimaryApplicationScrollRoot",
+    "browserPageZoomAvailability",
+    "cssZoomAvailability",
   ]) {
     assert(adapter.includes(evidence), `Standard adapter missing ${evidence}`);
   }
@@ -144,6 +178,7 @@ if (failures.length === 0) {
     "regionCaptureTarget",
     "standard-capture-complete",
     "standard-capture-failed",
+    "environment.scale.context.devicePixelRatio",
   ]) {
     assert(
       serviceWorker.includes(evidence),

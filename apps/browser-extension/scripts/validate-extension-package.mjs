@@ -59,18 +59,14 @@ assert(manifest.options_ui?.open_in_tab === true, "options must open in a tab");
 
 const permissions = [...(manifest.permissions ?? [])].sort();
 assert(
-  JSON.stringify(permissions) ===
-    JSON.stringify(["activeTab", "scripting", "storage"].sort()),
+  JSON.stringify(permissions) === JSON.stringify(["activeTab", "scripting", "storage"].sort()),
   "browser permissions must remain activeTab+scripting+storage",
 );
 assert(
   !("host_permissions" in manifest),
   "source providers must not request broad host permissions",
 );
-assert(
-  !("content_scripts" in manifest),
-  "content script must be injected only after user action",
-);
+assert(!("content_scripts" in manifest), "content script must be injected only after user action");
 assert(
   manifest.content_security_policy?.extension_pages === "script-src 'self'; object-src 'self'",
   "extension page CSP must remain self-only",
@@ -78,10 +74,7 @@ assert(
 
 const popup = await readFile(`${outputRoot}/popup.html`, "utf8");
 const options = await readFile(`${outputRoot}/options.html`, "utf8");
-assert(
-  popup.includes('type="module" src="runtime/popup.js"'),
-  "popup module entrypoint missing",
-);
+assert(popup.includes('type="module" src="runtime/popup.js"'), "popup module entrypoint missing");
 assert(
   options.includes('type="module" src="runtime/options.js"'),
   "options module entrypoint missing",

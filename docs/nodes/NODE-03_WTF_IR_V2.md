@@ -2,13 +2,13 @@
 
 ## Status
 
-**IN PROGRESS — implementation complete, final frozen-lockfile CI pending**
+**DONE / PASS**
 
 ## Goal
 
-Define the complete shared semantic IR used between normalized browser capture and downstream render/capability logic, while preserving the portable compatibility/integrity boundaries frozen by NODE-02.
+Freeze the complete shared semantic IR between normalized browser capture and downstream render/capability logic while preserving the `.wtf` V2 compatibility boundaries established by NODE-02.
 
-NODE-03 owns the data model and validation contract, not the later capture/inference/render algorithms.
+NODE-03 defines data models, validation, deterministic serialization and migration boundaries. Capture, inference and Figma rendering algorithms remain owned by later NODEs.
 
 ## Implemented package
 
@@ -16,15 +16,13 @@ NODE-03 owns the data model and validation contract, not the later capture/infer
 packages/w2f-ir
 ```
 
-The package depends on:
+Dependencies:
 
 ```text
 @w2f/w2f-schema: workspace:*
 ```
 
-and exports the shared Browser/Figma IR API.
-
-## IR version
+IR version:
 
 ```text
 2.0.0
@@ -49,7 +47,7 @@ WtfIrEnvelope
 
 ## Source Graph
 
-Implemented Source Node vocabulary:
+Source-node vocabulary:
 
 ```text
 document
@@ -62,24 +60,21 @@ slot
 comment
 ```
 
-Preserved evidence includes:
+Source Graph preserves:
 
-- per-capture identity;
-- stable identity reservation with confidence/evidence;
-- source/composed/render relationship fields from V2.1;
+- `captureNodeId` and stable-identity hooks;
+- source/composed/render relationship reservations;
 - child source IDs;
-- semantic tag/role/attributes/selector;
-- pseudo/text evidence;
-- double-precision geometry;
+- tag/role/attributes/selector/pseudo/text evidence;
+- exact double-precision geometry;
 - style and asset references;
-- structural fingerprint;
-- revision hashes;
-- scroll-container model;
+- structural fingerprints and revision hashes;
+- scroll-container information;
 - document/capture/revision metadata.
 
 ## Render Tree
 
-Implemented Render Node vocabulary includes:
+Render-node vocabulary includes:
 
 ```text
 document
@@ -98,63 +93,34 @@ decoration
 fallback
 ```
 
-Every Render Node maps to one or more Source Nodes through `sourceNodeIds`.
+Every Render Node maps to one or more Source Nodes using `sourceNodeIds`.
 
-Render Tree additionally preserves:
+Render Tree preserves hierarchy, stable-source mapping, meaningful names, geometry, layout, paint, text, assets, render strategy, decision evidence, component-candidate metadata, revision hashes, diagnostics and section outline.
 
-- parent/child hierarchy;
-- source stable IDs;
-- meaningful layer name;
-- geometry;
-- layout model;
-- paint model;
-- text model;
-- asset references;
-- render strategy;
-- decision confidence/reasons;
-- component-candidate fingerprint;
-- revision hashes;
-- diagnostic references;
-- section outline.
+## Semantic layout/CSS model
 
-## CSS semantic model
-
-Lengths are not flattened to px.
-
-Supported semantic forms:
+CSS lengths retain authored semantics instead of being flattened to px:
 
 ```text
-px
-percent
-em
-rem
-vw
-vh
-vmin
-vmax
-keyword
-expression
+px / percent / em / rem
+vw / vh / vmin / vmax
+keyword / expression
 ```
 
-The same length may retain `resolvedPx` and authored source text.
+A length may additionally preserve `resolvedPx` and authored text.
 
-This preserves authored intent while keeping browser-resolved truth available.
+Layout IR covers:
 
-## Layout IR
-
-Implemented:
-
-- flow/flex/grid/absolute/table/inline/contents modes;
-- FILL/HUG/FIXED/intrinsic/content/unknown sizing vocabulary;
+- flow/flex/grid/absolute/table/inline/contents;
+- FILL/HUG/FIXED/intrinsic/content/unknown sizing;
 - min/max sizing;
-- padding/effective gaps;
+- padding and effective gaps;
 - overflow;
-- flex container/item data;
-- grid tracks/item placement;
-- absolute constraints;
-- explainable decision evidence.
+- flex container/item evidence;
+- grid tracks/placement;
+- absolute constraints.
 
-Every major layout decision has:
+Major sizing/layout/render decisions carry:
 
 ```text
 confidence
@@ -162,143 +128,51 @@ reasons[]
 sourceRefs?
 ```
 
-## Paint IR
+## Paint / text / asset IR
 
-Implemented:
+Paint supports solid/image/gradient fills, borders/radii, shadows, opacity, blend/isolation, filters, mask and clip metadata.
 
-- solid fills;
-- image fills;
-- linear/radial/conic gradient data;
-- borders/radii;
-- shadows;
-- opacity;
-- blend/isolation;
-- filter/backdrop-filter;
-- mask/clip metadata.
+Text preserves semantic runs plus browser line-fragment and baseline evidence, font metadata, direction and Editable/Balanced/Pixel strategy hints.
 
-This is capability-neutral: recognition does not assert native Figma support.
-
-## Text IR
-
-Implemented:
-
-- semantic text value;
-- styled text runs;
-- browser line fragments;
-- baseline;
-- font family/style/weight/stretch;
-- font variation/feature settings;
-- PostScript/source/fingerprint metadata;
-- size/line-height/letter spacing;
-- color/decoration/baseline shift;
-- direction;
-- white-space/word-break/overflow-wrap/text alignment;
-- Editable/Balanced/Pixel strategy hint.
-
-## Asset IR
-
-Implemented asset records for:
-
-```text
-image
-svg
-font-metadata
-canvas-raster
-video-frame
-fallback-raster
-pixel-reference
-```
-
-Records reserve checksum, embedded path, dimensions, source/current URL and provenance.
+Assets support image, SVG, font metadata, canvas raster, video frame, fallback raster and pixel-reference records with checksum, dimensions, source/current URLs and provenance hooks.
 
 ## Environment / state / responsive
 
-Implemented:
+IR preserves browser/platform/language/direction, color scheme, reduced motion, viewport, DPR and zoom evidence.
 
-- browser/platform/language/direction/color-scheme/reduced-motion environment;
-- viewport/DPR/page zoom/CSS zoom reservation;
-- current/light/dark visual state;
-- animation capture mode;
-- state snapshots;
-- responsive snapshot references;
-- responsive ranges/rules with confidence/evidence;
-- media rule traces;
-- container-query information.
+State and responsive data include visual/pseudo states, animation-capture mode, responsive snapshots/rules, media-rule traces and container-query information.
 
 ## V2.1 integration
 
-NODE-03 consumes and integrates the reservations frozen by NODE-02:
+NODE-03 integrates the protocol hooks frozen earlier for:
 
-- Stable Identity hooks;
+- Stable Identity;
 - Token Graph;
 - Structural Fingerprint;
 - Revision Metadata / node revision hashes;
-- Scroll Root model;
-- Composed Tree relationships;
+- Scroll Root;
+- Composed Tree;
 - double-precision geometry.
 
-NODE-04 and later nodes generate these values; NODE-03 guarantees their place in the semantic model.
+Later NODEs generate these values; NODE-03 guarantees their semantic location and compatibility.
 
 ## Diagnostics
 
 Structured domains:
 
 ```text
-SOURCE
-PERMISSION
-CAPTURE
-DOM
-CSS
-TEXT
-ASSET
-RESPONSIVE
-LAYOUT
-COMPOSITING
-FILE
-FIGMA
-FONT
-RENDER
-QA
-PERFORMANCE
-SECURITY
+SOURCE PERMISSION CAPTURE DOM CSS TEXT ASSET
+RESPONSIVE LAYOUT COMPOSITING FILE FIGMA FONT
+RENDER QA PERFORMANCE SECURITY
 ```
 
-Severity:
+Severity is `info | warning | error | fatal`. Diagnostics may reference Source/Render Nodes and include evidence/metadata.
 
-```text
-info
-warning
-error
-fatal
-```
+## Validation and codec
 
-Diagnostics can map to Source Nodes and Render Nodes and retain evidence/metadata.
+`validateWtfIrBundle` enforces runtime cross-payload integrity beyond TypeScript typing, including unique IDs, acyclic/reachable trees, Source→Render mapping, source relationships, geometry/confidence, style/asset/state/environment/snapshot references, responsive stable IDs, diagnostics, token references, hashes and revision/root consistency.
 
-## Validation
-
-`validateWtfIrBundle` performs runtime structural and cross-reference validation beyond TypeScript typing.
-
-Current checks include:
-
-- unique source/render/style/asset/state/environment/snapshot/diagnostic IDs;
-- acyclic and fully reachable source/render trees;
-- valid Source→Render mapping;
-- source relationship validity;
-- geometry validity;
-- confidence range validity;
-- paint opacity validity;
-- style and asset reference integrity;
-- scroll-container source references;
-- document/revision identity consistency;
-- state/environment/snapshot reference integrity;
-- responsive stable-identity targets;
-- diagnostic reference integrity;
-- token graph integrity;
-- canonical SHA-256 when present.
-
-## Deterministic codec
-
-Implemented:
+Implemented codec:
 
 ```text
 createWtfIrEnvelope
@@ -307,25 +181,13 @@ decodeWtfIrEnvelope
 migrateWtfIrEnvelope
 ```
 
-Encoding uses NODE-02 canonical JSON.
+Canonical JSON comes from NODE-02. Valid IR supports deterministic encode/decode/encode roundtrip.
 
-Valid IR must support:
-
-```text
-encode
-→ decode
-→ semantic equality
-→ encode
-→ byte-identical canonical JSON
-```
-
-Unknown IR versions are rejected.
-
-The recognized historical internal V2 flat-draft envelope can be migrated to the canonical nested V2 envelope. Full `.wtf` archive migration remains NODE-23.
+The known internal flat V2 draft envelope can migrate to the canonical nested V2 envelope. Unknown IR versions fail closed. Full `.wtf` archive migration remains NODE-23.
 
 ## Tests
 
-Implemented fixture and suites:
+Suites:
 
 ```text
 packages/w2f-ir/test/fixture.ts
@@ -333,39 +195,13 @@ packages/w2f-ir/test/roundtrip.test.ts
 packages/w2f-ir/test/validation.test.ts
 ```
 
-Coverage includes:
+Coverage includes canonical validation, deterministic roundtrip, sub-pixel precision, flat-draft migration, unsupported versions, invalid JSON, broken Source→Render mapping, graph cycles/unreachable nodes, dangling style/asset/diagnostic references, responsive identity/environment errors, revision drift and malformed asset hashes.
 
-- canonical IR validation;
-- deterministic roundtrip;
-- sub-pixel precision survival;
-- flat-draft migration;
-- unsupported version rejection;
-- invalid JSON;
-- broken Source→Render mapping;
-- source graph cycle;
-- unreachable render nodes;
-- dangling style/asset references;
-- unknown responsive stable IDs;
-- unknown snapshot environments;
-- revision drift;
-- dangling diagnostic references;
-- malformed asset hash.
-
-## Shared consumer proof
-
-Browser Extension and Figma Plugin both depend on:
-
-```text
-@w2f/w2f-ir: workspace:*
-```
-
-and both test the same `WTF_IR_VERSION = 2.0.0`.
-
-There is no duplicate app-specific IR schema.
+Browser Extension and Figma Plugin both consume `@w2f/w2f-ir: workspace:*` and verify `WTF_IR_VERSION = 2.0.0`.
 
 ## Monorepo task-graph correction
 
-NODE-03 exposed a deeper workspace dependency chain:
+NODE-03 introduced the dependency chain:
 
 ```text
 Browser / Figma
@@ -373,38 +209,42 @@ Browser / Figma
 → w2f-schema
 ```
 
-Workspace packages publish declaration output in `dist`, so consumer typecheck must wait for upstream package build output.
-
-Turborepo `typecheck` is therefore updated to depend on:
+Workspace declarations are published from `dist`, so consumer typecheck must wait for upstream declaration builds. Turborepo `typecheck` now depends on both:
 
 ```text
 ^build
 ^typecheck
 ```
 
-This preserves the source-only build boundary while making multi-level workspace type resolution deterministic.
+## Validation history
 
-## Bootstrap CI history
+Bootstrap CI found and resolved two genuine integration issues:
 
-The first real cloud run found one literal-type inference issue in migration metadata. It was corrected by explicitly typing the migration source version as `string`.
+1. migration `fromVersion` required a widened `string` type;
+2. multi-level workspace typecheck required upstream `^build` output.
 
-The second run proved the IR package itself typechecked successfully but Browser/Figma could not yet resolve its unbuilt `dist` declarations. This exposed the missing upstream-build dependency in the task graph.
-
-After correcting the Turborepo dependency graph, the bootstrap pipeline passed:
-
-- workspace install/update;
-- canonical Prettier formatting;
-- lint;
-- TypeScript typecheck across the multi-level workspace dependency chain;
-- Vitest;
-- build;
-- format check.
-
-The push-triggered bootstrap then committed canonical formatting and the authoritative updated `pnpm-lock.yaml` as commit:
+After correction, bootstrap lint/typecheck/test/build/format passed and committed the authoritative lockfile plus pinned Prettier output in:
 
 ```text
 0b252f64c30296332244e4c43c48126af53dedc0
 ```
+
+The temporary bootstrap workflow was removed. Standard read-only CI was restored with:
+
+```text
+pnpm install --frozen-lockfile
+```
+
+GitHub Actions run `32564946698` then passed:
+
+- foundation validation: **PASS**;
+- Node.js 24 / pnpm 11.22.0: **PASS**;
+- frozen-lockfile install: **PASS**;
+- lint: **PASS**;
+- TypeScript 6.0.3 typecheck: **PASS**;
+- Vitest: **PASS**;
+- build: **PASS**;
+- Prettier: **PASS**.
 
 ## Normative documentation
 
@@ -414,40 +254,32 @@ The push-triggered bootstrap then committed canonical formatting and the authori
 
 ## Definition of Done
 
-- [x] shared `@w2f/w2f-ir` package created
-- [x] Source Graph defined
-- [x] Render Tree defined
-- [x] Source→Render mapping defined
-- [x] layout/sizing IR defined
-- [x] authored/computed CSS semantic model defined
-- [x] paint IR defined
-- [x] text/font/line-fragment IR defined
-- [x] asset IR defined
-- [x] environment/state IR defined
-- [x] responsive/media/container-query IR defined
-- [x] diagnostics IR defined
-- [x] V2.1 protocol reservations integrated
-- [x] deterministic IR envelope/codec implemented
-- [x] roundtrip tests implemented
-- [x] migration-gate tests implemented
-- [x] cross-reference/runtime validation implemented
-- [x] Browser consumes shared IR
-- [x] Figma consumes shared IR
-- [x] multi-level workspace typecheck task graph corrected
-- [x] authoritative lockfile/formatting bootstrap completed
-- [ ] standard read-only frozen-lockfile CI restored
-- [ ] final frozen-lockfile CI passes on completed NODE-03 head
+- [x] shared `@w2f/w2f-ir` package
+- [x] Source Graph
+- [x] Render Tree and Source→Render mapping
+- [x] layout/sizing/CSS semantic IR
+- [x] paint/text/font/asset IR
+- [x] environment/state/responsive IR
+- [x] diagnostics IR
+- [x] V2.1 integrations
+- [x] deterministic codec
+- [x] roundtrip tests
+- [x] migration tests
+- [x] runtime cross-reference validation
+- [x] Browser/Figma shared IR consumption
+- [x] multi-level workspace task graph corrected
+- [x] authoritative lockfile/formatting
+- [x] standard frozen-lockfile CI restored
+- [x] frozen-lockfile CI passed
 
 ## Exit rule
 
-NODE-03 becomes DONE only after the temporary bootstrap workflow is removed, standard `pnpm install --frozen-lockfile` CI is restored, and the complete branch passes all formal quality gates.
+Satisfied. NODE-03 is complete and the Semantic IR V2 boundaries are frozen for downstream implementation.
 
 ## Next
-
-After completion proceed to:
 
 ```text
 NODE-04 — Stable Identity & Source Mapping
 ```
 
-NODE-04 implements stable-node identity generation, confidence/evidence, document/capture identity behavior and deterministic source mapping on top of the IR hooks frozen here.
+NODE-04 implements stable node identity generation, confidence/evidence scoring, document/capture identity and deterministic source mapping using the hooks frozen by NODE-02/NODE-03.

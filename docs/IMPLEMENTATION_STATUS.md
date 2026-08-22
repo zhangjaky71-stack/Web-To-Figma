@@ -13,9 +13,9 @@
 | 00 | Product Baseline & Acceptance Contract | DONE | PASS | PR #3 merged |
 | 01 | Monorepo Foundation | DONE | Frozen-lockfile GitHub Actions PASS | PR #4 merged |
 | 02 | W2F File Spec V2 | DONE | Shared schema + frozen-lockfile GitHub Actions PASS | PR #6 merged |
-| 03 | W2F IR V2 | DONE | Roundtrip/migration/reference validation + frozen-lockfile GitHub Actions PASS | PR #7 |
-| 04 | Stable Identity & Source Mapping | NEXT | - | - |
-| 05 | Browser Extension Shell | TODO | - | - |
+| 03 | W2F IR V2 | DONE | IR roundtrip/reference validation + frozen-lockfile GitHub Actions PASS | PR #7 merged |
+| 04 | Stable Identity & Source Mapping | DONE | Repeat-capture identity/mapping + frozen-lockfile GitHub Actions PASS | PR #8 |
+| 05 | Browser Extension Shell | NEXT | - | - |
 | 06 | Source Providers & Offline | TODO | - | - |
 | 07 | Region Selector & Redaction | TODO | - | - |
 | 08 | Standard DOM Capture | TODO | - | - |
@@ -45,63 +45,50 @@
 
 ## Current Node
 
-`NODE-04 — Stable Identity & Source Mapping`
+`NODE-05 — Browser Extension Shell`
 
-## NODE-03 Completion
+## NODE-04 Completion
 
-NODE-03 froze the shared Semantic IR between normalized browser capture and downstream render/capability logic.
+NODE-04 implements the deterministic stable identity layer reserved by the frozen V2/V2.1 architecture and NODE-03 IR.
 
-Implemented in `packages/w2f-ir`:
+Implemented in `packages/stable-identity`:
 
-- IR version `2.0.0` and canonical deterministic envelope;
-- Source Graph with source/composed relationship evidence;
-- Render Tree with explicit Source→Render mapping and section outline;
-- stable-identity and revision hooks;
-- V2.1 Structural Fingerprint / Scroll Root / Composed Tree / Token Graph integration;
-- double-precision browser geometry and box model;
-- authored CSS semantic lengths plus resolved pixel truth;
-- layout modes, sizing semantics and confidence/reason evidence;
-- flex/grid/absolute layout data;
-- paint, gradient, border, shadow, blend/filter/mask metadata;
-- semantic text runs plus browser line-fragment/baseline evidence;
-- font metadata and asset records;
-- capture environment, visual states and animation-capture mode;
-- responsive snapshots/rules, media traces and container-query metadata;
-- structured diagnostic domains and severities;
-- runtime cross-payload/reference validation;
-- deterministic encode/decode roundtrip;
-- known flat-V2-draft migration gate and unsupported-version rejection.
+- stable algorithm version `1.0.0`;
+- normalized HTTP/file/local-folder/opaque document locators;
+- deterministic `documentId` and `sourceFingerprint`;
+- distinct per-capture `captureId`;
+- deterministic revision identity and optional parent revision linkage;
+- stable node evidence from source scope, semantic ancestry, tag/role, stable ID/data attributes, meaningful classes, normalized text and asset fingerprints;
+- filtering of React/Radix/Headless UI hydration IDs, UUID/timestamp/hash-like runtime values, unstable framework data attributes, CSS-module hashes and utility-class noise;
+- explainable confidence/evidence scoring;
+- lower-confidence structural fallback;
+- deterministic same-capture collision disambiguation;
+- cross-capture `matched` / `added` / `removed` / `ambiguous` mapping;
+- fail-visible ambiguity instead of array-order pairing;
+- immutable application of stable identities to NODE-03 Source Graph nodes;
+- explicit reporting of unmapped Source Nodes and unused assignments.
 
-Browser Extension and Figma Plugin both consume `@w2f/w2f-ir` via `workspace:*`; there is no app-specific duplicate IR.
+Browser Extension now consumes `@w2f/stable-identity` through the workspace rather than defining app-local identity logic.
 
-NODE-03 also corrected the monorepo task graph so consumer `typecheck` waits for both upstream `^build` and `^typecheck`, which is required by the multi-level dependency chain:
+## NODE-04 Validation
 
-```text
-Browser / Figma
-→ w2f-ir
-→ w2f-schema
-```
+The first real cloud validation found an `exactOptionalPropertyTypes` incompatibility in normalized signal typing. It was corrected without weakening strict TypeScript settings.
 
-## NODE-03 Validation
+The controlled bootstrap then passed and wrote canonical Prettier formatting plus the authoritative workspace lockfile.
 
-Bootstrap validation exposed and resolved two real integration issues:
-
-1. migration `fromVersion` needed an explicit `string` type rather than the literal `"2.0.0"`;
-2. multi-level workspace consumers needed upstream declaration builds before typecheck.
-
-After those fixes, the bootstrap pipeline passed and committed canonical Prettier output plus the authoritative updated `pnpm-lock.yaml` in commit:
-
-```text
-0b252f64c30296332244e4c43c48126af53dedc0
-```
-
-The temporary bootstrap CI was then removed and the normal read-only quality workflow restored with:
+The bootstrap workflow was removed and standard read-only CI restored with:
 
 ```text
 pnpm install --frozen-lockfile
 ```
 
-GitHub Actions run `32564946698` passed on the completed NODE-03 branch with:
+GitHub Actions run `32566068160` passed on commit:
+
+```text
+d7882c58deecfdfffa6b6d2187dddcee58c5e5b9
+```
+
+Validated gates:
 
 - foundation validation: **PASS**;
 - Node.js 24 / pnpm 11.22.0: **PASS**;
@@ -114,24 +101,22 @@ GitHub Actions run `32564946698` passed on the completed NODE-03 branch with:
 
 Normative documentation:
 
-- `docs/WTF_IR_V2.md`;
-- `docs/adr/ADR-0003-source-graph-render-tree-and-ir-boundaries.md`;
-- `docs/nodes/NODE-03_WTF_IR_V2.md`.
+- `docs/STABLE_IDENTITY_SOURCE_MAPPING_V2.md`;
+- `docs/adr/ADR-0004-stable-identity-and-source-mapping.md`;
+- `docs/nodes/NODE-04_STABLE_IDENTITY_SOURCE_MAPPING.md`.
 
-## NODE-03 Exit Criteria
+## NODE-04 Exit Criteria
 
-- [x] shared Semantic IR package
-- [x] Source Graph
-- [x] Render Tree
-- [x] Source→Render mapping
-- [x] layout/paint/text/assets/state/responsive/diagnostic IR
-- [x] V2.1 reservations integrated
-- [x] deterministic codec
-- [x] runtime cross-reference validation
-- [x] roundtrip tests
-- [x] migration tests
-- [x] Browser/Figma shared IR consumption
-- [x] authoritative lockfile updated
+- [x] document/capture/revision identity implemented
+- [x] stable node evidence and confidence implemented
+- [x] volatile runtime signals filtered
+- [x] deterministic collision handling implemented
+- [x] cross-capture mapping implemented
+- [x] ambiguous duplicate mapping is fail-visible
+- [x] Source Graph identity application implemented
+- [x] repeat-capture stability tests implemented
+- [x] Browser consumes shared identity package
+- [x] authoritative workspace lockfile updated
 - [x] bootstrap workflow removed
 - [x] frozen-lockfile CI restored
 - [x] frozen-lockfile CI passes
@@ -142,6 +127,6 @@ None.
 
 ## Next
 
-Proceed to `NODE-04 — Stable Identity & Source Mapping`.
+Proceed to `NODE-05 — Browser Extension Shell`.
 
-NODE-04 will implement stable node identity, confidence/evidence scoring, document/capture identity behavior, deterministic source mapping and repeat-capture stability fixtures using the hooks frozen by NODE-02/NODE-03.
+NODE-05 owns the production browser-extension shell: Manifest V3, runtime entrypoints, background/service-worker lifecycle, content-script bridge, popup/options UI surfaces, permissions/capability boundaries and extension build packaging. It must consume the file/IR/identity contracts from NODE-02/03/04 instead of redefining them.

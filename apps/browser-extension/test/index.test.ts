@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   getBrowserExtensionAppId,
+  getBrowserStableIdentityAlgorithmVersion,
   getBrowserWtfIrVersion,
   getBrowserWtfSchemaVersion,
 } from "../src/index.js";
@@ -16,5 +17,9 @@ describe("browser extension foundation", () => {
 
   it("uses the shared W2F V2 semantic IR", () => {
     expect(getBrowserWtfIrVersion()).toBe("2.0.0");
+  });
+
+  it("uses the shared NODE-04 stable identity algorithm", () => {
+    expect(getBrowserStableIdentityAlgorithmVersion()).toBe("1.0.0");
   });
 });

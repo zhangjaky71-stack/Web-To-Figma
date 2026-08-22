@@ -1,8 +1,12 @@
 {
-  "name": "@w2f/browser-extension",
+  "name": "@w2f/stable-identity",
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "lint": "eslint src test --max-warnings=0",
@@ -10,7 +14,6 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@w2f/stable-identity": "workspace:*",
     "@w2f/w2f-ir": "workspace:*",
     "@w2f/w2f-schema": "workspace:*"
   },

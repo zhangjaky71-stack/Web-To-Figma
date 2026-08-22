@@ -11,10 +11,10 @@
 | NODE | Name | Status | Validation | Commit/PR |
 |---|---|---|---|---|
 | 00 | Product Baseline & Acceptance Contract | DONE | PASS | PR #3 merged |
-| 01 | Monorepo Foundation | DONE | Frozen-lockfile GitHub Actions pipeline PASS | PR #4 merged |
-| 02 | W2F File Spec V2 | DONE | Shared schema + frozen-lockfile GitHub Actions PASS | PR #6 |
-| 03 | W2F IR V2 | NEXT | - | - |
-| 04 | Stable Identity & Source Mapping | TODO | - | - |
+| 01 | Monorepo Foundation | DONE | Frozen-lockfile GitHub Actions PASS | PR #4 merged |
+| 02 | W2F File Spec V2 | DONE | Shared schema + frozen-lockfile GitHub Actions PASS | PR #6 merged |
+| 03 | W2F IR V2 | DONE | Roundtrip/migration/reference validation + frozen-lockfile GitHub Actions PASS | PR #7 |
+| 04 | Stable Identity & Source Mapping | NEXT | - | - |
 | 05 | Browser Extension Shell | TODO | - | - |
 | 06 | Source Providers & Offline | TODO | - | - |
 | 07 | Region Selector & Redaction | TODO | - | - |
@@ -45,55 +45,66 @@
 
 ## Current Node
 
-`NODE-03 — W2F IR V2`
+`NODE-04 — Stable Identity & Source Mapping`
 
-## NODE-02 Completion
+## NODE-03 Completion
 
-NODE-02 froze the portable `.wtf` V2 protocol before downstream capture/render implementation.
+NODE-03 froze the shared Semantic IR between normalized browser capture and downstream render/capability logic.
 
-Implemented:
+Implemented in `packages/w2f-ir`:
 
-- shared `packages/w2f-schema` package;
-- `.wtf` / `application/x-wtf` / V2 version constants;
-- container kind and canonical entrypoints;
-- manifest and file-inventory model;
-- compatibility and feature negotiation;
-- `minReaderVersion` enforcement;
-- SHA-256 checksum contract;
-- deterministic canonical JSON;
-- archive-entry and portable-path validation;
-- hard archive/security ceilings;
-- capture-target and double-precision geometry contract;
-- responsive/state/reference-tile reservations;
-- V2.1 Token Graph reservation and validator;
-- V2.1 Structural Fingerprint reservation;
-- V2.1 Revision Metadata reservation;
-- V2.1 Scroll Root reservation;
-- V2.1 Composed Tree reservation;
-- Browser Extension and Figma Plugin both consuming `@w2f/w2f-schema` via `workspace:*`;
-- authoritative workspace lockfile update.
+- IR version `2.0.0` and canonical deterministic envelope;
+- Source Graph with source/composed relationship evidence;
+- Render Tree with explicit Source→Render mapping and section outline;
+- stable-identity and revision hooks;
+- V2.1 Structural Fingerprint / Scroll Root / Composed Tree / Token Graph integration;
+- double-precision browser geometry and box model;
+- authored CSS semantic lengths plus resolved pixel truth;
+- layout modes, sizing semantics and confidence/reason evidence;
+- flex/grid/absolute layout data;
+- paint, gradient, border, shadow, blend/filter/mask metadata;
+- semantic text runs plus browser line-fragment/baseline evidence;
+- font metadata and asset records;
+- capture environment, visual states and animation-capture mode;
+- responsive snapshots/rules, media traces and container-query metadata;
+- structured diagnostic domains and severities;
+- runtime cross-payload/reference validation;
+- deterministic encode/decode roundtrip;
+- known flat-V2-draft migration gate and unsupported-version rejection.
 
-Normative documentation:
+Browser Extension and Figma Plugin both consume `@w2f/w2f-ir` via `workspace:*`; there is no app-specific duplicate IR.
 
-- `docs/WTF_FILE_SPEC_V2.md`;
-- `docs/adr/ADR-0002-wtf-v2-compatibility-integrity-and-security-contract.md`;
-- `docs/nodes/NODE-02_WTF_FILE_SPEC_V2.md`.
+NODE-03 also corrected the monorepo task graph so consumer `typecheck` waits for both upstream `^build` and `^typecheck`, which is required by the multi-level dependency chain:
 
-## NODE-02 Validation
+```text
+Browser / Figma
+→ w2f-ir
+→ w2f-schema
+```
 
-The bootstrap validation established the shared-schema implementation and produced canonical Prettier/lockfile output.
+## NODE-03 Validation
 
-The bootstrap workflow was then removed and the normal read-only workflow restored with:
+Bootstrap validation exposed and resolved two real integration issues:
+
+1. migration `fromVersion` needed an explicit `string` type rather than the literal `"2.0.0"`;
+2. multi-level workspace consumers needed upstream declaration builds before typecheck.
+
+After those fixes, the bootstrap pipeline passed and committed canonical Prettier output plus the authoritative updated `pnpm-lock.yaml` in commit:
+
+```text
+0b252f64c30296332244e4c43c48126af53dedc0
+```
+
+The temporary bootstrap CI was then removed and the normal read-only quality workflow restored with:
 
 ```text
 pnpm install --frozen-lockfile
 ```
 
-GitHub Actions run `32564276456` completed successfully with:
+GitHub Actions run `32564946698` passed on the completed NODE-03 branch with:
 
 - foundation validation: **PASS**;
-- Node.js 24 setup: **PASS**;
-- pnpm 11.22.0 setup: **PASS**;
+- Node.js 24 / pnpm 11.22.0: **PASS**;
 - frozen-lockfile install: **PASS**;
 - lint: **PASS**;
 - TypeScript 6.0.3 typecheck: **PASS**;
@@ -101,20 +112,26 @@ GitHub Actions run `32564276456` completed successfully with:
 - build: **PASS**;
 - Prettier format check: **PASS**.
 
-The `w2f-schema` suite contains 15 protocol/security/integrity tests, and both Browser/Figma workspaces compile and test against the same schema package.
+Normative documentation:
 
-## NODE-02 Exit Criteria
+- `docs/WTF_IR_V2.md`;
+- `docs/adr/ADR-0003-source-graph-render-tree-and-ir-boundaries.md`;
+- `docs/nodes/NODE-03_WTF_IR_V2.md`.
 
-- [x] container contract defined
-- [x] manifest defined
-- [x] compatibility defined
-- [x] checksums/inventory defined
-- [x] feature flags defined
-- [x] source/render/responsive/state/reference entrypoints reserved
-- [x] security limits/path rules defined
-- [x] V2.1 protocol reservations defined
-- [x] Browser and Figma share one schema package
-- [x] workspace lockfile updated
+## NODE-03 Exit Criteria
+
+- [x] shared Semantic IR package
+- [x] Source Graph
+- [x] Render Tree
+- [x] Source→Render mapping
+- [x] layout/paint/text/assets/state/responsive/diagnostic IR
+- [x] V2.1 reservations integrated
+- [x] deterministic codec
+- [x] runtime cross-reference validation
+- [x] roundtrip tests
+- [x] migration tests
+- [x] Browser/Figma shared IR consumption
+- [x] authoritative lockfile updated
 - [x] bootstrap workflow removed
 - [x] frozen-lockfile CI restored
 - [x] frozen-lockfile CI passes
@@ -125,6 +142,6 @@ None.
 
 ## Next
 
-Proceed to `NODE-03 — W2F IR V2`.
+Proceed to `NODE-04 — Stable Identity & Source Mapping`.
 
-NODE-03 owns the complete Source Graph, Render Tree, layout, paint, text, asset, responsive, state and diagnostic IR. It must build on the portable compatibility/integrity boundaries frozen by NODE-02 rather than redefining them.
+NODE-04 will implement stable node identity, confidence/evidence scoring, document/capture identity behavior, deterministic source mapping and repeat-capture stability fixtures using the hooks frozen by NODE-02/NODE-03.

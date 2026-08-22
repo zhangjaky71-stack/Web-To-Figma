@@ -1,0 +1,28 @@
+{
+  "name": "web-to-figma",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Web-To-Figma monorepo for browser capture, .wtf packaging, and Figma reconstruction.",
+  "packageManager": "pnpm@11.22.0",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "validate:foundation": "node scripts/validate-foundation.mjs",
+    "check": "pnpm validate:foundation && pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm format:check"
+  },
+  "devDependencies": {
+    "eslint": "10.8.1",
+    "prettier": "3.9.6",
+    "turbo": "2.10.11",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.67.0",
+    "vitest": "4.1.11"
+  }
+}

@@ -4,15 +4,15 @@
 **Portable package:** `.wtf`  
 **MIME:** `application/x-wtf`  
 **Architecture:** FROZEN FOR IMPLEMENTATION  
-**Updated:** 2026-08-21
+**Updated:** 2026-08-22
 
 ## Roadmap
 
 | NODE | Name | Status | Validation | Commit/PR |
 |---|---|---|---|---|
-| 00 | Product Baseline & Acceptance Contract | DONE | PASS — contract/DoD review | `feat/node-00-product-baseline` |
-| 01 | Monorepo Foundation | READY | - | - |
-| 02 | W2F File Spec V2 | TODO | - | - |
+| 00 | Product Baseline & Acceptance Contract | DONE | PASS | PR #3 merged |
+| 01 | Monorepo Foundation | DONE | GitHub Actions frozen-lockfile quality pipeline PASS | PR #4 |
+| 02 | W2F File Spec V2 | NEXT | - | - |
 | 03 | W2F IR V2 | TODO | - | - |
 | 04 | Stable Identity & Source Mapping | TODO | - | - |
 | 05 | Browser Extension Shell | TODO | - | - |
@@ -45,69 +45,58 @@
 
 ## Current Node
 
-`NODE-01 — Monorepo Foundation`
+`NODE-02 — W2F File Spec V2`
 
-NODE-00 implementation is complete on its feature branch and ready for integration.
+## NODE-01 Completion
 
-## NODE-00 Deliverables
+NODE-01 is complete. The monorepo foundation now includes:
 
-- [x] `docs/PRODUCT_BASELINE_V2.md`
-- [x] `docs/ACCEPTANCE_CONTRACT_V2.md`
-- [x] `docs/KNOWN_LIMITATIONS.md`
-- [x] `docs/CAPTURE_SEMANTICS.md`
-- [x] `docs/IMPLEMENTATION_STATUS.md`
+- pnpm workspace and shared lockfile;
+- Turborepo task graph;
+- Node.js 24 LTS policy;
+- strict shared TypeScript configuration;
+- ESLint flat configuration;
+- Prettier configuration;
+- browser-extension compile/test shell;
+- Figma-plugin compile/test shell;
+- shared-utils proof package;
+- source-only build configurations;
+- `.wtf` extension and `application/x-wtf` contract tests;
+- dependency-free foundation validator;
+- authoritative `pnpm-lock.yaml` generated with pnpm 11.22.0;
+- GitHub Actions CI using `pnpm install --frozen-lockfile`.
 
-## NODE-00 Contract Decisions
+## NODE-01 Final Validation
 
-- [x] Current implementation baseline frozen as V2 + V2.1 + NODE-00 contracts.
-- [x] Export/import package extension fixed as `.wtf`.
-- [x] MIME fixed as `application/x-wtf`.
-- [x] `W2F` remains product/project/internal namespace, not the file extension.
-- [x] Capture unit fixed as Current Rendered Application State.
-- [x] Full Page distinguished from whole-site crawling.
-- [x] Document, scroll-root and region capture semantics defined.
-- [x] P0/P1/P2 and non-goals defined.
-- [x] Eight core product-quality dimensions defined.
-- [x] Release gates made measurable.
-- [x] Raster-only implementations explicitly prevented from passing editability/structure gates.
-- [x] Security/privacy baseline defined.
-- [x] Known browser/Figma limitations documented.
-- [x] Architecture expansion frozen unless an implementation blocker, material platform change, security incompatibility or incompatible schema need is proven through ADR.
+GitHub Actions run `32563563130` on Ubuntu 24.04 completed successfully with the frozen toolchain and lockfile.
 
-## NODE-00 Validation
+Validated gates:
 
-Contract-level review result: **PASS**.
+- GitHub-hosted runner: **PASS**
+- foundation validation: **PASS**
+- Node.js 24 setup: **PASS**
+- pnpm 11.22.0 setup: **PASS**
+- frozen-lockfile install: **PASS**
+- lint: **PASS**
+- TypeScript 6.0.3 typecheck: **PASS**
+- Vitest: **PASS**
+- build: **PASS**
+- Prettier format check: **PASS**
 
-Validation checks completed:
+The earlier hosted-runner blocker tracked by Issue #5 is resolved and no longer blocks implementation.
 
-1. Product scope is testable and bounded.
-2. P0/P1/P2 separation is explicit.
-3. `.wtf` package format is used consistently in NODE-00 contracts.
-4. Acceptance metrics include visual, geometry, text, asset, structure, editability, responsive and raster dimensions.
-5. Determinism/security/privacy/scale gates are defined.
-6. Known limitations do not silently weaken declared P0 behavior.
-7. Capture semantics distinguish current app state, full page, scroll roots and region capture.
-8. NODE-01 can proceed without another architecture baseline revision.
+## Exit Criteria
 
-Automated repository/toolchain tests begin in NODE-01 when the monorepo test/lint/typecheck infrastructure is created.
-
-## Blockers
-
-None.
+- [x] GitHub Actions runner executes
+- [x] authoritative `pnpm-lock.yaml` generated and committed
+- [x] CI uses `pnpm install --frozen-lockfile`
+- [x] foundation validator passes
+- [x] lint passes
+- [x] typecheck passes under TypeScript 6.0.3
+- [x] Vitest passes
+- [x] build passes
+- [x] format check passes
 
 ## Next
 
-`NODE-01 — Monorepo Foundation`
-
-Expected NODE-01 outputs include:
-
-- pnpm workspace;
-- Turborepo;
-- TypeScript baseline;
-- ESLint/Prettier;
-- Vitest;
-- root build/lint/typecheck/test scripts;
-- `apps/browser-extension`;
-- `apps/figma-plugin`;
-- initial shared package structure;
-- CI baseline.
+Proceed to `NODE-02 — W2F File Spec V2` using the frozen V2 Baseline + V2.1 Addendum architecture contracts.

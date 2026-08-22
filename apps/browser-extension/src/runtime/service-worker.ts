@@ -22,6 +22,7 @@ const SHELL_INFO: W2fShellInfo = {
   shellVersion: W2F_EXTENSION_SHELL_VERSION,
   manifestVersion: 3,
   captureImplemented: false,
+  regionSelectionImplemented: true,
 };
 
 async function readJobState(): Promise<CaptureJobState | null> {
@@ -49,10 +50,16 @@ async function startShellJob(mode: CaptureJobMode): Promise<CaptureJobState> {
       throw new Error(`${capability.reason}${action}`);
     }
 
-    job = transitionCaptureJob(job, "running", "injecting-content-shell", new Date(), {
-      tabId,
-      source: descriptor,
-    });
+    job = transitionCaptureJob(
+      job,
+      "running",
+      mode === "region" ? "selecting-region" : "injecting-content-shell",
+      new Date(),
+      {
+        tabId,
+        source: descriptor,
+      },
+    );
     await writeJobState(job);
 
     await chrome.scripting.executeScript({
@@ -61,19 +68,43 @@ async function startShellJob(mode: CaptureJobMode): Promise<CaptureJobState> {
     });
 
     const response = await chrome.tabs.sendMessage(tabId, {
-      type: "W2F_PROBE_PAGE",
+      type: mode === "region" ? "W2F_SELECT_REGION" : "W2F_PROBE_PAGE",
       jobId,
-      mode,
     });
     if (!isW2fContentResponse(response) || response.jobId !== jobId) {
-      throw new Error("Content shell returned an invalid page probe response");
+      throw new Error("Content runtime returned an invalid response");
     }
 
-    job = transitionCaptureJob(job, "completed", "shell-probe-complete", new Date(), {
-      tabId,
-      source: descriptor,
-      page: response.page,
-    });
+    if (response.type === "W2F_CONTENT_SELECTION_CANCELLED") {
+      job = transitionCaptureJob(job, "cancelled", "selection-cancelled", new Date(), {
+        tabId,
+        source: descriptor,
+      });
+      await writeJobState(job);
+      return job;
+    }
+
+    if (mode === "region") {
+      if (response.type !== "W2F_CONTENT_REGION_RESULT") {
+        throw new Error("Region mode returned a non-region content response");
+      }
+      job = transitionCaptureJob(job, "completed", "region-selection-complete", new Date(), {
+        tabId,
+        source: descriptor,
+        page: response.page,
+        region: response.region,
+      });
+    } else {
+      if (response.type !== "W2F_CONTENT_PROBE_RESULT") {
+        throw new Error("Full-page mode returned a non-probe content response");
+      }
+      job = transitionCaptureJob(job, "completed", "shell-probe-complete", new Date(), {
+        tabId,
+        source: descriptor,
+        page: response.page,
+      });
+    }
+
     await writeJobState(job);
     return job;
   } catch (error) {
@@ -89,6 +120,16 @@ async function cancelShellJob(jobId: string): Promise<CaptureJobState | null> {
   const current = await readJobState();
   if (!current || current.jobId !== jobId) return current;
   if (["completed", "failed", "cancelled"].includes(current.status)) return current;
+
+  if (current.mode === "region" && typeof current.tabId === "number") {
+    await chrome.tabs
+      .sendMessage(current.tabId, {
+        type: "W2F_CANCEL_REGION_SELECTION",
+        jobId,
+      })
+      .catch(() => undefined);
+  }
+
   const cancelled = transitionCaptureJob(current, "cancelled", "cancelled-by-user");
   await writeJobState(cancelled);
   return cancelled;

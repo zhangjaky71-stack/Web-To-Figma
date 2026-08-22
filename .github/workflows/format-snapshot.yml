@@ -1,0 +1,45 @@
+name: Format Snapshot
+
+on:
+  push:
+    branches:
+      - feat/node-01-monorepo-foundation
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.22.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Format target files
+        run: pnpm exec prettier --write eslint.config.mjs README.md scripts/validate-foundation.mjs
+
+      - name: Upload formatted files
+        uses: actions/upload-artifact@v4
+        with:
+          name: formatted-files
+          path: |
+            eslint.config.mjs
+            README.md
+            scripts/validate-foundation.mjs
+          if-no-files-found: error

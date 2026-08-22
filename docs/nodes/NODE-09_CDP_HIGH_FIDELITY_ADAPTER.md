@@ -2,7 +2,7 @@
 
 ## Status
 
-**DONE / PASS — implementation and standard read-only frozen-lockfile Exit Gate passed; PR #13 pending final docs CI/merge**
+**DONE / PASS — implementation and final standard read-only frozen-lockfile docs/status CI passed; PR #13 ready to merge**
 
 ## Goal
 
@@ -180,9 +180,9 @@ Real GitHub Runner validation exposed and resolved:
 
 The temporary write-enabled NODE-09 bootstrap workflow was removed before the formal Exit Gate.
 
-## Formal Exit Gate
+## Formal Exit Gates
 
-Final code/security/build standard read-only GitHub Actions run before docs-only completion update:
+Code/security/build standard read-only GitHub Actions run:
 
 ```text
 32586474296
@@ -193,6 +193,14 @@ validated commit:
 ```text
 ef953d3a72f8a070c194423b7d22dd30e1f97737
 ```
+
+Docs/status standard read-only GitHub Actions run:
+
+```text
+32586638192
+```
+
+validated head included the complete NODE-09 normative docs and status transition to NODE-10.
 
 All formal gates passed:
 
@@ -234,7 +242,7 @@ All formal gates passed:
 - [x] final standard read-only frozen-lockfile code Exit Gate passed
 - [x] normative implementation document added
 - [x] ADR added
-- [ ] final docs/status-only CI passed
+- [x] final docs/status-only CI passed
 - [ ] PR #13 merged
 
 ## Normative documents
@@ -257,7 +265,7 @@ NODE-09 does not implement:
 
 ## Next
 
-After final docs/status CI and PR #13 merge:
+After PR #13 merge:
 
 ```text
 NODE-10 — Text / Inline / Pseudo Capture

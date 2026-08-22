@@ -2,7 +2,7 @@
 
 ## Status
 
-**IN PROGRESS — implementation and cloud validation complete; standard frozen-lockfile CI closure pending**
+**DONE — PASS**
 
 ## Goal
 
@@ -218,7 +218,7 @@ The dependency-free root foundation validator was upgraded to recognize and enfo
 
 ## Tests
 
-Browser suite now includes 11 tests across:
+Browser suite includes 11 tests across:
 
 ```text
 test/index.test.ts
@@ -266,23 +266,41 @@ Only canonical Prettier formatting remained.
 
 ### Run 32566633555
 
-A controlled format bootstrap used the repository-pinned Prettier 3.9.6, then reran:
+A controlled format bootstrap used the repository-pinned Prettier 3.9.6, then reran foundation, frozen install, lint, typecheck, tests, build/package validation and format check. All passed.
 
-- foundation;
-- frozen install;
-- lint;
-- typecheck;
-- tests;
-- build/package validation;
-- format check.
+### Run 32566752960
 
-All passed.
+The NODE-05 documentation formatting pass completed successfully with the same pinned toolchain and package validator.
 
-The push-triggered formatting commit advanced the PR branch to:
+### Final read-only run 32567397560
+
+The temporary formatting workflow was removed and the canonical read-only quality workflow restored:
 
 ```text
-a448313b90306a87f20d8aa609aea3841054f9e7
+permissions:
+  contents: read
+
+pnpm install --frozen-lockfile
 ```
+
+Commit validated:
+
+```text
+e3f284875c0e2977048fb25823fe2dc4c4a018e5
+```
+
+Final gates:
+
+- foundation validation: **PASS**;
+- Node.js 24 / pnpm 11.22.0: **PASS**;
+- frozen-lockfile install: **PASS**;
+- lint: **PASS**;
+- TypeScript 6.0.3 typecheck: **PASS**;
+- Browser shell tests: **PASS**;
+- full repository Vitest: **PASS**;
+- Browser extension build/package validation: **PASS**;
+- repository build: **PASS**;
+- Prettier format check: **PASS**.
 
 ## Normative documentation
 
@@ -310,17 +328,17 @@ a448313b90306a87f20d8aa609aea3841054f9e7
 - [x] runtime/job/protocol tests
 - [x] cloud typecheck/test/build/package validation passes
 - [x] canonical pinned formatting applied
-- [ ] temporary formatting workflow removed
-- [ ] standard read-only frozen-lockfile CI restored
-- [ ] final frozen-lockfile CI passes on completed NODE-05 head
+- [x] temporary formatting workflow removed
+- [x] standard read-only frozen-lockfile CI restored
+- [x] final frozen-lockfile CI passes on completed NODE-05 head
 
 ## Exit rule
 
-NODE-05 becomes DONE only after the temporary formatting workflow is removed, standard read-only frozen-lockfile CI is restored, and the completed branch passes all formal gates.
+**Satisfied. NODE-05 is DONE / PASS.**
 
 ## Next
 
-After completion proceed to:
+Proceed to:
 
 ```text
 NODE-06 — Source Providers & Offline

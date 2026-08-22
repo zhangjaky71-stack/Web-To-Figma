@@ -73,6 +73,12 @@ jobs:
               "NODE-09 foundation import",
             );
           }
+          foundation = replaceRequired(
+            foundation,
+            `  assert(\n    browserProtocol.includes('W2F_EXTENSION_SHELL_VERSION = "1.2.0"'),\n    "Browser shell protocol must remain at NODE-08 version 1.2.0",\n  );\n`,
+            "",
+            "remove global obsolete NODE-08 protocol pin",
+          );
           writeFileSync(foundationPath, foundation, "utf8");
 
           const node08Path = "scripts/validate-node-08.mjs";

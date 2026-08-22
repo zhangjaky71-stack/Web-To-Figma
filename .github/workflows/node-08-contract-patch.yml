@@ -1,0 +1,120 @@
+name: NODE-08 Contract Patch
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+permissions:
+  contents: write
+
+concurrency:
+  group: node-08-contract-patch
+  cancel-in-progress: true
+
+jobs:
+  patch:
+    if: github.head_ref == 'feat/node-08-standard-dom-capture'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v6
+        with:
+          ref: feat/node-08-standard-dom-capture
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.22.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Install frozen workspace
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply exact NODE-08 contract patches
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync } from "node:fs";
+
+          function replaceRequired(source, before, after, label) {
+            if (!source.includes(before)) throw new Error(`NODE-08 patch target missing: ${label}`);
+            return source.replace(before, after);
+          }
+
+          const capturePath = "packages/standard-capture-adapter/src/capture.ts";
+          let capture = readFileSync(capturePath, "utf8");
+          capture = replaceRequired(
+            capture,
+            `    environment: {\n      viewportWidth: window.innerWidth,\n      viewportHeight: window.innerHeight,\n      devicePixelRatio: window.devicePixelRatio,\n      ...(window.visualViewport?.scale === undefined\n        ? {}\n        : { visualViewportScale: window.visualViewport.scale }),\n    },`,
+            `    environment: {\n      viewportWidth: window.innerWidth,\n      viewportHeight: window.innerHeight,\n      scale: {\n        context: {\n          devicePixelRatio: window.devicePixelRatio,\n          ...(window.visualViewport?.scale === undefined\n            ? {}\n            : { visualViewportScale: window.visualViewport.scale }),\n        },\n        browserPageZoomAvailability: "unavailable",\n        cssZoomAvailability: "unavailable",\n        reasons: [\n          "Standard page APIs expose DPR and visual viewport scale but cannot reliably separate browser page zoom from OS display scaling.",\n          "CSS zoom is element-scoped evidence and is intentionally deferred to authored/computed CSS capture.",\n        ],\n      },\n    },`,
+            "Standard RawSnapshot ScaleContext evidence",
+          );
+          writeFileSync(capturePath, capture, "utf8");
+
+          const irTypesPath = "packages/w2f-ir/src/types.ts";
+          let irTypes = readFileSync(irTypesPath, "utf8");
+          if (!irTypes.includes('from "@w2f/w2f-schema/frame-context"')) {
+            irTypes = replaceRequired(
+              irTypes,
+              `} from "@w2f/w2f-schema";\n`,
+              `} from "@w2f/w2f-schema";\nimport type { FrameContext } from "@w2f/w2f-schema/frame-context";\n`,
+              "W2F IR FrameContext import",
+            );
+          }
+          irTypes = replaceRequired(
+            irTypes,
+            `  relationships: NodeRelationships;\n  childCaptureNodeIds: string[];`,
+            `  relationships: NodeRelationships;\n  frameContext?: FrameContext;\n  childCaptureNodeIds: string[];`,
+            "WtfSourceNode FrameContext field",
+          );
+          writeFileSync(irTypesPath, irTypes, "utf8");
+
+          const irValidationPath = "packages/w2f-ir/src/validation.ts";
+          let irValidation = readFileSync(irValidationPath, "utf8");
+          if (!irValidation.includes('from "@w2f/w2f-schema/frame-context"')) {
+            irValidation = replaceRequired(
+              irValidation,
+              `import { isSha256, validateRect, validateTokenGraph } from "@w2f/w2f-schema";\n`,
+              `import { isSha256, validateRect, validateTokenGraph } from "@w2f/w2f-schema";\nimport { validateFrameContext } from "@w2f/w2f-schema/frame-context";\n`,
+              "W2F IR FrameContext validator import",
+            );
+          }
+          irValidation = replaceRequired(
+            irValidation,
+            `    if (nodeValue.geometry !== undefined)\n      validateGeometry(nodeValue.geometry, errors, \`${'${path}'}.geometry\`);\n`,
+            `    if (nodeValue.geometry !== undefined)\n      validateGeometry(nodeValue.geometry, errors, \`${'${path}'}.geometry\`);\n    if (nodeValue.frameContext !== undefined && !validateFrameContext(nodeValue.frameContext).ok) {\n      add(\n        errors,\n        \`${'${path}'}.frameContext\`,\n        "WTF_IR_FRAME_CONTEXT_INVALID",\n        "frameContext must satisfy the shared frame context contract",\n      );\n    }\n`,
+            "W2F IR FrameContext validation",
+          );
+          writeFileSync(irValidationPath, irValidation, "utf8");
+          NODE
+
+      - name: Apply canonical formatting
+        run: pnpm exec prettier --write packages/standard-capture-adapter/src/capture.ts packages/w2f-ir/src/types.ts packages/w2f-ir/src/validation.ts packages/w2f-schema/src/scale-context.ts packages/capture-core/src packages/capture-core/test apps/browser-extension/src/runtime/service-worker.ts
+
+      - name: Validate repository
+        run: pnpm check
+
+      - name: Commit validated contract patches
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No contract changes to commit"
+            exit 0
+          fi
+          git commit -m "feat(node-08): finalize frame and scale contracts"
+          git push origin HEAD:feat/node-08-standard-dom-capture

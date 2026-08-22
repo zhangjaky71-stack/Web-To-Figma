@@ -1,3 +1,5 @@
+import type { SourceDescriptor } from "@w2f/source-providers";
+
 export type CaptureJobMode = "full-page" | "region";
 
 export type CaptureJobStatus = "idle" | "queued" | "running" | "completed" | "failed" | "cancelled";
@@ -20,6 +22,7 @@ export interface CaptureJobState {
   createdAt: string;
   updatedAt: string;
   tabId?: number;
+  source?: SourceDescriptor;
   page?: PageProbe;
   error?: string;
 }
@@ -30,6 +33,18 @@ function canonicalTimestamp(value: string | Date): string {
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) throw new TypeError("invalid job timestamp");
   return date.toISOString();
+}
+
+function isSourceDescriptor(value: unknown): value is SourceDescriptor {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+  const record = value as Record<string, unknown>;
+  return (
+    ["http-page", "file-tab", "local-folder"].includes(String(record.provider)) &&
+    ["http", "file", "local-folder"].includes(String(record.sourceType)) &&
+    typeof record.baseLocator === "string" &&
+    typeof record.displayName === "string" &&
+    typeof record.offline === "boolean"
+  );
 }
 
 export function createCaptureJob(
@@ -58,7 +73,7 @@ export function transitionCaptureJob(
   next: CaptureJobStatus,
   phase: string,
   now: string | Date = new Date(),
-  patch: Pick<CaptureJobState, "tabId" | "page" | "error"> = {},
+  patch: Pick<CaptureJobState, "tabId" | "source" | "page" | "error"> = {},
 ): CaptureJobState {
   if (isTerminalJobStatus(current.status)) {
     throw new TypeError(`cannot transition terminal job ${current.jobId} from ${current.status}`);
@@ -71,6 +86,7 @@ export function transitionCaptureJob(
     phase,
     updatedAt: canonicalTimestamp(now),
     ...(patch.tabId === undefined ? {} : { tabId: patch.tabId }),
+    ...(patch.source === undefined ? {} : { source: patch.source }),
     ...(patch.page === undefined ? {} : { page: patch.page }),
     ...(patch.error === undefined ? {} : { error: patch.error }),
   };
@@ -86,6 +102,7 @@ export function isCaptureJobState(value: unknown): value is CaptureJobState {
     ["idle", "queued", "running", "completed", "failed", "cancelled"].includes(record.status) &&
     typeof record.phase === "string" &&
     typeof record.createdAt === "string" &&
-    typeof record.updatedAt === "string"
+    typeof record.updatedAt === "string" &&
+    (record.source === undefined || isSourceDescriptor(record.source))
   );
 }

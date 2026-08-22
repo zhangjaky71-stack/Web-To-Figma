@@ -9,7 +9,8 @@ import {
 } from "../src/runtime/protocol.js";
 
 describe("browser shell message protocol", () => {
-  it("accepts only the frozen NODE-05 request vocabulary", () => {
+  it("accepts only the frozen shell plus NODE-06 source capability vocabulary", () => {
+    expect(isW2fShellRequest({ type: "W2F_GET_SOURCE_CAPABILITY" })).toBe(true);
     expect(isW2fShellRequest({ type: "W2F_GET_JOB_STATE" })).toBe(true);
     expect(isW2fShellRequest({ type: "W2F_START_JOB", mode: "full-page" })).toBe(true);
     expect(isW2fShellRequest({ type: "W2F_START_JOB", mode: "unsupported" })).toBe(false);
@@ -42,14 +43,22 @@ describe("browser shell message protocol", () => {
     ).toBe(false);
   });
 
-  it("uses typed success/failure envelopes", () => {
-    const success = shellSuccess("W2F_GET_SHELL_INFO", {
+  it("uses typed success/failure envelopes for source capability and shell state", () => {
+    const success = shellSuccess("W2F_GET_SOURCE_CAPABILITY", {
+      provider: "http-page",
+      supported: true,
+      available: true,
+      code: "ready",
+      reason: "fixture",
+    });
+    const shellInfo = shellSuccess("W2F_GET_SHELL_INFO", {
       shellVersion: W2F_EXTENSION_SHELL_VERSION,
       manifestVersion: 3,
       captureImplemented: false,
     });
     const failure = shellFailure("W2F_START_JOB", new Error("fixture failure"));
     expect(isW2fShellResponse(success)).toBe(true);
+    expect(isW2fShellResponse(shellInfo)).toBe(true);
     expect(isW2fShellResponse(failure)).toBe(true);
     expect(failure).toMatchObject({ ok: false, error: "fixture failure" });
   });

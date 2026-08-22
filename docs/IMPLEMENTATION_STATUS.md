@@ -15,9 +15,9 @@
 | 02 | W2F File Spec V2 | DONE | Shared schema + frozen-lockfile GitHub Actions PASS | PR #6 merged |
 | 03 | W2F IR V2 | DONE | IR roundtrip/reference validation + frozen-lockfile GitHub Actions PASS | PR #7 merged |
 | 04 | Stable Identity & Source Mapping | DONE | Repeat-capture identity/mapping + frozen-lockfile GitHub Actions PASS | PR #8 merged |
-| 05 | Browser Extension Shell | DONE | Loadable MV3 package + frozen-lockfile GitHub Actions PASS | PR #9 |
-| 06 | Source Providers & Offline | NEXT | - | - |
-| 07 | Region Selector & Redaction | TODO | - | - |
+| 05 | Browser Extension Shell | DONE | Loadable MV3 package + frozen-lockfile GitHub Actions PASS | PR #9 merged |
+| 06 | Source Providers & Offline | DONE | Source-provider/runtime/package + frozen-lockfile GitHub Actions PASS | PR #10 |
+| 07 | Region Selector & Redaction | NEXT | - | - |
 | 08 | Standard DOM Capture | TODO | - | - |
 | 09 | CDP High Fidelity Adapter | TODO | - | - |
 | 10 | Text / Inline / Pseudo Capture | TODO | - | - |
@@ -45,28 +45,32 @@
 
 ## Current Node
 
-`NODE-06 — Source Providers & Offline`
+`NODE-07 — Region Selector & Redaction`
 
-## NODE-05 Completion
+## NODE-06 Completion
 
-NODE-05 replaces the compile-only Browser workspace shell with a real Chromium Manifest V3 extension application.
+NODE-06 implements the frozen V2 source-provider boundary used by later Browser capture and asset-resolution nodes.
 
-Implemented in `apps/browser-extension`:
+Implemented in `packages/source-providers` and `apps/browser-extension`:
 
-- Manifest V3 source manifest;
-- module background service worker;
-- popup with Full page / Select area shell actions;
-- options/status surface;
-- typed runtime message protocol;
-- persistent capture-job state in `chrome.storage.local`;
-- user-action content bridge injection through `chrome.scripting`;
-- page probe evidence for URL/title/document size/viewport/DPR;
-- deterministic extension build and packaging pipeline;
-- loadable unpacked output in `apps/browser-extension/dist`;
-- package/security validation;
-- Browser integration with NODE-02 schema, NODE-03 IR and NODE-04 stable identity packages.
+- shared `@w2f/source-providers` contract package;
+- `HttpPageProvider`;
+- `FileTabProvider`;
+- `LocalFolderProvider`;
+- structured source capability results and required user actions;
+- HTTP/file relative reference resolution;
+- root-scoped local-folder relative resolution;
+- missing local-resource evidence without silent network fallback;
+- root traversal and normalized duplicate-entry protection;
+- Chrome `file://` access preflight;
+- explicit user local-folder selection surface;
+- Browser service-worker source preflight before content injection;
+- source descriptor persistence in capture job state;
+- `W2F_GET_SOURCE_CAPABILITY` protocol support;
+- packaged Chrome-resolvable source-provider runtime modules;
+- package validator rejection of unresolved `@w2f/*` Browser runtime imports.
 
-NODE-05 permission posture is intentionally minimal:
+The Browser extension remains least-privilege:
 
 ```text
 activeTab
@@ -74,71 +78,64 @@ scripting
 storage
 ```
 
-There are no broad default host permissions and no always-on static content scripts. File/local-folder source permissions are deferred to NODE-06; debugger/CDP permissions are deferred to NODE-09.
+NODE-06 adds no broad `host_permissions`, `<all_urls>`, debugger permission or static content scripts. File access remains a Chrome user setting checked at runtime; local-folder access requires explicit user selection.
 
-## NODE-05 Validation
+## NODE-06 Validation
 
-The first cloud run exposed an obsolete NODE-01 assumption that the Browser build script must equal a raw `tsc` command. The dependency-free foundation validator was evolved to accept and verify the real extension package pipeline while preserving TypeScript and MV3 invariants.
+The new workspace importer is committed in the authoritative `pnpm-lock.yaml` and the temporary write-enabled bootstrap has been removed.
 
-The real Browser shell then passed:
-
-- foundation validation;
-- frozen-lockfile installation;
-- ESLint;
-- TypeScript 6.0.3 typecheck;
-- 11 Browser shell/job/protocol tests;
-- full repository Vitest suite;
-- deterministic Browser build;
-- Browser extension package/security validator;
-- repository build;
-- pinned Prettier 3.9.6 format check.
-
-The temporary formatting workflow was removed and standard read-only CI restored:
+Final standard read-only GitHub Actions run:
 
 ```text
-permissions:
-  contents: read
-
-pnpm install --frozen-lockfile
-```
-
-Final read-only GitHub Actions run:
-
-```text
-32567397560
+32570905251
 ```
 
 validated commit:
 
 ```text
-e3f284875c0e2977048fb25823fe2dc4c4a018e5
+09e31c5e1bfb4efde5f3da3222a0329a26cd32ed
 ```
 
-with every formal gate **PASS**.
+with every formal gate **PASS**:
+
+- dependency-free foundation validation;
+- Node.js 24 / pnpm 11.22.0;
+- `pnpm install --frozen-lockfile`;
+- ESLint;
+- TypeScript 6.0.3 typecheck;
+- source-provider tests;
+- Browser integration tests;
+- full repository Vitest suite;
+- deterministic Browser extension build;
+- Browser package/runtime validator;
+- pinned Prettier 3.9.6 format check.
 
 Normative documentation:
 
-- `docs/BROWSER_EXTENSION_SHELL_V2.md`;
-- `docs/adr/ADR-0005-browser-extension-mv3-shell-and-permission-boundary.md`;
-- `docs/nodes/NODE-05_BROWSER_EXTENSION_SHELL.md`;
-- `apps/browser-extension/README.md`.
+- `docs/SOURCE_PROVIDERS_OFFLINE_V2.md`;
+- `docs/adr/ADR-0006-source-provider-boundary-and-offline-access.md`;
+- `docs/nodes/NODE-06_SOURCE_PROVIDERS_OFFLINE.md`;
+- `packages/source-providers`.
 
-## NODE-05 Exit Criteria
+## NODE-06 Exit Criteria
 
-- [x] production Manifest V3 shell
-- [x] popup
-- [x] module service worker
-- [x] content bridge
-- [x] typed message protocol
-- [x] persistent job state
-- [x] least-privilege permission boundary
-- [x] Browser shared-contract integration
-- [x] loadable unpacked extension package
-- [x] deterministic build/package validator
-- [x] Browser shell tests
-- [x] temporary write-enabled workflow removed
-- [x] standard read-only frozen-lockfile CI restored
-- [x] final frozen-lockfile CI passes
+- [x] shared source-provider package
+- [x] `HttpPageProvider`
+- [x] `FileTabProvider`
+- [x] `LocalFolderProvider`
+- [x] explicit capability/required-action model
+- [x] HTTP/file/local-folder reference resolution
+- [x] local root traversal protection
+- [x] missing local resource evidence
+- [x] Chrome file access preflight
+- [x] explicit local-folder selection surface
+- [x] Browser source preflight and persisted descriptor
+- [x] Chrome-resolvable packaged provider runtime
+- [x] Browser least-privilege boundary preserved
+- [x] tests/typecheck/build/package validation pass
+- [x] authoritative lockfile updated
+- [x] temporary write-enabled bootstrap removed
+- [x] final standard read-only frozen-lockfile CI passes
 
 ## Blockers
 
@@ -146,14 +143,6 @@ None.
 
 ## Next
 
-Proceed to `NODE-06 — Source Providers & Offline`.
+Proceed to `NODE-07 — Region Selector & Redaction`.
 
-NODE-06 implements the frozen V2 source-provider abstraction and the three required providers:
-
-```text
-HttpPageProvider
-FileTabProvider
-LocalFolderProvider
-```
-
-It must add capability checks, relative-URL resolution and explicit host/local permission behavior without weakening the NODE-05 least-privilege default shell.
+NODE-07 must implement the interactive region-selection/redaction layer on top of the NODE-05 Browser shell and NODE-06 source preflight while preserving deterministic geometry and explicit user control. It must not implement NODE-08 DOM extraction prematurely.

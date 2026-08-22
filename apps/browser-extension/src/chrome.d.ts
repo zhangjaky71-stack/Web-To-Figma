@@ -21,6 +21,10 @@ declare namespace chrome {
     function openOptionsPage(): Promise<void>;
   }
 
+  namespace extension {
+    function isAllowedFileSchemeAccess(): Promise<boolean>;
+  }
+
   namespace storage {
     interface StorageArea {
       get(keys?: string | readonly string[] | null): Promise<Record<string, unknown>>;

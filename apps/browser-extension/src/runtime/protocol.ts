@@ -1,3 +1,4 @@
+import type { SourceCapability } from "@w2f/source-providers";
 import type { CaptureJobMode, CaptureJobState, PageProbe } from "./job-state.js";
 
 export const W2F_EXTENSION_SHELL_VERSION = "1.0.0" as const;
@@ -5,6 +6,7 @@ export const W2F_JOB_STORAGE_KEY = "w2f.captureJob.v1" as const;
 
 export type W2fShellRequest =
   | { type: "W2F_GET_SHELL_INFO" }
+  | { type: "W2F_GET_SOURCE_CAPABILITY" }
   | { type: "W2F_GET_JOB_STATE" }
   | { type: "W2F_START_JOB"; mode: CaptureJobMode }
   | { type: "W2F_CANCEL_JOB"; jobId: string };
@@ -27,8 +29,10 @@ export interface W2fShellInfo {
   captureImplemented: false;
 }
 
+export type W2fShellResponseData = W2fShellInfo | SourceCapability | CaptureJobState | null;
+
 export type W2fShellResponse =
-  | { ok: true; requestType: W2fShellRequest["type"]; data: W2fShellInfo | CaptureJobState | null }
+  | { ok: true; requestType: W2fShellRequest["type"]; data: W2fShellResponseData }
   | { ok: false; requestType: string; error: string };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -39,6 +43,7 @@ export function isW2fShellRequest(value: unknown): value is W2fShellRequest {
   if (!isRecord(value) || typeof value.type !== "string") return false;
   switch (value.type) {
     case "W2F_GET_SHELL_INFO":
+    case "W2F_GET_SOURCE_CAPABILITY":
     case "W2F_GET_JOB_STATE":
       return true;
     case "W2F_START_JOB":
@@ -76,7 +81,7 @@ export function isW2fShellResponse(value: unknown): value is W2fShellResponse {
 
 export function shellSuccess(
   requestType: W2fShellRequest["type"],
-  data: W2fShellInfo | CaptureJobState | null,
+  data: W2fShellResponseData,
 ): W2fShellResponse {
   return { ok: true, requestType, data };
 }

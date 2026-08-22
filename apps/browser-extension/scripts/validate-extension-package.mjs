@@ -9,6 +9,14 @@ const requiredFiles = [
   "options.html",
   "shell.css",
   "runtime/service-worker.js",
+  "runtime/source-runtime.js",
+  "runtime/source-providers/index.js",
+  "runtime/source-providers/http-page-provider.js",
+  "runtime/source-providers/file-tab-provider.js",
+  "runtime/source-providers/local-folder-provider.js",
+  "runtime/source-providers/registry.js",
+  "runtime/source-providers/types.js",
+  "runtime/source-providers/urls.js",
   "runtime/content-script.js",
   "runtime/popup.js",
   "runtime/options.js",
@@ -18,6 +26,20 @@ const requiredFiles = [
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
+}
+
+async function walkJsFiles(directory, prefix = "") {
+  const entries = await readdir(directory, { withFileTypes: true });
+  const files = [];
+  for (const entry of entries) {
+    const relativePath = prefix ? `${prefix}/${entry.name}` : entry.name;
+    if (entry.isDirectory()) {
+      files.push(...(await walkJsFiles(`${directory}/${entry.name}`, relativePath)));
+    } else if (entry.name.endsWith(".js")) {
+      files.push(relativePath);
+    }
+  }
+  return files;
 }
 
 for (const relativePath of requiredFiles) {
@@ -38,13 +60,13 @@ assert(manifest.options_ui?.open_in_tab === true, "options must open in a tab");
 const permissions = [...(manifest.permissions ?? [])].sort();
 assert(
   JSON.stringify(permissions) === JSON.stringify(["activeTab", "scripting", "storage"].sort()),
-  "NODE-05 permissions must remain activeTab+scripting+storage",
+  "browser permissions must remain activeTab+scripting+storage",
 );
-assert(!("host_permissions" in manifest), "NODE-05 must not request broad host permissions");
 assert(
-  !("content_scripts" in manifest),
-  "NODE-05 content script must be injected only after user action",
+  !("host_permissions" in manifest),
+  "source providers must not request broad host permissions",
 );
+assert(!("content_scripts" in manifest), "content script must be injected only after user action");
 assert(
   manifest.content_security_policy?.extension_pages === "script-src 'self'; object-src 'self'",
   "extension page CSP must remain self-only",
@@ -58,11 +80,21 @@ assert(
   "options module entrypoint missing",
 );
 
-const runtimeFiles = await readdir(`${outputRoot}/runtime`);
-for (const file of runtimeFiles.filter((name) => name.endsWith(".js"))) {
+const runtimeFiles = await walkJsFiles(`${outputRoot}/runtime`);
+for (const file of runtimeFiles) {
   const source = await readFile(`${outputRoot}/runtime/${file}`, "utf8");
   assert(!/https?:\/\//i.test(source), `remote code URL found in runtime/${file}`);
+  assert(
+    !/from\s+["']@w2f\//.test(source),
+    `unresolved @w2f runtime import found in runtime/${file}`,
+  );
 }
+
+const sourceRuntime = await readFile(`${outputRoot}/runtime/source-runtime.js`, "utf8");
+assert(
+  sourceRuntime.includes('from "./source-providers/index.js"'),
+  "source runtime must use packaged relative source-provider modules",
+);
 
 const contentScript = await readFile(`${outputRoot}/runtime/content-script.js`, "utf8");
 assert(

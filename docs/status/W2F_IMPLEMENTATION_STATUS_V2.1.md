@@ -3,8 +3,8 @@
 **Export Package Format:** `.wtf` (`application/x-wtf`)  
 **Implementation Baseline:** V2 Baseline + V2.1 Addendum + NODE-00 Contracts  
 **Architecture Status:** FROZEN FOR IMPLEMENTATION  
-**Current Node:** NODE-01 — Monorepo Foundation  
-**Current State:** IN PROGRESS / BLOCKED  
+**Current Node:** NODE-07 — Region Selector & Redaction  
+**Current State:** NEXT  
 **Date:** 2026-08-22
 
 > Canonical live status is `docs/IMPLEMENTATION_STATUS.md`. This file is a compatibility/status snapshot and must not override the canonical status file.
@@ -22,42 +22,82 @@
 
 ## Progress
 
-- NODE-00 — DONE / PASS / merged in PR #3
-- NODE-01 — IN PROGRESS / PR #4 / blocker #5
-- NODE-02+ — TODO
+- NODE-00 — DONE / PASS / PR #3 merged
+- NODE-01 — DONE / frozen-lockfile CI PASS / PR #4 merged
+- NODE-02 — DONE / schema CI PASS / PR #6 merged
+- NODE-03 — DONE / IR CI PASS / PR #7 merged
+- NODE-04 — DONE / stable identity CI PASS / PR #8 merged
+- NODE-05 — DONE / Browser MV3 shell CI PASS / PR #9 merged
+- NODE-06 — DONE / source providers & offline CI PASS / PR #10
+- NODE-07 — NEXT
+- NODE-08+ — TODO
 
-## NODE-01 Implemented
+## NODE-06 Completed
 
-- pnpm/Turborepo workspace foundation
-- Node.js 24 LTS policy
-- TypeScript/ESLint/Prettier/Vitest baseline
-- browser-extension shell
-- figma-plugin shell
-- shared-utils proof package
-- source-only build configs
-- `.wtf` constants and tests
-- dependency-free foundation validator
-- bootstrap/frozen lockfile policy
-- GitHub Actions CI workflow
-- local static/runtime/build-compat validation
+NODE-06 establishes the shared source-provider layer required by later Browser capture and asset nodes:
 
-## Current Blocker
+```text
+HttpPageProvider
+FileTabProvider
+LocalFolderProvider
+```
 
-GitHub Actions cannot currently execute even a minimal GitHub-hosted `ubuntu-latest` diagnostic job in this private repository. Multiple attempts fail before any workflow step executes (`steps=[]` / `steps=null`).
+Implemented behavior includes:
 
-GitHub public status reports Actions operational, so the blocker is treated as repository/account-specific until Actions settings, hosted-runner permission, or private-repository billing/budget is corrected.
+- explicit source capability checks and required user actions;
+- HTTP/file/local-folder relative reference resolution;
+- Chrome file-scheme access preflight;
+- explicit user local-folder selection;
+- root-scoped local folder indexing;
+- local path traversal protection;
+- missing local resource evidence;
+- Browser service-worker source preflight;
+- source descriptor persistence in capture job state;
+- Chrome-resolvable packaging of shared provider runtime modules;
+- validation that no unresolved `@w2f/*` bare runtime import reaches the final extension package.
 
-Tracked in:
+Browser permissions remain:
 
-`Issue #5 — BLOCKER: GitHub Actions jobs fail before first step`
+```text
+activeTab
+scripting
+storage
+```
 
-Until Actions executes jobs, the project cannot generate and validate the authoritative initial `pnpm-lock.yaml` through the pinned pnpm toolchain or complete the required frozen-lockfile pipeline.
+No broad host permissions, `<all_urls>`, debugger permission or static content script was added.
 
-## Exit Criteria Remaining
+## NODE-06 Final Validation
 
-- GitHub Actions runner executes successfully
-- `pnpm-lock.yaml` generated and committed
-- CI uses `pnpm install --frozen-lockfile`
-- lint/typecheck/test/build/format all pass under pinned versions
+Temporary bootstrap workflow removed.
 
-Do not advance to NODE-02 until these gates pass.
+Final standard read-only frozen-lockfile GitHub Actions run:
+
+```text
+32570905251
+```
+
+validated commit:
+
+```text
+09e31c5e1bfb4efde5f3da3222a0329a26cd32ed
+```
+
+All formal gates passed:
+
+- foundation validation;
+- Node.js 24 / pnpm 11.22.0;
+- frozen lockfile install;
+- lint;
+- typecheck;
+- tests;
+- build;
+- Browser package/runtime validation;
+- Prettier format check.
+
+## Blockers
+
+None.
+
+## Next
+
+Proceed to `NODE-07 — Region Selector & Redaction` after PR #10 is merged.

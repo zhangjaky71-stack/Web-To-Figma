@@ -20,14 +20,22 @@ describe("browser capture job state", () => {
     expect(isCaptureJobState(job)).toBe(true);
   });
 
-  it("preserves accumulated job evidence across transitions", () => {
+  it("preserves source and page evidence across transitions", () => {
     const queued = createCaptureJob("region", "job_region", "2026-08-22T02:00:00.000Z");
+    const source = {
+      provider: "http-page",
+      sourceType: "http",
+      sourceUrl: "https://example.com/",
+      baseLocator: "https://example.com/",
+      displayName: "Example",
+      offline: false,
+    } as const;
     const running = transitionCaptureJob(
       queued,
       "running",
       "injecting-content-shell",
       "2026-08-22T02:00:01.000Z",
-      { tabId: 42 },
+      { tabId: 42, source },
     );
     const completed = transitionCaptureJob(
       running,
@@ -48,8 +56,15 @@ describe("browser capture job state", () => {
     );
 
     expect(completed.tabId).toBe(42);
+    expect(completed.source).toEqual(source);
     expect(completed.page?.documentHeight).toBe(3200);
+    expect(isCaptureJobState(completed)).toBe(true);
     expect(isTerminalJobStatus(completed.status)).toBe(true);
+  });
+
+  it("rejects malformed persisted source descriptors", () => {
+    const job = createCaptureJob("full-page", "job_source_guard", "2026-08-22T02:00:00.000Z");
+    expect(isCaptureJobState({ ...job, source: { provider: "file-tab" } })).toBe(false);
   });
 
   it("rejects transitions after a terminal state", () => {

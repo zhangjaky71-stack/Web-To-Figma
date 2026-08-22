@@ -41,9 +41,7 @@ export function createWtfIrEnvelope(bundle: WtfIrBundle): WtfIrEnvelope {
   return { irVersion: WTF_IR_VERSION, bundle };
 }
 
-export function migrateWtfIrEnvelope(
-  value: unknown,
-): WtfIrValidationResult<WtfIrMigrationResult> {
+export function migrateWtfIrEnvelope(value: unknown): WtfIrValidationResult<WtfIrMigrationResult> {
   if (!isRecord(value)) {
     return validationFailure("$", "WTF_IR_ENVELOPE_INVALID", "IR envelope must be an object");
   }
@@ -103,9 +101,7 @@ export function decodeWtfIrEnvelope(text: string): WtfIrValidationResult<WtfIrMi
     parsed = JSON.parse(text) as unknown;
   } catch (error) {
     const message = error instanceof Error ? error.message : "invalid JSON";
-    const errors: WtfIrValidationError[] = [
-      { path: "$", code: "WTF_IR_JSON_INVALID", message },
-    ];
+    const errors: WtfIrValidationError[] = [{ path: "$", code: "WTF_IR_JSON_INVALID", message }];
     return { ok: false, errors };
   }
   return migrateWtfIrEnvelope(parsed);

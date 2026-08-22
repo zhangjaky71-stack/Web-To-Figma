@@ -28,14 +28,7 @@ export interface WtfStableIdentity {
 }
 
 export type WtfSourceNodeKind =
-  | "document"
-  | "element"
-  | "text"
-  | "pseudo"
-  | "shadow-root"
-  | "iframe"
-  | "slot"
-  | "comment";
+  "document" | "element" | "text" | "pseudo" | "shadow-root" | "iframe" | "slot" | "comment";
 
 export type WtfRenderNodeKind =
   | "document"
@@ -176,15 +169,7 @@ export interface WtfAbsoluteConstraints {
 }
 
 export type WtfLayoutMode =
-  | "none"
-  | "flow"
-  | "flex"
-  | "grid"
-  | "absolute"
-  | "table"
-  | "inline"
-  | "contents"
-  | "unknown";
+  "none" | "flow" | "flex" | "grid" | "absolute" | "table" | "inline" | "contents" | "unknown";
 
 export interface WtfLayoutModel {
   mode: WtfLayoutMode;
@@ -398,12 +383,7 @@ export interface WtfSourceGraph {
 }
 
 export type WtfRenderStrategy =
-  | "native"
-  | "emulated"
-  | "wrapper"
-  | "absolute"
-  | "raster"
-  | "unsupported";
+  "native" | "emulated" | "wrapper" | "absolute" | "raster" | "unsupported";
 
 export interface WtfComponentCandidate {
   fingerprint: StructuralFingerprint;
@@ -571,8 +551,7 @@ export interface WtfIrValidationError {
 }
 
 export type WtfIrValidationResult<T> =
-  | { ok: true; value: T }
-  | { ok: false; errors: WtfIrValidationError[] };
+  { ok: true; value: T } | { ok: false; errors: WtfIrValidationError[] };
 
 export interface WtfIrMigrationResult {
   migrated: boolean;

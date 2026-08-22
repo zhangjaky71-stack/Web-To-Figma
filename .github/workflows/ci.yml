@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feat/node-02-wtf-file-spec-v2
+  pull_request:
 
 permissions:
   contents: write
@@ -49,6 +50,7 @@ jobs:
         run: pnpm format:check
 
       - name: Commit lockfile
+        if: github.event_name == 'push'
         shell: bash
         run: |
           git config user.name "github-actions[bot]"

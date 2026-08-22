@@ -46,19 +46,22 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: Apply canonical formatting
+        run: pnpm exec prettier --write packages/w2f-schema/src/index.ts
+
       - name: Format check
         run: pnpm format:check
 
-      - name: Commit lockfile
+      - name: Commit bootstrap outputs
         if: github.event_name == 'push'
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add pnpm-lock.yaml
+          git add pnpm-lock.yaml packages/w2f-schema/src/index.ts
           if git diff --cached --quiet; then
-            echo "No lockfile changes to commit"
+            echo "No bootstrap changes to commit"
             exit 0
           fi
-          git commit -m "build(node-02): update workspace lockfile"
+          git commit -m "build(node-02): finalize schema formatting and lockfile"
           git push origin HEAD:feat/node-02-wtf-file-spec-v2

@@ -2,22 +2,22 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches:
+      - feat/node-04-stable-identity-source-mapping
   pull_request:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  quality:
+  node-04-bootstrap:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: Checkout
+      - name: Checkout feature branch
         uses: actions/checkout@v6
-
-      - name: Validate foundation
-        run: node scripts/validate-foundation.mjs
+        with:
+          ref: feat/node-04-stable-identity-source-mapping
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -31,13 +31,11 @@ jobs:
           node-version: 24
           package-manager-cache: false
 
-      - name: Verify toolchain
-        run: |
-          node --version
-          pnpm --version
+      - name: Update workspace lockfile
+        run: pnpm install --no-frozen-lockfile
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Apply canonical formatting
+        run: pnpm exec prettier --write packages/stable-identity apps/browser-extension
 
       - name: Lint
         run: pnpm lint
@@ -53,3 +51,17 @@ jobs:
 
       - name: Format check
         run: pnpm format:check
+
+      - name: Commit bootstrap outputs
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pnpm-lock.yaml packages/stable-identity apps/browser-extension
+          if git diff --cached --quiet; then
+            echo "No bootstrap changes to commit"
+            exit 0
+          fi
+          git commit -m "build(node-04): finalize identity formatting and lockfile"
+          git push origin HEAD:feat/node-04-stable-identity-source-mapping

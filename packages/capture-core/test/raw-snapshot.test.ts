@@ -18,8 +18,15 @@ function fixture(): RawSnapshot {
     environment: {
       viewportWidth: 1280,
       viewportHeight: 720,
-      devicePixelRatio: 2,
-      visualViewportScale: 1,
+      scale: {
+        context: {
+          devicePixelRatio: 2,
+          visualViewportScale: 1,
+        },
+        browserPageZoomAvailability: "unavailable",
+        cssZoomAvailability: "unavailable",
+        reasons: ["Standard page APIs do not reliably separate browser page zoom from OS scale."],
+      },
     },
     nodes: [
       {
@@ -73,10 +80,12 @@ function fixture(): RawSnapshot {
 }
 
 describe("RawSnapshot", () => {
-  it("accepts a standard snapshot with double-precision geometry", () => {
+  it("accepts a standard snapshot with double-precision geometry and explicit scale evidence", () => {
     const snapshot = fixture();
     expect(isRawSnapshot(snapshot)).toBe(true);
     expect(snapshot.nodes[1]?.geometry?.bounds.x).toBe(10.25);
+    expect(snapshot.environment.scale.context.devicePixelRatio).toBe(2);
+    expect(snapshot.environment.scale.browserPageZoomAvailability).toBe("unavailable");
     expect(summarizeRawSnapshot(snapshot)).toEqual({
       version: "1.0.0",
       adapter: "standard",
@@ -96,6 +105,12 @@ describe("RawSnapshot", () => {
   it("rejects nodes whose frame context is not registered", () => {
     const snapshot = fixture();
     snapshot.nodes[1]!.frameContext = { frameId: "missing-frame" };
+    expect(isRawSnapshot(snapshot)).toBe(false);
+  });
+
+  it("rejects invalid scale evidence instead of collapsing scale dimensions", () => {
+    const snapshot = fixture();
+    snapshot.environment.scale.context.devicePixelRatio = 0;
     expect(isRawSnapshot(snapshot)).toBe(false);
   });
 

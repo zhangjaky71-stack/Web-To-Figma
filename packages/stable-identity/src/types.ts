@@ -66,15 +66,15 @@ export interface StableIdentityNodeInput {
 
 export interface StableIdentitySignals {
   documentId: string;
-  sourceOrigin?: string;
+  sourceOrigin?: string | undefined;
   tagName: string;
-  namespace?: string;
-  role?: string;
-  stableIdAttribute?: string;
+  namespace?: string | undefined;
+  role?: string | undefined;
+  stableIdAttribute?: string | undefined;
   stableDataAttributes: readonly string[];
   meaningfulClasses: readonly string[];
   ancestry: readonly string[];
-  normalizedText?: string;
+  normalizedText?: string | undefined;
   assetFingerprints: readonly string[];
   structuralPosition: StableStructuralPosition;
   usesStructuralFallback: boolean;

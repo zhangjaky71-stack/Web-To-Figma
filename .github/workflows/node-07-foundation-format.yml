@@ -1,9 +1,11 @@
 name: NODE-07 Foundation Format
 
 on:
-  push:
+  pull_request:
     branches:
-      - feat/node-07-region-selector-redaction
+      - main
+    types:
+      - synchronize
 
 permissions:
   contents: write
@@ -14,6 +16,7 @@ concurrency:
 
 jobs:
   format:
+    if: github.head_ref == 'feat/node-07-region-selector-redaction'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

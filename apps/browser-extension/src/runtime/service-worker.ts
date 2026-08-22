@@ -71,7 +71,7 @@ function pageProbeFromSnapshot(snapshot: RawSnapshot): PageProbe {
     documentHeight: root?.geometry?.bounds.height ?? snapshot.environment.viewportHeight,
     viewportWidth: snapshot.environment.viewportWidth,
     viewportHeight: snapshot.environment.viewportHeight,
-    devicePixelRatio: snapshot.environment.devicePixelRatio,
+    devicePixelRatio: snapshot.environment.scale.context.devicePixelRatio,
   };
 }
 

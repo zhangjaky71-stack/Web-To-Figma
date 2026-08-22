@@ -11,8 +11,8 @@
 | NODE | Name | Status | Validation | Commit/PR |
 |---|---|---|---|---|
 | 00 | Product Baseline & Acceptance Contract | DONE | PASS | PR #3 merged |
-| 01 | Monorepo Foundation | IN PROGRESS / BLOCKED | Local structural/runtime/build-compat validation PASS; GitHub Actions runner unavailable | PR #4 / Issue #5 |
-| 02 | W2F File Spec V2 | TODO | - | - |
+| 01 | Monorepo Foundation | DONE | GitHub Actions frozen-lockfile quality pipeline PASS | PR #4 |
+| 02 | W2F File Spec V2 | NEXT | - | - |
 | 03 | W2F IR V2 | TODO | - | - |
 | 04 | Stable Identity & Source Mapping | TODO | - | - |
 | 05 | Browser Extension Shell | TODO | - | - |
@@ -45,92 +45,58 @@
 
 ## Current Node
 
-`NODE-01 — Monorepo Foundation`
+`NODE-02 — W2F File Spec V2`
 
-## NODE-01 Implemented
+## NODE-01 Completion
 
-- [x] pnpm workspace
-- [x] Turborepo task graph
-- [x] Node.js 24 LTS policy
-- [x] strict shared TypeScript baseline
-- [x] ESLint flat config
-- [x] Prettier config
-- [x] `apps/browser-extension` compile/test shell
-- [x] `apps/figma-plugin` compile/test shell
-- [x] `packages/shared-utils` proof package
-- [x] source-only `tsconfig.build.json` for each executable package
-- [x] shared-utils exports aligned to `dist/index.js` + `dist/index.d.ts`
-- [x] `.wtf` extension/MIME constants protected by tests
-- [x] dependency-free `scripts/validate-foundation.mjs`
-- [x] bootstrap/frozen-lockfile CI state validation
-- [x] root `check` covers foundation + lint + typecheck + test + build + format
-- [x] GitHub Actions CI workflow
-- [x] local JSON/YAML/ESM static validation
-- [x] local dependency-free foundation validator PASS
-- [x] local TypeScript runtime smoke PASS
-- [x] local TypeScript 5.8.3 build-compat smoke PASS for all three executable workspaces
-- [x] toolchain compatibility review against current official package support
+NODE-01 is complete. The monorepo foundation now includes:
 
-## NODE-01 Validation
+- pnpm workspace and shared lockfile;
+- Turborepo task graph;
+- Node.js 24 LTS policy;
+- strict shared TypeScript configuration;
+- ESLint flat configuration;
+- Prettier configuration;
+- browser-extension compile/test shell;
+- Figma-plugin compile/test shell;
+- shared-utils proof package;
+- source-only build configurations;
+- `.wtf` extension and `application/x-wtf` contract tests;
+- dependency-free foundation validator;
+- authoritative `pnpm-lock.yaml` generated with pnpm 11.22.0;
+- GitHub Actions CI using `pnpm install --frozen-lockfile`.
 
-Local assistant container validation:
+## NODE-01 Final Validation
 
-- JSON parse: **PASS**
-- YAML parse: **PASS**
-- `eslint.config.mjs` syntax: **PASS**
-- repository/workspace structure review: **PASS**
-- dependency-free foundation contract mirror: **PASS**
-- zero-dependency TypeScript runtime smoke: **PASS**
-- `.wtf` extension/MIME behavior: **PASS**
-- browser-extension app id: **PASS**
-- Figma-plugin app id: **PASS**
-- TypeScript 5.8.3 source-only build compatibility: **PASS**
+GitHub Actions run `32563563130` on Ubuntu 24.04 completed successfully with the frozen toolchain and lockfile.
 
-The TypeScript 5.8.3 smoke is supplemental only; the frozen project toolchain remains TypeScript 6.0.3 and must still pass in formal CI.
+Validated gates:
 
-Current toolchain compatibility was rechecked: TypeScript 6.0.3 is within the current typescript-eslint supported TypeScript range (`>=4.8.4 <6.1.0`), and typescript-eslint supports ESLint 10.
+- GitHub-hosted runner: **PASS**
+- foundation validation: **PASS**
+- Node.js 24 setup: **PASS**
+- pnpm 11.22.0 setup: **PASS**
+- frozen-lockfile install: **PASS**
+- lint: **PASS**
+- TypeScript 6.0.3 typecheck: **PASS**
+- Vitest: **PASS**
+- build: **PASS**
+- Prettier format check: **PASS**
 
-The assistant execution container has no ordinary npm-registry network access, so the exact pnpm dependency graph cannot be installed locally and the authoritative lockfile cannot be produced locally.
+The earlier hosted-runner blocker tracked by Issue #5 is resolved and no longer blocks implementation.
 
-## GitHub Actions Diagnostics
+## Exit Criteria
 
-Issue: `#5 — BLOCKER: GitHub Actions jobs fail before first step`
-
-Observed evidence includes:
-
-- CI run `32477712350`: failure before lockfile artifact
-- CI run `32477835968`: failure before lockfile artifact
-- CI run `32477926703`: failure
-- Diagnostic run `32477926786`, attempt 1: failure
-- Diagnostic run `32477926786`, attempt 2: queued/started then failure with `steps=[]`
-- Diagnostic run `32477926786`, attempt 3: queued then failure with `steps=null`
-- CI run `32493919394` (#19): failure with `steps=null`
-- CI run `32494021872` (#20): failure with `steps=null`
-- CI run `32539554832` (#21): failure with `steps=null`
-
-The minimal diagnostic contains only `echo`, `node --version`, and `npm --version`, so repository code, pnpm install, lint, tests and build are not reached.
-
-GitHub public status currently reports Actions operational, so this is not being treated as a known global GitHub Actions incident. The blocker is therefore classified as **private-repository/account Actions execution environment unavailable or restricted** until repository/account settings prove otherwise.
-
-## Blockers
-
-1. GitHub Actions cannot currently execute even a trivial GitHub-hosted runner step in this private repository.
-2. Therefore CI cannot generate the authoritative initial `pnpm-lock.yaml` artifact.
-3. NODE-01 cannot satisfy the frozen-lockfile quality gate until the repository Actions environment executes jobs.
-
-The connected GitHub toolset can inspect/re-run Actions runs but does not expose repository/account Actions billing, spending-limit, or hosted-runner policy settings, so the platform-level blocker cannot be corrected directly through the current connector.
-
-## Exit Criteria Remaining
-
-- [ ] GitHub Actions runner executes a trivial job
-- [ ] `pnpm-lock.yaml` generated and committed
-- [ ] CI switched to `pnpm install --frozen-lockfile`
-- [ ] lint passes under pinned ESLint/typescript-eslint
-- [ ] typecheck passes under pinned TypeScript 6.0.3
-- [ ] Vitest passes
-- [ ] build passes
-- [ ] format check passes
+- [x] GitHub Actions runner executes
+- [x] authoritative `pnpm-lock.yaml` generated and committed
+- [x] CI uses `pnpm install --frozen-lockfile`
+- [x] foundation validator passes
+- [x] lint passes
+- [x] typecheck passes under TypeScript 6.0.3
+- [x] Vitest passes
+- [x] build passes
+- [x] format check passes
 
 ## Next
 
-Do **not** advance canonical implementation status to NODE-02 until NODE-01 exit criteria pass.
+Proceed to `NODE-02 — W2F File Spec V2` using the frozen V2 Baseline + V2.1 Addendum architecture contracts.

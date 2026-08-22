@@ -1,0 +1,76 @@
+name: NODE-06 Bootstrap
+
+on:
+  push:
+    branches:
+      - feat/node-06-source-providers-offline
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v6
+        with:
+          ref: feat/node-06-source-providers-offline
+
+      - name: Validate foundation
+        run: node scripts/validate-foundation.mjs
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.22.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Update workspace lockfile
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Apply canonical formatting
+        run: >-
+          pnpm exec prettier --write
+          packages/source-providers
+          apps/browser-extension/package.json
+          apps/browser-extension/src
+          apps/browser-extension/test
+          apps/browser-extension/static/popup.html
+          scripts/validate-foundation.mjs
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+      - name: Format check
+        run: pnpm format:check
+
+      - name: Commit bootstrap outputs
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pnpm-lock.yaml packages/source-providers apps/browser-extension/package.json apps/browser-extension/src apps/browser-extension/test apps/browser-extension/static/popup.html scripts/validate-foundation.mjs
+          if git diff --cached --quiet; then
+            echo "No bootstrap changes to commit"
+            exit 0
+          fi
+          git commit -m "build(node-06): finalize source-provider lockfile and formatting"
+          git push origin HEAD:feat/node-06-source-providers-offline

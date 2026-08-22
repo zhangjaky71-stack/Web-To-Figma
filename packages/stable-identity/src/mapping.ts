@@ -112,8 +112,11 @@ export function applyStableIdentityAssignments(
 
 export function toStableMappedNodes(nodes: readonly WtfSourceNode[]): StableMappedNode[] {
   return nodes
-    .filter((node): node is WtfSourceNode & { stableIdentity: NonNullable<WtfSourceNode["stableIdentity"]> } =>
-      Boolean(node.stableIdentity),
+    .filter(
+      (
+        node,
+      ): node is WtfSourceNode & { stableIdentity: NonNullable<WtfSourceNode["stableIdentity"]> } =>
+        Boolean(node.stableIdentity),
     )
     .map((node) => ({
       captureNodeId: node.captureNodeId,

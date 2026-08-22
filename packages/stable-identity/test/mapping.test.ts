@@ -55,9 +55,9 @@ describe("cross-capture stable mapping", () => {
       ["sid_header", "matched"],
       ["sid_legacy", "removed"],
     ]);
-    expect(result.mappings.find((mapping) => mapping.stableNodeId === "sid_header")?.confidence).toBe(
-      0.96,
-    );
+    expect(
+      result.mappings.find((mapping) => mapping.stableNodeId === "sid_header")?.confidence,
+    ).toBe(0.96);
   });
 
   it("marks duplicate stable ids as ambiguous instead of silently pairing by array order", () => {

@@ -17,7 +17,10 @@ function clampConfidence(value: number): number {
   return Math.round(Math.min(0.99, Math.max(0, value)) * 1000) / 1000;
 }
 
-function identityEvidence(signals: StableIdentitySignals): { confidence: number; evidence: string[] } {
+function identityEvidence(signals: StableIdentitySignals): {
+  confidence: number;
+  evidence: string[];
+} {
   let confidence = 0.22;
   const evidence = ["document-scope", `tag=${signals.tagName}`];
 
@@ -215,7 +218,8 @@ export async function createCaptureIdentity(
   if (!input.documentId.trim()) throw new TypeError("documentId must be non-empty");
   if (!input.captureNonce.trim()) throw new TypeError("captureNonce must be non-empty");
   const timestamp = new Date(input.capturedAt);
-  if (Number.isNaN(timestamp.getTime())) throw new TypeError("capturedAt must be a valid timestamp");
+  if (Number.isNaN(timestamp.getTime()))
+    throw new TypeError("capturedAt must be a valid timestamp");
   const capturedAt = timestamp.toISOString();
   const hash = await sha256Hex(
     canonicalStringify([

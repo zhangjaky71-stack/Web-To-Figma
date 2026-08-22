@@ -36,8 +36,7 @@ describe("stable document/capture identity", () => {
   it("normalizes HTTP locators without credentials, fragments, or tracking query parameters", () => {
     const normalized = normalizeDocumentLocator({
       sourceType: "http",
-      sourceUrl:
-        "HTTPS://User:Pass@Example.COM/catalog?utm_source=mail&b=2&a=1&gclid=abc#hero",
+      sourceUrl: "HTTPS://User:Pass@Example.COM/catalog?utm_source=mail&b=2&a=1&gclid=abc#hero",
     });
     expect(normalized).toBe("http:https://example.com/catalog?a=1&b=2");
   });
@@ -84,8 +83,12 @@ describe("stable document/capture identity", () => {
 
 describe("stable node identity", () => {
   it("maps the same semantic node across captures despite capture ids and volatile text numbers", async () => {
-    const first = await assignStableIdentity(node("cap_node_1", { textContent: "Buy now · 2026-08-22" }));
-    const second = await assignStableIdentity(node("cap_node_99", { textContent: "Buy now · 2026-08-23" }));
+    const first = await assignStableIdentity(
+      node("cap_node_1", { textContent: "Buy now · 2026-08-22" }),
+    );
+    const second = await assignStableIdentity(
+      node("cap_node_99", { textContent: "Buy now · 2026-08-23" }),
+    );
     expect(second.identity.id).toBe(first.identity.id);
     expect(second.signatureHash).toBe(first.signatureHash);
     expect(first.identity.evidence).toContain("stable-data-attribute");
@@ -114,8 +117,14 @@ describe("stable node identity", () => {
 
   it("deterministically disambiguates same-signature siblings using structural position", async () => {
     const assignments = await assignStableIdentities([
-      node("node_1", { structuralPosition: { siblingIndex: 0, sameKindIndex: 0 }, textContent: "" }),
-      node("node_2", { structuralPosition: { siblingIndex: 1, sameKindIndex: 1 }, textContent: "" }),
+      node("node_1", {
+        structuralPosition: { siblingIndex: 0, sameKindIndex: 0 },
+        textContent: "",
+      }),
+      node("node_2", {
+        structuralPosition: { siblingIndex: 1, sameKindIndex: 1 },
+        textContent: "",
+      }),
     ]);
     expect(assignments[0]!.identity.id).not.toBe(assignments[1]!.identity.id);
     expect(assignments[0]!.identity.evidence).toContain(

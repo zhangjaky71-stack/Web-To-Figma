@@ -5,14 +5,7 @@ import type {
   StableIdentitySignals,
 } from "./types.js";
 
-const TRACKING_QUERY_KEYS = new Set([
-  "fbclid",
-  "gclid",
-  "dclid",
-  "msclkid",
-  "mc_cid",
-  "mc_eid",
-]);
+const TRACKING_QUERY_KEYS = new Set(["fbclid", "gclid", "dclid", "msclkid", "mc_cid", "mc_eid"]);
 
 const STABLE_DATA_KEYS = new Set([
   "data-testid",
@@ -48,11 +41,14 @@ const GENERIC_UTILITY_CLASSES = new Set([
   "antialiased",
 ]);
 
-const UTILITY_CLASS_PATTERN = /^(?:-?(?:m|p)(?:[trblxy])?-[^\s]+|(?:w|h|min-w|max-w|min-h|max-h)-[^\s]+|(?:bg|text|font|leading|tracking|rounded|border|shadow|ring|gap|space|items|justify|self|content|place|col|row|z|opacity|overflow|object|aspect|translate|scale|rotate|skew|inset|top|right|bottom|left)-[^\s]+)$/;
+const UTILITY_CLASS_PATTERN =
+  /^(?:-?(?:m|p)(?:[trblxy])?-[^\s]+|(?:w|h|min-w|max-w|min-h|max-h)-[^\s]+|(?:bg|text|font|leading|tracking|rounded|border|shadow|ring|gap|space|items|justify|self|content|place|col|row|z|opacity|overflow|object|aspect|translate|scale|rotate|skew|inset|top|right|bottom|left)-[^\s]+)$/;
 const CSS_MODULE_PATTERN = /(?:__|--)[A-Za-z0-9_-]*[A-Za-z0-9]{5,}$|_[a-f0-9]{6,}$/i;
-const UUID_PATTERN = /^(?:[a-f0-9]{8}-){1}[a-f0-9]{4}-[1-5a-f0-9][a-f0-9]{3}-[89ab0-9][a-f0-9]{3}-[a-f0-9]{12}$/i;
+const UUID_PATTERN =
+  /^(?:[a-f0-9]{8}-){1}[a-f0-9]{4}-[1-5a-f0-9][a-f0-9]{3}-[89ab0-9][a-f0-9]{3}-[a-f0-9]{12}$/i;
 const LONG_DIGITS_PATTERN = /\d{10,}/;
-const HYDRATION_ID_PATTERN = /^(?::r\d+:|react[-_:]|radix[-_:]|headlessui[-_:]|ember\d+|mui-\d+|uid-?\d+$|__next$)/i;
+const HYDRATION_ID_PATTERN =
+  /^(?::r\d+:|react[-_:]|radix[-_:]|headlessui[-_:]|ember\d+|mui-\d+|uid-?\d+$|__next$)/i;
 const HASHY_VALUE_PATTERN = /(?:^|[-_])[a-f0-9]{10,}(?:$|[-_])/i;
 
 function normalizeWhitespace(value: string): string {
@@ -75,7 +71,9 @@ export function normalizeSourceOrigin(value: string | undefined): string | undef
 }
 
 function normalizeOpaqueSourceKey(value: string): string {
-  return normalizeWhitespace(value).replace(/\\/g, "/").replace(/\/{2,}/g, "/");
+  return normalizeWhitespace(value)
+    .replace(/\\/g, "/")
+    .replace(/\/{2,}/g, "/");
 }
 
 export function normalizeDocumentLocator(input: DocumentIdentityInput): string {
@@ -88,7 +86,10 @@ export function normalizeDocumentLocator(input: DocumentIdentityInput): string {
 
       if (url.protocol === "http:" || url.protocol === "https:") {
         const kept = [...url.searchParams.entries()]
-          .filter(([key]) => !key.toLowerCase().startsWith("utm_") && !TRACKING_QUERY_KEYS.has(key.toLowerCase()))
+          .filter(
+            ([key]) =>
+              !key.toLowerCase().startsWith("utm_") && !TRACKING_QUERY_KEYS.has(key.toLowerCase()),
+          )
           .sort(([aKey, aValue], [bKey, bValue]) =>
             aKey === bKey ? aValue.localeCompare(bValue) : aKey.localeCompare(bKey),
           );
@@ -166,7 +167,9 @@ export function isMeaningfulClassToken(value: string): boolean {
 
 export function getMeaningfulClasses(classes: readonly string[] | undefined): string[] {
   if (!classes) return [];
-  return [...new Set(classes.filter(isMeaningfulClassToken).map((item) => item.trim().toLowerCase()))]
+  return [
+    ...new Set(classes.filter(isMeaningfulClassToken).map((item) => item.trim().toLowerCase())),
+  ]
     .sort()
     .slice(0, 8);
 }
@@ -215,22 +218,31 @@ function ancestrySegmentSignature(segment: StableAncestrySegment): string {
     .join("|");
 }
 
-export function normalizeAncestry(ancestry: readonly StableAncestrySegment[] | undefined): string[] {
+export function normalizeAncestry(
+  ancestry: readonly StableAncestrySegment[] | undefined,
+): string[] {
   if (!ancestry) return [];
   return ancestry.slice(-10).map(ancestrySegmentSignature);
 }
 
 export function normalizeAssetFingerprints(values: readonly string[] | undefined): string[] {
   if (!values) return [];
-  return [...new Set(values.map((value) => normalizeWhitespace(value).toLowerCase()).filter(Boolean))]
+  return [
+    ...new Set(values.map((value) => normalizeWhitespace(value).toLowerCase()).filter(Boolean)),
+  ]
     .sort()
     .slice(0, 8);
 }
 
-export function collectStableIdentitySignals(input: StableIdentityNodeInput): StableIdentitySignals {
+export function collectStableIdentitySignals(
+  input: StableIdentityNodeInput,
+): StableIdentitySignals {
   if (!input.captureNodeId.trim()) throw new TypeError("captureNodeId must be non-empty");
   if (!input.documentId.trim()) throw new TypeError("documentId must be non-empty");
-  if (!Number.isSafeInteger(input.structuralPosition.siblingIndex) || input.structuralPosition.siblingIndex < 0) {
+  if (
+    !Number.isSafeInteger(input.structuralPosition.siblingIndex) ||
+    input.structuralPosition.siblingIndex < 0
+  ) {
     throw new TypeError("structuralPosition.siblingIndex must be a non-negative integer");
   }
 

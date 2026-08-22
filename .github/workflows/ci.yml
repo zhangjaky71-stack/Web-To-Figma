@@ -2,22 +2,22 @@ name: CI
 
 on:
   push:
-    branches:
-      - feat/node-03-wtf-ir-v2
+    branches: [main]
   pull_request:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  node-03-bootstrap:
+  quality:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: Checkout feature branch
+      - name: Checkout
         uses: actions/checkout@v6
-        with:
-          ref: feat/node-03-wtf-ir-v2
+
+      - name: Validate foundation
+        run: node scripts/validate-foundation.mjs
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -31,11 +31,13 @@ jobs:
           node-version: 24
           package-manager-cache: false
 
-      - name: Update workspace lockfile
-        run: pnpm install --no-frozen-lockfile
+      - name: Verify toolchain
+        run: |
+          node --version
+          pnpm --version
 
-      - name: Apply canonical formatting
-        run: pnpm exec prettier --write packages/w2f-ir apps/browser-extension apps/figma-plugin
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: Lint
         run: pnpm lint
@@ -51,17 +53,3 @@ jobs:
 
       - name: Format check
         run: pnpm format:check
-
-      - name: Commit bootstrap outputs
-        if: github.event_name == 'push'
-        shell: bash
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add pnpm-lock.yaml packages/w2f-ir apps/browser-extension apps/figma-plugin
-          if git diff --cached --quiet; then
-            echo "No bootstrap changes to commit"
-            exit 0
-          fi
-          git commit -m "build(node-03): finalize IR formatting and lockfile"
-          git push origin HEAD:feat/node-03-wtf-ir-v2

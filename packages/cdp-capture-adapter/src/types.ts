@@ -12,6 +12,10 @@ export interface CdpRareStringData {
   value: number[];
 }
 
+export interface CdpRareBooleanData {
+  index: number[];
+}
+
 export interface CdpNodeTreeSnapshot {
   parentIndex: number[];
   nodeType: number[];
@@ -22,6 +26,8 @@ export interface CdpNodeTreeSnapshot {
   shadowRootType?: CdpRareStringData;
   contentDocumentIndex?: CdpRareIntegerData;
   pseudoType?: CdpRareStringData;
+  inputChecked?: CdpRareBooleanData;
+  optionSelected?: CdpRareBooleanData;
   currentSourceURL?: CdpRareStringData;
   originURL?: CdpRareStringData;
 }

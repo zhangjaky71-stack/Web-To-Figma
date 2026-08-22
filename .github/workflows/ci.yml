@@ -2,19 +2,22 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches:
+      - feat/node-05-browser-extension-shell
   pull_request:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  quality:
+  node-05-format-bootstrap:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: Checkout
+      - name: Checkout feature branch
         uses: actions/checkout@v6
+        with:
+          ref: feat/node-05-browser-extension-shell
 
       - name: Validate foundation
         run: node scripts/validate-foundation.mjs
@@ -39,6 +42,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Apply canonical formatting
+        run: pnpm exec prettier --write apps/browser-extension scripts/validate-foundation.mjs
+
       - name: Lint
         run: pnpm lint
 
@@ -53,3 +59,17 @@ jobs:
 
       - name: Format check
         run: pnpm format:check
+
+      - name: Commit formatting
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/browser-extension scripts/validate-foundation.mjs
+          if git diff --cached --quiet; then
+            echo "No formatting changes to commit"
+            exit 0
+          fi
+          git commit -m "style(node-05): apply canonical extension formatting"
+          git push origin HEAD:feat/node-05-browser-extension-shell

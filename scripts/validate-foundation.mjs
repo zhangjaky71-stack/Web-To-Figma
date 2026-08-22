@@ -252,9 +252,7 @@ if (failures.length === 0) {
     "Browser source runtime must delegate source classification to the shared provider package",
   );
 
-  const regionSelectionSource = readText(
-    "apps/browser-extension/src/runtime/region-selection.ts",
-  );
+  const regionSelectionSource = readText("apps/browser-extension/src/runtime/region-selection.ts");
   assert(
     regionSelectionSource.includes('W2F_REGION_SELECTION_VERSION = "1.0.0"'),
     "NODE-07 region-selection contract version drifted",
@@ -285,9 +283,7 @@ if (failures.length === 0) {
     assert(browserProtocol.includes(messageType), `NODE-07 protocol missing ${messageType}`);
   }
 
-  const browserContentRuntime = readText(
-    "apps/browser-extension/src/runtime/content-script.ts",
-  );
+  const browserContentRuntime = readText("apps/browser-extension/src/runtime/content-script.ts");
   for (const interactionContract of [
     "attachShadow",
     "elementsFromPoint",
@@ -303,11 +299,7 @@ if (failures.length === 0) {
       browserContentRuntime.includes("W2F_CONTENT_REGION_RESULT"),
     "NODE-07 content runtime must expose region selection request/result paths",
   );
-  for (const forbiddenSensitiveApi of [
-    "document.cookie",
-    "localStorage",
-    "sessionStorage",
-  ]) {
+  for (const forbiddenSensitiveApi of ["document.cookie", "localStorage", "sessionStorage"]) {
     assert(
       !browserContentRuntime.includes(forbiddenSensitiveApi),
       `NODE-07 selector must not access ${forbiddenSensitiveApi}`,

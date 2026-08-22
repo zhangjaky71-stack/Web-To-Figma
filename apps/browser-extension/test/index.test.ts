@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   getBrowserExtensionAppId,
   getBrowserExtensionShellVersion,
+  getBrowserRegionSelectionVersion,
   getBrowserSourceProvidersVersion,
   getBrowserStableIdentityAlgorithmVersion,
   getBrowserWtfIrVersion,
@@ -29,7 +30,11 @@ describe("browser extension foundation", () => {
     expect(getBrowserSourceProvidersVersion()).toBe("1.0.0");
   });
 
-  it("exposes the NODE-05 browser shell version", () => {
-    expect(getBrowserExtensionShellVersion()).toBe("1.0.0");
+  it("exposes the NODE-07 region-selection contract", () => {
+    expect(getBrowserRegionSelectionVersion()).toBe("1.0.0");
+  });
+
+  it("advances the Browser shell protocol for NODE-07", () => {
+    expect(getBrowserExtensionShellVersion()).toBe("1.1.0");
   });
 });

@@ -22,6 +22,7 @@ const requiredFiles = [
   "runtime/options.js",
   "runtime/protocol.js",
   "runtime/job-state.js",
+  "runtime/region-selection.js",
 ];
 
 function assert(condition, message) {
@@ -64,7 +65,7 @@ assert(
 );
 assert(
   !("host_permissions" in manifest),
-  "source providers must not request broad host permissions",
+  "source providers and region selection must not request broad host permissions",
 );
 assert(!("content_scripts" in manifest), "content script must be injected only after user action");
 assert(
@@ -100,6 +101,21 @@ const contentScript = await readFile(`${outputRoot}/runtime/content-script.js`, 
 assert(
   !/^\s*(?:import|export)\s/m.test(contentScript),
   "content script must remain a classic injected script",
+);
+assert(
+  contentScript.includes("W2F_CONTENT_REGION_RESULT") &&
+    contentScript.includes("W2F_CONTENT_SELECTION_CANCELLED"),
+  "content runtime must include NODE-07 region selection result/cancellation paths",
+);
+assert(
+  contentScript.includes("attachShadow") && contentScript.includes("elementsFromPoint"),
+  "NODE-07 selector must package its isolated overlay and smart-element hit testing",
+);
+
+const protocol = await readFile(`${outputRoot}/runtime/protocol.js`, "utf8");
+assert(
+  protocol.includes('W2F_EXTENSION_SHELL_VERSION = "1.1.0"'),
+  "Browser shell protocol must expose the NODE-07 version",
 );
 
 console.log("Browser extension package validation: PASS");

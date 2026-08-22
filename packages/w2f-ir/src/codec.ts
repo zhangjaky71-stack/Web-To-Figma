@@ -58,7 +58,7 @@ export function migrateWtfIrEnvelope(
 
   let bundleValue: unknown;
   let migrated = false;
-  let fromVersion = WTF_IR_VERSION;
+  let fromVersion: string = WTF_IR_VERSION;
 
   if (isRecord(value.bundle)) {
     bundleValue = value.bundle;

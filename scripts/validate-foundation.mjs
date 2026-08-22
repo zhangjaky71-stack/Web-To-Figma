@@ -99,6 +99,11 @@ if (failures.length === 0) {
       rootPackage.scripts?.test === "turbo run test",
     "root quality scripts must run through Turborepo",
   );
+  assert(
+    rootPackage.scripts?.check ===
+      "pnpm validate:foundation && pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm format:check",
+    "root check script must cover foundation, lint, typecheck, test, build and format",
+  );
 
   const expectedDevDependencies = {
     eslint: versions.eslint,
@@ -214,7 +219,10 @@ if (failures.length === 0) {
   const ci = readText(".github/workflows/ci.yml");
   assert(ci.includes("node-version: 24"), "CI must use Node 24");
   assert(ci.includes(`version: ${versions.pnpm}`), `CI must use pnpm ${versions.pnpm}`);
-  assert(ci.includes("pnpm validate:foundation"), "CI must run validate:foundation");
+  assert(
+    ci.includes("node scripts/validate-foundation.mjs"),
+    "CI must run the dependency-free foundation validator before dependency installation",
+  );
 
   if (existsSync(resolve(root, "pnpm-lock.yaml"))) {
     assert(

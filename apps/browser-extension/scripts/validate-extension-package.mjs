@@ -26,7 +26,10 @@ for (const relativePath of requiredFiles) {
 
 const manifest = JSON.parse(await readFile(`${outputRoot}/manifest.json`, "utf8"));
 assert(manifest.manifest_version === 3, "manifest_version must be 3");
-assert(manifest.background?.service_worker === "runtime/service-worker.js", "service worker path drift");
+assert(
+  manifest.background?.service_worker === "runtime/service-worker.js",
+  "service worker path drift",
+);
 assert(manifest.background?.type === "module", "service worker must be an ES module");
 assert(manifest.action?.default_popup === "popup.html", "popup path drift");
 assert(manifest.options_ui?.page === "options.html", "options path drift");
@@ -38,7 +41,10 @@ assert(
   "NODE-05 permissions must remain activeTab+scripting+storage",
 );
 assert(!("host_permissions" in manifest), "NODE-05 must not request broad host permissions");
-assert(!("content_scripts" in manifest), "NODE-05 content script must be injected only after user action");
+assert(
+  !("content_scripts" in manifest),
+  "NODE-05 content script must be injected only after user action",
+);
 assert(
   manifest.content_security_policy?.extension_pages === "script-src 'self'; object-src 'self'",
   "extension page CSP must remain self-only",
@@ -47,7 +53,10 @@ assert(
 const popup = await readFile(`${outputRoot}/popup.html`, "utf8");
 const options = await readFile(`${outputRoot}/options.html`, "utf8");
 assert(popup.includes('type="module" src="runtime/popup.js"'), "popup module entrypoint missing");
-assert(options.includes('type="module" src="runtime/options.js"'), "options module entrypoint missing");
+assert(
+  options.includes('type="module" src="runtime/options.js"'),
+  "options module entrypoint missing",
+);
 
 const runtimeFiles = await readdir(`${outputRoot}/runtime`);
 for (const file of runtimeFiles.filter((name) => name.endsWith(".js"))) {
@@ -56,6 +65,9 @@ for (const file of runtimeFiles.filter((name) => name.endsWith(".js"))) {
 }
 
 const contentScript = await readFile(`${outputRoot}/runtime/content-script.js`, "utf8");
-assert(!/^\s*(?:import|export)\s/m.test(contentScript), "content script must remain a classic injected script");
+assert(
+  !/^\s*(?:import|export)\s/m.test(contentScript),
+  "content script must remain a classic injected script",
+);
 
 console.log("Browser extension package validation: PASS");

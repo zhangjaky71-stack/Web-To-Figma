@@ -141,9 +141,16 @@ if (failures.length === 0) {
   for (const task of ["build", "lint", "typecheck", "test"]) {
     assert(Boolean(turbo.tasks?.[task]), `turbo task ${task} is missing`);
   }
-  assert(turbo.tasks?.build?.outputs?.includes("dist/**"), "turbo build must declare dist/** output");
+  assert(
+    turbo.tasks?.build?.outputs?.includes("dist/**"),
+    "turbo build must declare dist/** output",
+  );
 
-  for (const directory of ["apps/browser-extension", "apps/figma-plugin", "packages/shared-utils"]) {
+  for (const directory of [
+    "apps/browser-extension",
+    "apps/figma-plugin",
+    "packages/shared-utils",
+  ]) {
     const packageJson = readJson(`${directory}/package.json`);
     const buildCommand = packageJson.scripts?.build ?? "";
     if (directory === "apps/browser-extension") {
@@ -206,18 +213,30 @@ if (failures.length === 0) {
       JSON.stringify(["activeTab", "scripting", "storage"].sort()),
     "NODE-05 browser permissions must remain least-privilege activeTab+scripting+storage",
   );
-  assert(!("host_permissions" in browserManifest), "NODE-05 must not request broad host permissions");
-  assert(!("content_scripts" in browserManifest), "NODE-05 content bridge must be user-action injected");
+  assert(
+    !("host_permissions" in browserManifest),
+    "NODE-05 must not request broad host permissions",
+  );
+  assert(
+    !("content_scripts" in browserManifest),
+    "NODE-05 content bridge must be user-action injected",
+  );
 
   const sharedUtils = readJson("packages/shared-utils/package.json");
   assert(
     sharedUtils.exports?.["."] === "./dist/index.js",
     "shared-utils export must point to ./dist/index.js",
   );
-  assert(sharedUtils.types === "./dist/index.d.ts", "shared-utils types must point to ./dist/index.d.ts");
+  assert(
+    sharedUtils.types === "./dist/index.d.ts",
+    "shared-utils types must point to ./dist/index.d.ts",
+  );
 
   const constantsSource = readText("packages/shared-utils/src/index.ts");
-  assert(constantsSource.includes('WTF_FILE_EXTENSION = ".wtf"'), ".wtf extension contract drifted");
+  assert(
+    constantsSource.includes('WTF_FILE_EXTENSION = ".wtf"'),
+    ".wtf extension contract drifted",
+  );
   assert(
     constantsSource.includes('WTF_MIME_TYPE = "application/x-wtf"'),
     ".wtf MIME contract drifted",

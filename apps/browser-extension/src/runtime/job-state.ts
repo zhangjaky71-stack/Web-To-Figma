@@ -1,12 +1,6 @@
 export type CaptureJobMode = "full-page" | "region";
 
-export type CaptureJobStatus =
-  | "idle"
-  | "queued"
-  | "running"
-  | "completed"
-  | "failed"
-  | "cancelled";
+export type CaptureJobStatus = "idle" | "queued" | "running" | "completed" | "failed" | "cancelled";
 
 export interface PageProbe {
   url: string;

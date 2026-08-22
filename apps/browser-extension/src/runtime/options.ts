@@ -51,10 +51,14 @@ async function refresh(): Promise<void> {
   const info = isShellInfo(infoResponse.data) ? infoResponse.data : null;
   const job = isJob(jobResponse.data) ? jobResponse.data : null;
 
-  shellVersion.textContent = info ? `Shell ${info.shellVersion} · Manifest V${info.manifestVersion}` : "Unknown";
+  shellVersion.textContent = info
+    ? `Shell ${info.shellVersion} · Manifest V${info.manifestVersion}`
+    : "Unknown";
   permissionSummary.textContent =
     "Install-time permissions: activeTab, scripting, storage. Broad host access is intentionally deferred to source-provider capability requests.";
-  jobSummary.textContent = job ? `${job.status} · ${job.mode} · ${job.phase}` : "No capture shell job yet.";
+  jobSummary.textContent = job
+    ? `${job.status} · ${job.mode} · ${job.phase}`
+    : "No capture shell job yet.";
 }
 
 refreshButton.addEventListener("click", () => void refresh());

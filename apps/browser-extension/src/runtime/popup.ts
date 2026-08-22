@@ -1,9 +1,5 @@
 import type { CaptureJobMode, CaptureJobState } from "./job-state.js";
-import {
-  isW2fShellResponse,
-  type W2fShellRequest,
-  type W2fShellResponse,
-} from "./protocol.js";
+import { isW2fShellResponse, type W2fShellRequest, type W2fShellResponse } from "./protocol.js";
 
 function element<T extends HTMLElement>(id: string): T {
   const value = document.getElementById(id);

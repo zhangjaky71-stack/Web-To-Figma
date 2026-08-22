@@ -1,0 +1,114 @@
+import {
+  createCaptureJob,
+  isCaptureJobState,
+  transitionCaptureJob,
+  type CaptureJobMode,
+  type CaptureJobState,
+} from "./job-state.js";
+import {
+  W2F_EXTENSION_SHELL_VERSION,
+  W2F_JOB_STORAGE_KEY,
+  isW2fContentResponse,
+  isW2fShellRequest,
+  shellFailure,
+  shellSuccess,
+  type W2fShellInfo,
+  type W2fShellRequest,
+  type W2fShellResponse,
+} from "./protocol.js";
+
+const SHELL_INFO: W2fShellInfo = {
+  shellVersion: W2F_EXTENSION_SHELL_VERSION,
+  manifestVersion: 3,
+  captureImplemented: false,
+};
+
+async function readJobState(): Promise<CaptureJobState | null> {
+  const stored = await chrome.storage.local.get(W2F_JOB_STORAGE_KEY);
+  const value = stored[W2F_JOB_STORAGE_KEY];
+  return isCaptureJobState(value) ? value : null;
+}
+
+async function writeJobState(job: CaptureJobState): Promise<void> {
+  await chrome.storage.local.set({ [W2F_JOB_STORAGE_KEY]: job });
+}
+
+async function getActiveTabId(): Promise<number> {
+  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+  const tabId = tabs[0]?.id;
+  if (typeof tabId !== "number") throw new Error("No active browser tab is available");
+  return tabId;
+}
+
+async function startShellJob(mode: CaptureJobMode): Promise<CaptureJobState> {
+  const jobId = crypto.randomUUID();
+  let job = createCaptureJob(mode, jobId);
+  await writeJobState(job);
+
+  try {
+    const tabId = await getActiveTabId();
+    job = transitionCaptureJob(job, "running", "injecting-content-shell", new Date(), { tabId });
+    await writeJobState(job);
+
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      files: ["runtime/content-script.js"],
+    });
+
+    const response = await chrome.tabs.sendMessage(tabId, {
+      type: "W2F_PROBE_PAGE",
+      jobId,
+      mode,
+    });
+    if (!isW2fContentResponse(response) || response.jobId !== jobId) {
+      throw new Error("Content shell returned an invalid page probe response");
+    }
+
+    job = transitionCaptureJob(job, "completed", "shell-probe-complete", new Date(), {
+      tabId,
+      page: response.page,
+    });
+    await writeJobState(job);
+    return job;
+  } catch (error) {
+    job = transitionCaptureJob(job, "failed", "shell-probe-failed", new Date(), {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    await writeJobState(job);
+    return job;
+  }
+}
+
+async function cancelShellJob(jobId: string): Promise<CaptureJobState | null> {
+  const current = await readJobState();
+  if (!current || current.jobId !== jobId) return current;
+  if (["completed", "failed", "cancelled"].includes(current.status)) return current;
+  const cancelled = transitionCaptureJob(current, "cancelled", "cancelled-by-user");
+  await writeJobState(cancelled);
+  return cancelled;
+}
+
+async function handleShellRequest(request: W2fShellRequest): Promise<W2fShellResponse> {
+  switch (request.type) {
+    case "W2F_GET_SHELL_INFO":
+      return shellSuccess(request.type, SHELL_INFO);
+    case "W2F_GET_JOB_STATE":
+      return shellSuccess(request.type, await readJobState());
+    case "W2F_START_JOB":
+      return shellSuccess(request.type, await startShellJob(request.mode));
+    case "W2F_CANCEL_JOB":
+      return shellSuccess(request.type, await cancelShellJob(request.jobId));
+  }
+}
+
+chrome.runtime.onInstalled.addListener(() => {
+  void readJobState().catch(() => undefined);
+});
+
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if (!isW2fShellRequest(message)) return false;
+  void handleShellRequest(message)
+    .then(sendResponse)
+    .catch((error: unknown) => sendResponse(shellFailure(message.type, error)));
+  return true;
+});

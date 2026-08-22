@@ -96,10 +96,10 @@ describe("stable node identity", () => {
     const assigned = await assignStableIdentity(
       node("node_a", {
         idAttribute: ":r123:",
-        dataAttributes: undefined,
+        dataAttributes: {},
         classList: ["flex", "px-4", "Card_root__a1b2c3d4"],
-        textContent: undefined,
-        assetFingerprints: undefined,
+        textContent: "",
+        assetFingerprints: [],
       }),
     );
     expect(assigned.signals.stableIdAttribute).toBeUndefined();
@@ -114,8 +114,8 @@ describe("stable node identity", () => {
 
   it("deterministically disambiguates same-signature siblings using structural position", async () => {
     const assignments = await assignStableIdentities([
-      node("node_1", { structuralPosition: { siblingIndex: 0, sameKindIndex: 0 }, textContent: undefined }),
-      node("node_2", { structuralPosition: { siblingIndex: 1, sameKindIndex: 1 }, textContent: undefined }),
+      node("node_1", { structuralPosition: { siblingIndex: 0, sameKindIndex: 0 }, textContent: "" }),
+      node("node_2", { structuralPosition: { siblingIndex: 1, sameKindIndex: 1 }, textContent: "" }),
     ]);
     expect(assignments[0]!.identity.id).not.toBe(assignments[1]!.identity.id);
     expect(assignments[0]!.identity.evidence).toContain(

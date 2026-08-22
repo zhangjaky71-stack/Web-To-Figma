@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 
 const root = process.cwd();
 const failures = [];
+const obsoleteMime = ["application", "x-w2f"].join("/");
 
 const versions = {
   pnpm: "11.22.0",
@@ -213,7 +214,7 @@ if (failures.length === 0) {
 
   for (const path of sourceAndCurrentDocFiles) {
     const content = readText(path);
-    assert(!content.includes("application/x-w2f"), `${path} contains obsolete MIME application/x-w2f`);
+    assert(!content.includes(obsoleteMime), `${path} contains obsolete MIME ${obsoleteMime}`);
   }
 
   const ci = readText(".github/workflows/ci.yml");

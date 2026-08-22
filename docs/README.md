@@ -11,11 +11,14 @@ MIME: application/x-wtf
 
 `W2F` remains the product/project/internal namespace name. Only the exported portable file extension is `.wtf`.
 
-The normative V2 portable-format contract is:
+The normative V2 portable-format and Semantic IR contracts are:
 
 ```text
 docs/WTF_FILE_SPEC_V2.md
 packages/w2f-schema
+
+docs/WTF_IR_V2.md
+packages/w2f-ir
 ```
 
 ## Current implementation baseline
@@ -43,6 +46,7 @@ Architecture is frozen for implementation. Do not introduce V3 or expand the arc
 - `docs/PRODUCT_BASELINE_V2.md` — frozen product baseline.
 - `docs/ACCEPTANCE_CONTRACT_V2.md` — frozen acceptance contract.
 - `docs/WTF_FILE_SPEC_V2.md` — normative `.wtf` V2 portable-file specification.
+- `docs/WTF_IR_V2.md` — normative Semantic IR V2 specification.
 - `docs/IMPLEMENTATION_STATUS.md` — canonical current implementation status.
 - `docs/nodes/` — per-NODE implementation/DoD records.
 - `docs/adr/` — accepted architecture and engineering decisions.
@@ -82,10 +86,11 @@ Completed:
 NODE-00 — Product Baseline & Acceptance Contract
 NODE-01 — Monorepo Foundation
 NODE-02 — W2F File Spec V2
+NODE-03 — W2F IR V2
 ```
 
 Next implementation node:
 
 ```text
-NODE-03 — W2F IR V2
+NODE-04 — Stable Identity & Source Mapping
 ```

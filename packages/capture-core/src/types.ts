@@ -1,5 +1,6 @@
 import type { NodeRelationships, Rect, ScrollContainerInfo } from "@w2f/w2f-schema";
 import type { FrameContext } from "@w2f/w2f-schema/frame-context";
+import type { ScaleContextEvidence } from "@w2f/w2f-schema/scale-context";
 
 export const RAW_SNAPSHOT_VERSION = "1.0.0" as const;
 
@@ -66,8 +67,7 @@ export type RawCaptureTarget =
 export interface RawCaptureEnvironment {
   viewportWidth: number;
   viewportHeight: number;
-  devicePixelRatio: number;
-  visualViewportScale?: number;
+  scale: ScaleContextEvidence;
 }
 
 export interface RawCaptureDiagnostic {

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Web-To-Figma Capture</title>
+    <link rel="stylesheet" href="shell.css" />
+  </head>
+  <body class="popup-shell">
+    <main class="panel">
+      <header class="panel-header">
+        <div>
+          <p class="eyebrow">W2F Capture</p>
+          <h1>Web → Figma</h1>
+        </div>
+        <span id="job-status" class="status" data-status="idle">Ready</span>
+      </header>
+
+      <p id="job-details" class="details">Choose Full page or Select area for the current tab.</p>
+
+      <div class="actions">
+        <button id="capture-full-page" class="primary" type="button">Full page</button>
+        <button id="capture-region" type="button">Select area</button>
+      </div>
+
+      <div class="footer-actions">
+        <button id="cancel-job" class="text-button" type="button" disabled>Cancel</button>
+        <button id="open-options" class="text-button" type="button">Details</button>
+      </div>
+
+      <p class="note">
+        NODE-07 adds interactive Free/Smart region selection plus Redact/Exclude masks. DOM capture
+        starts in NODE-08.
+      </p>
+    </main>
+    <script type="module" src="runtime/popup.js"></script>
+  </body>
+</html>

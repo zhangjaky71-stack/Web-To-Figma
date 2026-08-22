@@ -1,10 +1,4 @@
-import type {
-  RawCaptureDiagnostic,
-  RawCaptureTarget,
-  RawFrameRecord,
-  RawNode,
-  RawSnapshot,
-} from "@w2f/capture-core";
+import type { RawCaptureDiagnostic, RawFrameRecord, RawNode, RawSnapshot } from "@w2f/capture-core";
 import type {
   CdpCaptureInput,
   CdpCaptureResult,
@@ -35,7 +29,9 @@ const URL_ATTRIBUTES = new Set(["action", "formaction", "href", "poster", "src",
 type Rect = { x: number; y: number; width: number; height: number };
 
 function stringAt(strings: readonly string[], index: number | undefined): string {
-  return typeof index === "number" && index >= 0 && index < strings.length ? (strings[index] ?? "") : "";
+  return typeof index === "number" && index >= 0 && index < strings.length
+    ? (strings[index] ?? "")
+    : "";
 }
 
 function rareInteger(data: CdpRareIntegerData | undefined, nodeIndex: number): number | undefined {
@@ -66,12 +62,7 @@ function rectangle(value: readonly number[] | undefined): Rect | undefined {
 }
 
 function intersects(a: Rect, b: Rect): boolean {
-  return (
-    a.x < b.x + b.width &&
-    a.x + a.width > b.x &&
-    a.y < b.y + b.height &&
-    a.y + a.height > b.y
-  );
+  return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
 }
 
 function contains(outer: Rect, inner: Rect): boolean {
@@ -164,7 +155,11 @@ function stylesFor(
   return output;
 }
 
-function makeNodeId(documentIndex: number, nodeIndex: number, backendNodeId: number | undefined): string {
+function makeNodeId(
+  documentIndex: number,
+  nodeIndex: number,
+  backendNodeId: number | undefined,
+): string {
   return `cdp:${documentIndex}:${backendNodeId ?? nodeIndex}`;
 }
 
@@ -179,7 +174,11 @@ function buildDocumentNodeIds(documentIndex: number, document: CdpDocumentSnapsh
   );
 }
 
-function documentUrl(document: CdpDocumentSnapshot, strings: readonly string[], fallback: string): string {
+function documentUrl(
+  document: CdpDocumentSnapshot,
+  strings: readonly string[],
+  fallback: string,
+): string {
   const raw = stringAt(strings, document.documentURL) || fallback;
   return raw ? safeUrl(raw, raw) : "";
 }
@@ -242,7 +241,8 @@ export function normalizeCdpCapture(input: CdpCaptureInput): CdpCaptureResult {
     const context = frameContextFor(frameId, frameMap, url);
     const owner = documentOwner.get(documentIndex);
     if (owner) {
-      context.parentFrameId = documentFrameIds[owner.documentIndex];
+      const parentFrameId = documentFrameIds[owner.documentIndex];
+      if (parentFrameId !== undefined) context.parentFrameId = parentFrameId;
     }
     const rootIndex = findDocumentRootIndex(document.nodes);
     frames.push({
@@ -270,7 +270,9 @@ export function normalizeCdpCapture(input: CdpCaptureInput): CdpCaptureResult {
           : undefined;
 
       const layoutIndex = layoutMap.get(nodeIndex);
-      const bounds = rectangle(layoutIndex === undefined ? undefined : document.layout.bounds[layoutIndex]);
+      const bounds = rectangle(
+        layoutIndex === undefined ? undefined : document.layout.bounds[layoutIndex],
+      );
       if (
         input.captureTarget.type === "region" &&
         bounds &&
@@ -283,7 +285,9 @@ export function normalizeCdpCapture(input: CdpCaptureInput): CdpCaptureResult {
       const masked =
         input.captureTarget.type === "region" &&
         bounds !== undefined &&
-        input.captureTarget.exclusions.some((item) => intersects(item.bounds, bounds));
+        input.captureTarget.exclusions.some(
+          (item) => item.kind === "redact" && intersects(item.bounds, bounds),
+        );
 
       const computed = stylesFor(document.layout, layoutIndex, strings);
       const attributes = sanitizeAttributes(
@@ -361,7 +365,8 @@ export function normalizeCdpCapture(input: CdpCaptureInput): CdpCaptureResult {
     });
     diagnostics.push({
       code: "CDP_FRAME_DOCUMENT_UNAVAILABLE",
-      message: "Frame is present in Page.getFrameTree but absent from the root DOMSnapshot; it may be an out-of-process iframe target.",
+      message:
+        "Frame is present in Page.getFrameTree but absent from the root DOMSnapshot; it may be an out-of-process iframe target.",
       frameId: frame.id,
     });
   }
@@ -398,7 +403,8 @@ export function normalizeCdpCapture(input: CdpCaptureInput): CdpCaptureResult {
 
   const finalNodeIds = new Set(finalNodes.map((node) => node.captureNodeId));
   const finalFrameIds = new Set(finalNodes.map((node) => node.frameContext.frameId));
-  for (const diagnostic of diagnostics) if (diagnostic.frameId) finalFrameIds.add(diagnostic.frameId);
+  for (const diagnostic of diagnostics)
+    if (diagnostic.frameId) finalFrameIds.add(diagnostic.frameId);
   let frameChanged = true;
   while (frameChanged) {
     frameChanged = false;
@@ -433,9 +439,10 @@ export function normalizeCdpCapture(input: CdpCaptureInput): CdpCaptureResult {
   const rootUrl = documentUrl(rootDocument, strings, input.fallbackUrl ?? rootFrame.url);
   const rootTitle = stringAt(strings, rootDocument.title) || input.fallbackTitle || "";
 
-  const scrollContainers = [];
+  const scrollContainers: RawSnapshot["scrollContainers"] = [];
   if (finalNodeIds.has(rootCaptureNodeId)) {
-    const rootBounds = finalNodes.find((node) => node.captureNodeId === rootCaptureNodeId)?.geometry?.bounds;
+    const rootBounds = finalNodes.find((node) => node.captureNodeId === rootCaptureNodeId)?.geometry
+      ?.bounds;
     scrollContainers.push({
       sourceNodeId: rootCaptureNodeId,
       scrollWidth: rootDocument.contentWidth ?? contentSize?.width ?? rootBounds?.width ?? 0,
@@ -461,7 +468,8 @@ export function normalizeCdpCapture(input: CdpCaptureInput): CdpCaptureResult {
     captureTarget: input.captureTarget,
     environment: {
       viewportWidth: cssVisual?.clientWidth ?? cssLayout?.clientWidth ?? contentSize?.width ?? 0,
-      viewportHeight: cssVisual?.clientHeight ?? cssLayout?.clientHeight ?? contentSize?.height ?? 0,
+      viewportHeight:
+        cssVisual?.clientHeight ?? cssLayout?.clientHeight ?? contentSize?.height ?? 0,
       scale: {
         context: {
           devicePixelRatio: input.evidence.devicePixelRatio,

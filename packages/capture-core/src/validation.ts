@@ -181,7 +181,10 @@ function isRawNode(value: unknown): boolean {
 
   if (value.textContent !== undefined && typeof value.textContent !== "string") return false;
   if (value.paintOrder !== undefined && !isNonNegativeFiniteNumber(value.paintOrder)) return false;
-  if (value.source.backendNodeId !== undefined && !isNonNegativeFiniteNumber(value.source.backendNodeId)) {
+  if (
+    value.source.backendNodeId !== undefined &&
+    !isNonNegativeFiniteNumber(value.source.backendNodeId)
+  ) {
     return false;
   }
   if (value.source.attributes !== undefined) {

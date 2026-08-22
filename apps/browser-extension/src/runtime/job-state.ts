@@ -75,7 +75,8 @@ function isCaptureSnapshotReceipt(value: unknown): value is CaptureSnapshotRecei
     typeof record.capturedAt === "string" &&
     !Number.isNaN(Date.parse(record.capturedAt)) &&
     (record.referenceScreenshotKey === undefined ||
-      (typeof record.referenceScreenshotKey === "string" && record.referenceScreenshotKey.length > 0)) &&
+      (typeof record.referenceScreenshotKey === "string" &&
+        record.referenceScreenshotKey.length > 0)) &&
     (record.fallbackFromCdp === undefined || typeof record.fallbackFromCdp === "boolean")
   );
 }

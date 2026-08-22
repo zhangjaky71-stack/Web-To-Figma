@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import "./validate-node-08.mjs";
+import "./validate-node-09.mjs";
 
 const root = process.cwd();
 const failures = [];
@@ -271,10 +272,6 @@ if (failures.length === 0) {
   );
 
   const browserProtocol = readText("apps/browser-extension/src/runtime/protocol.ts");
-  assert(
-    browserProtocol.includes('W2F_EXTENSION_SHELL_VERSION = "1.2.0"'),
-    "Browser shell protocol must remain at NODE-08 version 1.2.0",
-  );
   for (const messageType of [
     "W2F_SELECT_REGION",
     "W2F_CANCEL_REGION_SELECTION",

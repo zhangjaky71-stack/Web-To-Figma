@@ -97,19 +97,25 @@ describe("browser capture job state", () => {
 
   it("accepts High Fidelity screenshot references and explicit Standard fallback receipts", () => {
     const job = createCaptureJob("full-page", "job_cdp", "2026-08-23T00:00:00.000Z");
-    const cdp = transitionCaptureJob(job, "completed", "high-fidelity-capture-complete", new Date(), {
-      capture: {
-        version: "1.0.0",
-        adapter: "cdp",
-        nodeCount: 900,
-        frameCount: 4,
-        scrollContainerCount: 1,
-        diagnosticCount: 0,
-        storageKey: "raw-snapshot:job_cdp",
-        referenceScreenshotKey: "reference-screenshot:job_cdp",
-        capturedAt: "2026-08-23T00:00:01.000Z",
+    const cdp = transitionCaptureJob(
+      job,
+      "completed",
+      "high-fidelity-capture-complete",
+      new Date(),
+      {
+        capture: {
+          version: "1.0.0",
+          adapter: "cdp",
+          nodeCount: 900,
+          frameCount: 4,
+          scrollContainerCount: 1,
+          diagnosticCount: 0,
+          storageKey: "raw-snapshot:job_cdp",
+          referenceScreenshotKey: "reference-screenshot:job_cdp",
+          capturedAt: "2026-08-23T00:00:01.000Z",
+        },
       },
-    });
+    );
     expect(isCaptureJobState(cdp)).toBe(true);
     expect(cdp.capture?.referenceScreenshotKey).toBe("reference-screenshot:job_cdp");
 

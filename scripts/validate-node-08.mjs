@@ -161,10 +161,6 @@ if (failures.length === 0) {
   );
   const protocol = readText("apps/browser-extension/src/runtime/protocol.ts");
   assert(
-    protocol.includes('W2F_EXTENSION_SHELL_VERSION = "1.2.0"'),
-    "Browser protocol must advance to NODE-08 version 1.2.0",
-  );
-  assert(
     protocol.includes("captureImplemented: true") &&
       protocol.includes("standardCaptureImplemented: true"),
     "Browser shell must report Standard capture as implemented",
@@ -177,7 +173,7 @@ if (failures.length === 0) {
     "writeRawSnapshot",
     "regionCaptureTarget",
     "standard-capture-complete",
-    "standard-capture-failed",
+    "capturePreferredDom",
     "environment.scale.context.devicePixelRatio",
   ]) {
     assert(

@@ -70,7 +70,13 @@ if (failures.length === 0) {
   ]) {
     assert(normalizer.includes(evidence), `CDP RawSnapshot normalizer missing ${evidence}`);
   }
-  for (const forbidden of ["inputValue", "textValue", "document.cookie", "localStorage", "sessionStorage"]) {
+  for (const forbidden of [
+    "inputValue",
+    "textValue",
+    "document.cookie",
+    "localStorage",
+    "sessionStorage",
+  ]) {
     assert(!normalizer.includes(forbidden), `CDP normalizer must not consume ${forbidden}`);
   }
 
@@ -103,8 +109,8 @@ if (failures.length === 0) {
 
   const cdpRuntime = readText("apps/browser-extension/src/runtime/cdp-runtime.ts");
   for (const evidence of [
-    "chrome.debugger.attach",
-    "chrome.debugger.detach",
+    "api.attach",
+    "api.detach",
     '"DOMSnapshot.captureSnapshot"',
     '"Page.getLayoutMetrics"',
     '"Page.getFrameTree"',
@@ -116,7 +122,10 @@ if (failures.length === 0) {
   ]) {
     assert(cdpRuntime.includes(evidence), `Browser CDP platform adapter missing ${evidence}`);
   }
-  assert(cdpRuntime.includes("finally"), "CDP debugger detach must be protected by finally");
+  assert(
+    cdpRuntime.includes("debuggerApi") && cdpRuntime.includes("finally"),
+    "CDP debugger API must be locally typed and detach protected by finally",
+  );
 
   const serviceWorker = readText("apps/browser-extension/src/runtime/service-worker.ts");
   for (const evidence of [
@@ -129,7 +138,10 @@ if (failures.length === 0) {
     "writeReferenceScreenshot",
     "deleteCaptureArtifacts",
   ]) {
-    assert(serviceWorker.includes(evidence), `Browser High Fidelity orchestration missing ${evidence}`);
+    assert(
+      serviceWorker.includes(evidence),
+      `Browser High Fidelity orchestration missing ${evidence}`,
+    );
   }
 
   const snapshotStore = readText("apps/browser-extension/src/runtime/snapshot-store.ts");
@@ -148,7 +160,10 @@ if (failures.length === 0) {
     "Browser must depend on the shared CDP adapter",
   );
   for (const script of ["build", "build:standard", "build:high-fidelity"]) {
-    assert(typeof browserPackage.scripts?.[script] === "string", `Browser package missing ${script}`);
+    assert(
+      typeof browserPackage.scripts?.[script] === "string",
+      `Browser package missing ${script}`,
+    );
   }
 
   const packager = readText("apps/browser-extension/scripts/package-extension.mjs");
@@ -162,7 +177,9 @@ if (failures.length === 0) {
     assert(packager.includes(evidence), `Browser dual-profile packager missing ${evidence}`);
   }
 
-  const packageValidator = readText("apps/browser-extension/scripts/validate-extension-package.mjs");
+  const packageValidator = readText(
+    "apps/browser-extension/scripts/validate-extension-package.mjs",
+  );
   for (const evidence of [
     "dist-high-fidelity",
     '"debugger"',

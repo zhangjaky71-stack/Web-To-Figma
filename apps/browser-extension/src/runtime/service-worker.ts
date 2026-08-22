@@ -9,10 +9,7 @@ import {
   type StandardCaptureInput,
   type StandardCaptureResult,
 } from "@w2f/standard-capture-adapter";
-import {
-  captureHighFidelityWithCdp,
-  getCdpRuntimeCapability,
-} from "./cdp-runtime.js";
+import { captureHighFidelityWithCdp, getCdpRuntimeCapability } from "./cdp-runtime.js";
 import {
   createCaptureJob,
   isCaptureJobState,
@@ -120,7 +117,8 @@ async function captureStandardDom(
       message: `High Fidelity capture failed and Standard capture was used: ${fallbackReason}`,
     });
   }
-  if (!isRawSnapshot(snapshot)) throw new Error("Standard fallback diagnostics invalidated RawSnapshot");
+  if (!isRawSnapshot(snapshot))
+    throw new Error("Standard fallback diagnostics invalidated RawSnapshot");
 
   const storageKey = await writeRawSnapshot(jobId, snapshot);
   return {
@@ -141,12 +139,7 @@ async function captureCdpDom(
   fallbackUrl?: string,
   fallbackTitle?: string,
 ): Promise<{ snapshot: RawSnapshot; receipt: CaptureSnapshotReceipt }> {
-  const result = await captureHighFidelityWithCdp(
-    tabId,
-    captureTarget,
-    fallbackUrl,
-    fallbackTitle,
-  );
+  const result = await captureHighFidelityWithCdp(tabId, captureTarget, fallbackUrl, fallbackTitle);
   if (!isRawSnapshot(result.snapshot) || result.snapshot.adapter !== "cdp") {
     throw new Error("CDP capture returned an invalid RawSnapshot");
   }
@@ -285,11 +278,12 @@ async function startShellJob(mode: CaptureJobMode): Promise<CaptureJobState> {
       return cancelled;
     }
 
-    const phase = receipt.adapter === "cdp"
-      ? "high-fidelity-capture-complete"
-      : receipt.fallbackFromCdp
-        ? "standard-fallback-complete"
-        : "standard-capture-complete";
+    const phase =
+      receipt.adapter === "cdp"
+        ? "high-fidelity-capture-complete"
+        : receipt.fallbackFromCdp
+          ? "standard-fallback-complete"
+          : "standard-capture-complete";
     job = transitionCaptureJob(job, "completed", phase, new Date(), {
       tabId,
       source: descriptor,

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Web-To-Figma Capture · Details</title>
+    <link rel="stylesheet" href="shell.css" />
+  </head>
+  <body class="options-shell">
+    <main class="options-panel">
+      <p class="eyebrow">W2F Capture</p>
+      <h1>Source access details</h1>
+      <p class="details">
+        NODE-06 adds explicit HTTP, file-tab and local-folder source capability checks while keeping
+        the NODE-05 least-privilege Manifest V3 shell.
+      </p>
+
+      <section class="info-card">
+        <h2>Runtime</h2>
+        <p id="shell-version">Loading…</p>
+      </section>
+
+      <section class="info-card">
+        <h2>Current tab source</h2>
+        <p id="source-summary">Loading…</p>
+      </section>
+
+      <section class="info-card">
+        <h2>Local folder</h2>
+        <p>
+          Select a folder to build a root-scoped relative file index. Absolute operating-system
+          paths are not stored.
+        </p>
+        <input id="local-folder-input" type="file" webkitdirectory multiple />
+        <p id="local-folder-summary">No local folder selected in this page session.</p>
+      </section>
+
+      <section class="info-card">
+        <h2>Permission boundary</h2>
+        <p id="permission-summary">Loading…</p>
+      </section>
+
+      <section class="info-card">
+        <h2>Last shell job</h2>
+        <p id="job-summary">Loading…</p>
+      </section>
+
+      <button id="refresh-status" class="primary" type="button">Refresh status</button>
+    </main>
+    <script type="module" src="runtime/options.js"></script>
+  </body>
+</html>

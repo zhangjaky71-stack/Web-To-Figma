@@ -81,10 +81,15 @@ assert(
   `permissions must equal ${expectedPermissions.join("+")}`,
 );
 assert(
-  profile === "high-fidelity" ? permissions.includes("debugger") : !permissions.includes("debugger"),
+  profile === "high-fidelity"
+    ? permissions.includes("debugger")
+    : !permissions.includes("debugger"),
   "debugger permission must exist only in the High Fidelity profile",
 );
-assert(!("host_permissions" in manifest), "capture profiles must not request broad host permissions");
+assert(
+  !("host_permissions" in manifest),
+  "capture profiles must not request broad host permissions",
+);
 assert(!("content_scripts" in manifest), "content script must be injected only after user action");
 assert(
   manifest.content_security_policy?.extension_pages === "script-src 'self'; object-src 'self'",
@@ -117,9 +122,9 @@ assert(
 
 const serviceWorker = await readFile(`${outputRoot}/runtime/service-worker.js`, "utf8");
 for (const importPath of [
-  './capture-core/index.js',
-  './standard-capture-adapter/index.js',
-  './cdp-runtime.js',
+  "./capture-core/index.js",
+  "./standard-capture-adapter/index.js",
+  "./cdp-runtime.js",
 ]) {
   assert(serviceWorker.includes(`from "${importPath}"`), `service worker missing ${importPath}`);
 }
@@ -132,8 +137,8 @@ assert(
 
 const cdpRuntime = await readFile(`${outputRoot}/runtime/cdp-runtime.js`, "utf8");
 for (const evidence of [
-  "chrome.debugger.attach",
-  "chrome.debugger.detach",
+  "api.attach",
+  "api.detach",
   "DOMSnapshot.captureSnapshot",
   "Page.captureScreenshot",
   "Page.getLayoutMetrics",
@@ -154,8 +159,8 @@ const cdpNormalizer = await readFile(
   "utf8",
 );
 assert(
-  cdpNormalizer.includes('from "../capture-core/index.js"'),
-  "nested CDP adapter must resolve capture-core through a package-relative import",
+  !cdpNormalizer.includes("@w2f/"),
+  "nested CDP adapter must not contain unresolved workspace imports",
 );
 assert(cdpNormalizer.includes("paintOrder"), "CDP adapter must preserve paint order evidence");
 assert(
@@ -163,7 +168,10 @@ assert(
   "CDP adapter must diagnose frame tree entries unavailable in the root DOMSnapshot",
 );
 assert(!cdpNormalizer.includes("inputValue"), "CDP adapter must not consume input runtime values");
-assert(!cdpNormalizer.includes("textValue"), "CDP adapter must not consume textarea runtime values");
+assert(
+  !cdpNormalizer.includes("textValue"),
+  "CDP adapter must not consume textarea runtime values",
+);
 
 const snapshotStore = await readFile(`${outputRoot}/runtime/snapshot-store.js`, "utf8");
 assert(snapshotStore.includes("indexedDB.open"), "capture evidence must use IndexedDB persistence");
@@ -194,7 +202,10 @@ for (const evidence of [
 }
 assert(!standardCapture.includes("document.cookie"), "Standard capture must not read cookies");
 assert(!standardCapture.includes("localStorage"), "Standard capture must not read localStorage");
-assert(!standardCapture.includes("sessionStorage"), "Standard capture must not read sessionStorage");
+assert(
+  !standardCapture.includes("sessionStorage"),
+  "Standard capture must not read sessionStorage",
+);
 
 const contentScript = await readFile(`${outputRoot}/runtime/content-script.js`, "utf8");
 assert(

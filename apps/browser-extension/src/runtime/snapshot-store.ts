@@ -120,7 +120,8 @@ export async function readReferenceScreenshot(
     const transaction = database.transaction(W2F_REFERENCE_SCREENSHOT_STORE_NAME, "readonly");
     const request = transaction.objectStore(W2F_REFERENCE_SCREENSHOT_STORE_NAME).get(key);
     const value = await new Promise<unknown>((resolve, reject) => {
-      request.onerror = () => reject(request.error ?? new Error("failed to read reference screenshot"));
+      request.onerror = () =>
+        reject(request.error ?? new Error("failed to read reference screenshot"));
       request.onsuccess = () => resolve(request.result);
     });
     await waitForTransaction(transaction);

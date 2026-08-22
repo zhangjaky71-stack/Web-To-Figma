@@ -2,7 +2,7 @@
 
 ## Status
 
-**IN PROGRESS — implementation complete, final frozen-lockfile CI pending**
+**DONE / PASS**
 
 ## Goal
 
@@ -248,9 +248,9 @@ Freezes double-precision source evidence and deterministic JSON behavior.
 - token alias/reference integrity;
 - canonical SHA-256 validation.
 
-## First cloud validation
+## Validation history
 
-The first NODE-02 GitHub-hosted run proved:
+The first NODE-02 GitHub-hosted bootstrap run proved:
 
 - lint: **PASS**;
 - TypeScript 6.0.3 typecheck: **PASS**;
@@ -259,7 +259,24 @@ The first NODE-02 GitHub-hosted run proved:
 - Figma Plugin shared-schema test: **PASS**;
 - build: **PASS**.
 
-That run identified only canonical Prettier formatting in `packages/w2f-schema/src/index.ts`; the pinned Prettier 3.9.6 output was then applied automatically and committed together with the updated workspace lockfile.
+That run identified only canonical Prettier formatting in `packages/w2f-schema/src/index.ts`; pinned Prettier 3.9.6 output was applied automatically and committed together with the updated workspace lockfile.
+
+The bootstrap workflow was then removed and the standard read-only quality workflow was restored with:
+
+```text
+pnpm install --frozen-lockfile
+```
+
+GitHub Actions run `32564276456` passed all final NODE-02 gates:
+
+- foundation validation: **PASS**;
+- Node.js 24 / pnpm 11.22.0 toolchain: **PASS**;
+- frozen-lockfile install: **PASS**;
+- lint: **PASS**;
+- TypeScript 6.0.3 typecheck: **PASS**;
+- Vitest: **PASS**;
+- build: **PASS**;
+- Prettier format check: **PASS**.
 
 ## Documentation
 
@@ -289,16 +306,16 @@ That run identified only canonical Prettier formatting in `packages/w2f-schema/s
 - [x] runtime schema tests pass in GitHub Actions
 - [x] TypeScript/lint/build gates pass in GitHub Actions
 - [x] authoritative workspace lockfile updated
-- [ ] formal CI restored to `pnpm install --frozen-lockfile`
-- [ ] final frozen-lockfile CI passes after documentation/status closure
+- [x] formal CI restored to `pnpm install --frozen-lockfile`
+- [x] frozen-lockfile CI passes
 
 ## Exit rule
 
-NODE-02 becomes DONE only after the temporary bootstrap workflow is removed, the standard read-only frozen-lockfile CI is restored, and that CI passes on the final branch head.
+Satisfied. NODE-02 is complete and its protocol boundaries are frozen for downstream implementation.
 
 ## Next
 
-After completion, proceed to:
+Proceed to:
 
 ```text
 NODE-03 — W2F IR V2

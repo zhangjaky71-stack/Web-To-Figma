@@ -10,7 +10,7 @@ import {
 
 describe("browser shell message protocol", () => {
   it("accepts the frozen shell plus source capability vocabulary", () => {
-    expect(W2F_EXTENSION_SHELL_VERSION).toBe("1.2.0");
+    expect(W2F_EXTENSION_SHELL_VERSION).toBe("1.3.0");
     expect(isW2fShellRequest({ type: "W2F_GET_SOURCE_CAPABILITY" })).toBe(true);
     expect(isW2fShellRequest({ type: "W2F_GET_JOB_STATE" })).toBe(true);
     expect(isW2fShellRequest({ type: "W2F_START_JOB", mode: "region" })).toBe(true);
@@ -86,7 +86,7 @@ describe("browser shell message protocol", () => {
     ).toBe(false);
   });
 
-  it("reports the Standard DOM capture capability through shell info", () => {
+  it("reports Standard and High Fidelity capture capability through shell info", () => {
     const success = shellSuccess("W2F_GET_SOURCE_CAPABILITY", {
       provider: "http-page",
       supported: true,
@@ -99,7 +99,10 @@ describe("browser shell message protocol", () => {
       manifestVersion: 3,
       captureImplemented: true,
       standardCaptureImplemented: true,
+      cdpCaptureImplemented: true,
       regionSelectionImplemented: true,
+      captureProfile: "high-fidelity",
+      cdpAvailable: true,
     });
     const failure = shellFailure("W2F_START_JOB", new Error("fixture failure"));
     expect(isW2fShellResponse(success)).toBe(true);

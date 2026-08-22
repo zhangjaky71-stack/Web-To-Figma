@@ -145,7 +145,10 @@ for (const evidence of [
 }
 assert(!standardCapture.includes("document.cookie"), "Standard capture must not read cookies");
 assert(!standardCapture.includes("localStorage"), "Standard capture must not read localStorage");
-assert(!standardCapture.includes("sessionStorage"), "Standard capture must not read sessionStorage");
+assert(
+  !standardCapture.includes("sessionStorage"),
+  "Standard capture must not read sessionStorage",
+);
 
 const contentScript = await readFile(`${outputRoot}/runtime/content-script.js`, "utf8");
 assert(

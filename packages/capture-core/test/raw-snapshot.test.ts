@@ -27,7 +27,11 @@ function fixture(): RawSnapshot {
         kind: "document",
         relationships: {},
         childCaptureNodeIds: ["n1"],
-        frameContext: { frameId: "frame-main", url: "https://example.com/", origin: "https://example.com" },
+        frameContext: {
+          frameId: "frame-main",
+          url: "https://example.com/",
+          origin: "https://example.com",
+        },
         source: {},
       },
       {
@@ -35,7 +39,11 @@ function fixture(): RawSnapshot {
         kind: "element",
         relationships: { sourceParentId: "n0", composedParentId: "n0" },
         childCaptureNodeIds: [],
-        frameContext: { frameId: "frame-main", url: "https://example.com/", origin: "https://example.com" },
+        frameContext: {
+          frameId: "frame-main",
+          url: "https://example.com/",
+          origin: "https://example.com",
+        },
         source: { tagName: "DIV", sourceSelector: "html > body > div:nth-of-type(1)" },
         geometry: { bounds: { x: 10.25, y: 20.5, width: 300.125, height: 120.75 } },
         visibility: {
@@ -50,7 +58,11 @@ function fixture(): RawSnapshot {
     ],
     frames: [
       {
-        context: { frameId: "frame-main", url: "https://example.com/", origin: "https://example.com" },
+        context: {
+          frameId: "frame-main",
+          url: "https://example.com/",
+          origin: "https://example.com",
+        },
         rootCaptureNodeId: "n0",
         accessible: true,
       },

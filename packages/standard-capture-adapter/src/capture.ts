@@ -1,15 +1,14 @@
-import type {
-  RawCaptureDiagnostic,
-  RawCaptureTarget,
-  RawFrameRecord,
-  RawNode,
-  RawSnapshot,
-} from "@w2f/capture-core";
+import type { RawCaptureDiagnostic, RawFrameRecord, RawNode, RawSnapshot } from "@w2f/capture-core";
 import type { StandardCaptureInput, StandardCaptureResult } from "./types.js";
 
 export function captureStandardSnapshotInPage(input: StandardCaptureInput): StandardCaptureResult {
   type LocalRect = { x: number; y: number; width: number; height: number };
-  type LocalFrameContext = { frameId: string; parentFrameId?: string; origin?: string; url?: string };
+  type LocalFrameContext = {
+    frameId: string;
+    parentFrameId?: string;
+    origin?: string;
+    url?: string;
+  };
   type LocalScrollContainer = {
     sourceNodeId: string;
     scrollWidth: number;
@@ -57,7 +56,11 @@ export function captureStandardSnapshotInPage(input: StandardCaptureInput): Stan
     }
   }
 
-  function frameContext(frameId: string, parentFrameId: string | undefined, view: Window): LocalFrameContext {
+  function frameContext(
+    frameId: string,
+    parentFrameId: string | undefined,
+    view: Window,
+  ): LocalFrameContext {
     let url = "";
     let origin = "";
     try {
@@ -143,10 +146,7 @@ export function captureStandardSnapshotInPage(input: StandardCaptureInput): Stan
 
   function intersects(a: LocalRect, b: LocalRect): boolean {
     return (
-      a.x < b.x + b.width &&
-      a.x + a.width > b.x &&
-      a.y < b.y + b.height &&
-      a.y + a.height > b.y
+      a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y
     );
   }
 
@@ -157,10 +157,6 @@ export function captureStandardSnapshotInPage(input: StandardCaptureInput): Stan
       inner.x + inner.width <= outer.x + outer.width &&
       inner.y + inner.height <= outer.y + outer.height
     );
-  }
-
-  function exclusionsFor(bounds: LocalRect | undefined): RawCaptureTarget extends infer _T ? RawCaptureTarget : never {
-    return captureTarget;
   }
 
   function isFullyExcluded(bounds: LocalRect | undefined): boolean {
@@ -181,7 +177,7 @@ export function captureStandardSnapshotInPage(input: StandardCaptureInput): Stan
     while (current) {
       const tag = current.tagName.toLowerCase();
       let segment = tag;
-      const parent = current.parentElement;
+      const parent: Element | null = current.parentElement;
       if (parent) {
         const sameTag = [...parent.children].filter((child) => child.tagName === current!.tagName);
         if (sameTag.length > 1) segment += `:nth-of-type(${sameTag.indexOf(current) + 1})`;
@@ -241,8 +237,7 @@ export function captureStandardSnapshotInPage(input: StandardCaptureInput): Stan
     if (!view) return parentScrollContainerId;
     const style = view.getComputedStyle(element);
     const html = element as HTMLElement;
-    const scrollable =
-      html.scrollWidth > html.clientWidth || html.scrollHeight > html.clientHeight;
+    const scrollable = html.scrollWidth > html.clientWidth || html.scrollHeight > html.clientHeight;
     if (!scrollable) return parentScrollContainerId;
     const record: LocalScrollContainer = {
       sourceNodeId: captureNodeId,
@@ -288,7 +283,9 @@ export function captureStandardSnapshotInPage(input: StandardCaptureInput): Stan
       captureNodeId: documentId,
       kind: "document",
       relationships: {
-        ...(sourceParentId === undefined ? {} : { sourceParentId, composedParentId: sourceParentId }),
+        ...(sourceParentId === undefined
+          ? {}
+          : { sourceParentId, composedParentId: sourceParentId }),
       },
       childCaptureNodeIds: [],
       frameContext: context,
@@ -398,10 +395,15 @@ export function captureStandardSnapshotInPage(input: StandardCaptureInput): Stan
         parentFrameId: parentContext.frameId,
         ...(url ? { url } : {}),
       };
-      frames.push({ context, accessible: false, inaccessibleReason: "cross-origin-or-inaccessible" });
+      frames.push({
+        context,
+        accessible: false,
+        inaccessibleReason: "cross-origin-or-inaccessible",
+      });
       diagnostics.push({
         code: "STANDARD_CAPTURE_FRAME_INACCESSIBLE",
-        message: "iframe content is cross-origin, sandboxed, or otherwise unavailable to Standard capture",
+        message:
+          "iframe content is cross-origin, sandboxed, or otherwise unavailable to Standard capture",
         frameId: childFrameId,
         sourceNodeId: iframeId,
       });
@@ -490,13 +492,16 @@ export function captureStandardSnapshotInPage(input: StandardCaptureInput): Stan
     const masked = isMasked(bounds);
     const tagName = element.tagName.toUpperCase();
     const kind = tagName === "IFRAME" ? "iframe" : tagName === "SLOT" ? "slot" : "element";
+    const namespace = element.namespaceURI;
+    const role = element.getAttribute("role");
     const source = {
       tagName,
-      namespace: element.namespaceURI ?? undefined,
-      role: element.getAttribute("role") ?? undefined,
+      ...(namespace === null ? {} : { namespace }),
+      ...(role === null ? {} : { role }),
       sourceSelector: sourceSelector(element),
       ...(masked ? {} : { attributes: sanitizeAttributes(element) }),
     };
+    const visibility = visibilityFor(element);
     const raw: RawNode = {
       captureNodeId,
       kind,
@@ -511,7 +516,7 @@ export function captureStandardSnapshotInPage(input: StandardCaptureInput): Stan
       ...(bounds === undefined
         ? {}
         : { geometry: { bounds, clientRects: clientRects(element, offsetX, offsetY) } }),
-      visibility: visibilityFor(element),
+      ...(visibility === undefined ? {} : { visibility }),
     };
     nodes.push(raw);
     nodeIds.set(node, captureNodeId);
@@ -567,12 +572,7 @@ export function captureStandardSnapshotInPage(input: StandardCaptureInput): Stan
   const mainContext = frameContext("frame-main", undefined, window);
   const mainFrame: RawFrameRecord = { context: mainContext, accessible: true };
   frames.push(mainFrame);
-  const rootCaptureNodeId = captureDocument(
-    document,
-    mainContext,
-    window.scrollX,
-    window.scrollY,
-  );
+  const rootCaptureNodeId = captureDocument(document, mainContext, window.scrollX, window.scrollY);
   if (!rootCaptureNodeId) throw new Error("Standard capture could not create the document root");
   mainFrame.rootCaptureNodeId = rootCaptureNodeId;
 
@@ -596,9 +596,7 @@ export function captureStandardSnapshotInPage(input: StandardCaptureInput): Stan
   const nonDocumentScroll = scrollContainers.filter((item) => !item.isDocumentScrollRoot);
   const primary = nonDocumentScroll
     .filter((item) => item.clientWidth > 0 && item.clientHeight > 0)
-    .sort(
-      (a, b) => b.clientWidth * b.clientHeight - a.clientWidth * a.clientHeight,
-    )[0];
+    .sort((a, b) => b.clientWidth * b.clientHeight - a.clientWidth * a.clientHeight)[0];
   if (
     primary &&
     primary.clientWidth * primary.clientHeight >= window.innerWidth * window.innerHeight * 0.5
@@ -646,6 +644,14 @@ export function captureStandardSnapshotInPage(input: StandardCaptureInput): Stan
 
   const finalNodeIds = new Set(finalNodes.map((node) => node.captureNodeId));
   const usedFrameIds = new Set(finalNodes.map((node) => node.frameContext.frameId));
+  for (const diagnostic of diagnostics) {
+    if (
+      diagnostic.frameId &&
+      (diagnostic.sourceNodeId === undefined || finalNodeIds.has(diagnostic.sourceNodeId))
+    ) {
+      usedFrameIds.add(diagnostic.frameId);
+    }
+  }
   let frameClosureChanged = true;
   while (frameClosureChanged) {
     frameClosureChanged = false;
@@ -659,14 +665,18 @@ export function captureStandardSnapshotInPage(input: StandardCaptureInput): Stan
     }
   }
 
-  const finalFrames = frames
+  const finalFrames: RawFrameRecord[] = frames
     .filter((frame) => usedFrameIds.has(frame.context.frameId))
-    .map((frame) => ({
-      ...frame,
-      ...(frame.rootCaptureNodeId && finalNodeIds.has(frame.rootCaptureNodeId)
-        ? { rootCaptureNodeId: frame.rootCaptureNodeId }
-        : { rootCaptureNodeId: undefined }),
-    })) as RawFrameRecord[];
+    .map((frame) => {
+      if (!frame.rootCaptureNodeId || finalNodeIds.has(frame.rootCaptureNodeId)) return frame;
+      return {
+        context: frame.context,
+        accessible: frame.accessible,
+        ...(frame.inaccessibleReason === undefined
+          ? {}
+          : { inaccessibleReason: frame.inaccessibleReason }),
+      };
+    });
 
   const snapshot: RawSnapshot = {
     version: "1.0.0",

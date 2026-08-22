@@ -2,14 +2,7 @@ const SENSITIVE_ATTRIBUTE_PATTERN =
   /(?:^|[-_:])(authorization|auth|token|secret|password|passwd|cookie|session|credential|signature|api[-_]?key|access[-_]?key)(?:$|[-_:])/i;
 const SENSITIVE_QUERY_PATTERN =
   /(authorization|auth|token|secret|password|passwd|cookie|session|credential|signature|api[-_]?key|access[-_]?key)/i;
-const URL_ATTRIBUTES = new Set([
-  "action",
-  "formaction",
-  "href",
-  "poster",
-  "src",
-  "cite",
-]);
+const URL_ATTRIBUTES = new Set(["action", "formaction", "href", "poster", "src", "cite"]);
 
 export function isSensitiveCapturedAttribute(tagName: string, attributeName: string): boolean {
   const tag = tagName.toUpperCase();
@@ -45,9 +38,7 @@ export function sanitizeCapturedAttributes(
     const name = attribute.name.toLowerCase();
     if (isSensitiveCapturedAttribute(tagName, name)) continue;
     const rawValue = attribute.value.slice(0, 16_384);
-    result[name] = URL_ATTRIBUTES.has(name)
-      ? sanitizeCapturedUrl(rawValue, baseUrl)
-      : rawValue;
+    result[name] = URL_ATTRIBUTES.has(name) ? sanitizeCapturedUrl(rawValue, baseUrl) : rawValue;
   }
   return result;
 }

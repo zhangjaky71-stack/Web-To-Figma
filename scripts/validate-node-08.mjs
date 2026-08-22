@@ -113,7 +113,10 @@ if (failures.length === 0) {
     assert(!adapter.includes(protectedApi), `Standard adapter must not read ${protectedApi}`);
   }
   for (const sensitiveEvidence of ["password", "authorization", "token", "srcdoc"]) {
-    assert(adapter.includes(sensitiveEvidence), `Standard adapter privacy filter missing ${sensitiveEvidence}`);
+    assert(
+      adapter.includes(sensitiveEvidence),
+      `Standard adapter privacy filter missing ${sensitiveEvidence}`,
+    );
   }
 
   const browserPackage = readJson("apps/browser-extension/package.json");
@@ -142,7 +145,10 @@ if (failures.length === 0) {
     "standard-capture-complete",
     "standard-capture-failed",
   ]) {
-    assert(serviceWorker.includes(evidence), `Browser Standard capture orchestration missing ${evidence}`);
+    assert(
+      serviceWorker.includes(evidence),
+      `Browser Standard capture orchestration missing ${evidence}`,
+    );
   }
   const snapshotStore = readText("apps/browser-extension/src/runtime/snapshot-store.ts");
   assert(snapshotStore.includes("indexedDB.open"), "RawSnapshot storage must use IndexedDB");
@@ -181,7 +187,9 @@ if (failures.length === 0) {
 }
 
 if (failures.length > 0) {
-  console.error(`NODE-08 foundation validation failed:\n${failures.map((item) => `- ${item}`).join("\n")}`);
+  console.error(
+    `NODE-08 foundation validation failed:\n${failures.map((item) => `- ${item}`).join("\n")}`,
+  );
   process.exitCode = 1;
 } else {
   console.log("NODE-08 foundation validation passed.");

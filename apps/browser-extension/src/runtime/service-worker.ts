@@ -107,7 +107,10 @@ async function captureStandardDom(
   };
 }
 
-async function selectRegion(tabId: number, jobId: string): Promise<{
+async function selectRegion(
+  tabId: number,
+  jobId: string,
+): Promise<{
   page: PageProbe;
   region: RegionSelectionResult;
 } | null> {
@@ -218,7 +221,11 @@ async function cancelShellJob(jobId: string): Promise<CaptureJobState | null> {
   if (!current || current.jobId !== jobId) return current;
   if (["completed", "failed", "cancelled"].includes(current.status)) return current;
 
-  if (current.mode === "region" && current.phase === "selecting-region" && typeof current.tabId === "number") {
+  if (
+    current.mode === "region" &&
+    current.phase === "selecting-region" &&
+    typeof current.tabId === "number"
+  ) {
     await chrome.tabs
       .sendMessage(current.tabId, {
         type: "W2F_CANCEL_REGION_SELECTION",

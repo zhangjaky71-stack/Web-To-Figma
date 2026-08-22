@@ -6,8 +6,7 @@ export interface FrameContext {
 }
 
 export type FrameContextValidationResult =
-  | { ok: true; value: FrameContext }
-  | { ok: false; errors: string[] };
+  { ok: true; value: FrameContext } | { ok: false; errors: string[] };
 
 export function validateFrameContext(value: unknown): FrameContextValidationResult {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
@@ -26,7 +25,5 @@ export function validateFrameContext(value: unknown): FrameContextValidationResu
     }
   }
 
-  return errors.length === 0
-    ? { ok: true, value: value as FrameContext }
-    : { ok: false, errors };
+  return errors.length === 0 ? { ok: true, value: value as FrameContext } : { ok: false, errors };
 }

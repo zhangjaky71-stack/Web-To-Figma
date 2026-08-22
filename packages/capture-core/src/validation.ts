@@ -117,7 +117,8 @@ function isRawNode(value: unknown): boolean {
   if (value.textContent !== undefined && typeof value.textContent !== "string") return false;
   if (value.source.attributes !== undefined) {
     if (!isRecord(value.source.attributes)) return false;
-    if (!Object.values(value.source.attributes).every((item) => typeof item === "string")) return false;
+    if (!Object.values(value.source.attributes).every((item) => typeof item === "string"))
+      return false;
   }
   return true;
 }
@@ -188,7 +189,11 @@ export function isRawSnapshot(value: unknown): value is RawSnapshot {
 
   const frameIds = new Set<string>();
   for (const frame of value.frames) {
-    if (!isRecord(frame) || !isFrameContext(frame.context) || typeof frame.accessible !== "boolean") {
+    if (
+      !isRecord(frame) ||
+      !isFrameContext(frame.context) ||
+      typeof frame.accessible !== "boolean"
+    ) {
       return false;
     }
     const context = frame.context as { frameId: string; parentFrameId?: string };
@@ -208,7 +213,10 @@ export function isRawSnapshot(value: unknown): value is RawSnapshot {
   for (const frame of value.frames) {
     if (!isRecord(frame) || !isRecord(frame.context)) return false;
     const parentFrameId = frame.context.parentFrameId;
-    if (parentFrameId !== undefined && (!isNonEmptyString(parentFrameId) || !frameIds.has(parentFrameId))) {
+    if (
+      parentFrameId !== undefined &&
+      (!isNonEmptyString(parentFrameId) || !frameIds.has(parentFrameId))
+    ) {
       return false;
     }
   }
@@ -244,7 +252,8 @@ export function isRawSnapshot(value: unknown): value is RawSnapshot {
   for (const item of value.scrollContainers) {
     if (!isRecord(item)) return false;
     const parent = item.parentScrollContainerId;
-    if (parent !== undefined && (!isNonEmptyString(parent) || !scrollNodeIds.has(parent))) return false;
+    if (parent !== undefined && (!isNonEmptyString(parent) || !scrollNodeIds.has(parent)))
+      return false;
   }
 
   for (const diagnostic of value.diagnostics) {

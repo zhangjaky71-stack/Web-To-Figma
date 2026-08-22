@@ -28,8 +28,10 @@ function openSnapshotDatabase(): Promise<IDBDatabase> {
 function waitForTransaction(transaction: IDBTransaction): Promise<void> {
   return new Promise((resolve, reject) => {
     transaction.oncomplete = () => resolve();
-    transaction.onerror = () => reject(transaction.error ?? new Error("snapshot transaction failed"));
-    transaction.onabort = () => reject(transaction.error ?? new Error("snapshot transaction aborted"));
+    transaction.onerror = () =>
+      reject(transaction.error ?? new Error("snapshot transaction failed"));
+    transaction.onabort = () =>
+      reject(transaction.error ?? new Error("snapshot transaction aborted"));
   });
 }
 

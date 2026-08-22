@@ -101,10 +101,7 @@ export function transitionCaptureJob(
   next: CaptureJobStatus,
   phase: string,
   now: string | Date = new Date(),
-  patch: Pick<
-    CaptureJobState,
-    "tabId" | "source" | "page" | "region" | "capture" | "error"
-  > = {},
+  patch: Pick<CaptureJobState, "tabId" | "source" | "page" | "region" | "capture" | "error"> = {},
 ): CaptureJobState {
   if (isTerminalJobStatus(current.status)) {
     throw new TypeError(`cannot transition terminal job ${current.jobId} from ${current.status}`);

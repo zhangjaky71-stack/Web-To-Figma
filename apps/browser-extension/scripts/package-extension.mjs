@@ -19,7 +19,9 @@ const runtimePackages = [
   {
     specifier: "@w2f/standard-capture-adapter",
     directory: "standard-capture-adapter",
-    dist: fileURLToPath(new URL("../../../packages/standard-capture-adapter/dist/", import.meta.url)),
+    dist: fileURLToPath(
+      new URL("../../../packages/standard-capture-adapter/dist/", import.meta.url),
+    ),
   },
 ];
 

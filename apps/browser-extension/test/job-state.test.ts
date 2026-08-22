@@ -5,6 +5,7 @@ import {
   isTerminalJobStatus,
   transitionCaptureJob,
 } from "../src/runtime/job-state.js";
+import type { RegionSelectionResult } from "../src/runtime/region-selection.js";
 
 describe("browser capture job state", () => {
   it("creates deterministic queued state from supplied job identity and time", () => {
@@ -37,7 +38,7 @@ describe("browser capture job state", () => {
       "2026-08-22T02:00:01.000Z",
       { tabId: 42, source },
     );
-    const region = {
+    const region: RegionSelectionResult = {
       version: "1.0.0",
       coordinateSpace: "document-css-px",
       mode: "free-rect",
@@ -55,7 +56,7 @@ describe("browser capture job state", () => {
           bounds: { x: 180, y: 280, width: 220, height: 60 },
         },
       ],
-    } as const;
+    };
     const completed = transitionCaptureJob(
       running,
       "completed",

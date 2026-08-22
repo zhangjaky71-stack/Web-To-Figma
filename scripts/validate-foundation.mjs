@@ -247,9 +247,7 @@ if (failures.length === 0) {
 }
 
 if (failures.length > 0) {
-  console.error(
-    `Foundation validation failed:\n${failures.map((item) => `- ${item}`).join("\n")}`,
-  );
+  console.error(`Foundation validation failed:\n${failures.map((item) => `- ${item}`).join("\n")}`);
   process.exit(1);
 }
 

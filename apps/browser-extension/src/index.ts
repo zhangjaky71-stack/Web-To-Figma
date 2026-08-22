@@ -1,3 +1,4 @@
+import { CDP_CAPTURE_ADAPTER_VERSION } from "@w2f/cdp-capture-adapter";
 import { RAW_SNAPSHOT_VERSION } from "@w2f/capture-core";
 import { SOURCE_PROVIDERS_VERSION } from "@w2f/source-providers";
 import { STABLE_IDENTITY_ALGORITHM_VERSION } from "@w2f/stable-identity";
@@ -39,6 +40,10 @@ export function getBrowserRawSnapshotVersion(): string {
 
 export function getBrowserStandardCaptureAdapterVersion(): string {
   return STANDARD_CAPTURE_ADAPTER_VERSION;
+}
+
+export function getBrowserCdpCaptureAdapterVersion(): string {
+  return CDP_CAPTURE_ADAPTER_VERSION;
 }
 
 export function getBrowserExtensionShellVersion(): string {

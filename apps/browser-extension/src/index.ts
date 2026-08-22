@@ -1,5 +1,7 @@
+import { RAW_SNAPSHOT_VERSION } from "@w2f/capture-core";
 import { SOURCE_PROVIDERS_VERSION } from "@w2f/source-providers";
 import { STABLE_IDENTITY_ALGORITHM_VERSION } from "@w2f/stable-identity";
+import { STANDARD_CAPTURE_ADAPTER_VERSION } from "@w2f/standard-capture-adapter";
 import { WTF_IR_VERSION } from "@w2f/w2f-ir";
 import { WTF_SCHEMA_VERSION } from "@w2f/w2f-schema";
 import { W2F_EXTENSION_SHELL_VERSION } from "./runtime/protocol.js";
@@ -29,6 +31,14 @@ export function getBrowserSourceProvidersVersion(): string {
 
 export function getBrowserRegionSelectionVersion(): string {
   return W2F_REGION_SELECTION_VERSION;
+}
+
+export function getBrowserRawSnapshotVersion(): string {
+  return RAW_SNAPSHOT_VERSION;
+}
+
+export function getBrowserStandardCaptureAdapterVersion(): string {
+  return STANDARD_CAPTURE_ADAPTER_VERSION;
 }
 
 export function getBrowserExtensionShellVersion(): string {

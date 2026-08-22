@@ -1,5 +1,5 @@
 {
-  "name": "@w2f/w2f-schema",
+  "name": "@w2f/standard-capture-adapter",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -7,14 +7,6 @@
     ".": {
       "types": "./src/index.ts",
       "default": "./dist/index.js"
-    },
-    "./frame-context": {
-      "types": "./src/frame-context.ts",
-      "default": "./dist/frame-context.js"
-    },
-    "./scale-context": {
-      "types": "./src/scale-context.ts",
-      "default": "./dist/scale-context.js"
     }
   },
   "types": "./src/index.ts",
@@ -23,6 +15,9 @@
     "lint": "eslint src test --max-warnings=0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run"
+  },
+  "dependencies": {
+    "@w2f/capture-core": "workspace:*"
   },
   "devDependencies": {
     "typescript": "6.0.3",

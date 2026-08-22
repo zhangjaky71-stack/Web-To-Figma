@@ -10,6 +10,7 @@ import type {
   WtfStateSnapshotRef,
   WtfTokenGraph,
 } from "@w2f/w2f-schema";
+import type { FrameContext } from "@w2f/w2f-schema/frame-context";
 
 export const WTF_IR_VERSION = "2.0.0" as const;
 
@@ -359,6 +360,7 @@ export interface WtfSourceNode {
   stableIdentity?: WtfStableIdentity;
   kind: WtfSourceNodeKind;
   relationships: NodeRelationships;
+  frameContext?: FrameContext;
   childCaptureNodeIds: string[];
   tagName?: string;
   namespace?: string;

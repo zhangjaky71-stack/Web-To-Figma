@@ -17,12 +17,20 @@ const requiredFiles = [
   "runtime/source-providers/registry.js",
   "runtime/source-providers/types.js",
   "runtime/source-providers/urls.js",
+  "runtime/capture-core/index.js",
+  "runtime/capture-core/types.js",
+  "runtime/capture-core/validation.js",
+  "runtime/standard-capture-adapter/index.js",
+  "runtime/standard-capture-adapter/capture.js",
+  "runtime/standard-capture-adapter/privacy.js",
+  "runtime/standard-capture-adapter/types.js",
   "runtime/content-script.js",
   "runtime/popup.js",
   "runtime/options.js",
   "runtime/protocol.js",
   "runtime/job-state.js",
   "runtime/region-selection.js",
+  "runtime/snapshot-store.js",
 ];
 
 function assert(condition, message) {
@@ -65,7 +73,7 @@ assert(
 );
 assert(
   !("host_permissions" in manifest),
-  "source providers and region selection must not request broad host permissions",
+  "Standard capture must not request broad host permissions",
 );
 assert(!("content_scripts" in manifest), "content script must be injected only after user action");
 assert(
@@ -97,6 +105,51 @@ assert(
   "source runtime must use packaged relative source-provider modules",
 );
 
+const serviceWorker = await readFile(`${outputRoot}/runtime/service-worker.js`, "utf8");
+assert(
+  serviceWorker.includes('from "./capture-core/index.js"') &&
+    serviceWorker.includes('from "./standard-capture-adapter/index.js"'),
+  "service worker must use packaged Standard capture modules",
+);
+assert(
+  serviceWorker.includes("captureStandardSnapshotInPage") &&
+    serviceWorker.includes("standard-capture-complete"),
+  "service worker must execute and complete NODE-08 Standard capture",
+);
+
+const snapshotStore = await readFile(`${outputRoot}/runtime/snapshot-store.js`, "utf8");
+assert(snapshotStore.includes("indexedDB.open"), "RawSnapshots must use IndexedDB persistence");
+assert(
+  snapshotStore.includes('from "./capture-core/index.js"'),
+  "snapshot store must validate persisted RawSnapshots with packaged capture-core",
+);
+
+const captureCore = await readFile(`${outputRoot}/runtime/capture-core/validation.js`, "utf8");
+assert(
+  !captureCore.includes("@w2f/w2f-schema"),
+  "Browser capture-core runtime must remain self-contained",
+);
+
+const standardCapture = await readFile(
+  `${outputRoot}/runtime/standard-capture-adapter/capture.js`,
+  "utf8",
+);
+for (const evidence of [
+  "assignedNodes",
+  "shadowRoot",
+  "contentDocument",
+  "STANDARD_CAPTURE_FRAME_INACCESSIBLE",
+  "getClientRects",
+]) {
+  assert(standardCapture.includes(evidence), `Standard capture runtime missing ${evidence}`);
+}
+assert(!standardCapture.includes("document.cookie"), "Standard capture must not read cookies");
+assert(!standardCapture.includes("localStorage"), "Standard capture must not read localStorage");
+assert(
+  !standardCapture.includes("sessionStorage"),
+  "Standard capture must not read sessionStorage",
+);
+
 const contentScript = await readFile(`${outputRoot}/runtime/content-script.js`, "utf8");
 assert(
   !/^\s*(?:import|export)\s/m.test(contentScript),
@@ -105,17 +158,17 @@ assert(
 assert(
   contentScript.includes("W2F_CONTENT_REGION_RESULT") &&
     contentScript.includes("W2F_CONTENT_SELECTION_CANCELLED"),
-  "content runtime must include NODE-07 region selection result/cancellation paths",
+  "content runtime must keep NODE-07 region selection result/cancellation paths",
 );
 assert(
   contentScript.includes("attachShadow") && contentScript.includes("elementsFromPoint"),
-  "NODE-07 selector must package its isolated overlay and smart-element hit testing",
+  "region selector must package its isolated overlay and smart-element hit testing",
 );
 
 const protocol = await readFile(`${outputRoot}/runtime/protocol.js`, "utf8");
 assert(
-  protocol.includes('W2F_EXTENSION_SHELL_VERSION = "1.1.0"'),
-  "Browser shell protocol must expose the NODE-07 version",
+  protocol.includes('W2F_EXTENSION_SHELL_VERSION = "1.2.0"'),
+  "Browser shell protocol must expose the NODE-08 version",
 );
 
 console.log("Browser extension package validation: PASS");

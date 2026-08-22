@@ -1,3 +1,4 @@
+import type { RawSnapshotSummary } from "@w2f/capture-core";
 import type { SourceDescriptor } from "@w2f/source-providers";
 import { isRegionSelectionResult, type RegionSelectionResult } from "./region-selection.js";
 
@@ -15,6 +16,11 @@ export interface PageProbe {
   devicePixelRatio: number;
 }
 
+export interface CaptureSnapshotReceipt extends RawSnapshotSummary {
+  storageKey: string;
+  capturedAt: string;
+}
+
 export interface CaptureJobState {
   jobId: string;
   mode: CaptureJobMode;
@@ -26,6 +32,7 @@ export interface CaptureJobState {
   source?: SourceDescriptor;
   page?: PageProbe;
   region?: RegionSelectionResult;
+  capture?: CaptureSnapshotReceipt;
   error?: string;
 }
 
@@ -46,6 +53,25 @@ function isSourceDescriptor(value: unknown): value is SourceDescriptor {
     typeof record.baseLocator === "string" &&
     typeof record.displayName === "string" &&
     typeof record.offline === "boolean"
+  );
+}
+
+function isCaptureSnapshotReceipt(value: unknown): value is CaptureSnapshotReceipt {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+  const record = value as Record<string, unknown>;
+  return (
+    record.version === "1.0.0" &&
+    (record.adapter === "standard" || record.adapter === "cdp") &&
+    [
+      record.nodeCount,
+      record.frameCount,
+      record.scrollContainerCount,
+      record.diagnosticCount,
+    ].every((item) => typeof item === "number" && Number.isSafeInteger(item) && item >= 0) &&
+    typeof record.storageKey === "string" &&
+    record.storageKey.length > 0 &&
+    typeof record.capturedAt === "string" &&
+    !Number.isNaN(Date.parse(record.capturedAt))
   );
 }
 
@@ -75,7 +101,7 @@ export function transitionCaptureJob(
   next: CaptureJobStatus,
   phase: string,
   now: string | Date = new Date(),
-  patch: Pick<CaptureJobState, "tabId" | "source" | "page" | "region" | "error"> = {},
+  patch: Pick<CaptureJobState, "tabId" | "source" | "page" | "region" | "capture" | "error"> = {},
 ): CaptureJobState {
   if (isTerminalJobStatus(current.status)) {
     throw new TypeError(`cannot transition terminal job ${current.jobId} from ${current.status}`);
@@ -91,6 +117,7 @@ export function transitionCaptureJob(
     ...(patch.source === undefined ? {} : { source: patch.source }),
     ...(patch.page === undefined ? {} : { page: patch.page }),
     ...(patch.region === undefined ? {} : { region: patch.region }),
+    ...(patch.capture === undefined ? {} : { capture: patch.capture }),
     ...(patch.error === undefined ? {} : { error: patch.error }),
   };
 }
@@ -107,6 +134,7 @@ export function isCaptureJobState(value: unknown): value is CaptureJobState {
     typeof record.createdAt === "string" &&
     typeof record.updatedAt === "string" &&
     (record.source === undefined || isSourceDescriptor(record.source)) &&
-    (record.region === undefined || isRegionSelectionResult(record.region))
+    (record.region === undefined || isRegionSelectionResult(record.region)) &&
+    (record.capture === undefined || isCaptureSnapshotReceipt(record.capture))
   );
 }

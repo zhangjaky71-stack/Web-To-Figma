@@ -47,9 +47,21 @@ declare namespace chrome {
   }
 
   namespace scripting {
+    interface InjectionResult<T> {
+      frameId: number;
+      result?: T;
+      error?: string;
+    }
+
     function executeScript(injection: {
       target: { tabId: number };
       files: string[];
-    }): Promise<unknown[]>;
+    }): Promise<InjectionResult<unknown>[]>;
+
+    function executeScript<TArgs extends unknown[], TResult>(injection: {
+      target: { tabId: number };
+      func: (...args: TArgs) => TResult;
+      args: TArgs;
+    }): Promise<InjectionResult<TResult>[]>;
   }
 }

@@ -39,11 +39,19 @@ function renderJob(job: CaptureJobState | null): void {
   statusElement.dataset.status = job.status;
   const page = job.page;
   const region = job.region;
-  detailsElement.textContent = region
-    ? `${region.mode === "smart-element" ? "Smart element" : "Selected area"} · ${Math.round(region.bounds.width)}×${Math.round(region.bounds.height)} CSS px · ${region.exclusions.length} mask${region.exclusions.length === 1 ? "" : "s"}`
-    : page
-      ? `${page.title || "Untitled page"} · ${page.documentWidth}×${page.documentHeight}`
-      : job.error || `${job.mode} · ${job.phase}`;
+  const capture = job.capture;
+  if (capture) {
+    const captureSummary = `${capture.adapter.toUpperCase()} · ${capture.nodeCount} nodes · ${capture.frameCount} frames · ${capture.scrollContainerCount} scroll roots · ${capture.diagnosticCount} diagnostics`;
+    detailsElement.textContent = region
+      ? `${region.mode === "smart-element" ? "Smart element" : "Selected area"} · ${Math.round(region.bounds.width)}×${Math.round(region.bounds.height)} CSS px · ${region.exclusions.length} mask${region.exclusions.length === 1 ? "" : "s"} · ${captureSummary}`
+      : `${page?.title || "Untitled page"} · ${captureSummary}`;
+  } else {
+    detailsElement.textContent = region
+      ? `${region.mode === "smart-element" ? "Smart element" : "Selected area"} · ${Math.round(region.bounds.width)}×${Math.round(region.bounds.height)} CSS px · ${region.exclusions.length} mask${region.exclusions.length === 1 ? "" : "s"}`
+      : page
+        ? `${page.title || "Untitled page"} · ${page.documentWidth}×${page.documentHeight}`
+        : job.error || `${job.mode} · ${job.phase}`;
+  }
   cancelButton.disabled = ["completed", "failed", "cancelled"].includes(job.status);
   cancelButton.dataset.jobId = job.jobId;
 }
@@ -60,7 +68,7 @@ async function startJob(mode: CaptureJobMode): Promise<void> {
   detailsElement.textContent =
     mode === "region"
       ? "Select a region directly on the current page…"
-      : "Preparing the current tab…";
+      : "Capturing the current rendered page…";
   try {
     const response = await sendRequest({ type: "W2F_START_JOB", mode });
     if (!response.ok) throw new Error(response.error);

@@ -21,7 +21,7 @@ describe("browser capture job state", () => {
     expect(isCaptureJobState(job)).toBe(true);
   });
 
-  it("preserves source, page and region evidence across transitions", () => {
+  it("preserves source, region and Standard capture receipt across transitions", () => {
     const queued = createCaptureJob("region", "job_region", "2026-08-22T02:00:00.000Z");
     const source = {
       provider: "http-page",
@@ -60,7 +60,7 @@ describe("browser capture job state", () => {
     const completed = transitionCaptureJob(
       running,
       "completed",
-      "region-selection-complete",
+      "standard-capture-complete",
       "2026-08-22T02:00:02.000Z",
       {
         page: {
@@ -73,6 +73,16 @@ describe("browser capture job state", () => {
           devicePixelRatio: 2,
         },
         region,
+        capture: {
+          version: "1.0.0",
+          adapter: "standard",
+          nodeCount: 321,
+          frameCount: 2,
+          scrollContainerCount: 3,
+          diagnosticCount: 1,
+          storageKey: "raw-snapshot:job_region",
+          capturedAt: "2026-08-22T02:00:01.500Z",
+        },
       },
     );
 
@@ -80,11 +90,12 @@ describe("browser capture job state", () => {
     expect(completed.source).toEqual(source);
     expect(completed.page?.documentHeight).toBe(3200);
     expect(completed.region).toEqual(region);
+    expect(completed.capture).toMatchObject({ adapter: "standard", nodeCount: 321 });
     expect(isCaptureJobState(completed)).toBe(true);
     expect(isTerminalJobStatus(completed.status)).toBe(true);
   });
 
-  it("rejects malformed persisted source descriptors and region evidence", () => {
+  it("rejects malformed persisted source, region and capture evidence", () => {
     const job = createCaptureJob("region", "job_guard", "2026-08-22T02:00:00.000Z");
     expect(isCaptureJobState({ ...job, source: { provider: "file-tab" } })).toBe(false);
     expect(
@@ -95,6 +106,21 @@ describe("browser capture job state", () => {
           coordinateSpace: "document-css-px",
           mode: "free-rect",
           bounds: { x: 0, y: 0, width: 0, height: 20 },
+        },
+      }),
+    ).toBe(false);
+    expect(
+      isCaptureJobState({
+        ...job,
+        capture: {
+          version: "1.0.0",
+          adapter: "standard",
+          nodeCount: -1,
+          frameCount: 1,
+          scrollContainerCount: 0,
+          diagnosticCount: 0,
+          storageKey: "raw-snapshot:job_guard",
+          capturedAt: "invalid",
         },
       }),
     ).toBe(false);

@@ -30,6 +30,7 @@ export interface RawSourceReference {
   role?: string;
   attributes?: Record<string, string>;
   sourceSelector?: string;
+  backendNodeId?: number;
 }
 
 export interface RawNode {

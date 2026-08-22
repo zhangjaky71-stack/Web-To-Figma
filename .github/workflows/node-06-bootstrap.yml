@@ -44,7 +44,9 @@ jobs:
           apps/browser-extension/package.json
           apps/browser-extension/src
           apps/browser-extension/test
+          apps/browser-extension/scripts
           apps/browser-extension/static/popup.html
+          apps/browser-extension/static/options.html
           scripts/validate-foundation.mjs
 
       - name: Lint
@@ -67,7 +69,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add pnpm-lock.yaml packages/source-providers apps/browser-extension/package.json apps/browser-extension/src apps/browser-extension/test apps/browser-extension/static/popup.html scripts/validate-foundation.mjs
+          git add pnpm-lock.yaml packages/source-providers apps/browser-extension/package.json apps/browser-extension/src apps/browser-extension/test apps/browser-extension/scripts apps/browser-extension/static/popup.html apps/browser-extension/static/options.html scripts/validate-foundation.mjs
           if git diff --cached --quiet; then
             echo "No bootstrap changes to commit"
             exit 0

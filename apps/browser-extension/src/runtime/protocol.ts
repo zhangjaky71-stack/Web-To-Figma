@@ -17,7 +17,8 @@ export type W2fShellRequest =
 
 export type W2fContentRequest =
   | { type: "W2F_PROBE_PAGE"; jobId: string }
-  | { type: "W2F_SELECT_REGION"; jobId: string };
+  | { type: "W2F_SELECT_REGION"; jobId: string }
+  | { type: "W2F_CANCEL_REGION_SELECTION"; jobId: string };
 
 export type W2fContentResponse =
   | {

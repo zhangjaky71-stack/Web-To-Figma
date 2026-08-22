@@ -19,7 +19,7 @@
 | 06 | Source Providers & Offline | DONE | Source-provider/runtime/package + frozen-lockfile GitHub Actions PASS | PR #10 merged |
 | 07 | Region Selector & Redaction | DONE | Region interaction/runtime/package + frozen-lockfile GitHub Actions PASS | PR #11 merged |
 | 08 | Standard DOM Capture | DONE | RawSnapshot/Standard capture/runtime/package + frozen-lockfile GitHub Actions PASS | PR #12 merged |
-| 09 | CDP High Fidelity Adapter | DONE | CDP/dual-profile/runtime/package + frozen-lockfile GitHub Actions PASS | PR #13 ready after final docs CI |
+| 09 | CDP High Fidelity Adapter | DONE | CDP/dual-profile/runtime/package + frozen-lockfile GitHub Actions PASS | PR #13 ready to merge |
 | 10 | Text / Inline / Pseudo Capture | NEXT | - | - |
 | 11 | CSS Cascade & Authored Semantics | TODO | - | - |
 | 12 | Media / Container / Environment Capture | TODO | - | - |
@@ -58,9 +58,7 @@ Delivered:
 - `@w2f/cdp-capture-adapter`;
 - Chrome debugger attach/sendCommand/detach runtime;
 - `DOMSnapshot.captureSnapshot` with paint-order and DOM-rect evidence;
-- `Page.getLayoutMetrics`;
-- `Page.getFrameTree`;
-- `Page.captureScreenshot`;
+- `Page.getLayoutMetrics`, `Page.getFrameTree`, and `Page.captureScreenshot`;
 - separate DPR, browser-page-zoom and visual-viewport evidence;
 - backend node ID and paint-order RawSnapshot evidence;
 - frame-aware normalization and unavailable-frame diagnostics;
@@ -93,7 +91,7 @@ Neither build adds broad host permissions or static content scripts.
 
 The temporary write-enabled bootstrap workflow has been removed. Generated `dist-high-fidelity/` output is excluded from Git.
 
-Final standard read-only code/security/build Exit Gate:
+Code/security/build standard read-only Exit Gate:
 
 ```text
 32586474296
@@ -104,6 +102,14 @@ validated commit:
 ```text
 ef953d3a72f8a070c194423b7d22dd30e1f97737
 ```
+
+Docs/status standard read-only CI:
+
+```text
+32586638192
+```
+
+This run validated the complete normative NODE-09 documentation and the Roadmap transition to NODE-10.
 
 Every formal gate **PASS**:
 
@@ -141,13 +147,13 @@ Normative documentation:
 - [x] generated High Fidelity output excluded from Git
 - [x] standard read-only frozen-lockfile code Exit Gate passed
 - [x] normative documentation written
-- [ ] final docs/status-only standard CI passed
+- [x] final docs/status-only standard CI passed
 - [ ] PR #13 merged
 
 ## Blockers
 
-No implementation, security, test or build blocker remains. Only final docs/status CI and PR #13 merge remain before NODE-10.
+No implementation, security, test, build or documentation blocker remains. PR #13 merge is the only remaining transition gate before NODE-10.
 
 ## Next
 
-Run the final docs/status-only standard CI, merge PR #13, then create NODE-10 from the merged `main` baseline and begin `Text / Inline / Pseudo Capture`.
+Merge PR #13, then create NODE-10 from the merged `main` baseline and begin `Text / Inline / Pseudo Capture`.

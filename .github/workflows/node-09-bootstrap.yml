@@ -62,6 +62,12 @@ jobs:
             '  const scrollContainers: RawSnapshot["scrollContainers"] = [];',
             "typed CDP scroll containers",
           );
+          normalize = replaceRequired(
+            normalize,
+            `    if (owner) {\n      context.parentFrameId = documentFrameIds[owner.documentIndex];\n    }\n`,
+            `    if (owner) {\n      const parentFrameId = documentFrameIds[owner.documentIndex];\n      if (parentFrameId !== undefined) context.parentFrameId = parentFrameId;\n    }\n`,
+            "exact optional parent frame typing",
+          );
           writeFileSync(normalizePath, normalize, "utf8");
 
           const foundationPath = "scripts/validate-foundation.mjs";

@@ -4,14 +4,14 @@
 **Portable package:** `.wtf`  
 **MIME:** `application/x-wtf`  
 **Architecture:** FROZEN FOR IMPLEMENTATION  
-**Updated:** 2026-08-21
+**Updated:** 2026-08-22
 
 ## Roadmap
 
 | NODE | Name | Status | Validation | Commit/PR |
 |---|---|---|---|---|
 | 00 | Product Baseline & Acceptance Contract | DONE | PASS | PR #3 merged |
-| 01 | Monorepo Foundation | IN PROGRESS / BLOCKED | Local structural/runtime validation PASS; GitHub Actions runner unavailable | PR #4 |
+| 01 | Monorepo Foundation | IN PROGRESS / BLOCKED | Local structural/runtime/build-compat validation PASS; GitHub Actions runner unavailable | PR #4 / Issue #5 |
 | 02 | W2F File Spec V2 | TODO | - | - |
 | 03 | W2F IR V2 | TODO | - | - |
 | 04 | Stable Identity & Source Mapping | TODO | - | - |
@@ -62,10 +62,13 @@
 - [x] shared-utils exports aligned to `dist/index.js` + `dist/index.d.ts`
 - [x] `.wtf` extension/MIME constants protected by tests
 - [x] dependency-free `scripts/validate-foundation.mjs`
+- [x] bootstrap/frozen-lockfile CI state validation
+- [x] root `check` covers foundation + lint + typecheck + test + build + format
 - [x] GitHub Actions CI workflow
 - [x] local JSON/YAML/ESM static validation
 - [x] local dependency-free foundation validator PASS
 - [x] local TypeScript runtime smoke PASS
+- [x] local TypeScript 5.8.3 build-compat smoke PASS for all three executable workspaces
 - [x] toolchain compatibility review against current official package support
 
 ## NODE-01 Validation
@@ -76,42 +79,55 @@ Local assistant container validation:
 - YAML parse: **PASS**
 - `eslint.config.mjs` syntax: **PASS**
 - repository/workspace structure review: **PASS**
-- `node scripts/validate-foundation.mjs`: **PASS**
+- dependency-free foundation contract mirror: **PASS**
 - zero-dependency TypeScript runtime smoke: **PASS**
 - `.wtf` extension/MIME behavior: **PASS**
 - browser-extension app id: **PASS**
 - Figma-plugin app id: **PASS**
+- TypeScript 5.8.3 source-only build compatibility: **PASS**
 
-Current toolchain compatibility was also rechecked: TypeScript 6.0.3 is within the current typescript-eslint supported TypeScript range (`>=4.8.4 <6.1.0`), and typescript-eslint supports ESLint 10.
+The TypeScript 5.8.3 smoke is supplemental only; the frozen project toolchain remains TypeScript 6.0.3 and must still pass in formal CI.
 
-The assistant execution container has no ordinary npm-registry network access, so dependency installation cannot be completed locally.
+Current toolchain compatibility was rechecked: TypeScript 6.0.3 is within the current typescript-eslint supported TypeScript range (`>=4.8.4 <6.1.0`), and typescript-eslint supports ESLint 10.
 
-GitHub Actions diagnostics:
+The assistant execution container has no ordinary npm-registry network access, so the exact pnpm dependency graph cannot be installed locally and the authoritative lockfile cannot be produced locally.
+
+## GitHub Actions Diagnostics
+
+Issue: `#5 — BLOCKER: GitHub Actions jobs fail before first step`
+
+Observed evidence includes:
 
 - CI run `32477712350`: failure before lockfile artifact
 - CI run `32477835968`: failure before lockfile artifact
 - CI run `32477926703`: failure
 - Diagnostic run `32477926786`, attempt 1: failure
-- Diagnostic run `32477926786`, attempt 2: failure with no workflow steps executed
+- Diagnostic run `32477926786`, attempt 2: queued/started then failure with `steps=[]`
+- Diagnostic run `32477926786`, attempt 3: queued then failure with `steps=null`
+- CI run `32493919394` (#19): failure with `steps=null`
+- CI run `32494021872` (#20): failure with `steps=null`
+- CI run `32539554832` (#21): failure with `steps=null`
 
-The minimal diagnostic contains only `echo`, `node --version`, and `npm --version`. Attempt 2 was accepted, queued and started, then failed within seconds while returning `steps=[]`. The current blocker therefore remains classified as **private-repository GitHub Actions execution environment unavailable**, not a W2F source-code/dependency failure.
+The minimal diagnostic contains only `echo`, `node --version`, and `npm --version`, so repository code, pnpm install, lint, tests and build are not reached.
+
+GitHub public status currently reports Actions operational, so this is not being treated as a known global GitHub Actions incident. The blocker is therefore classified as **private-repository/account Actions execution environment unavailable or restricted** until repository/account settings prove otherwise.
 
 ## Blockers
 
-1. GitHub Actions cannot currently execute even a trivial `ubuntu-latest` job in this private repository.
-2. Therefore CI cannot generate the first `pnpm-lock.yaml` artifact.
-3. NODE-01 cannot satisfy the frozen-lockfile CI gate until the repository Actions environment executes jobs.
+1. GitHub Actions cannot currently execute even a trivial GitHub-hosted runner step in this private repository.
+2. Therefore CI cannot generate the authoritative initial `pnpm-lock.yaml` artifact.
+3. NODE-01 cannot satisfy the frozen-lockfile quality gate until the repository Actions environment executes jobs.
 
-The connected GitHub toolset can inspect/re-run Actions runs but does not expose repository Actions billing/runner policy settings, so the platform-level blocker cannot be corrected directly through the current connector.
+The connected GitHub toolset can inspect/re-run Actions runs but does not expose repository/account Actions billing, spending-limit, or hosted-runner policy settings, so the platform-level blocker cannot be corrected directly through the current connector.
 
 ## Exit Criteria Remaining
 
 - [ ] GitHub Actions runner executes a trivial job
 - [ ] `pnpm-lock.yaml` generated and committed
 - [ ] CI switched to `pnpm install --frozen-lockfile`
-- [ ] lint passes
-- [ ] typecheck passes
-- [ ] tests pass
+- [ ] lint passes under pinned ESLint/typescript-eslint
+- [ ] typecheck passes under pinned TypeScript 6.0.3
+- [ ] Vitest passes
 - [ ] build passes
 - [ ] format check passes
 

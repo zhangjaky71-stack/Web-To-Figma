@@ -31,6 +31,7 @@ const requiredFiles = [
   "apps/browser-extension/src/index.ts",
   "apps/browser-extension/src/runtime/protocol.ts",
   "apps/browser-extension/src/runtime/job-state.ts",
+  "apps/browser-extension/src/runtime/source-runtime.ts",
   "apps/browser-extension/src/runtime/service-worker.ts",
   "apps/browser-extension/src/runtime/content-script.ts",
   "apps/browser-extension/src/runtime/popup.ts",
@@ -48,6 +49,15 @@ const requiredFiles = [
   "packages/shared-utils/tsconfig.json",
   "packages/shared-utils/tsconfig.build.json",
   "packages/shared-utils/src/index.ts",
+  "packages/source-providers/package.json",
+  "packages/source-providers/tsconfig.json",
+  "packages/source-providers/tsconfig.build.json",
+  "packages/source-providers/src/index.ts",
+  "packages/source-providers/src/types.ts",
+  "packages/source-providers/src/http-page-provider.ts",
+  "packages/source-providers/src/file-tab-provider.ts",
+  "packages/source-providers/src/local-folder-provider.ts",
+  "packages/source-providers/src/registry.ts",
 ];
 
 function fail(message) {
@@ -150,6 +160,7 @@ if (failures.length === 0) {
     "apps/browser-extension",
     "apps/figma-plugin",
     "packages/shared-utils",
+    "packages/source-providers",
   ]) {
     const packageJson = readJson(`${directory}/package.json`);
     const buildCommand = packageJson.scripts?.build ?? "";
@@ -211,16 +222,46 @@ if (failures.length === 0) {
   assert(
     JSON.stringify(browserPermissions) ===
       JSON.stringify(["activeTab", "scripting", "storage"].sort()),
-    "NODE-05 browser permissions must remain least-privilege activeTab+scripting+storage",
+    "browser permissions must remain least-privilege activeTab+scripting+storage",
   );
   assert(
     !("host_permissions" in browserManifest),
-    "NODE-05 must not request broad host permissions",
+    "source providers must not introduce broad default host permissions",
   );
   assert(
     !("content_scripts" in browserManifest),
-    "NODE-05 content bridge must be user-action injected",
+    "content bridge must remain user-action injected",
   );
+
+  const browserPackage = readJson("apps/browser-extension/package.json");
+  assert(
+    browserPackage.dependencies?.["@w2f/source-providers"] === "workspace:*",
+    "Browser Extension must consume the shared source-providers workspace package",
+  );
+  const browserSourceRuntime = readText("apps/browser-extension/src/runtime/source-runtime.ts");
+  assert(
+    browserSourceRuntime.includes("isAllowedFileSchemeAccess"),
+    "Browser source runtime must check Chrome file-scheme access explicitly",
+  );
+  assert(
+    browserSourceRuntime.includes("resolveTabSource"),
+    "Browser source runtime must delegate source classification to the shared provider package",
+  );
+
+  const sourceProviders = readJson("packages/source-providers/package.json");
+  assert(
+    sourceProviders.exports?.["."] === "./dist/index.js" && sourceProviders.types === "./dist/index.d.ts",
+    "source-providers package export/types contract drifted",
+  );
+  const sourceProviderIndex = readText("packages/source-providers/src/index.ts");
+  for (const contract of [
+    "http-page-provider",
+    "file-tab-provider",
+    "local-folder-provider",
+    "registry",
+  ]) {
+    assert(sourceProviderIndex.includes(contract), `source-providers index must export ${contract}`);
+  }
 
   const sharedUtils = readJson("packages/shared-utils/package.json");
   assert(
@@ -270,7 +311,7 @@ if (failures.length === 0) {
     assert(ci.includes("pnpm install --frozen-lockfile"), "CI must use --frozen-lockfile");
     assert(
       !ci.includes("pnpm install --no-frozen-lockfile"),
-      "CI must not keep bootstrap --no-frozen-lockfile after lockfile commit",
+      "canonical CI must not keep bootstrap --no-frozen-lockfile",
     );
   }
 }

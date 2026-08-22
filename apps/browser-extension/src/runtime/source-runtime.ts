@@ -6,6 +6,7 @@ import {
 
 export interface ActiveTabSourceResolution {
   tabId: number;
+  tab: chrome.tabs.Tab;
   capability: SourceCapability;
   descriptor?: SourceDescriptor;
 }
@@ -28,6 +29,7 @@ export async function resolveActiveTabSource(): Promise<ActiveTabSourceResolutio
 
   return {
     tabId: tab.id,
+    tab,
     capability: resolved.capability,
     ...(resolved.descriptor === undefined ? {} : { descriptor: resolved.descriptor }),
   };

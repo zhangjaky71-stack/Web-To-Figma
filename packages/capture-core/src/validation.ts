@@ -81,6 +81,44 @@ function isScaleEvidence(value: unknown): boolean {
   );
 }
 
+function isLayoutViewport(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    [value.pageX, value.pageY, value.clientWidth, value.clientHeight].every(isFiniteNumber) &&
+    isNonNegativeFiniteNumber(value.clientWidth) &&
+    isNonNegativeFiniteNumber(value.clientHeight)
+  );
+}
+
+function isVisualViewport(value: unknown): boolean {
+  if (!isRecord(value)) return false;
+  if (
+    ![
+      value.offsetX,
+      value.offsetY,
+      value.pageX,
+      value.pageY,
+      value.clientWidth,
+      value.clientHeight,
+    ].every(isFiniteNumber) ||
+    !isNonNegativeFiniteNumber(value.clientWidth) ||
+    !isNonNegativeFiniteNumber(value.clientHeight) ||
+    !isPositiveFiniteNumber(value.scale)
+  ) {
+    return false;
+  }
+  return value.zoom === undefined || isPositiveFiniteNumber(value.zoom);
+}
+
+function isLayoutMetricsEvidence(value: unknown): boolean {
+  if (!isRecord(value)) return false;
+  return (
+    (value.contentSize === undefined || isRect(value.contentSize)) &&
+    (value.layoutViewport === undefined || isLayoutViewport(value.layoutViewport)) &&
+    (value.visualViewport === undefined || isVisualViewport(value.visualViewport))
+  );
+}
+
 function isRawCaptureTarget(value: unknown): boolean {
   if (!isRecord(value)) return false;
   if (value.type === "document") return true;
@@ -129,10 +167,10 @@ function isRawNode(value: unknown): boolean {
   if (value.visibility !== undefined) {
     if (!isRecord(value.visibility)) return false;
     if (
-      !isNonEmptyString(value.visibility.display) ||
-      !isNonEmptyString(value.visibility.visibility) ||
+      typeof value.visibility.display !== "string" ||
+      typeof value.visibility.visibility !== "string" ||
       (value.visibility.contentVisibility !== undefined &&
-        !isNonEmptyString(value.visibility.contentVisibility)) ||
+        typeof value.visibility.contentVisibility !== "string") ||
       !isFiniteNumber(value.visibility.opacity) ||
       typeof value.visibility.hiddenAttribute !== "boolean" ||
       typeof value.visibility.rendered !== "boolean"
@@ -142,6 +180,13 @@ function isRawNode(value: unknown): boolean {
   }
 
   if (value.textContent !== undefined && typeof value.textContent !== "string") return false;
+  if (value.paintOrder !== undefined && !isNonNegativeFiniteNumber(value.paintOrder)) return false;
+  if (
+    value.source.backendNodeId !== undefined &&
+    !isNonNegativeFiniteNumber(value.source.backendNodeId)
+  ) {
+    return false;
+  }
   if (value.source.attributes !== undefined) {
     if (!isRecord(value.source.attributes)) return false;
     if (!Object.values(value.source.attributes).every((item) => typeof item === "string")) {
@@ -177,6 +222,8 @@ export function isRawSnapshot(value: unknown): value is RawSnapshot {
     !isNonNegativeFiniteNumber(value.environment.viewportWidth) ||
     !isNonNegativeFiniteNumber(value.environment.viewportHeight) ||
     !isScaleEvidence(value.environment.scale) ||
+    (value.environment.layoutMetrics !== undefined &&
+      !isLayoutMetricsEvidence(value.environment.layoutMetrics)) ||
     !Array.isArray(value.nodes) ||
     !Array.isArray(value.frames) ||
     !Array.isArray(value.scrollContainers) ||

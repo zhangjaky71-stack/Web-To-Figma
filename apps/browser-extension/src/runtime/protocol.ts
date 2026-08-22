@@ -2,7 +2,7 @@ import type { SourceCapability } from "@w2f/source-providers";
 import type { CaptureJobMode, CaptureJobState, PageProbe } from "./job-state.js";
 import { isRegionSelectionResult, type RegionSelectionResult } from "./region-selection.js";
 
-export const W2F_EXTENSION_SHELL_VERSION = "1.2.0" as const;
+export const W2F_EXTENSION_SHELL_VERSION = "1.3.0" as const;
 export const W2F_JOB_STORAGE_KEY = "w2f.captureJob.v1" as const;
 
 export type W2fShellRequest =
@@ -39,7 +39,10 @@ export interface W2fShellInfo {
   manifestVersion: 3;
   captureImplemented: true;
   standardCaptureImplemented: true;
+  cdpCaptureImplemented: true;
   regionSelectionImplemented: true;
+  captureProfile: "standard" | "high-fidelity";
+  cdpAvailable: boolean;
 }
 
 export type W2fShellResponseData = W2fShellInfo | SourceCapability | CaptureJobState | null;

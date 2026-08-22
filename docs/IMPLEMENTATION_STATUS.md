@@ -18,9 +18,9 @@
 | 05 | Browser Extension Shell | DONE | Loadable MV3 package + frozen-lockfile GitHub Actions PASS | PR #9 merged |
 | 06 | Source Providers & Offline | DONE | Source-provider/runtime/package + frozen-lockfile GitHub Actions PASS | PR #10 merged |
 | 07 | Region Selector & Redaction | DONE | Region interaction/runtime/package + frozen-lockfile GitHub Actions PASS | PR #11 merged |
-| 08 | Standard DOM Capture | DONE | RawSnapshot/Standard capture/runtime/package + frozen-lockfile GitHub Actions PASS | PR #12 ready to merge |
-| 09 | CDP High Fidelity Adapter | NEXT | - | - |
-| 10 | Text / Inline / Pseudo Capture | TODO | - | - |
+| 08 | Standard DOM Capture | DONE | RawSnapshot/Standard capture/runtime/package + frozen-lockfile GitHub Actions PASS | PR #12 merged |
+| 09 | CDP High Fidelity Adapter | DONE | CDP/dual-profile/runtime/package + frozen-lockfile GitHub Actions PASS | PR #13 ready to merge |
+| 10 | Text / Inline / Pseudo Capture | NEXT | - | - |
 | 11 | CSS Cascade & Authored Semantics | TODO | - | - |
 | 12 | Media / Container / Environment Capture | TODO | - | - |
 | 13 | Asset Resolver | TODO | - | - |
@@ -45,40 +45,33 @@
 
 ## Current Node
 
-`NODE-09 — CDP High Fidelity Adapter`
+`NODE-10 — Text / Inline / Pseudo Capture`
 
-> NODE-09 implementation must not begin until PR #12 is merged into `main`.
+> NODE-10 implementation begins only after PR #13 is merged into `main`.
 
-## NODE-08 Completion
+## NODE-09 Completion
 
-NODE-08 implements the frozen V2/V2.1 Standard DOM capture path and establishes the adapter-neutral RawSnapshot boundary that NODE-09 CDP must also target.
+NODE-09 implements the optional Chrome DevTools Protocol High Fidelity capture path while keeping NODE-08 Standard capture as the least-privilege default/fallback and preserving one shared RawSnapshot boundary.
 
-Implemented:
+Delivered:
 
-- shared `@w2f/capture-core` RawSnapshot contract;
-- `FrameContext` schema and IR preservation;
-- explicit `ScaleContext` model separating DPR, browser page zoom, CSS zoom and visual viewport scale;
-- `@w2f/standard-capture-adapter`;
-- Element/Text/Document traversal;
-- unrounded double-precision geometry/client rect evidence;
-- computed visibility evidence;
-- open Shadow DOM traversal;
-- slot/composed-parent inference via `assignedNodes({ flatten: true })`;
-- same-origin iframe recursion;
-- inaccessible iframe frame records and diagnostics;
-- scroll-container evidence and primary application scroll-root heuristic;
-- region intersection + structural ancestor closure;
-- Redact/Exclude application before captured content leaves the page;
-- protected form/auth/cookie/session/token data filtering;
-- Browser Full Page Standard capture;
-- Browser post-region Standard capture;
-- IndexedDB RawSnapshot persistence with compact `chrome.storage.local` receipt;
-- cancellation-race protection;
-- Chrome-resolvable packaged capture runtime with unresolved workspace-import rejection.
+- `@w2f/cdp-capture-adapter`;
+- Chrome debugger attach/sendCommand/detach runtime;
+- `DOMSnapshot.captureSnapshot` with paint-order and DOM-rect evidence;
+- `Page.getLayoutMetrics`, `Page.getFrameTree`, and `Page.captureScreenshot`;
+- separate DPR, browser-page-zoom and visual-viewport evidence;
+- backend node ID and paint-order RawSnapshot evidence;
+- frame-aware normalization and unavailable-frame diagnostics;
+- NODE-07 Region/Redact/Exclude integration;
+- explicit CDP-to-Standard fallback diagnostics;
+- reference screenshot IndexedDB persistence;
+- Standard and High Fidelity manifest/build isolation;
+- recursive Browser runtime import/package validation;
+- dependency-free NODE-09 foundation invariants.
 
-Standard capture does not fabricate browser zoom evidence that page APIs cannot reliably separate. Those fields are explicitly represented as unavailable for the Standard path and remain available for higher-fidelity evidence in NODE-09.
+## Permission boundary
 
-The Browser extension remains least-privilege:
+Standard build remains:
 
 ```text
 activeTab
@@ -86,66 +79,81 @@ scripting
 storage
 ```
 
-NODE-08 adds no `debugger`, broad `host_permissions` or static content scripts.
-
-## NODE-08 Validation
-
-All temporary write-enabled bootstrap/patch workflows have been removed.
-
-Final standard read-only GitHub Actions run:
+High Fidelity adds only:
 
 ```text
-32582370051
+debugger
+```
+
+Neither build adds broad host permissions or static content scripts.
+
+## NODE-09 Validation
+
+The temporary write-enabled bootstrap workflow has been removed. Generated `dist-high-fidelity/` output is excluded from Git.
+
+Code/security/build standard read-only Exit Gate:
+
+```text
+32586474296
 ```
 
 validated commit:
 
 ```text
-4dc6ccc369dc9f332dd4119e2324e873e6127603
+ef953d3a72f8a070c194423b7d22dd30e1f97737
 ```
+
+Docs/status standard read-only CI:
+
+```text
+32586638192
+```
+
+This run validated the complete normative NODE-09 documentation and the Roadmap transition to NODE-10.
 
 Every formal gate **PASS**:
 
-- dependency-free foundation validation including NODE-08 contract invariants;
+- NODE-08, NODE-09 and global dependency-free foundation validation;
 - Node.js 24 / pnpm 11.22.0;
 - `pnpm install --frozen-lockfile`;
 - ESLint;
-- TypeScript 6.0.3 typecheck;
+- TypeScript 6.0.3 strict typecheck;
 - full repository Vitest suite;
-- deterministic Browser extension build;
-- Browser package/runtime validator;
+- Standard Browser package build/validation;
+- High Fidelity Browser package build/validation;
 - pinned Prettier 3.9.6 format check.
 
 Normative documentation:
 
-- `docs/STANDARD_DOM_CAPTURE_V2.md`;
-- `docs/adr/ADR-0008-adapter-neutral-raw-snapshot-and-standard-capture.md`;
-- `docs/nodes/NODE-08_STANDARD_DOM_CAPTURE.md`.
+- `docs/CDP_HIGH_FIDELITY_ADAPTER_V2.md`;
+- `docs/adr/ADR-0009-cdp-high-fidelity-permission-and-raw-snapshot-boundary.md`;
+- `docs/nodes/NODE-09_CDP_HIGH_FIDELITY_ADAPTER.md`.
 
-## NODE-08 Exit Criteria
+## NODE-09 Exit Criteria
 
-- [x] adapter-neutral RawSnapshot contract
-- [x] Standard DOM capture adapter
-- [x] DOM/Text geometry and visibility evidence
-- [x] open Shadow DOM + composed-tree inference
-- [x] iframe/origin-aware FrameContext
-- [x] explicit ScaleContext without fabricated zoom values
-- [x] scroll-root evidence
-- [x] Region + Redact/Exclude integration
-- [x] automatic privacy filtering
-- [x] Browser Full Page/Region capture orchestration
-- [x] IndexedDB snapshot persistence
-- [x] package/runtime validation
-- [x] authoritative lockfile updated
-- [x] temporary write-enabled workflows removed
-- [x] final standard read-only frozen-lockfile CI passes
-- [x] validation evidence written to normative status/docs
-- [ ] PR #12 merged
+- [x] same RawSnapshot contract for Standard/CDP
+- [x] CDP platform adapter with safe attach/detach
+- [x] DOMSnapshot/layout metrics/frame tree/screenshot evidence
+- [x] paint order/backend node evidence
+- [x] explicit ScaleContext evidence
+- [x] frame diagnostics without fabricated documents
+- [x] Region/Redact/Exclude semantics
+- [x] explicit Standard fallback
+- [x] screenshot IndexedDB persistence
+- [x] Standard/High Fidelity permission isolation
+- [x] dual-profile package validation
+- [x] authoritative 11-workspace lockfile
+- [x] temporary write-enabled workflow removed
+- [x] generated High Fidelity output excluded from Git
+- [x] standard read-only frozen-lockfile code Exit Gate passed
+- [x] normative documentation written
+- [x] final docs/status-only standard CI passed
+- [ ] PR #13 merged
 
 ## Blockers
 
-No implementation or CI blockers remain for NODE-08. PR #12 only requires merge.
+No implementation, security, test, build or documentation blocker remains. PR #13 merge is the only remaining transition gate before NODE-10.
 
 ## Next
 
-Merge PR #12, then create NODE-09 from the merged `main` baseline and begin `CDP High Fidelity Adapter` implementation against the same RawSnapshot contract.
+Merge PR #13, then create NODE-10 from the merged `main` baseline and begin `Text / Inline / Pseudo Capture`.

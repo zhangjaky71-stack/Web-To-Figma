@@ -8,6 +8,13 @@ declare namespace chrome {
       tab?: tabs.Tab;
     }
 
+    interface Manifest {
+      manifest_version: number;
+      permissions?: string[];
+      name?: string;
+      version?: string;
+    }
+
     const onInstalled: W2fChromeEvent<(details: { reason: string }) => void>;
     const onMessage: W2fChromeEvent<
       (
@@ -19,6 +26,7 @@ declare namespace chrome {
 
     function sendMessage(message: unknown): Promise<unknown>;
     function openOptionsPage(): Promise<void>;
+    function getManifest(): Manifest;
   }
 
   namespace extension {

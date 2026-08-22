@@ -4,7 +4,7 @@
 **Portable package:** `.wtf`  
 **MIME:** `application/x-wtf`  
 **Architecture:** FROZEN FOR IMPLEMENTATION  
-**Updated:** 2026-08-22
+**Updated:** 2026-08-23
 
 ## Roadmap
 
@@ -17,9 +17,9 @@
 | 04 | Stable Identity & Source Mapping | DONE | Repeat-capture identity/mapping + frozen-lockfile GitHub Actions PASS | PR #8 merged |
 | 05 | Browser Extension Shell | DONE | Loadable MV3 package + frozen-lockfile GitHub Actions PASS | PR #9 merged |
 | 06 | Source Providers & Offline | DONE | Source-provider/runtime/package + frozen-lockfile GitHub Actions PASS | PR #10 merged |
-| 07 | Region Selector & Redaction | DONE | Region interaction/runtime/package + frozen-lockfile GitHub Actions PASS | PR #11 merge pending |
-| 08 | Standard DOM Capture | NEXT | - | - |
-| 09 | CDP High Fidelity Adapter | TODO | - | - |
+| 07 | Region Selector & Redaction | DONE | Region interaction/runtime/package + frozen-lockfile GitHub Actions PASS | PR #11 merged |
+| 08 | Standard DOM Capture | DONE | RawSnapshot/Standard capture/runtime/package + frozen-lockfile GitHub Actions PASS | PR #12 ready to merge |
+| 09 | CDP High Fidelity Adapter | NEXT | - | - |
 | 10 | Text / Inline / Pseudo Capture | TODO | - | - |
 | 11 | CSS Cascade & Authored Semantics | TODO | - | - |
 | 12 | Media / Container / Environment Capture | TODO | - | - |
@@ -45,35 +45,38 @@
 
 ## Current Node
 
-`NODE-08 — Standard DOM Capture`
+`NODE-09 — CDP High Fidelity Adapter`
 
-> NODE-08 implementation must not begin until PR #11 is merged into `main`.
+> NODE-09 implementation must not begin until PR #12 is merged into `main`.
 
-## NODE-07 Completion
+## NODE-08 Completion
 
-NODE-07 implements the frozen V2 interactive region-selection and redaction boundary on top of the Browser shell and source-provider preflight.
+NODE-08 implements the frozen V2/V2.1 Standard DOM capture path and establishes the adapter-neutral RawSnapshot boundary that NODE-09 CDP must also target.
 
-Implemented in `apps/browser-extension`:
+Implemented:
 
-- versioned `RegionSelectionResult` contract;
-- unrounded double-precision `document-css-px` geometry;
-- Free Rectangle drag selection;
-- Smart Element hover/click selection;
-- rendered hit testing via `document.elementsFromPoint`;
-- lightweight element-edge snap with `Alt` bypass;
-- `Esc` cancel and `Enter` confirm;
-- Arrow 1 CSS px and Shift+Arrow 10 CSS px movement;
-- edge auto-scroll during drag;
-- wheel scrolling while selector is active;
-- selection root hint and explicit root clip;
-- Redact and Exclude masks clipped to the selected region;
-- deterministic overlay/listener cleanup;
-- region protocol request/result/cancellation paths;
-- structurally validated region evidence persisted in capture job state;
-- popup result summary;
-- Browser package/runtime validation for the NODE-07 runtime.
+- shared `@w2f/capture-core` RawSnapshot contract;
+- `FrameContext` schema and IR preservation;
+- explicit `ScaleContext` model separating DPR, browser page zoom, CSS zoom and visual viewport scale;
+- `@w2f/standard-capture-adapter`;
+- Element/Text/Document traversal;
+- unrounded double-precision geometry/client rect evidence;
+- computed visibility evidence;
+- open Shadow DOM traversal;
+- slot/composed-parent inference via `assignedNodes({ flatten: true })`;
+- same-origin iframe recursion;
+- inaccessible iframe frame records and diagnostics;
+- scroll-container evidence and primary application scroll-root heuristic;
+- region intersection + structural ancestor closure;
+- Redact/Exclude application before captured content leaves the page;
+- protected form/auth/cookie/session/token data filtering;
+- Browser Full Page Standard capture;
+- Browser post-region Standard capture;
+- IndexedDB RawSnapshot persistence with compact `chrome.storage.local` receipt;
+- cancellation-race protection;
+- Chrome-resolvable packaged capture runtime with unresolved workspace-import rejection.
 
-The interaction overlay is isolated in a closed Shadow DOM and remains user-action injected.
+Standard capture does not fabricate browser zoom evidence that page APIs cannot reliably separate. Those fields are explicitly represented as unavailable for the Standard path and remain available for higher-fidelity evidence in NODE-09.
 
 The Browser extension remains least-privilege:
 
@@ -83,66 +86,66 @@ scripting
 storage
 ```
 
-NODE-07 adds no broad `host_permissions`, `<all_urls>`, debugger permission or static content scripts. It does not read cookies, local/session storage, authorization headers, auth tokens or form values.
+NODE-08 adds no `debugger`, broad `host_permissions` or static content scripts.
 
-NODE-07 deliberately does not serialize DOM or implement NODE-08 Standard DOM Capture.
+## NODE-08 Validation
 
-## NODE-07 Validation
-
-The temporary write-enabled formatter has been removed.
+All temporary write-enabled bootstrap/patch workflows have been removed.
 
 Final standard read-only GitHub Actions run:
 
 ```text
-32577222247
+32582370051
 ```
 
 validated commit:
 
 ```text
-d342db88388490dcaf3eaab4c3399aaa902dc3d1
+4dc6ccc369dc9f332dd4119e2324e873e6127603
 ```
 
-with every formal gate **PASS**:
+Every formal gate **PASS**:
 
-- dependency-free foundation validation;
+- dependency-free foundation validation including NODE-08 contract invariants;
 - Node.js 24 / pnpm 11.22.0;
 - `pnpm install --frozen-lockfile`;
 - ESLint;
 - TypeScript 6.0.3 typecheck;
 - full repository Vitest suite;
-- Browser region-selection/protocol/job-state tests;
 - deterministic Browser extension build;
 - Browser package/runtime validator;
 - pinned Prettier 3.9.6 format check.
 
 Normative documentation:
 
-- `docs/REGION_SELECTOR_REDACTION_V2.md`;
-- `docs/adr/ADR-0007-region-selection-and-redaction-boundary.md`;
-- `docs/nodes/NODE-07_REGION_SELECTOR_REDACTION.md`.
+- `docs/STANDARD_DOM_CAPTURE_V2.md`;
+- `docs/adr/ADR-0008-adapter-neutral-raw-snapshot-and-standard-capture.md`;
+- `docs/nodes/NODE-08_STANDARD_DOM_CAPTURE.md`.
 
-## NODE-07 Exit Criteria
+## NODE-08 Exit Criteria
 
-- [x] versioned region-selection contract
-- [x] double-precision document-space geometry
-- [x] Free Rectangle + Smart Element modes
-- [x] snap bypass and keyboard controls
-- [x] edge auto-scroll and active wheel scrolling
-- [x] selection root + root clip
-- [x] Redact + Exclude masks clipped to selection
-- [x] deterministic cleanup/cancellation
-- [x] protocol/job-state/popup integration
-- [x] permission and privacy boundary preserved
-- [x] foundation invariants updated
-- [x] tests/typecheck/build/package validation pass
-- [x] temporary write-enabled formatter removed
+- [x] adapter-neutral RawSnapshot contract
+- [x] Standard DOM capture adapter
+- [x] DOM/Text geometry and visibility evidence
+- [x] open Shadow DOM + composed-tree inference
+- [x] iframe/origin-aware FrameContext
+- [x] explicit ScaleContext without fabricated zoom values
+- [x] scroll-root evidence
+- [x] Region + Redact/Exclude integration
+- [x] automatic privacy filtering
+- [x] Browser Full Page/Region capture orchestration
+- [x] IndexedDB snapshot persistence
+- [x] package/runtime validation
+- [x] authoritative lockfile updated
+- [x] temporary write-enabled workflows removed
 - [x] final standard read-only frozen-lockfile CI passes
+- [x] validation evidence written to normative status/docs
+- [ ] PR #12 merged
 
 ## Blockers
 
-None for NODE-07 implementation. PR #11 must be merged before NODE-08 work starts.
+No implementation or CI blockers remain for NODE-08. PR #12 only requires merge.
 
 ## Next
 
-Merge PR #11, then proceed to `NODE-08 — Standard DOM Capture` from the merged `main` baseline.
+Merge PR #12, then create NODE-09 from the merged `main` baseline and begin `CDP High Fidelity Adapter` implementation against the same RawSnapshot contract.

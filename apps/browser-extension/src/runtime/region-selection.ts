@@ -42,9 +42,19 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 export function isRegionRect(value: unknown): value is RegionRect {
   if (!isRecord(value)) return false;
-  return [value.x, value.y, value.width, value.height].every(
-    (item) => typeof item === "number" && Number.isFinite(item),
-  ) && value.width >= 0 && value.height >= 0;
+  const { x, y, width, height } = value;
+  return (
+    typeof x === "number" &&
+    Number.isFinite(x) &&
+    typeof y === "number" &&
+    Number.isFinite(y) &&
+    typeof width === "number" &&
+    Number.isFinite(width) &&
+    width >= 0 &&
+    typeof height === "number" &&
+    Number.isFinite(height) &&
+    height >= 0
+  );
 }
 
 export function rectFromPoints(

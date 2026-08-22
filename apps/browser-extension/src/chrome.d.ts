@@ -8,6 +8,13 @@ declare namespace chrome {
       tab?: tabs.Tab;
     }
 
+    interface Manifest {
+      manifest_version: number;
+      permissions?: string[];
+      name?: string;
+      version?: string;
+    }
+
     const onInstalled: W2fChromeEvent<(details: { reason: string }) => void>;
     const onMessage: W2fChromeEvent<
       (
@@ -19,6 +26,7 @@ declare namespace chrome {
 
     function sendMessage(message: unknown): Promise<unknown>;
     function openOptionsPage(): Promise<void>;
+    function getManifest(): Manifest;
   }
 
   namespace extension {
@@ -63,5 +71,22 @@ declare namespace chrome {
       func: (...args: TArgs) => TResult;
       args: TArgs;
     }): Promise<InjectionResult<TResult>[]>;
+  }
+
+  namespace debugger {
+    interface Debuggee {
+      tabId?: number;
+      targetId?: string;
+      extensionId?: string;
+      sessionId?: string;
+    }
+
+    function attach(target: Debuggee, requiredVersion: string): Promise<void>;
+    function detach(target: Debuggee): Promise<void>;
+    function sendCommand(
+      target: Debuggee,
+      method: string,
+      commandParams?: Record<string, unknown>,
+    ): Promise<Record<string, unknown>>;
   }
 }

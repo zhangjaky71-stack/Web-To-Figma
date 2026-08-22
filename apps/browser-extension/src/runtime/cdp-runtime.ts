@@ -34,7 +34,7 @@ export function getCdpRuntimeCapability(): CdpRuntimeCapability {
   };
 }
 
-async function command<T extends Record<string, unknown>>(
+async function command<T>(
   target: chrome.debugger.Debuggee,
   method: string,
   params?: Record<string, unknown>,
@@ -79,7 +79,7 @@ export async function captureHighFidelityWithCdp(
       }),
       command<CdpLayoutMetricsResponse>(target, "Page.getLayoutMetrics"),
       command<CdpFrameTreeResponse>(target, "Page.getFrameTree"),
-      command(target, "Runtime.evaluate", {
+      command<Record<string, unknown>>(target, "Runtime.evaluate", {
         expression: "window.devicePixelRatio",
         returnByValue: true,
         silent: true,

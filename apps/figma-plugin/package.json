@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@w2f/w2f-ir": "workspace:*",
-    "@w2f/w2f-parser": "workspace:*",
+    "@w2f/w2f-parser": "workspace:../../packages/wtf-parser",
     "@w2f/w2f-schema": "workspace:*"
   },
   "devDependencies": {

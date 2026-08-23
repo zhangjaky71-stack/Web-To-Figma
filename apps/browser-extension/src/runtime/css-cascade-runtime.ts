@@ -22,6 +22,12 @@ import {
 
 const CDP_REQUIRED_PROTOCOL_VERSION = "1.3" as const;
 const CDP_CASCADE_NODE_LIMIT = 2500;
+const TABLE_REQUIRED_COMPUTED_PROPERTIES = [
+  "border-collapse",
+  "border-spacing",
+  "table-layout",
+  "caption-side",
+] as const;
 
 interface ChromeDebuggee {
   tabId?: number;
@@ -316,6 +322,10 @@ export function normalizeCdpMatchedStyleAcquisition(
         addRuleMatches(inherited.matchedCSSRules, true);
         addStyle(inherited.inlineStyle, true, { type: "inline" });
       }
+    }
+
+    for (const property of TABLE_REQUIRED_COMPUTED_PROPERTIES) {
+      if (!candidates.has(property)) candidates.set(property, []);
     }
 
     const traces = [...candidates.entries()]

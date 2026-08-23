@@ -49,7 +49,11 @@ function snapshot(nodes: RawNode[]): RawSnapshot {
   };
 }
 
-function trace(property: string, computedValue: string, authoredValue?: string): CssCascadePropertyTrace {
+function trace(
+  property: string,
+  computedValue: string,
+  authoredValue?: string,
+): CssCascadePropertyTrace {
   return {
     property,
     computedValue,
@@ -97,12 +101,24 @@ describe("Table Layout Engine", () => {
   it("reconstructs row groups, cells, occupancy, tracks and table CSS semantics", () => {
     const result = analyzeTableLayout({
       snapshot: snapshot([
-        rawNode("table", "table", ["caption", "thead", "tbody"], {}, { x: 10, y: 10, width: 300, height: 150 }),
+        rawNode(
+          "table",
+          "table",
+          ["caption", "thead", "tbody"],
+          {},
+          { x: 10, y: 10, width: 300, height: 150 },
+        ),
         rawNode("caption", "caption", [], {}, { x: 10, y: 10, width: 300, height: 20 }),
         rawNode("thead", "thead", ["r0"], {}, { x: 10, y: 30, width: 300, height: 40 }),
         rawNode("r0", "tr", ["h0", "h1"], {}, { x: 10, y: 30, width: 300, height: 40 }),
         rawNode("h0", "th", [], { scope: "col" }, { x: 10, y: 30, width: 100, height: 40 }),
-        rawNode("h1", "th", [], { colspan: "2", scope: "colgroup" }, { x: 110, y: 30, width: 200, height: 40 }),
+        rawNode(
+          "h1",
+          "th",
+          [],
+          { colspan: "2", scope: "colgroup" },
+          { x: 110, y: 30, width: 200, height: 40 },
+        ),
         rawNode("tbody", "tbody", ["r1", "r2"], {}, { x: 10, y: 70, width: 300, height: 90 }),
         rawNode("r1", "tr", ["a", "b", "c"], {}, { x: 10, y: 70, width: 300, height: 45 }),
         rawNode("a", "td", [], { rowspan: "2" }, { x: 10, y: 70, width: 100, height: 90 }),
@@ -135,11 +151,25 @@ describe("Table Layout Engine", () => {
     const header = table?.cells.find((cell) => cell.sourceNodeId === "h1");
     const spanning = table?.cells.find((cell) => cell.sourceNodeId === "a");
     const d = table?.cells.find((cell) => cell.sourceNodeId === "d");
-    expect(header).toMatchObject({ rowIndex: 0, columnIndex: 1, rowSpan: 1, columnSpan: 2, columnEnd: 3 });
-    expect(spanning).toMatchObject({ rowIndex: 1, columnIndex: 0, rowSpan: 2, columnSpan: 1, rowEnd: 3 });
+    expect(header).toMatchObject({
+      rowIndex: 0,
+      columnIndex: 1,
+      rowSpan: 1,
+      columnSpan: 2,
+      columnEnd: 3,
+    });
+    expect(spanning).toMatchObject({
+      rowIndex: 1,
+      columnIndex: 0,
+      rowSpan: 2,
+      columnSpan: 1,
+      rowEnd: 3,
+    });
     expect(d).toMatchObject({ rowIndex: 2, columnIndex: 1, headers: ["h1"] });
     expect(table?.occupancy).toHaveLength(9);
-    expect(table?.occupancy.find((slot) => slot.rowIndex === 2 && slot.columnIndex === 0)).toMatchObject({
+    expect(
+      table?.occupancy.find((slot) => slot.rowIndex === 2 && slot.columnIndex === 0),
+    ).toMatchObject({
       sourceCellId: "a",
       origin: false,
     });
@@ -163,7 +193,10 @@ describe("Table Layout Engine", () => {
       cascade: cascade({ table: [] }),
     });
     const table = result.tables[0];
-    expect(table?.cells.find((cell) => cell.sourceNodeId === "a")).toMatchObject({ rowSpan: 3, rowEnd: 3 });
+    expect(table?.cells.find((cell) => cell.sourceNodeId === "a")).toMatchObject({
+      rowSpan: 3,
+      rowEnd: 3,
+    });
     expect(table?.cells.find((cell) => cell.sourceNodeId === "c")?.columnIndex).toBe(1);
     expect(table?.cells.find((cell) => cell.sourceNodeId === "d")?.columnIndex).toBe(1);
   });
@@ -181,7 +214,9 @@ describe("Table Layout Engine", () => {
     expect(result.tables[0]?.cells[0]).toMatchObject({ rowSpan: 1, columnSpan: 1 });
     expect(result.diagnostics.filter((item) => item.code === "TABLE_SPAN_INVALID")).toHaveLength(2);
     expect(result.diagnostics.some((item) => item.code === "TABLE_CELL_OUTSIDE_ROW")).toBe(true);
-    expect(result.diagnostics.some((item) => item.code === "TABLE_STYLE_EVIDENCE_MISSING")).toBe(true);
+    expect(result.diagnostics.some((item) => item.code === "TABLE_STYLE_EVIDENCE_MISSING")).toBe(
+      true,
+    );
   });
 
   it("is deterministic and reports summary counts", () => {

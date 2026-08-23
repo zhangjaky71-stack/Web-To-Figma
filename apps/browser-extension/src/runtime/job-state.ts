@@ -54,6 +54,12 @@ export interface CaptureSnapshotReceipt extends RawSnapshotSummary {
   layoutFlexNodeCount?: number;
   layoutGridNodeCount?: number;
   layoutAbsoluteNodeCount?: number;
+  tableLayoutStorageKey?: string;
+  tableCount?: number;
+  tableRowCount?: number;
+  tableCellCount?: number;
+  tableSpannedCellCount?: number;
+  tableLayoutDiagnosticCount?: number;
 }
 
 export interface ResponsiveCaptureReceipt {
@@ -182,7 +188,15 @@ function isCaptureSnapshotReceipt(value: unknown): value is CaptureSnapshotRecei
     isOptionalNonNegativeInteger(record.layoutDiagnosticCount) &&
     isOptionalNonNegativeInteger(record.layoutFlexNodeCount) &&
     isOptionalNonNegativeInteger(record.layoutGridNodeCount) &&
-    isOptionalNonNegativeInteger(record.layoutAbsoluteNodeCount)
+    isOptionalNonNegativeInteger(record.layoutAbsoluteNodeCount) &&
+    (record.tableLayoutStorageKey === undefined ||
+      (typeof record.tableLayoutStorageKey === "string" &&
+        record.tableLayoutStorageKey.length > 0)) &&
+    isOptionalNonNegativeInteger(record.tableCount) &&
+    isOptionalNonNegativeInteger(record.tableRowCount) &&
+    isOptionalNonNegativeInteger(record.tableCellCount) &&
+    isOptionalNonNegativeInteger(record.tableSpannedCellCount) &&
+    isOptionalNonNegativeInteger(record.tableLayoutDiagnosticCount)
   );
 }
 

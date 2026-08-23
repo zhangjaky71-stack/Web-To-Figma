@@ -20,7 +20,8 @@ function openDatabase(): Promise<IDBDatabase> {
         database.createObjectStore(W2F_TABLE_LAYOUT_STORE_NAME);
       }
     };
-    request.onerror = () => reject(request.error ?? new Error("failed to open table layout database"));
+    request.onerror = () =>
+      reject(request.error ?? new Error("failed to open table layout database"));
     request.onsuccess = () => resolve(request.result);
   });
 }
@@ -28,12 +29,17 @@ function openDatabase(): Promise<IDBDatabase> {
 function waitForTransaction(transaction: IDBTransaction): Promise<void> {
   return new Promise((resolve, reject) => {
     transaction.oncomplete = () => resolve();
-    transaction.onerror = () => reject(transaction.error ?? new Error("table layout transaction failed"));
-    transaction.onabort = () => reject(transaction.error ?? new Error("table layout transaction aborted"));
+    transaction.onerror = () =>
+      reject(transaction.error ?? new Error("table layout transaction failed"));
+    transaction.onabort = () =>
+      reject(transaction.error ?? new Error("table layout transaction aborted"));
   });
 }
 
-export async function writeTableLayoutResult(jobId: string, result: TableLayoutResult): Promise<string> {
+export async function writeTableLayoutResult(
+  jobId: string,
+  result: TableLayoutResult,
+): Promise<string> {
   if (!isTableLayoutResult(result)) throw new TypeError("invalid TableLayoutResult");
   const key = tableLayoutStorageKey(jobId);
   const database = await openDatabase();
@@ -54,7 +60,8 @@ export async function readTableLayoutResult(jobId: string): Promise<TableLayoutR
     const transaction = database.transaction(W2F_TABLE_LAYOUT_STORE_NAME, "readonly");
     const request = transaction.objectStore(W2F_TABLE_LAYOUT_STORE_NAME).get(key);
     const value = await new Promise<unknown>((resolve, reject) => {
-      request.onerror = () => reject(request.error ?? new Error("failed to read TableLayoutResult"));
+      request.onerror = () =>
+        reject(request.error ?? new Error("failed to read TableLayoutResult"));
       request.onsuccess = () => resolve(request.result);
     });
     await waitForTransaction(transaction);

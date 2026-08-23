@@ -38,6 +38,13 @@ export function captureStandardCascadeInPage(input: StandardCascadeInput): Stand
   };
   type ProvisionalDefinition = CssTokenDefinitionEvidence & { referenceNames: string[] };
 
+  const requiredComputedProperties = [
+    "border-collapse",
+    "border-spacing",
+    "table-layout",
+    "caption-side",
+  ] as const;
+
   const maxRules = Math.max(1, Math.min(input.maxRules ?? 20_000, 100_000));
   const maxDeclarations = Math.max(1, Math.min(input.maxDeclarations ?? 200_000, 500_000));
   const diagnostics: CssCascadeDiagnostic[] = [];
@@ -477,6 +484,10 @@ export function captureStandardCascadeInPage(input: StandardCascadeInput): Stand
         });
         sourceOrder += 1;
       }
+    }
+
+    for (const property of requiredComputedProperties) {
+      if (!candidatesByProperty.has(property)) candidatesByProperty.set(property, []);
     }
 
     const traces = [...candidatesByProperty.entries()]

@@ -167,7 +167,10 @@ if (failures.length === 0) {
     "tableLayoutStorageKey",
     "tableCellCount",
   ]) {
-    assert(serviceWorker.includes(evidence), `Service worker table orchestration missing ${evidence}`);
+    assert(
+      serviceWorker.includes(evidence),
+      `Service worker table orchestration missing ${evidence}`,
+    );
   }
 
   const normative = readText("docs/TABLE_LAYOUT_ENGINE_V2.md");

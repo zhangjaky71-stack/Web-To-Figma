@@ -86,7 +86,10 @@ for (const evidence of [
   "tableCount",
   "tableCellCount",
 ]) {
-  assert(serviceWorker.includes(evidence), `packaged service worker missing table integration ${evidence}`);
+  assert(
+    serviceWorker.includes(evidence),
+    `packaged service worker missing table integration ${evidence}`,
+  );
 }
 
 if (failures.length > 0) {

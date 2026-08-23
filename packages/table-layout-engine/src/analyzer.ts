@@ -1,5 +1,6 @@
 import type { RawNode } from "@w2f/capture-core";
 import type { CssCascadePropertyTrace, CssNodeCascadeEvidence } from "@w2f/css-cascade";
+import type { Rect } from "@w2f/w2f-schema";
 import {
   TABLE_LAYOUT_ENGINE_VERSION,
   type TableCaptionAnalysis,
@@ -40,14 +41,24 @@ function uniqueSorted(values: readonly string[]): string[] {
 }
 
 function winner(trace: CssCascadePropertyTrace | undefined): string | undefined {
-  return trace?.candidates.find((candidate) => candidate.status === "winner")?.authoredValue?.trim();
+  return trace?.candidates
+    .find((candidate) => candidate.status === "winner")
+    ?.authoredValue?.trim();
 }
 
-function trace(node: CssNodeCascadeEvidence | undefined, property: string): CssCascadePropertyTrace | undefined {
-  return node?.traces.find((candidate) => candidate.property.toLowerCase() === property.toLowerCase());
+function trace(
+  node: CssNodeCascadeEvidence | undefined,
+  property: string,
+): CssCascadePropertyTrace | undefined {
+  return node?.traces.find(
+    (candidate) => candidate.property.toLowerCase() === property.toLowerCase(),
+  );
 }
 
-function styleValue(node: CssNodeCascadeEvidence | undefined, property: string): {
+function styleValue(
+  node: CssNodeCascadeEvidence | undefined,
+  property: string,
+): {
   computed?: string;
   authored?: string;
 } {
@@ -88,7 +99,9 @@ function px(raw: string | undefined): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
-function parseBorderSpacing(raw: string | undefined): { horizontal: number; vertical: number } | undefined {
+function parseBorderSpacing(
+  raw: string | undefined,
+): { horizontal: number; vertical: number } | undefined {
   if (!raw) return undefined;
   const parts = raw.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0 || parts.length > 2) return undefined;
@@ -98,7 +111,7 @@ function parseBorderSpacing(raw: string | undefined): { horizontal: number; vert
   return { horizontal, vertical };
 }
 
-function boundsUnion(nodes: readonly RawNode[]): RawNode["geometry"]["bounds"] | undefined {
+function boundsUnion(nodes: readonly RawNode[]): Rect | undefined {
   const bounds = nodes.flatMap((node) => (node.geometry?.bounds ? [node.geometry.bounds] : []));
   if (bounds.length === 0) return undefined;
   const left = Math.min(...bounds.map((item) => item.x));
@@ -119,7 +132,11 @@ function collectRows(
   table: RawNode,
   byId: ReadonlyMap<string, RawNode>,
   diagnostics: TableLayoutDiagnostic[],
-): { groups: TableRowGroupAnalysis[]; rows: RawNode[]; rowGroupById: Map<string, { index: number; kind: TableRowGroupKind }> } {
+): {
+  groups: TableRowGroupAnalysis[];
+  rows: RawNode[];
+  rowGroupById: Map<string, { index: number; kind: TableRowGroupKind }>;
+} {
   const groups: TableRowGroupAnalysis[] = [];
   const rows: RawNode[] = [];
   const rowGroupById = new Map<string, { index: number; kind: TableRowGroupKind }>();
@@ -129,10 +146,11 @@ function collectRows(
     if (anonymousRows.length === 0) return;
     const groupIndex = groups.length;
     const rowSourceNodeIds = anonymousRows.map((row) => row.captureNodeId);
+    const anonymousBounds = boundsUnion(anonymousRows);
     groups.push({
       kind: "anonymous",
       rowSourceNodeIds,
-      ...(boundsUnion(anonymousRows) ? { bounds: boundsUnion(anonymousRows) } : {}),
+      ...(anonymousBounds ? { bounds: anonymousBounds } : {}),
     });
     for (const row of anonymousRows) {
       rowGroupById.set(row.captureNodeId, { index: groupIndex, kind: "anonymous" });
@@ -167,7 +185,8 @@ function collectRows(
     if (childTag === "td" || childTag === "th") {
       diagnostics.push({
         code: "TABLE_CELL_OUTSIDE_ROW",
-        message: "A table cell is not contained by a captured row and is excluded from grid reconstruction.",
+        message:
+          "A table cell is not contained by a captured row and is excluded from grid reconstruction.",
         sourceNodeId: child.captureNodeId,
         relatedSourceNodeIds: [table.captureNodeId],
       });
@@ -177,14 +196,22 @@ function collectRows(
   return { groups, rows, rowGroupById };
 }
 
-function decisionForCell(cell: RawNode, rowSpan: number, columnSpan: number): TableDecisionEvidence {
+function decisionForCell(
+  cell: RawNode,
+  rowSpan: number,
+  columnSpan: number,
+): TableDecisionEvidence {
   const hasGeometry = cell.geometry?.bounds !== undefined;
   return {
     confidence: clampConfidence(hasGeometry ? 0.99 : 0.84),
     reasons: uniqueSorted([
       "cell placement follows captured source row order",
-      rowSpan > 1 || columnSpan > 1 ? "HTML span attributes define grid occupancy" : "cell occupies one grid slot",
-      hasGeometry ? "resolved Browser geometry is available" : "resolved Browser geometry is unavailable",
+      rowSpan > 1 || columnSpan > 1
+        ? "HTML span attributes define grid occupancy"
+        : "cell occupies one grid slot",
+      hasGeometry
+        ? "resolved Browser geometry is available"
+        : "resolved Browser geometry is unavailable",
     ]),
     sourceRefs: [cell.captureNodeId],
   };
@@ -201,7 +228,11 @@ function median(values: readonly number[]): number | undefined {
   return previous === undefined ? current : (previous + current) / 2;
 }
 
-function deriveTracks(cells: readonly TableCellAnalysis[], rowCount: number, columnCount: number): {
+function deriveTracks(
+  cells: readonly TableCellAnalysis[],
+  rowCount: number,
+  columnCount: number,
+): {
   rowTracks: TableRowTrack[];
   columnTracks: TableColumnTrack[];
   complete: boolean;
@@ -222,8 +253,10 @@ function deriveTracks(cells: readonly TableCellAnalysis[], rowCount: number, col
   };
 
   for (const cell of cells) {
-    for (let row = cell.rowIndex; row < cell.rowEnd; row += 1) addCell(rowCells, row, cell.sourceNodeId);
-    for (let column = cell.columnIndex; column < cell.columnEnd; column += 1) addCell(columnCells, column, cell.sourceNodeId);
+    for (let row = cell.rowIndex; row < cell.rowEnd; row += 1)
+      addCell(rowCells, row, cell.sourceNodeId);
+    for (let column = cell.columnIndex; column < cell.columnEnd; column += 1)
+      addCell(columnCells, column, cell.sourceNodeId);
     if (!cell.bounds) continue;
     addBoundary(rowBoundaries, cell.rowIndex, cell.bounds.y);
     addBoundary(rowBoundaries, cell.rowEnd, cell.bounds.y + cell.bounds.height);
@@ -248,7 +281,9 @@ function deriveTracks(cells: readonly TableCellAnalysis[], rowCount: number, col
     return {
       rowIndex,
       ...(start === undefined ? {} : { resolvedY: start }),
-      ...(start === undefined || end === undefined ? {} : { resolvedHeight: Math.max(0, end - start) }),
+      ...(start === undefined || end === undefined
+        ? {}
+        : { resolvedHeight: Math.max(0, end - start) }),
       sourceCellIds: [...(rowCells.get(rowIndex) ?? [])].sort(),
     };
   });
@@ -258,7 +293,9 @@ function deriveTracks(cells: readonly TableCellAnalysis[], rowCount: number, col
     return {
       columnIndex,
       ...(start === undefined ? {} : { resolvedX: start }),
-      ...(start === undefined || end === undefined ? {} : { resolvedWidth: Math.max(0, end - start) }),
+      ...(start === undefined || end === undefined
+        ? {}
+        : { resolvedWidth: Math.max(0, end - start) }),
       sourceCellIds: [...(columnCells.get(columnIndex) ?? [])].sort(),
     };
   });
@@ -266,14 +303,23 @@ function deriveTracks(cells: readonly TableCellAnalysis[], rowCount: number, col
     rowTracks,
     columnTracks,
     complete:
-      rowTracks.every((track) => track.resolvedY !== undefined && track.resolvedHeight !== undefined) &&
-      columnTracks.every((track) => track.resolvedX !== undefined && track.resolvedWidth !== undefined),
+      rowTracks.every(
+        (track) => track.resolvedY !== undefined && track.resolvedHeight !== undefined,
+      ) &&
+      columnTracks.every(
+        (track) => track.resolvedX !== undefined && track.resolvedWidth !== undefined,
+      ),
   };
 }
 
-function strategyHint(cells: readonly TableCellAnalysis[], geometryComplete: boolean): TableStrategyHint {
+function strategyHint(
+  cells: readonly TableCellAnalysis[],
+  geometryComplete: boolean,
+): TableStrategyHint {
   if (!geometryComplete) return "absolute-semantic";
-  return cells.some((cell) => cell.rowSpan > 1 || cell.columnSpan > 1) ? "span-hybrid" : "regular-grid";
+  return cells.some((cell) => cell.rowSpan > 1 || cell.columnSpan > 1)
+    ? "span-hybrid"
+    : "regular-grid";
 }
 
 function analyzeTable(
@@ -303,10 +349,28 @@ function analyzeTable(
     const rowCellIds: string[] = [];
     for (const cell of rowCells) {
       while (occupancyByKey.has(`${rowIndex}:${cursor}`)) cursor += 1;
-      const rawRowSpan = parsePositiveSpan(cell.source.attributes?.rowspan, cell.captureNodeId, "rowspan", diagnostics);
-      const columnSpan = parsePositiveSpan(cell.source.attributes?.colspan, cell.captureNodeId, "colspan", diagnostics);
+      const rawRowSpan = parsePositiveSpan(
+        cell.source.attributes?.rowspan,
+        cell.captureNodeId,
+        "rowspan",
+        diagnostics,
+      );
+      const columnSpan = parsePositiveSpan(
+        cell.source.attributes?.colspan,
+        cell.captureNodeId,
+        "colspan",
+        diagnostics,
+      );
       const resolvedColumnSpan = columnSpan === "to-end" ? 1 : columnSpan;
-      const rowSpan = rawRowSpan === "to-end" ? Math.max(1, rowCount - rowIndex) : rawRowSpan;
+      const groupRows = groups[group.index]?.rowSourceNodeIds ?? [];
+      const rowIndexWithinGroup = Math.max(0, groupRows.indexOf(row.captureNodeId));
+      const rowSpan =
+        rawRowSpan === "to-end"
+          ? Math.max(
+              1,
+              groupRows.length > 0 ? groupRows.length - rowIndexWithinGroup : rowCount - rowIndex,
+            )
+          : rawRowSpan;
       const rowEnd = Math.min(rowCount, rowIndex + rowSpan);
       const columnEnd = cursor + resolvedColumnSpan;
       const conflicts = new Set<string>();
@@ -329,7 +393,8 @@ function analyzeTable(
       if (conflicts.size > 0) {
         diagnostics.push({
           code: "TABLE_SPAN_CONFLICT",
-          message: "Cell span overlaps previously occupied table grid slots; conflicting slots keep first ownership.",
+          message:
+            "Cell span overlaps previously occupied table grid slots; conflicting slots keep first ownership.",
           sourceNodeId: cell.captureNodeId,
           relatedSourceNodeIds: [...conflicts].sort(),
         });
@@ -370,7 +435,8 @@ function analyzeTable(
   if (!collapseEvidence.computed || !spacingEvidence.computed || !tableLayoutEvidence.computed) {
     diagnostics.push({
       code: "TABLE_STYLE_EVIDENCE_MISSING",
-      message: "One or more computed table layout properties are unavailable; CSS initial values are used as deterministic fallback.",
+      message:
+        "One or more computed table layout properties are unavailable; CSS initial values are used as deterministic fallback.",
       sourceNodeId: table.captureNodeId,
     });
   }
@@ -400,7 +466,8 @@ function analyzeTable(
   if (cells.length > 0 && !tracks.complete) {
     diagnostics.push({
       code: "TABLE_GEOMETRY_INCOMPLETE",
-      message: "Cell geometry does not resolve every row/column track boundary; semantic occupancy remains authoritative.",
+      message:
+        "Cell geometry does not resolve every row/column track boundary; semantic occupancy remains authoritative.",
       sourceNodeId: table.captureNodeId,
     });
   }
@@ -411,7 +478,9 @@ function analyzeTable(
     reasons: uniqueSorted([
       "table source semantics define row and cell hierarchy",
       "rowspan/colspan attributes define deterministic occupancy",
-      tracks.complete ? "resolved geometry defines table track boundaries" : "semantic occupancy survives incomplete geometry",
+      tracks.complete
+        ? "resolved geometry defines table track boundaries"
+        : "semantic occupancy survives incomplete geometry",
       strategy === "regular-grid"
         ? "regular one-slot cells are compatible with downstream grid rendering"
         : strategy === "span-hybrid"
@@ -428,8 +497,18 @@ function analyzeTable(
     columnCount,
     rowGroups: groups,
     rows: rowAnalyses,
-    cells: cells.sort((left, right) => left.rowIndex - right.rowIndex || left.columnIndex - right.columnIndex || left.sourceNodeId.localeCompare(right.sourceNodeId)),
-    occupancy: [...occupancyByKey.values()].sort((left, right) => left.rowIndex - right.rowIndex || left.columnIndex - right.columnIndex || left.sourceCellId.localeCompare(right.sourceCellId)),
+    cells: cells.sort(
+      (left, right) =>
+        left.rowIndex - right.rowIndex ||
+        left.columnIndex - right.columnIndex ||
+        left.sourceNodeId.localeCompare(right.sourceNodeId),
+    ),
+    occupancy: [...occupancyByKey.values()].sort(
+      (left, right) =>
+        left.rowIndex - right.rowIndex ||
+        left.columnIndex - right.columnIndex ||
+        left.sourceCellId.localeCompare(right.sourceCellId),
+    ),
     rowTracks: tracks.rowTracks,
     columnTracks: tracks.columnTracks,
     ...(caption ? { caption } : {}),
@@ -442,7 +521,11 @@ function analyzeTable(
     strategyHint: strategy,
     ...(table.geometry?.bounds ? { bounds: table.geometry.bounds } : {}),
     decision,
-    diagnostics: diagnostics.sort((left, right) => (left.sourceNodeId ?? "").localeCompare(right.sourceNodeId ?? "") || left.code.localeCompare(right.code)),
+    diagnostics: diagnostics.sort(
+      (left, right) =>
+        (left.sourceNodeId ?? "").localeCompare(right.sourceNodeId ?? "") ||
+        left.code.localeCompare(right.code),
+    ),
   };
 }
 
@@ -467,10 +550,12 @@ export function summarizeTableLayout(result: TableLayoutResult): TableLayoutSumm
     rowCount: result.tables.reduce((sum, table) => sum + table.rowCount, 0),
     cellCount: result.tables.reduce((sum, table) => sum + table.cells.length, 0),
     spannedCellCount: result.tables.reduce(
-      (sum, table) => sum + table.cells.filter((cell) => cell.rowSpan > 1 || cell.columnSpan > 1).length,
+      (sum, table) =>
+        sum + table.cells.filter((cell) => cell.rowSpan > 1 || cell.columnSpan > 1).length,
       0,
     ),
-    collapsedBorderTableCount: result.tables.filter((table) => table.borderCollapse === "collapse").length,
+    collapsedBorderTableCount: result.tables.filter((table) => table.borderCollapse === "collapse")
+      .length,
     diagnosticCount: result.diagnostics.length,
   };
 }

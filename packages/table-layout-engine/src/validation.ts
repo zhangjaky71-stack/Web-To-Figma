@@ -5,7 +5,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 export function isTableLayoutResult(value: unknown): value is TableLayoutResult {
-  if (!isRecord(value) || value.version !== TABLE_LAYOUT_ENGINE_VERSION || !Array.isArray(value.tables) || !Array.isArray(value.diagnostics)) {
+  if (
+    !isRecord(value) ||
+    value.version !== TABLE_LAYOUT_ENGINE_VERSION ||
+    !Array.isArray(value.tables) ||
+    !Array.isArray(value.diagnostics)
+  ) {
     return false;
   }
   return value.tables.every((table) => {

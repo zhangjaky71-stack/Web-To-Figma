@@ -1,12 +1,12 @@
 Scope: all 23 workspace projects
 ? Verifying lockfile against supply-chain policies (188 entries)...
-✓ Lockfile passes supply-chain policies (188 entries in 1.7s)
+✓ Lockfile passes supply-chain policies (188 entries in 1.6s)
 Progress: resolved 1, reused 0, downloaded 0, added 0
 Progress: resolved 7, reused 0, downloaded 7, added 0
 Progress: resolved 8, reused 0, downloaded 7, added 0
-Progress: resolved 90, reused 0, downloaded 59, added 0
-Progress: resolved 136, reused 0, downloaded 105, added 0
-Progress: resolved 152, reused 0, downloaded 121, added 0
+Progress: resolved 90, reused 0, downloaded 58, added 0
+Progress: resolved 135, reused 0, downloaded 105, added 0
+Progress: resolved 152, reused 0, downloaded 122, added 0
 Packages: +133
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Packages are hard linked from the content-addressable store to the virtual store.
@@ -24,35 +24,35 @@ devDependencies:
 + typescript-eslint 8.67.0
 + vitest 4.1.11
 
-Done in 11.2s using pnpm v11.22.0
+Done in 11.1s using pnpm v11.22.0
 NODE-23 integration finalizer applied successfully.
 Scope: all 23 workspace projects
 Already up to date
-Done in 421ms using pnpm v11.22.0
+Done in 437ms using pnpm v11.22.0
 [90mpackages/wtf-parser/package.json[39m 27ms (unchanged)
-[90mpackages/wtf-parser/src/index.ts[39m 43ms (unchanged)
-[90mpackages/wtf-parser/src/migrations.ts[39m 30ms (unchanged)
-packages/wtf-parser/src/parser.ts 85ms
-packages/wtf-parser/src/svg-sanitize.ts 19ms
-[90mpackages/wtf-parser/src/types.ts[39m 16ms (unchanged)
+[90mpackages/wtf-parser/src/index.ts[39m 42ms (unchanged)
+[90mpackages/wtf-parser/src/migrations.ts[39m 32ms (unchanged)
+packages/wtf-parser/src/parser.ts 81ms
+packages/wtf-parser/src/svg-sanitize.ts 16ms
+[90mpackages/wtf-parser/src/types.ts[39m 14ms (unchanged)
 packages/wtf-parser/src/zip-reader.ts 45ms
-[90mpackages/wtf-parser/test/migrations.test.ts[39m 7ms (unchanged)
-packages/wtf-parser/test/parser.test.ts 26ms
-[90mpackages/wtf-parser/test/svg-sanitize.test.ts[39m 5ms (unchanged)
-[90mpackages/wtf-parser/test/zip-reader.test.ts[39m 10ms (unchanged)
+[90mpackages/wtf-parser/test/migrations.test.ts[39m 6ms (unchanged)
+packages/wtf-parser/test/parser.test.ts 24ms
+[90mpackages/wtf-parser/test/svg-sanitize.test.ts[39m 3ms (unchanged)
+[90mpackages/wtf-parser/test/zip-reader.test.ts[39m 11ms (unchanged)
 [90mpackages/wtf-parser/tsconfig.build.json[39m 2ms (unchanged)
 [90mpackages/wtf-parser/tsconfig.json[39m 1ms (unchanged)
 [90mpackages/w2f-schema/package.json[39m 1ms (unchanged)
 [90mpackages/w2f-schema/src/container-paths.ts[39m 1ms (unchanged)
 [90mpackages/w2f-schema/src/public.ts[39m 1ms (unchanged)
 [90mapps/figma-plugin/package.json[39m 1ms (unchanged)
-[90mapps/figma-plugin/src/main.ts[39m 12ms (unchanged)
-[90mapps/figma-plugin/src/protocol.ts[39m 20ms (unchanged)
-apps/figma-plugin/src/ui.ts 41ms
-apps/figma-plugin/scripts/validate-plugin-package.mjs 19ms
+[90mapps/figma-plugin/src/main.ts[39m 9ms (unchanged)
+[90mapps/figma-plugin/src/protocol.ts[39m 15ms (unchanged)
+apps/figma-plugin/src/ui.ts 34ms
+apps/figma-plugin/scripts/validate-plugin-package.mjs 17ms
 [90mscripts/validate-node-22.mjs[39m 12ms (unchanged)
-scripts/validate-node-23.mjs 15ms
-[90mscripts/validate-foundation.mjs[39m 23ms (unchanged)
+scripts/validate-node-23.mjs 10ms
+[90mscripts/validate-foundation.mjs[39m 24ms (unchanged)
 rm 'scripts/node-23-finalize.mjs'
 $ pnpm validate:foundation && pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm format:check
 $ node scripts/validate-foundation.mjs
@@ -73,7 +73,7 @@ NODE-21 foundation validation passed.
 NODE-22 foundation validation passed.
 NODE-23 foundation validation failed:
 - parser hostile fixture missing supportedCapabilities
-- Figma UI must consume the shared secure parser
+- Figma UI must consume the secure parser through workspace-only resolution
 - Figma UI parser integration missing W2F_E_SECURE_PARSER
 - Figma packaged-output validator missing WTF_PARSER_MIGRATION_UNSUPPORTED
 - Figma packaged-output validator missing DecompressionStream

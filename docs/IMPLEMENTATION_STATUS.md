@@ -32,7 +32,7 @@
 | 19 | Render Tree Optimizer | DONE | Exact-head read-only CI #477 PASS | PR #23 merged as `030f433a` |
 | 20 | Compositing & Fallback Boundary | DONE | Exact-head read-only CI #503 PASS | PR #24 merged as `f0d10cdb` |
 | 21 | WTF Packager | DONE | Exact-head read-only CI #540 PASS | PR #25 merged as `5395d1eb` |
-| 22 | Figma Plugin Shell & File Intake | IN PROGRESS | Shell/intake implementation | `feat/node-22-figma-plugin-shell-file-intake` |
+| 22 | Figma Plugin Shell & File Intake | EXIT GATE CANDIDATE | Bootstrap CI #569 full `pnpm check` PASS; exact-head read-only CI pending | PR #26 |
 | 23 | Secure Parser & Migration | TODO | - | - |
 | 24 | Figma Capability Resolver | TODO | - | - |
 | 25 | Basic Figma Renderer | TODO | - | - |
@@ -109,10 +109,37 @@ NODE-22 is the shell and file-intake boundary only:
 
 NODE-23 owns schema/version parsing, ZIP security, checksums, SVG sanitization and migration. NODE-24+ own capability resolution and rendering.
 
+## NODE-22 Exit-Gate Candidate
+
+Controlled Bootstrap CI #569 (`32646508846`) completed successfully and ran the final candidate through repository-wide `pnpm check`, including:
+
+- permanent NODE-22 foundation validation;
+- lint across all workspaces;
+- TypeScript typecheck across all workspaces;
+- all Vitest suites;
+- loadable Figma main/UI esbuild bundle;
+- Figma manifest/package validation;
+- all existing Browser Extension package builds and validators;
+- repository-wide formatting check.
+
+The validated implementation candidate produced by the controlled Bootstrap is:
+
+```text
+9d5964b13ff96b165330e579c3f0b09f8d0acbcb
+```
+
+The candidate also pins Figma typings/esbuild, uses pnpm `allowBuilds` only for `esbuild@0.28.2`, rejects invalid/over-limit UI files before full `arrayBuffer()` allocation, and preserves the NODE-23 secure-parser boundary.
+
+Temporary Bootstrap workflow/finalizer and diagnostic failure log are absent from the candidate. GitHub marked bot-origin synchronize CI #570 as `action_required`; this documentation-only user-origin commit triggers the formal exact-head read-only CI without changing implementation behavior.
+
 ## Blockers
 
 No product/architecture blocker is known.
 
 ## Next
 
-Implement the loadable Figma main/UI shell, file-intake protocol, progress state, import profiles and section-selection contract, then run the NODE-22 exit gate.
+After NODE-22 formal exact-head Exit Gate and squash merge:
+
+```text
+NODE-23 — Secure Parser & Migration
+```

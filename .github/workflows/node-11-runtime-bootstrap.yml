@@ -1,9 +1,9 @@
 name: NODE-11 Runtime Bootstrap
 
 on:
-  push:
-    branches: [feat/node-11-css-cascade-authored-semantics]
-  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: write
@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   bootstrap:
-    if: github.actor != 'github-actions[bot]'
+    if: github.head_ref == 'feat/node-11-css-cascade-authored-semantics' && github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:

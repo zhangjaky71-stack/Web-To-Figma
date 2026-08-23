@@ -35,6 +35,12 @@ jobs:
           node-version: 24
           package-manager-cache: false
 
+      - name: Apply narrow TypeScript inference fix
+        run: >-
+          sed -i
+          's/const parentId = current.relationships.sourceParentId;/const parentId: string | undefined = current.relationships.sourceParentId;/'
+          apps/browser-extension/src/runtime/css-cascade-runtime.ts
+
       - name: Refresh workspace lockfile
         run: pnpm install --no-frozen-lockfile
 

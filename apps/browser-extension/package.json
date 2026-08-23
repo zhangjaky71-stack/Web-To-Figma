@@ -14,6 +14,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@w2f/asset-resolver": "workspace:*",
     "@w2f/capture-core": "workspace:*",
     "@w2f/cdp-capture-adapter": "workspace:*",
     "@w2f/css-cascade": "workspace:*",

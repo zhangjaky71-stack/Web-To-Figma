@@ -20,8 +20,8 @@
 | 07 | Region Selector & Redaction | DONE | Region interaction/runtime/package + frozen-lockfile GitHub Actions PASS | PR #11 merged |
 | 08 | Standard DOM Capture | DONE | RawSnapshot/Standard capture/runtime/package + frozen-lockfile GitHub Actions PASS | PR #12 merged |
 | 09 | CDP High Fidelity Adapter | DONE | CDP/dual-profile/runtime/package + frozen-lockfile GitHub Actions PASS | PR #13 merged |
-| 10 | Text / Inline / Pseudo Capture | DONE | Text/fragment/pseudo/form behavior + Standard/High Fidelity package + standard read-only frozen-lockfile CI PASS | PR #14 ready to merge |
-| 11 | CSS Cascade & Authored Semantics | TODO | - | - |
+| 10 | Text / Inline / Pseudo Capture | DONE | Text/fragment/pseudo/form behavior + Standard/High Fidelity package + exact-head read-only frozen-lockfile CI PASS | PR #14 merged |
+| 11 | CSS Cascade & Authored Semantics | IN PROGRESS | Entry baseline frozen | branch `feat/node-11-css-cascade-authored-semantics` |
 | 12 | Media / Container / Environment Capture | TODO | - | - |
 | 13 | Asset Resolver | TODO | - | - |
 | 14 | Pixel Ground Truth & Raster Engine | TODO | - | - |
@@ -45,96 +45,79 @@
 
 ## Current Node
 
-`NODE-10 — Text / Inline / Pseudo Capture`
+`NODE-11 — CSS Cascade & Authored Semantics`
 
-NODE-10 started from merged NODE-09 `main` commit:
-
-```text
-80a727e301a7d0c47899e486e3a41a2412fc31b3
-```
-
-PR:
+NODE-11 starts from merged NODE-10 `main` commit:
 
 ```text
-#14 — feat(node-10): implement Text Inline Pseudo Capture
+eb31c82bbbaaf15f740aa19f7d343f8a2d884099
 ```
 
-PR #14 is ready for review/merge. NODE-11 must not become the active implementation node until NODE-10 is squash merged into `main`.
+Working branch:
+
+```text
+feat/node-11-css-cascade-authored-semantics
+```
 
 ## NODE-10 Completion
 
-NODE-10 extends the shared adapter-neutral `RawSnapshot 1.0.0` with:
-
-- text-run evidence;
-- rendered text-fragment geometry;
-- baseline provenance/confidence;
-- inline/ruby fragment evidence;
-- `::before` / `::after` / `::marker` pseudo evidence;
-- safe form-control visual state.
-
-Standard capture uses DOM Range/client-rect and computed-style evidence. CDP normalization preserves repeated DOMSnapshot layout/text evidence and maps it into the same shared contract.
-
-Live input/textarea textual values remain outside the evidence contract. CDP `inputValue` / `textValue` runtime fields are not consumed, and sensitive `INPUT`/`TEXTAREA` `value` attributes remain filtered.
-
-NODE-11 authored cascade semantics were not pulled forward into NODE-10.
-
-## NODE-10 Validation
-
-Controlled final-shape full repository validation:
+PR #14 was squash merged into `main` as:
 
 ```text
-32615130105
+eb31c82bbbaaf15f740aa19f7d343f8a2d884099
 ```
 
-The one-time format workflow removed itself from the working tree before the complete `pnpm check`, and that final-shape check passed.
-
-Formal standard read-only frozen-lockfile documentation/status Exit Gate:
+Final exact-head standard read-only frozen-lockfile CI:
 
 ```text
-32615395336
+32615506313
 ```
 
-Validated head:
+validated NODE-10 head:
 
 ```text
-3a3a89b005b6e919074614bb52ea0393cff8e186
+f82711f5959505a82c72f6afc91bde7cce5c1b60
 ```
 
-Every formal gate passed:
+Every final gate passed, including NODE-10 behavior fixtures, Standard and High Fidelity Browser package validation, and pinned format checking.
 
-- NODE-08/NODE-09/NODE-10/global foundation validation;
-- Node.js 24 / pnpm 11.22.0;
-- `pnpm install --frozen-lockfile`;
-- lint;
-- strict TypeScript typecheck;
-- complete test suite including NODE-10 behavior fixtures;
-- Standard Browser package build/validation;
-- High Fidelity Browser package build/validation;
-- pinned Prettier 3.9.6 format check.
+## NODE-11 Frozen Scope
 
-## NODE-10 Exit Criteria
+V2 roadmap requires NODE-11 to implement:
 
-- [x] implementation complete
-- [x] actual CDP text/fragment/pseudo/form behavior fixture passes
-- [x] temporary write-enabled bootstrap/recovery workflows removed
-- [x] one-time canonical-format workflow removed from resulting branch
-- [x] normative implementation document added
-- [x] ADR added
-- [x] NODE-10 DoD record added
-- [x] formal standard read-only frozen-lockfile docs/status CI passes
-- [x] PR #14 marked ready
-- [ ] PR #14 squash merged
+```text
+computed
+authored
+variables
+media
+important
+cascade trace
+CSS length semantic model
+```
+
+V2.1 adds the hard requirement to preserve a **Token Graph** for CSS Custom Properties, including definitions, usages, aliases/references, raw/authored values, browser-resolved values, scope/provenance and confidence.
+
+Boundary with NODE-12:
+
+- NODE-11 owns authored cascade structure and the media-condition provenance needed to explain why a declaration participates in the cascade;
+- NODE-12 owns environment snapshots plus media/container query evaluation across captured environments;
+- NODE-11 must not grow into responsive multi-environment orchestration.
+
+NODE-11 must build on the browser-observed computed evidence captured by NODE-08 through NODE-10. It must not replace that evidence, fabricate unavailable authored sources, or reimplement the browser's full CSS variable resolver.
+
+## NODE-11 Entry Conditions
+
+- [x] NODE-10 PR #14 squash merged
+- [x] final NODE-10 exact-head read-only CI passed
+- [x] shared RawSnapshot Standard/CDP boundary stable
+- [x] computed text/inline/pseudo/form visual evidence available
+- [x] Token Graph schema reservation already exists in V2.1 contracts
+- [x] NODE-11 branch created from merged `main`
 
 ## Blockers
 
-No implementation or validation blocker remains. Only the squash merge of PR #14 remains.
+None at NODE-11 entry.
 
 ## Next
 
-After NODE-10 PR #14 squash merge:
-
-```text
-NODE-11 — CSS Cascade & Authored Semantics
-```
-
-NODE-11 must build authored selector/cascade/custom-property semantics on top of the computed/browser-observed evidence already captured by NODE-08 through NODE-10, without weakening the existing privacy or adapter-neutral RawSnapshot boundaries.
+Implement NODE-11 CSS Cascade & Authored Semantics against the frozen V2/V2.1 scope, beginning with an adapter-neutral authored-cascade/Token-Graph contract and deterministic CSS length semantics before Browser acquisition integration.

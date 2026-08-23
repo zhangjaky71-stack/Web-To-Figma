@@ -1,5 +1,6 @@
 name: NODE-21 Bootstrap
 
+# Existing-workflow push trigger for the controlled NODE-21 integration run.
 on:
   push:
     branches:

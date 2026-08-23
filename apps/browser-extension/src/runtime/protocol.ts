@@ -1,15 +1,17 @@
+import type { ResponsiveCaptureRequest } from "@w2f/responsive-capture";
 import type { SourceCapability } from "@w2f/source-providers";
 import type { CaptureJobMode, CaptureJobState, PageProbe } from "./job-state.js";
 import { isRegionSelectionResult, type RegionSelectionResult } from "./region-selection.js";
 
-export const W2F_EXTENSION_SHELL_VERSION = "1.3.0" as const;
+export const W2F_EXTENSION_SHELL_VERSION = "1.4.0" as const;
 export const W2F_JOB_STORAGE_KEY = "w2f.captureJob.v1" as const;
 
 export type W2fShellRequest =
   | { type: "W2F_GET_SHELL_INFO" }
   | { type: "W2F_GET_SOURCE_CAPABILITY" }
   | { type: "W2F_GET_JOB_STATE" }
-  | { type: "W2F_START_JOB"; mode: CaptureJobMode }
+  | { type: "W2F_START_JOB"; mode: Exclude<CaptureJobMode, "responsive"> }
+  | { type: "W2F_START_RESPONSIVE_JOB"; capture: ResponsiveCaptureRequest }
   | { type: "W2F_CANCEL_JOB"; jobId: string };
 
 export type W2fContentRequest =
@@ -41,8 +43,10 @@ export interface W2fShellInfo {
   standardCaptureImplemented: true;
   cdpCaptureImplemented: true;
   regionSelectionImplemented: true;
+  responsiveCaptureImplemented: true;
   captureProfile: "standard" | "high-fidelity";
   cdpAvailable: boolean;
+  syntheticResponsiveAvailable: boolean;
 }
 
 export type W2fShellResponseData = W2fShellInfo | SourceCapability | CaptureJobState | null;
@@ -70,6 +74,24 @@ function isPageProbe(value: unknown): value is PageProbe {
   );
 }
 
+function isResponsiveCaptureRequest(value: unknown): value is ResponsiveCaptureRequest {
+  if (!isRecord(value) || typeof value.mode !== "string") return false;
+  if (value.mode === "current" || value.mode === "common") return true;
+  if (value.mode !== "custom" || !Array.isArray(value.viewports) || value.viewports.length === 0) {
+    return false;
+  }
+  return value.viewports.every(
+    (viewport) =>
+      isRecord(viewport) &&
+      typeof viewport.width === "number" &&
+      Number.isFinite(viewport.width) &&
+      (viewport.height === undefined ||
+        (typeof viewport.height === "number" && Number.isFinite(viewport.height))) &&
+      (viewport.dpr === undefined ||
+        (typeof viewport.dpr === "number" && Number.isFinite(viewport.dpr))),
+  );
+}
+
 export function isW2fShellRequest(value: unknown): value is W2fShellRequest {
   if (!isRecord(value) || typeof value.type !== "string") return false;
   switch (value.type) {
@@ -79,6 +101,8 @@ export function isW2fShellRequest(value: unknown): value is W2fShellRequest {
       return true;
     case "W2F_START_JOB":
       return value.mode === "full-page" || value.mode === "region";
+    case "W2F_START_RESPONSIVE_JOB":
+      return isResponsiveCaptureRequest(value.capture);
     case "W2F_CANCEL_JOB":
       return typeof value.jobId === "string" && value.jobId.length > 0;
     default:

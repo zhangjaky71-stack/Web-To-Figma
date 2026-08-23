@@ -98,6 +98,175 @@ function fixture(): CdpCaptureEvidence {
   };
 }
 
+function node10Fixture(): CdpCaptureEvidence {
+  const strings: string[] = [];
+  const intern = (value: string): number => {
+    const existing = strings.indexOf(value);
+    if (existing >= 0) return existing;
+    strings.push(value);
+    return strings.length - 1;
+  };
+  const defaults: Record<string, string> = {
+    display: "inline",
+    visibility: "visible",
+    "content-visibility": "visible",
+    opacity: "1",
+    "overflow-x": "visible",
+    "overflow-y": "visible",
+    position: "static",
+    "font-family": "Inter",
+    "font-size": "16px",
+    "font-style": "normal",
+    "font-weight": "400",
+    "font-stretch": "normal",
+    "font-variation-settings": "normal",
+    "font-feature-settings": "normal",
+    "line-height": "20px",
+    "letter-spacing": "0px",
+    color: "rgb(10, 20, 30)",
+    "text-decoration-line": "none",
+    "white-space": "normal",
+    "word-break": "normal",
+    "overflow-wrap": "normal",
+    "text-align": "start",
+    direction: "ltr",
+    "writing-mode": "horizontal-tb",
+    "vertical-align": "baseline",
+    content: "normal",
+    appearance: "auto",
+    "accent-color": "auto",
+  };
+  const styleFor = (overrides: Record<string, string> = {}): number[] =>
+    CDP_COMPUTED_STYLE_PROPERTIES.map((property) =>
+      intern(overrides[property] ?? defaults[property] ?? ""),
+    );
+
+  const documentUrl = intern("https://example.com/node-10");
+  const title = intern("NODE-10 Fixture");
+  const frameId = intern("frame-main");
+  const documentName = intern("#document");
+  const html = intern("HTML");
+  const body = intern("BODY");
+  const div = intern("DIV");
+  const textName = intern("#text");
+  const pseudoName = intern("::before");
+  const input = intern("INPUT");
+  const hello = intern("hello");
+  const empty = intern("");
+  const id = intern("id");
+  const hero = intern("hero");
+  const type = intern("type");
+  const checkbox = intern("checkbox");
+  const value = intern("value");
+  const secret = intern("sensitive-runtime-like-attribute");
+  const before = intern("before");
+  const he = intern("he");
+  const llo = intern("llo");
+  const prefix = intern("Prefix");
+
+  const blockStyle = styleFor({ display: "block" });
+  const textStyle = styleFor();
+  const pseudoStyle = styleFor({ content: '"Prefix"' });
+  const inputStyle = styleFor({
+    display: "inline-block",
+    appearance: "auto",
+    "accent-color": "rgb(0, 120, 255)",
+  });
+
+  return {
+    devicePixelRatio: 2,
+    domSnapshot: {
+      strings,
+      documents: [
+        {
+          documentURL,
+          title,
+          baseURL: documentUrl,
+          frameId,
+          contentWidth: 1024,
+          contentHeight: 1600,
+          scrollOffsetX: 0,
+          scrollOffsetY: 0,
+          nodes: {
+            parentIndex: [-1, 0, 1, 2, 3, 3, 2],
+            nodeType: [9, 1, 1, 1, 3, 1, 1],
+            nodeName: [documentName, html, body, div, textName, pseudoName, input],
+            nodeValue: [empty, empty, empty, empty, hello, empty, empty],
+            backendNodeId: [1, 2, 3, 4, 5, 6, 7],
+            attributes: [
+              [],
+              [],
+              [],
+              [id, hero],
+              [],
+              [],
+              [type, checkbox, value, secret],
+            ],
+            pseudoType: { index: [5], value: [before] },
+            inputChecked: { index: [6] },
+          },
+          layout: {
+            nodeIndex: [1, 2, 3, 4, 4, 5, 6],
+            styles: [
+              blockStyle,
+              blockStyle,
+              blockStyle,
+              textStyle,
+              textStyle,
+              pseudoStyle,
+              inputStyle,
+            ],
+            bounds: [
+              [0, 0, 1024, 1600],
+              [0, 0, 1024, 1600],
+              [80, 120, 600, 200],
+              [100, 150, 24, 20],
+              [100, 174, 36, 20],
+              [88, 126, 48, 20],
+              [80, 360, 24, 24],
+            ],
+            clientRects: [
+              [0, 0, 1024, 768],
+              [0, 0, 1024, 768],
+              [80, 120, 600, 200],
+              [100, 150, 24, 20],
+              [100, 174, 36, 20],
+              [88, 126, 48, 20],
+              [80, 360, 24, 24],
+            ],
+            text: [empty, empty, empty, he, llo, prefix, empty],
+            paintOrders: [1, 2, 3, 4, 4, 5, 6],
+          },
+        },
+      ],
+    },
+    layoutMetrics: {
+      cssLayoutViewport: { pageX: 0, pageY: 0, clientWidth: 1024, clientHeight: 768 },
+      cssVisualViewport: {
+        offsetX: 0,
+        offsetY: 0,
+        pageX: 0,
+        pageY: 0,
+        clientWidth: 1024,
+        clientHeight: 768,
+        scale: 1,
+        zoom: 1,
+      },
+      cssContentSize: { x: 0, y: 0, width: 1024, height: 1600 },
+    },
+    frameTree: {
+      frameTree: {
+        frame: {
+          id: "frame-main",
+          url: "https://example.com/node-10",
+          securityOrigin: "https://example.com",
+        },
+      },
+    },
+    screenshot: { data: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB" },
+  };
+}
+
 describe("CDP capture adapter", () => {
   it("keeps NODE-09 computed styles and adds NODE-10 text/inline/pseudo visual evidence", () => {
     expect(CDP_CAPTURE_ADAPTER_VERSION).toBe("1.0.0");
@@ -150,11 +319,71 @@ describe("CDP capture adapter", () => {
       visualViewportScale: 1,
     });
     expect(result.snapshot.environment.layoutMetrics?.contentSize?.height).toBe(3000.25);
-    const hero = result.snapshot.nodes.find((node) => node.source.attributes?.id === "hero");
-    expect(hero?.geometry?.bounds.x).toBe(100.25);
-    expect(hero?.paintOrder).toBe(8);
-    expect(hero?.source.backendNodeId).toBe(4);
+    const heroNode = result.snapshot.nodes.find((node) => node.source.attributes?.id === "hero");
+    expect(heroNode?.geometry?.bounds.x).toBe(100.25);
+    expect(heroNode?.paintOrder).toBe(8);
+    expect(heroNode?.source.backendNodeId).toBe(4);
     expect(result.screenshot).toMatchObject({ format: "png", captureBeyondViewport: true });
+  });
+
+  it("normalizes NODE-10 text fragments, baseline provenance, pseudo text and safe form state", () => {
+    const result = normalizeCdpCapture({
+      captureTarget: { type: "document" },
+      evidence: node10Fixture(),
+      capturedAt: "2026-08-23T01:00:00.000Z",
+    });
+
+    const textNode = result.snapshot.nodes.find((node) => node.kind === "text");
+    expect(textNode?.textContent).toBe("hello");
+    expect(textNode?.text?.value).toBe("hello");
+    expect(textNode?.text?.runs[0]).toMatchObject({
+      start: 0,
+      end: 5,
+      text: "hello",
+      font: { family: "Inter", weight: "400" },
+      fontSize: 16,
+      lineHeight: 20,
+      letterSpacing: 0,
+      direction: "ltr",
+    });
+    expect(textNode?.text?.fragments).toHaveLength(2);
+    expect(textNode?.text?.fragments.map((fragment) => [fragment.start, fragment.end])).toEqual([
+      [0, 2],
+      [2, 5],
+    ]);
+    for (const fragment of textNode?.text?.fragments ?? []) {
+      expect(fragment.baselineSource).toBe("cdp-layout-estimate");
+      expect(fragment.baselineConfidence).toBe(0.7);
+      expect(Number.isFinite(fragment.baseline)).toBe(true);
+    }
+    expect(textNode?.inline).toMatchObject({
+      display: "inline",
+      writingMode: "horizontal-tb",
+    });
+    expect(textNode?.inline?.fragmentBounds).toHaveLength(2);
+
+    const pseudoNode = result.snapshot.nodes.find((node) => node.kind === "pseudo");
+    expect(pseudoNode?.source.pseudoType).toBe("before");
+    expect(pseudoNode?.pseudo).toEqual({
+      type: "before",
+      content: '"Prefix"',
+      contentKind: "text",
+      generatedText: "Prefix",
+    });
+    expect(pseudoNode?.textContent).toBe("Prefix");
+    expect(pseudoNode?.text?.runs[0]?.font.family).toBe("Inter");
+
+    const inputNode = result.snapshot.nodes.find((node) => node.source.tagName === "INPUT");
+    expect(inputNode?.formVisual).toMatchObject({
+      controlKind: "input",
+      inputType: "checkbox",
+      disabled: false,
+      readOnly: false,
+      required: false,
+      checked: true,
+      textValueCapture: "not-applicable",
+    });
+    expect(inputNode?.source.attributes).toEqual({ type: "checkbox" });
   });
 
   it("keeps region ancestor closure and removes fully excluded nodes", () => {
@@ -172,7 +401,7 @@ describe("CDP capture adapter", () => {
   });
 
   it("never consumes CDP input/textarea runtime value fields because they are outside the evidence contract", () => {
-    const nodeContract = JSON.stringify(fixture().domSnapshot.documents[0]?.nodes);
+    const nodeContract = JSON.stringify(node10Fixture().domSnapshot.documents[0]?.nodes);
     expect(nodeContract).not.toContain("inputValue");
     expect(nodeContract).not.toContain("textValue");
   });

@@ -24,6 +24,11 @@ const runtimePackages = [
     dist: fileURLToPath(new URL("../../../packages/css-cascade/dist/", import.meta.url)),
   },
   {
+    specifier: "@w2f/environment-capture",
+    directory: "environment-capture",
+    dist: fileURLToPath(new URL("../../../packages/environment-capture/dist/", import.meta.url)),
+  },
+  {
     specifier: "@w2f/standard-capture-adapter",
     directory: "standard-capture-adapter",
     dist: fileURLToPath(

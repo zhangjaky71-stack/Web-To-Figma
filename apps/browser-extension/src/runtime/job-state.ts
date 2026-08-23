@@ -26,6 +26,13 @@ export interface CaptureSnapshotReceipt extends RawSnapshotSummary {
   cssStyleCount?: number;
   cssTokenCount?: number;
   cssCascadeDiagnosticCount?: number;
+  environmentStorageKey?: string;
+  environmentAdapter?: "standard" | "cdp";
+  mediaRuleCount?: number;
+  activeMediaRuleCount?: number;
+  containerCount?: number;
+  containerQueryCount?: number;
+  environmentDiagnosticCount?: number;
 }
 
 export interface CaptureJobState {
@@ -97,7 +104,18 @@ function isCaptureSnapshotReceipt(value: unknown): value is CaptureSnapshotRecei
       record.cssCascadeAdapter === "cdp") &&
     isOptionalNonNegativeInteger(record.cssStyleCount) &&
     isOptionalNonNegativeInteger(record.cssTokenCount) &&
-    isOptionalNonNegativeInteger(record.cssCascadeDiagnosticCount)
+    isOptionalNonNegativeInteger(record.cssCascadeDiagnosticCount) &&
+    (record.environmentStorageKey === undefined ||
+      (typeof record.environmentStorageKey === "string" &&
+        record.environmentStorageKey.length > 0)) &&
+    (record.environmentAdapter === undefined ||
+      record.environmentAdapter === "standard" ||
+      record.environmentAdapter === "cdp") &&
+    isOptionalNonNegativeInteger(record.mediaRuleCount) &&
+    isOptionalNonNegativeInteger(record.activeMediaRuleCount) &&
+    isOptionalNonNegativeInteger(record.containerCount) &&
+    isOptionalNonNegativeInteger(record.containerQueryCount) &&
+    isOptionalNonNegativeInteger(record.environmentDiagnosticCount)
   );
 }
 

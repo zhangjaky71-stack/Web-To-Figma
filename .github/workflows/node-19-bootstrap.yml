@@ -36,7 +36,7 @@ jobs:
       - name: Apply NODE-19 integration closure
         run: node scripts/node-19-finalize.mjs
 
-      - name: Fix core global-name guard collision
+      - name: Fix strict Render Tree core typing
         run: |
           node --input-type=module <<'EOF'
           import { readFileSync, writeFileSync } from "node:fs";
@@ -47,8 +47,22 @@ jobs:
             "const documentIdentity = await createDocumentIdentity({",
           );
           source = source.replaceAll("document.documentId", "documentIdentity.documentId");
+          source = source.replace(
+            '      : Number.isFinite(zNumber)\n        ? { zIndex: zNumber }',
+            '      : typeof zNumber === "number" && Number.isFinite(zNumber)\n        ? { zIndex: zNumber }',
+          );
+          source = source.replace(
+            '    paintHash: fingerprint.paintHash,\n    hierarchyHash:',
+            '    ...(fingerprint.paintHash ? { paintHash: fingerprint.paintHash } : {}),\n    hierarchyHash:',
+          );
           if (source.includes("document.documentId")) {
             throw new Error("NODE-19 document global-name collision remains");
+          }
+          if (!source.includes('typeof zNumber === "number" && Number.isFinite(zNumber)')) {
+            throw new Error("NODE-19 zIndex strict typing patch missing");
+          }
+          if (!source.includes('...(fingerprint.paintHash ? { paintHash: fingerprint.paintHash } : {})')) {
+            throw new Error("NODE-19 paintHash strict typing patch missing");
           }
           writeFileSync(path, source);
           EOF

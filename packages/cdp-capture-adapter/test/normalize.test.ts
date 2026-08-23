@@ -179,7 +179,7 @@ function node10Fixture(): CdpCaptureEvidence {
       strings,
       documents: [
         {
-          documentURL,
+          documentURL: documentUrl,
           title,
           baseURL: documentUrl,
           frameId,

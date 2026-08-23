@@ -58,9 +58,9 @@ function normalizeEnvironment(value: RuntimeEnvironmentEvidence): RuntimeEnviron
   if (value.cssZoomAvailability === "observed" && cssZoom === undefined) {
     throw new TypeError("observed css zoom requires a value");
   }
-  const mediaFeatures = value.mediaFeatures.map(normalizeMediaFeature).sort((a, b) =>
-    a.id.localeCompare(b.id),
-  );
+  const mediaFeatures = value.mediaFeatures
+    .map(normalizeMediaFeature)
+    .sort((a, b) => a.id.localeCompare(b.id));
   if (new Set(mediaFeatures.map((item) => item.id)).size !== mediaFeatures.length) {
     throw new TypeError("duplicate media feature id");
   }
@@ -100,7 +100,9 @@ function normalizeMedia(rule: MediaRuleEvidence, snapshotId: string): MediaRuleE
 
 function normalizeContainer(value: ContainerDefinitionEvidence): ContainerDefinitionEvidence {
   const inlineSize =
-    value.inlineSize === undefined ? undefined : nonNegative(value.inlineSize, "container inlineSize");
+    value.inlineSize === undefined
+      ? undefined
+      : nonNegative(value.inlineSize, "container inlineSize");
   const blockSize =
     value.blockSize === undefined ? undefined : nonNegative(value.blockSize, "container blockSize");
   return {
@@ -261,7 +263,8 @@ export function summarizeEnvironmentCapture(
     observedContainerQueryCount: capture.containerQueries.filter(
       (item) => item.activeAvailability === "observed",
     ).length,
-    activeContainerQueryCount: capture.containerQueries.filter((item) => item.active === true).length,
+    activeContainerQueryCount: capture.containerQueries.filter((item) => item.active === true)
+      .length,
     diagnosticCount: capture.diagnostics.length,
   };
 }

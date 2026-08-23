@@ -332,7 +332,7 @@ No broad default host permission or static content script is introduced.
 
 NODE-09 already persisted one High Fidelity `captureBeyondViewport` PNG as early reference evidence.
 
-NODE-14 does not silently reinterpret that historical record as the final Tile Model. The new PixelGroundTruth sidecar is the authoritative reference/tile source for future NODE-20/21/28 work. The legacy record remains temporarily for compatibility until downstream migration is complete.
+NODE-14 does not silently reinterpret that historical record as the final Tile Model. The new PixelGroundTruth sidecar is the authoritative reference/tile source for future downstream work. The legacy record remains temporarily for compatibility until downstream migration is complete.
 
 ## Explicit non-goals
 
@@ -347,3 +347,9 @@ NODE-14 does not implement:
 - arbitrary video stream packaging.
 
 Those remain assigned to later frozen nodes.
+
+## Downstream ownership
+
+- **NODE-20** consumes node/canvas/video raster primitives when choosing compositing-safe fallback boundaries.
+- **NODE-21** serializes the reference-tile index and content-addressed PNG resources into `.wtf`.
+- **NODE-28** consumes Pixel Ground Truth for hybrid native/raster rendering and visual fidelity workflows.

@@ -58,6 +58,11 @@ export interface ResponsiveCaptureReceipt {
   stableNodeEvidenceCount: number;
   diagnosticCount: number;
   viewportWidths: number[];
+  inferenceStorageKey: string;
+  responsiveRuleCount: number;
+  breakpointCandidateCount: number;
+  responsiveSizingDecisionCount: number;
+  responsiveInferenceDiagnosticCount: number;
 }
 
 export interface CaptureJobState {
@@ -197,7 +202,13 @@ function isResponsiveCaptureReceipt(value: unknown): value is ResponsiveCaptureR
     Array.isArray(record.viewportWidths) &&
     record.viewportWidths.every(
       (width) => typeof width === "number" && Number.isSafeInteger(width) && width > 0,
-    )
+    ) &&
+    typeof record.inferenceStorageKey === "string" &&
+    record.inferenceStorageKey.length > 0 &&
+    isOptionalNonNegativeInteger(record.responsiveRuleCount) &&
+    isOptionalNonNegativeInteger(record.breakpointCandidateCount) &&
+    isOptionalNonNegativeInteger(record.responsiveSizingDecisionCount) &&
+    isOptionalNonNegativeInteger(record.responsiveInferenceDiagnosticCount)
   );
 }
 

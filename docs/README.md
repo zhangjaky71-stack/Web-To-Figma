@@ -120,18 +120,19 @@ NODE-06 — Source Providers & Offline
 NODE-07 — Region Selector & Redaction
 NODE-08 — Standard DOM Capture
 NODE-09 — CDP High Fidelity Adapter
+NODE-10 — Text / Inline / Pseudo Capture
 ```
 
 Current implementation node:
 
 ```text
-NODE-10 — Text / Inline / Pseudo Capture
+NODE-11 — CSS Cascade & Authored Semantics
 ```
 
-NODE-10 implementation and behavior fixtures are complete. Its formal standard read-only documentation/status Exit Gate and PR #14 merge remain before the roadmap advances.
+NODE-11 starts from the squash-merged NODE-10 main commit `eb31c82bbbaaf15f740aa19f7d343f8a2d884099` and must preserve the existing adapter-neutral RawSnapshot/privacy boundaries while adding authored cascade and Token Graph semantics.
 
-Next implementation node after NODE-10 merge:
+Next implementation node after NODE-11 merge:
 
 ```text
-NODE-11 — CSS Cascade & Authored Semantics
+NODE-12 — Media / Container / Environment Capture
 ```

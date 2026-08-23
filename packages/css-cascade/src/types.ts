@@ -4,7 +4,12 @@ import type { WtfTokenGraph, WtfTokenKind } from "@w2f/w2f-schema";
 export const CSS_CASCADE_ENGINE_VERSION = "1.0.0" as const;
 
 export type CssCascadeEngineVersion = typeof CSS_CASCADE_ENGINE_VERSION;
-export type CssDeclarationStatus = "winner" | "overridden" | "inactive-condition";
+export type CssCascadeAdapter = "standard" | "cdp";
+export type CssDeclarationStatus =
+  | "winner"
+  | "overridden"
+  | "inactive-condition"
+  | "matched-unresolved";
 
 export interface CssSpecificity {
   ids: number;
@@ -73,6 +78,15 @@ export interface CssTokenUsageEvidence {
   resolvedValue: string;
 }
 
+export interface CssUnresolvedTokenUsage {
+  sourceNodeId: string;
+  property: string;
+  tokenName: string;
+  authoredValue: string;
+  resolvedValue: string;
+  reason: "definition-ambiguous" | "definition-unavailable";
+}
+
 export interface CssTokenGraphBuildInput {
   definitions: CssTokenDefinitionEvidence[];
   usages: CssTokenUsageEvidence[];
@@ -81,6 +95,29 @@ export interface CssTokenGraphBuildInput {
 export interface CssTokenGraphBuildResult {
   graph: WtfTokenGraph;
   definitionIds: Record<string, string>;
+}
+
+export interface CssCascadeDiagnostic {
+  code:
+    | "CSS_STYLESHEET_INACCESSIBLE"
+    | "CSS_SELECTOR_UNSUPPORTED"
+    | "CSS_SOURCE_NODE_UNRESOLVED"
+    | "CSS_CDP_NODE_UNAVAILABLE"
+    | "CSS_CDP_MATCHED_STYLES_UNAVAILABLE"
+    | "CSS_TOKEN_USAGE_UNRESOLVED";
+  message: string;
+  sourceNodeId?: string;
+  stylesheetRef?: string;
+}
+
+export interface CssCascadeCapture {
+  version: CssCascadeEngineVersion;
+  adapter: CssCascadeAdapter;
+  cascade: CssCascadePayload;
+  styles: WtfStyleRecord[];
+  tokens: WtfTokenGraph;
+  unresolvedTokenUsages: CssUnresolvedTokenUsage[];
+  diagnostics: CssCascadeDiagnostic[];
 }
 
 export type CssLengthModel = WtfCssLength;

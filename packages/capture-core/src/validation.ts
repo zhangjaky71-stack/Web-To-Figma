@@ -160,12 +160,17 @@ function isRawFontEvidence(value: unknown): boolean {
 }
 
 function isRawTextRun(value: unknown, text: string): boolean {
-  if (!isRecord(value) || !isSafeOffset(value.start, text.length) || !isSafeOffset(value.end, text.length)) {
+  if (
+    !isRecord(value) ||
+    !isSafeOffset(value.start, text.length) ||
+    !isSafeOffset(value.end, text.length)
+  ) {
     return false;
   }
   const start = value.start as number;
   const end = value.end as number;
-  if (end < start || typeof value.text !== "string" || value.text !== text.slice(start, end)) return false;
+  if (end < start || typeof value.text !== "string" || value.text !== text.slice(start, end))
+    return false;
   if (!isRawFontEvidence(value.font) || !isNonNegativeFiniteNumber(value.fontSize)) return false;
   if (
     value.lineHeight !== undefined &&
@@ -178,7 +183,8 @@ function isRawTextRun(value: unknown, text: string): boolean {
   if (value.color !== undefined && typeof value.color !== "string") return false;
   if (value.decoration !== undefined && typeof value.decoration !== "string") return false;
   if (value.baselineShift !== undefined && !isFiniteNumber(value.baselineShift)) return false;
-  if (value.direction !== undefined && value.direction !== "ltr" && value.direction !== "rtl") return false;
+  if (value.direction !== undefined && value.direction !== "ltr" && value.direction !== "rtl")
+    return false;
   return true;
 }
 
@@ -213,7 +219,13 @@ function isRawTextEvidence(value: unknown): boolean {
   ) {
     return false;
   }
-  for (const field of ["whiteSpace", "wordBreak", "overflowWrap", "textAlign", "writingMode"] as const) {
+  for (const field of [
+    "whiteSpace",
+    "wordBreak",
+    "overflowWrap",
+    "textAlign",
+    "writingMode",
+  ] as const) {
     const candidate = value[field];
     if (candidate !== undefined && typeof candidate !== "string") return false;
   }
@@ -266,16 +278,9 @@ function isRawFormVisualEvidence(value: unknown): boolean {
 function isRawNode(value: unknown): boolean {
   if (!isRecord(value) || !isNonEmptyString(value.captureNodeId)) return false;
   if (
-    ![
-      "document",
-      "element",
-      "text",
-      "pseudo",
-      "shadow-root",
-      "iframe",
-      "slot",
-      "comment",
-    ].includes(String(value.kind))
+    !["document", "element", "text", "pseudo", "shadow-root", "iframe", "slot", "comment"].includes(
+      String(value.kind),
+    )
   ) {
     return false;
   }
@@ -336,7 +341,8 @@ function isRawNode(value: unknown): boolean {
   ) {
     return false;
   }
-  if (value.source.pseudoType !== undefined && !isNonEmptyString(value.source.pseudoType)) return false;
+  if (value.source.pseudoType !== undefined && !isNonEmptyString(value.source.pseudoType))
+    return false;
   if (
     value.source.pseudoType !== undefined &&
     isRecord(value.pseudo) &&

@@ -7,14 +7,7 @@ export const RAW_SNAPSHOT_VERSION = "1.0.0" as const;
 export type RawSnapshotVersion = typeof RAW_SNAPSHOT_VERSION;
 export type RawCaptureAdapter = "standard" | "cdp";
 export type RawNodeKind =
-  | "document"
-  | "element"
-  | "text"
-  | "pseudo"
-  | "shadow-root"
-  | "iframe"
-  | "slot"
-  | "comment";
+  "document" | "element" | "text" | "pseudo" | "shadow-root" | "iframe" | "slot" | "comment";
 
 export interface RawVisibilityEvidence {
   display: string;

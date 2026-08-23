@@ -6,6 +6,7 @@ import type {
   CdpFrameTree,
   CdpLayoutTreeSnapshot,
   CdpNodeTreeSnapshot,
+  CdpRareBooleanData,
   CdpRareIntegerData,
   CdpRareStringData,
 } from "./types.js";
@@ -18,6 +19,27 @@ export const CDP_COMPUTED_STYLE_PROPERTIES = [
   "overflow-x",
   "overflow-y",
   "position",
+  "font-family",
+  "font-size",
+  "font-style",
+  "font-weight",
+  "font-stretch",
+  "font-variation-settings",
+  "font-feature-settings",
+  "line-height",
+  "letter-spacing",
+  "color",
+  "text-decoration-line",
+  "white-space",
+  "word-break",
+  "overflow-wrap",
+  "text-align",
+  "direction",
+  "writing-mode",
+  "vertical-align",
+  "content",
+  "appearance",
+  "accent-color",
 ] as const;
 
 const SENSITIVE_ATTRIBUTE_PATTERN =
@@ -50,6 +72,10 @@ function rareString(
   if (position < 0) return undefined;
   const value = stringAt(strings, data.value[position]);
   return value || undefined;
+}
+
+function rareBoolean(data: CdpRareBooleanData | undefined, nodeIndex: number): boolean | undefined {
+  return data ? data.index.includes(nodeIndex) : undefined;
 }
 
 function rectangle(value: readonly number[] | undefined): Rect | undefined {
@@ -131,7 +157,9 @@ function nodeKind(
   nodeType: number | undefined,
   nodeName: string,
   shadowRootType: string | undefined,
+  pseudoType: string | undefined,
 ): RawNode["kind"] | undefined {
+  if (pseudoType) return "pseudo";
   if (nodeType === 9) return "document";
   if (nodeType === 3) return "text";
   if (nodeType === 8) return "comment";
@@ -153,6 +181,220 @@ function stylesFor(
     output[property] = stringAt(strings, values?.[index]);
   });
   return output;
+}
+
+function cssPixels(value: string): number | undefined {
+  if (!value || value === "normal") return undefined;
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function layoutIndicesLookup(layout: CdpLayoutTreeSnapshot): Map<number, number[]> {
+  const result = new Map<number, number[]>();
+  layout.nodeIndex.forEach((nodeIndex, layoutIndex) => {
+    const entries = result.get(nodeIndex) ?? [];
+    entries.push(layoutIndex);
+    result.set(nodeIndex, entries);
+  });
+  return result;
+}
+
+function unionRects(rects: Rect[]): Rect | undefined {
+  if (rects.length === 0) return undefined;
+  const left = Math.min(...rects.map((rect) => rect.x));
+  const top = Math.min(...rects.map((rect) => rect.y));
+  const right = Math.max(...rects.map((rect) => rect.x + rect.width));
+  const bottom = Math.max(...rects.map((rect) => rect.y + rect.height));
+  return { x: left, y: top, width: right - left, height: bottom - top };
+}
+
+function rawTextRun(
+  value: string,
+  computed: Record<(typeof CDP_COMPUTED_STYLE_PROPERTIES)[number], string>,
+): NonNullable<RawNode["text"]>["runs"][number] {
+  const fontSize = cssPixels(computed["font-size"]) ?? 0;
+  const lineHeight = cssPixels(computed["line-height"]);
+  const letterSpacing = cssPixels(computed["letter-spacing"]);
+  return {
+    start: 0,
+    end: value.length,
+    text: value,
+    font: {
+      family: computed["font-family"],
+      ...(computed["font-style"] ? { style: computed["font-style"] } : {}),
+      ...(computed["font-weight"] ? { weight: computed["font-weight"] } : {}),
+      ...(computed["font-stretch"] ? { stretch: computed["font-stretch"] } : {}),
+      ...(computed["font-variation-settings"]
+        ? { variationSettings: computed["font-variation-settings"] }
+        : {}),
+      ...(computed["font-feature-settings"]
+        ? { featureSettings: computed["font-feature-settings"] }
+        : {}),
+    },
+    fontSize,
+    ...(lineHeight === undefined
+      ? { lineHeight: computed["line-height"] || "normal" }
+      : { lineHeight }),
+    ...(letterSpacing === undefined ? {} : { letterSpacing }),
+    ...(computed.color ? { color: computed.color } : {}),
+    ...(computed["text-decoration-line"] ? { decoration: computed["text-decoration-line"] } : {}),
+    direction: computed.direction === "rtl" ? "rtl" : "ltr",
+  };
+}
+
+function cdpBaseline(
+  bounds: Rect,
+  computed: Record<(typeof CDP_COMPUTED_STYLE_PROPERTIES)[number], string>,
+): Pick<
+  NonNullable<RawNode["text"]>["fragments"][number],
+  "baseline" | "baselineSource" | "baselineConfidence"
+> {
+  const fontSize = cssPixels(computed["font-size"]) ?? bounds.height;
+  const lineHeight = cssPixels(computed["line-height"]) ?? bounds.height;
+  const leading = Math.max(0, Math.min(bounds.height, lineHeight) - fontSize);
+  return {
+    baseline: bounds.y + leading / 2 + fontSize * 0.8,
+    baselineSource: "cdp-layout-estimate",
+    baselineConfidence: 0.7,
+  };
+}
+
+function cdpTextEvidence(
+  value: string,
+  computed: Record<(typeof CDP_COMPUTED_STYLE_PROPERTIES)[number], string>,
+  layout: CdpLayoutTreeSnapshot,
+  layoutIndices: number[],
+  strings: readonly string[],
+): RawNode["text"] {
+  if (!value) return undefined;
+  let cursor = 0;
+  const fragments = layoutIndices.flatMap((layoutIndex, lineIndex) => {
+    const bounds =
+      rectangle(layout.clientRects?.[layoutIndex]) ?? rectangle(layout.bounds[layoutIndex]);
+    if (!bounds) return [];
+    const renderedText = stringAt(strings, layout.text[layoutIndex]);
+    const found = renderedText ? value.indexOf(renderedText, cursor) : -1;
+    const start = found >= 0 ? found : Math.min(cursor, value.length);
+    const end = renderedText ? Math.min(value.length, start + renderedText.length) : value.length;
+    cursor = Math.max(cursor, end);
+    return [
+      {
+        start,
+        end,
+        bounds,
+        ...cdpBaseline(bounds, computed),
+        lineIndex,
+      },
+    ];
+  });
+  return {
+    value,
+    runs: [rawTextRun(value, computed)],
+    fragments,
+    whiteSpace: computed["white-space"],
+    wordBreak: computed["word-break"],
+    overflowWrap: computed["overflow-wrap"],
+    textAlign: computed["text-align"],
+    direction: computed.direction === "rtl" ? "rtl" : "ltr",
+    writingMode: computed["writing-mode"],
+  };
+}
+
+function inlineEvidence(
+  computed: Record<(typeof CDP_COMPUTED_STYLE_PROPERTIES)[number], string>,
+  fragmentBounds: Rect[],
+): RawNode["inline"] {
+  const display = computed.display;
+  if (!(display.startsWith("inline") || display.startsWith("ruby"))) return undefined;
+  return {
+    display,
+    writingMode: computed["writing-mode"],
+    ...(computed["vertical-align"] ? { verticalAlign: computed["vertical-align"] } : {}),
+    fragmentBounds,
+  };
+}
+
+function pseudoEvidence(
+  pseudoType: string,
+  content: string,
+  renderedText: string,
+): RawNode["pseudo"] {
+  if (renderedText) {
+    return { type: pseudoType, content, contentKind: "text", generatedText: renderedText };
+  }
+  if (!content || content === "none" || content === "normal") {
+    return { type: pseudoType, content, contentKind: "none" };
+  }
+  return { type: pseudoType, content, contentKind: "complex" };
+}
+
+function formVisualEvidence(
+  nodeName: string,
+  attributes: Record<string, string>,
+  computed: Record<(typeof CDP_COMPUTED_STYLE_PROPERTIES)[number], string>,
+  checked: boolean | undefined,
+): RawNode["formVisual"] {
+  if (
+    !["INPUT", "TEXTAREA", "SELECT", "BUTTON", "PROGRESS", "METER", "OUTPUT"].includes(nodeName)
+  ) {
+    return undefined;
+  }
+  const disabled = Object.hasOwn(attributes, "disabled");
+  const common = {
+    disabled,
+    ...(computed.appearance ? { appearance: computed.appearance } : {}),
+    ...(computed["accent-color"] ? { accentColor: computed["accent-color"] } : {}),
+  };
+  if (nodeName === "INPUT") {
+    const inputType = (attributes.type || "text").toLowerCase();
+    const checkable = inputType === "checkbox" || inputType === "radio";
+    const textual = ![
+      "button",
+      "submit",
+      "reset",
+      "checkbox",
+      "radio",
+      "range",
+      "color",
+      "file",
+      "image",
+      "hidden",
+    ].includes(inputType);
+    return {
+      controlKind: "input",
+      inputType,
+      ...common,
+      readOnly: Object.hasOwn(attributes, "readonly"),
+      required: Object.hasOwn(attributes, "required"),
+      ...(checkable && checked !== undefined ? { checked } : {}),
+      ...(attributes.placeholder ? { placeholder: attributes.placeholder } : {}),
+      textValueCapture: textual ? "omitted-sensitive" : "not-applicable",
+    };
+  }
+  if (nodeName === "TEXTAREA") {
+    return {
+      controlKind: "textarea",
+      ...common,
+      readOnly: Object.hasOwn(attributes, "readonly"),
+      required: Object.hasOwn(attributes, "required"),
+      ...(attributes.placeholder ? { placeholder: attributes.placeholder } : {}),
+      textValueCapture: "omitted-sensitive",
+    };
+  }
+  if (nodeName === "SELECT") {
+    return {
+      controlKind: "select",
+      ...common,
+      required: Object.hasOwn(attributes, "required"),
+      multiple: Object.hasOwn(attributes, "multiple"),
+      textValueCapture: "omitted-sensitive",
+    };
+  }
+  return {
+    controlKind: nodeName.toLowerCase() as "button" | "progress" | "meter" | "output",
+    ...common,
+    textValueCapture: "not-applicable",
+  };
 }
 
 function makeNodeId(
@@ -252,12 +494,14 @@ export function normalizeCdpCapture(input: CdpCaptureInput): CdpCaptureResult {
     });
 
     const layoutMap = layoutLookup(document.layout);
+    const layoutIndicesMap = layoutIndicesLookup(document.layout);
     const baseUrl = stringAt(strings, document.baseURL) || url;
 
     document.nodes.nodeType.forEach((type, nodeIndex) => {
       const nodeName = stringAt(strings, document.nodes.nodeName[nodeIndex]).toUpperCase();
       const shadowRootType = rareString(document.nodes.shadowRootType, nodeIndex, strings);
-      const kind = nodeKind(type, nodeName, shadowRootType);
+      const pseudoType = rareString(document.nodes.pseudoType, nodeIndex, strings);
+      const kind = nodeKind(type, nodeName, shadowRootType, pseudoType);
       if (!kind) return;
 
       const captureNodeId = nodeIdsByDocument[documentIndex]![nodeIndex]!;
@@ -270,9 +514,11 @@ export function normalizeCdpCapture(input: CdpCaptureInput): CdpCaptureResult {
           : undefined;
 
       const layoutIndex = layoutMap.get(nodeIndex);
-      const bounds = rectangle(
-        layoutIndex === undefined ? undefined : document.layout.bounds[layoutIndex],
-      );
+      const layoutIndices = layoutIndicesMap.get(nodeIndex) ?? [];
+      const layoutBounds = layoutIndices
+        .map((index) => rectangle(document.layout.bounds[index]))
+        .filter((value): value is Rect => value !== undefined);
+      const bounds = unionRects(layoutBounds);
       if (
         input.captureTarget.type === "region" &&
         bounds &&
@@ -303,11 +549,38 @@ export function normalizeCdpCapture(input: CdpCaptureInput): CdpCaptureResult {
         computed.visibility !== "hidden" &&
         computed.visibility !== "collapse";
       const nodeValue = stringAt(strings, document.nodes.nodeValue[nodeIndex]);
-      const clientRect = rectangle(
-        layoutIndex === undefined ? undefined : document.layout.clientRects?.[layoutIndex],
-      );
+      const clientRects = layoutIndices
+        .map(
+          (index) =>
+            rectangle(document.layout.clientRects?.[index]) ??
+            rectangle(document.layout.bounds[index]),
+        )
+        .filter((value): value is Rect => value !== undefined);
       const paintOrder =
         layoutIndex === undefined ? undefined : document.layout.paintOrders?.[layoutIndex];
+      const renderedText = layoutIndices
+        .map((index) => stringAt(strings, document.layout.text[index]))
+        .filter(Boolean)
+        .join("");
+      const pseudo =
+        kind === "pseudo" && pseudoType
+          ? pseudoEvidence(pseudoType, computed.content, renderedText)
+          : undefined;
+      const textValue =
+        kind === "text" ? nodeValue : kind === "pseudo" ? pseudo?.generatedText : undefined;
+      const text =
+        !masked && textValue
+          ? cdpTextEvidence(textValue, computed, document.layout, layoutIndices, strings)
+          : undefined;
+      const inline = masked ? undefined : inlineEvidence(computed, clientRects);
+      const formVisual = masked
+        ? undefined
+        : formVisualEvidence(
+            nodeName,
+            attributes,
+            computed,
+            rareBoolean(document.nodes.inputChecked, nodeIndex),
+          );
 
       const raw: RawNode = {
         captureNodeId,
@@ -321,13 +594,14 @@ export function normalizeCdpCapture(input: CdpCaptureInput): CdpCaptureResult {
         frameContext: context,
         source: {
           ...(nodeName && !nodeName.startsWith("#") ? { tagName: nodeName } : {}),
+          ...(pseudoType ? { pseudoType } : {}),
           ...(masked ? {} : { attributes }),
           ...(typeof document.nodes.backendNodeId[nodeIndex] === "number"
             ? { backendNodeId: document.nodes.backendNodeId[nodeIndex] }
             : {}),
         },
         ...(bounds
-          ? { geometry: { bounds, ...(clientRect ? { clientRects: [clientRect] } : {}) } }
+          ? { geometry: { bounds, ...(clientRects.length > 0 ? { clientRects } : {}) } }
           : {}),
         ...(layoutIndex === undefined
           ? {}
@@ -343,7 +617,11 @@ export function normalizeCdpCapture(input: CdpCaptureInput): CdpCaptureResult {
                 rendered,
               },
             }),
-        ...(kind === "text" && !masked && nodeValue ? { textContent: nodeValue } : {}),
+        ...(!masked && textValue ? { textContent: textValue } : {}),
+        ...(text === undefined ? {} : { text }),
+        ...(inline === undefined ? {} : { inline }),
+        ...(pseudo === undefined ? {} : { pseudo }),
+        ...(formVisual === undefined ? {} : { formVisual }),
         ...(typeof paintOrder === "number" ? { paintOrder } : {}),
       };
       nodes.push(raw);

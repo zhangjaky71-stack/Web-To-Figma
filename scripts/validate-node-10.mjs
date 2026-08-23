@@ -103,7 +103,10 @@ if (failures.length === 0) {
     "CDP NODE-10 evidence must expose safe checked-state evidence",
   );
   for (const forbidden of ["inputValue", "textValue"]) {
-    assert(!cdpTypes.includes(forbidden), `CDP NODE-10 evidence contract must not expose ${forbidden}`);
+    assert(
+      !cdpTypes.includes(forbidden),
+      `CDP NODE-10 evidence contract must not expose ${forbidden}`,
+    );
   }
 
   const cdp = readText("packages/cdp-capture-adapter/src/normalize.ts");

@@ -56,6 +56,6 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add packages/cdp-capture-adapter/test/normalize.test.ts .github/workflows/node-10-format-once.yml
+          git add -A
           git commit -m "style(node-10): format behavior fixture"
           git push origin HEAD:feat/node-10-text-inline-pseudo-capture

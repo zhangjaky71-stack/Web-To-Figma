@@ -6,9 +6,14 @@ import {
   toWtfCaptureEnvironment,
   toWtfContainerQueryInfo,
   toWtfMediaRuleTraces,
+  type EnvironmentEvidenceAvailability,
 } from "../src/index.js";
 
-function baseEnvironment() {
+function baseEnvironment(
+  pageZoom: number | undefined = 1.25,
+  pageZoomAvailability: EnvironmentEvidenceAvailability =
+    pageZoom === undefined ? "unavailable" : "observed",
+) {
   return {
     browserName: "Chrome",
     browserVersion: "140.0.0.0",
@@ -20,8 +25,8 @@ function baseEnvironment() {
     viewportWidth: 1440,
     viewportHeight: 900,
     dpr: 2,
-    pageZoom: 1.25,
-    pageZoomAvailability: "observed" as const,
+    ...(pageZoom === undefined ? {} : { pageZoom }),
+    pageZoomAvailability,
     visualViewportScale: 1,
     cssZoomAvailability: "unavailable" as const,
   };
@@ -62,13 +67,103 @@ describe("NODE-12 environment capture", () => {
       affectedProperties: ["display", "grid-template-columns"],
       affectedSourceNodeIds: ["node:a", "node:b"],
     });
+    expect(capture.environment.mediaFeatures).toEqual([]);
+    expect(capture.containerQueries[0]).toMatchObject({
+      activeAvailability: "unavailable",
+    });
+    expect(capture.containerQueries[0]).not.toHaveProperty("active");
     expect(isEnvironmentCapture(capture)).toBe(true);
     expect(summarizeEnvironmentCapture(capture)).toMatchObject({
       mediaRuleCount: 1,
       activeMediaRuleCount: 1,
       containerCount: 1,
       containerQueryCount: 1,
+      observedContainerQueryCount: 0,
+      activeContainerQueryCount: 0,
     });
+  });
+
+  it("normalizes observed media features and container-query state", () => {
+    const capture = createEnvironmentCapture({
+      adapter: "cdp",
+      snapshotId: "snapshot:observed",
+      environment: {
+        ...baseEnvironment(),
+        mediaFeatures: [
+          {
+            id: "reduced-motion",
+            query: "(prefers-reduced-motion: reduce)",
+            matches: true,
+            availability: "observed",
+          },
+          {
+            id: "color-scheme-dark",
+            query: "(prefers-color-scheme: dark)",
+            matches: true,
+            availability: "observed",
+          },
+        ],
+      },
+      containerQueries: [
+        {
+          id: "container:observed",
+          condition: "(inline-size > 40rem)",
+          active: true,
+          activeAvailability: "observed",
+          containerSourceNodeId: "node:container",
+          affectedProperties: ["display"],
+          affectedSourceNodeIds: ["node:card"],
+        },
+      ],
+    });
+
+    expect(capture.environment.mediaFeatures?.map((item) => item.id)).toEqual([
+      "color-scheme-dark",
+      "reduced-motion",
+    ]);
+    expect(capture.containerQueries[0]).toMatchObject({
+      active: true,
+      activeAvailability: "observed",
+      containerSourceNodeId: "node:container",
+    });
+    expect(summarizeEnvironmentCapture(capture)).toMatchObject({
+      observedContainerQueryCount: 1,
+      activeContainerQueryCount: 1,
+    });
+  });
+
+  it("rejects duplicate media feature identities and fabricated container status", () => {
+    const feature = {
+      id: "hover",
+      query: "(hover: hover)",
+      matches: true,
+      availability: "observed" as const,
+    };
+    expect(() =>
+      createEnvironmentCapture({
+        adapter: "standard",
+        snapshotId: "snapshot:duplicate-feature",
+        environment: { ...baseEnvironment(), mediaFeatures: [feature, feature] },
+      }),
+    ).toThrow(/duplicate media feature id/);
+
+    expect(() =>
+      createEnvironmentCapture({
+        adapter: "standard",
+        snapshotId: "snapshot:fabricated-container",
+        environment: baseEnvironment(),
+        containerQueries: [
+          {
+            id: "container:fabricated",
+            condition: "(width > 10px)",
+            active: true,
+            activeAvailability: "unavailable",
+            affectedProperties: [],
+            affectedSourceNodeIds: [],
+          },
+        ],
+      }),
+    ).toThrow(/must not fabricate active/);
   });
 
   it("converts observed runtime environment and responsive metadata to IR shapes", () => {
@@ -126,15 +221,10 @@ describe("NODE-12 environment capture", () => {
   });
 
   it("does not fabricate a portable pageZoom when Standard evidence is unavailable", () => {
-    const withoutZoom = {
-      ...baseEnvironment(),
-      pageZoom: undefined,
-      pageZoomAvailability: "unavailable" as const,
-    };
     const capture = createEnvironmentCapture({
       adapter: "standard",
       snapshotId: "snapshot:standard",
-      environment: withoutZoom,
+      environment: baseEnvironment(undefined, "unavailable"),
     });
     expect(toWtfCaptureEnvironment(capture)).toBeNull();
   });
@@ -157,12 +247,11 @@ describe("NODE-12 environment capture", () => {
       }),
     ).toThrow(/duplicate media rule id/);
 
-    const withoutZoom = { ...baseEnvironment(), pageZoom: undefined };
     expect(() =>
       createEnvironmentCapture({
         adapter: "standard",
         snapshotId: "snapshot:1",
-        environment: withoutZoom,
+        environment: baseEnvironment(undefined, "observed"),
       }),
     ).toThrow(/observed page zoom requires a value/);
   });

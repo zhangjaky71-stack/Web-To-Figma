@@ -77,6 +77,7 @@ export async function captureEnvironmentForSnapshot(
     chrome.scripting.executeScript({
       target: { tabId },
       func: captureEnvironmentMediaFeaturesInPage,
+      args: [],
     }),
   ]);
   const result = environmentResults[0]?.result as StandardEnvironmentResult | undefined;

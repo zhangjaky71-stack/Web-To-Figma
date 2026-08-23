@@ -4,6 +4,7 @@ import {
   type RawCaptureTarget,
   type RawSnapshot,
 } from "@w2f/capture-core";
+import { summarizeEnvironmentCapture } from "@w2f/environment-capture";
 import {
   captureStandardSnapshotInPage,
   type StandardCaptureInput,
@@ -12,6 +13,8 @@ import {
 import { captureHighFidelityWithCdp, getCdpRuntimeCapability } from "./cdp-runtime.js";
 import { captureCssCascadeForSnapshot } from "./css-cascade-runtime.js";
 import { deleteCssCascadeCapture, writeCssCascadeCapture } from "./css-cascade-store.js";
+import { captureEnvironmentForSnapshot } from "./environment-runtime.js";
+import { deleteEnvironmentCapture, writeEnvironmentCapture } from "./environment-store.js";
 import {
   createCaptureJob,
   isCaptureJobState,
@@ -65,7 +68,11 @@ async function writeJobState(job: CaptureJobState): Promise<void> {
 }
 
 async function deleteAllCaptureArtifacts(jobId: string): Promise<void> {
-  await Promise.allSettled([deleteCaptureArtifacts(jobId), deleteCssCascadeCapture(jobId)]);
+  await Promise.allSettled([
+    deleteCaptureArtifacts(jobId),
+    deleteCssCascadeCapture(jobId),
+    deleteEnvironmentCapture(jobId),
+  ]);
 }
 
 function regionCaptureTarget(region: RegionSelectionResult): RawCaptureTarget {
@@ -120,6 +127,36 @@ async function persistCssCascade(
   };
 }
 
+async function persistEnvironment(
+  tabId: number,
+  jobId: string,
+  snapshot: RawSnapshot,
+): Promise<
+  Pick<
+    CaptureSnapshotReceipt,
+    | "environmentStorageKey"
+    | "environmentAdapter"
+    | "mediaRuleCount"
+    | "activeMediaRuleCount"
+    | "containerCount"
+    | "containerQueryCount"
+    | "environmentDiagnosticCount"
+  >
+> {
+  const capture = await captureEnvironmentForSnapshot(tabId, snapshot);
+  const environmentStorageKey = await writeEnvironmentCapture(jobId, capture);
+  const summary = summarizeEnvironmentCapture(capture);
+  return {
+    environmentStorageKey,
+    environmentAdapter: capture.adapter,
+    mediaRuleCount: summary.mediaRuleCount,
+    activeMediaRuleCount: summary.activeMediaRuleCount,
+    containerCount: summary.containerCount,
+    containerQueryCount: summary.containerQueryCount,
+    environmentDiagnosticCount: summary.diagnosticCount,
+  };
+}
+
 async function captureStandardDom(
   tabId: number,
   jobId: string,
@@ -148,12 +185,14 @@ async function captureStandardDom(
       message: `High Fidelity capture failed and Standard capture was used: ${fallbackReason}`,
     });
   }
-  if (!isRawSnapshot(snapshot))
+  if (!isRawSnapshot(snapshot)) {
     throw new Error("Standard fallback diagnostics invalidated RawSnapshot");
+  }
 
   try {
     const storageKey = await writeRawSnapshot(jobId, snapshot);
     const cascadeReceipt = await persistCssCascade(tabId, jobId, snapshot);
+    const environmentReceipt = await persistEnvironment(tabId, jobId, snapshot);
     return {
       snapshot,
       receipt: {
@@ -161,6 +200,7 @@ async function captureStandardDom(
         storageKey,
         capturedAt: snapshot.capturedAt,
         ...cascadeReceipt,
+        ...environmentReceipt,
         ...(fallbackReason ? { fallbackFromCdp: true } : {}),
       },
     };
@@ -186,6 +226,7 @@ async function captureCdpDom(
     const storageKey = await writeRawSnapshot(jobId, result.snapshot);
     const referenceScreenshotKey = await writeReferenceScreenshot(jobId, result.screenshot);
     const cascadeReceipt = await persistCssCascade(tabId, jobId, result.snapshot);
+    const environmentReceipt = await persistEnvironment(tabId, jobId, result.snapshot);
     return {
       snapshot: result.snapshot,
       receipt: {
@@ -194,6 +235,7 @@ async function captureCdpDom(
         referenceScreenshotKey,
         capturedAt: result.snapshot.capturedAt,
         ...cascadeReceipt,
+        ...environmentReceipt,
       },
     };
   } catch (error) {

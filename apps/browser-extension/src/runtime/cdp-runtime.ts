@@ -28,11 +28,39 @@ interface ChromeDebuggerApi {
   ): Promise<Record<string, unknown>>;
 }
 
+interface CdpPageResource {
+  url: string;
+  type?: string;
+  mimeType?: string;
+}
+
+interface CdpResourceTreeNode {
+  frame: { id: string; url?: string };
+  resources?: CdpPageResource[];
+  childFrames?: CdpResourceTreeNode[];
+}
+
+interface CdpResourceTreeResponse {
+  frameTree: CdpResourceTreeNode;
+}
+
+interface CdpResourceContentResponse {
+  content: string;
+  base64Encoded: boolean;
+}
+
 export interface CdpRuntimeCapability {
   buildProfile: "standard" | "high-fidelity";
   debuggerPermission: boolean;
   available: boolean;
   reason: string;
+}
+
+export interface CdpRecoveredResource {
+  url: string;
+  frameId: string;
+  bytes: number[];
+  mediaTypeHint?: string;
 }
 
 function debuggerApi(): ChromeDebuggerApi {
@@ -74,6 +102,84 @@ function readDevicePixelRatio(value: Record<string, unknown>): number {
   if (typeof result !== "object" || result === null || Array.isArray(result)) return 1;
   const observed = (result as Record<string, unknown>).value;
   return typeof observed === "number" && Number.isFinite(observed) && observed > 0 ? observed : 1;
+}
+
+function resourceKey(url: string): string {
+  try {
+    const parsed = new URL(url);
+    parsed.hash = "";
+    return parsed.href;
+  } catch {
+    return url.split("#", 1)[0] ?? url;
+  }
+}
+
+function collectResources(
+  tree: CdpResourceTreeNode,
+  map: Map<string, { frameId: string; resource: CdpPageResource }>,
+): void {
+  for (const resource of tree.resources ?? []) {
+    const key = resourceKey(resource.url);
+    if (!map.has(key)) map.set(key, { frameId: tree.frame.id, resource });
+  }
+  for (const child of tree.childFrames ?? []) collectResources(child, map);
+}
+
+function decodeCdpContent(response: CdpResourceContentResponse): number[] {
+  if (!response.base64Encoded) return [...new TextEncoder().encode(response.content)];
+  const binary = atob(response.content);
+  const bytes = new Array<number>(binary.length);
+  for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+  return bytes;
+}
+
+export async function fetchHighFidelityResourceContents(
+  tabId: number,
+  urls: string[],
+): Promise<CdpRecoveredResource[]> {
+  const capability = getCdpRuntimeCapability();
+  if (!capability.available || urls.length === 0) return [];
+
+  const api = debuggerApi();
+  const target: ChromeDebuggee = { tabId };
+  let attached = false;
+  try {
+    await api.attach(target, CDP_REQUIRED_PROTOCOL_VERSION);
+    attached = true;
+    await command(api, target, "Page.enable");
+    const resourceTree = await command<CdpResourceTreeResponse>(
+      api,
+      target,
+      "Page.getResourceTree",
+    );
+    const resourceMap = new Map<string, { frameId: string; resource: CdpPageResource }>();
+    collectResources(resourceTree.frameTree, resourceMap);
+
+    const results: CdpRecoveredResource[] = [];
+    for (const url of [...new Set(urls.map((value) => value.trim()).filter(Boolean))]) {
+      const matched = resourceMap.get(resourceKey(url));
+      if (!matched) continue;
+      try {
+        const content = await command<CdpResourceContentResponse>(
+          api,
+          target,
+          "Page.getResourceContent",
+          { frameId: matched.frameId, url: matched.resource.url },
+        );
+        results.push({
+          url,
+          frameId: matched.frameId,
+          bytes: decodeCdpContent(content),
+          ...(matched.resource.mimeType ? { mediaTypeHint: matched.resource.mimeType } : {}),
+        });
+      } catch {
+        // Keep the original native-fetch diagnostic when CDP cannot recover one resource.
+      }
+    }
+    return results;
+  } finally {
+    if (attached) await api.detach(target).catch(() => undefined);
+  }
 }
 
 export async function captureHighFidelityWithCdp(

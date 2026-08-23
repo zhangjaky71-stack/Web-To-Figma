@@ -33,6 +33,13 @@ export interface CaptureSnapshotReceipt extends RawSnapshotSummary {
   containerCount?: number;
   containerQueryCount?: number;
   environmentDiagnosticCount?: number;
+  assetStorageKey?: string;
+  assetAdapter?: "standard" | "cdp";
+  assetCount?: number;
+  assetReferenceCount?: number;
+  assetDeduplicatedReferenceCount?: number;
+  assetUniqueByteCount?: number;
+  assetDiagnosticCount?: number;
 }
 
 export interface CaptureJobState {
@@ -115,7 +122,17 @@ function isCaptureSnapshotReceipt(value: unknown): value is CaptureSnapshotRecei
     isOptionalNonNegativeInteger(record.activeMediaRuleCount) &&
     isOptionalNonNegativeInteger(record.containerCount) &&
     isOptionalNonNegativeInteger(record.containerQueryCount) &&
-    isOptionalNonNegativeInteger(record.environmentDiagnosticCount)
+    isOptionalNonNegativeInteger(record.environmentDiagnosticCount) &&
+    (record.assetStorageKey === undefined ||
+      (typeof record.assetStorageKey === "string" && record.assetStorageKey.length > 0)) &&
+    (record.assetAdapter === undefined ||
+      record.assetAdapter === "standard" ||
+      record.assetAdapter === "cdp") &&
+    isOptionalNonNegativeInteger(record.assetCount) &&
+    isOptionalNonNegativeInteger(record.assetReferenceCount) &&
+    isOptionalNonNegativeInteger(record.assetDeduplicatedReferenceCount) &&
+    isOptionalNonNegativeInteger(record.assetUniqueByteCount) &&
+    isOptionalNonNegativeInteger(record.assetDiagnosticCount)
   );
 }
 

@@ -1,3 +1,4 @@
+import { summarizeAssetCapture } from "@w2f/asset-resolver";
 import {
   isRawSnapshot,
   summarizeRawSnapshot,
@@ -10,6 +11,8 @@ import {
   type StandardCaptureInput,
   type StandardCaptureResult,
 } from "@w2f/standard-capture-adapter";
+import { captureAssetsForSnapshot } from "./asset-runtime.js";
+import { deleteAssetCapture, writeAssetCapture } from "./asset-store.js";
 import { captureHighFidelityWithCdp, getCdpRuntimeCapability } from "./cdp-runtime.js";
 import { captureCssCascadeForSnapshot } from "./css-cascade-runtime.js";
 import { deleteCssCascadeCapture, writeCssCascadeCapture } from "./css-cascade-store.js";
@@ -72,6 +75,7 @@ async function deleteAllCaptureArtifacts(jobId: string): Promise<void> {
     deleteCaptureArtifacts(jobId),
     deleteCssCascadeCapture(jobId),
     deleteEnvironmentCapture(jobId),
+    deleteAssetCapture(jobId),
   ]);
 }
 
@@ -157,6 +161,36 @@ async function persistEnvironment(
   };
 }
 
+async function persistAssets(
+  tabId: number,
+  jobId: string,
+  snapshot: RawSnapshot,
+): Promise<
+  Pick<
+    CaptureSnapshotReceipt,
+    | "assetStorageKey"
+    | "assetAdapter"
+    | "assetCount"
+    | "assetReferenceCount"
+    | "assetDeduplicatedReferenceCount"
+    | "assetUniqueByteCount"
+    | "assetDiagnosticCount"
+  >
+> {
+  const capture = await captureAssetsForSnapshot(tabId, snapshot);
+  const assetStorageKey = await writeAssetCapture(jobId, capture);
+  const summary = summarizeAssetCapture(capture);
+  return {
+    assetStorageKey,
+    assetAdapter: capture.adapter,
+    assetCount: summary.assetCount,
+    assetReferenceCount: summary.referenceCount,
+    assetDeduplicatedReferenceCount: summary.deduplicatedReferenceCount,
+    assetUniqueByteCount: summary.uniqueByteCount,
+    assetDiagnosticCount: summary.diagnosticCount,
+  };
+}
+
 async function captureStandardDom(
   tabId: number,
   jobId: string,
@@ -193,6 +227,7 @@ async function captureStandardDom(
     const storageKey = await writeRawSnapshot(jobId, snapshot);
     const cascadeReceipt = await persistCssCascade(tabId, jobId, snapshot);
     const environmentReceipt = await persistEnvironment(tabId, jobId, snapshot);
+    const assetReceipt = await persistAssets(tabId, jobId, snapshot);
     return {
       snapshot,
       receipt: {
@@ -201,6 +236,7 @@ async function captureStandardDom(
         capturedAt: snapshot.capturedAt,
         ...cascadeReceipt,
         ...environmentReceipt,
+        ...assetReceipt,
         ...(fallbackReason ? { fallbackFromCdp: true } : {}),
       },
     };
@@ -227,6 +263,7 @@ async function captureCdpDom(
     const referenceScreenshotKey = await writeReferenceScreenshot(jobId, result.screenshot);
     const cascadeReceipt = await persistCssCascade(tabId, jobId, result.snapshot);
     const environmentReceipt = await persistEnvironment(tabId, jobId, result.snapshot);
+    const assetReceipt = await persistAssets(tabId, jobId, result.snapshot);
     return {
       snapshot: result.snapshot,
       receipt: {
@@ -236,6 +273,7 @@ async function captureCdpDom(
         capturedAt: result.snapshot.capturedAt,
         ...cascadeReceipt,
         ...environmentReceipt,
+        ...assetReceipt,
       },
     };
   } catch (error) {

@@ -29,6 +29,11 @@ const runtimePackages = [
     dist: fileURLToPath(new URL("../../../packages/environment-capture/dist/", import.meta.url)),
   },
   {
+    specifier: "@w2f/asset-resolver",
+    directory: "asset-resolver",
+    dist: fileURLToPath(new URL("../../../packages/asset-resolver/dist/", import.meta.url)),
+  },
+  {
     specifier: "@w2f/standard-capture-adapter",
     directory: "standard-capture-adapter",
     dist: fileURLToPath(

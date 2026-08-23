@@ -4,16 +4,17 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node scripts/clean-extension.mjs && tsc -p tsconfig.build.json && node scripts/package-extension.mjs && node scripts/validate-extension-package.mjs && tsc -p tsconfig.build.json && W2F_BROWSER_PROFILE=high-fidelity node scripts/package-extension.mjs && W2F_BROWSER_PROFILE=high-fidelity node scripts/validate-extension-package.mjs",
-    "build:standard": "node scripts/clean-extension.mjs && tsc -p tsconfig.build.json && node scripts/package-extension.mjs && node scripts/validate-extension-package.mjs",
-    "build:high-fidelity": "node scripts/clean-extension.mjs && tsc -p tsconfig.build.json && W2F_BROWSER_PROFILE=high-fidelity node scripts/package-extension.mjs && W2F_BROWSER_PROFILE=high-fidelity node scripts/validate-extension-package.mjs",
-    "validate:package": "node scripts/validate-extension-package.mjs",
-    "validate:package:high-fidelity": "W2F_BROWSER_PROFILE=high-fidelity node scripts/validate-extension-package.mjs",
+    "build": "node scripts/clean-extension.mjs && tsc -p tsconfig.build.json && node scripts/package-extension.mjs && node scripts/validate-extension-package.mjs && node scripts/validate-node-13-package.mjs && tsc -p tsconfig.build.json && W2F_BROWSER_PROFILE=high-fidelity node scripts/package-extension.mjs && W2F_BROWSER_PROFILE=high-fidelity node scripts/validate-extension-package.mjs && W2F_BROWSER_PROFILE=high-fidelity node scripts/validate-node-13-package.mjs",
+    "build:standard": "node scripts/clean-extension.mjs && tsc -p tsconfig.build.json && node scripts/package-extension.mjs && node scripts/validate-extension-package.mjs && node scripts/validate-node-13-package.mjs",
+    "build:high-fidelity": "node scripts/clean-extension.mjs && tsc -p tsconfig.build.json && W2F_BROWSER_PROFILE=high-fidelity node scripts/package-extension.mjs && W2F_BROWSER_PROFILE=high-fidelity node scripts/validate-extension-package.mjs && W2F_BROWSER_PROFILE=high-fidelity node scripts/validate-node-13-package.mjs",
+    "validate:package": "node scripts/validate-extension-package.mjs && node scripts/validate-node-13-package.mjs",
+    "validate:package:high-fidelity": "W2F_BROWSER_PROFILE=high-fidelity node scripts/validate-extension-package.mjs && W2F_BROWSER_PROFILE=high-fidelity node scripts/validate-node-13-package.mjs",
     "lint": "eslint src test scripts --max-warnings=0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run"
   },
   "dependencies": {
+    "@w2f/asset-resolver": "workspace:*",
     "@w2f/capture-core": "workspace:*",
     "@w2f/cdp-capture-adapter": "workspace:*",
     "@w2f/css-cascade": "workspace:*",

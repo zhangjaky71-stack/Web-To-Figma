@@ -21,9 +21,9 @@
 | 08 | Standard DOM Capture | DONE | RawSnapshot/Standard capture/runtime/package + frozen-lockfile GitHub Actions PASS | PR #12 merged |
 | 09 | CDP High Fidelity Adapter | DONE | CDP/dual-profile/runtime/package + frozen-lockfile GitHub Actions PASS | PR #13 merged |
 | 10 | Text / Inline / Pseudo Capture | DONE | Text/fragment/pseudo/form behavior + exact-head read-only frozen-lockfile CI PASS | PR #14 merged |
-| 11 | CSS Cascade & Authored Semantics | DONE | Cascade/Token Graph/Standard/CDP/sidecar + formal read-only frozen-lockfile CI PASS | PR #15 merged as `6e303818` |
-| 12 | Media / Container / Environment Capture | IMPLEMENTED | Full `pnpm check` + bootstrap final-shape validation PASS; exact-head read-only closure CI pending | PR #16 |
-| 13 | Asset Resolver | TODO | - | - |
+| 11 | CSS Cascade & Authored Semantics | DONE | Cascade/Token Graph/Standard/CDP/sidecar + exact-head read-only frozen-lockfile CI PASS | PR #15 merged as `6e303818` |
+| 12 | Media / Container / Environment Capture | DONE | Exact-head read-only CI #310 PASS | PR #16 merged as `b9cdca4d` |
+| 13 | Asset Resolver | IN PROGRESS | Implementation assembled; bootstrap/Exit Gate pending | `feat/node-13-asset-resolver` |
 | 14 | Pixel Ground Truth & Raster Engine | TODO | - | - |
 | 15 | Multi-Viewport Responsive Capture | TODO | - | - |
 | 16 | Responsive Inference Engine | TODO | - | - |
@@ -45,108 +45,75 @@
 
 ## Current Node
 
-`NODE-12 — Media / Container / Environment Capture`
+`NODE-13 — Asset Resolver`
 
-NODE-12 started from merged NODE-11 `main` commit:
-
-```text
-6e3038184c29b63ad5c346c413d2675aeba52513
-```
-
-Working branch / PR:
+NODE-13 starts from merged NODE-12 `main` commit:
 
 ```text
-feat/node-12-media-container-environment-capture
-PR #16
+b9cdca4dc4bc68a3a46571451de7a30c7eb13ad6
 ```
 
-## NODE-12 Completion
-
-NODE-12 delivers:
-
-- platform-neutral `@w2f/environment-capture`;
-- `EnvironmentCapture 1.0.0` sidecar while preserving `RawSnapshot 1.0.0`;
-- runtime browser/environment state including color scheme, reduced motion, viewport, DPR and scale evidence;
-- fail-closed Standard page-zoom evidence without fabricating `pageZoom = 1`;
-- extended media-feature state for contrast, reduced transparency, forced colors, hover and pointer capabilities;
-- active/inactive `@media` rule traces with affected properties and source-node evidence;
-- computed `container-name` / `container-type` evidence;
-- authored `@container` rule traces with explicit unavailable activity semantics where the browser cannot prove current participation;
-- W2F IR bridges for capture environment, media traces and container-query info;
-- Standard CSSOM traversal across document/adopted/open Shadow DOM/same-origin iframe boundaries;
-- dedicated Browser IndexedDB environment sidecar persistence, capture receipts and failure/cancellation cleanup;
-- Standard and High Fidelity Browser package integration and package validation;
-- dependency-free NODE-12 guardrail, behavior tests, compatibility tests, normative implementation document and ADR-0012.
-
-NODE-12 does not pull NODE-15 multi-viewport scheduling or NODE-16 responsive inference forward.
-
-## NODE-12 Validation
-
-Formal repository CI on pre-finalization head:
+Working branch:
 
 ```text
-run 32619068828
-head c6c4978dd5ddf40c0cdc5cd774aca515c0f95a29
+feat/node-13-asset-resolver
 ```
 
-passed all read-only repository gates:
+## NODE-12 Closure
 
-- dependency-free NODE-08 through NODE-12 foundation validation;
-- `pnpm install --frozen-lockfile`;
-- ESLint;
-- strict TypeScript typecheck;
-- complete Vitest suite;
-- Standard + High Fidelity Browser build/package validation;
-- pinned Prettier format check.
-
-Controlled final-shape bootstrap:
+NODE-12 PR #16 passed exact-head read-only CI #310 on its final candidate and was squash merged into `main` as:
 
 ```text
-run 32619068827
+b9cdca4dc4bc68a3a46571451de7a30c7eb13ad6
 ```
 
-also passed complete validation, then committed the final Browser package-validator integration and removed the temporary NODE-12 write-enabled workflow from the resulting branch tree.
+The merged tree contains no temporary NODE-12 write-enabled workflow.
 
-Resulting finalization commit:
+## NODE-13 Implementation
 
-```text
-98baec5a1c643d620bf528c5245d4682fb959511
-```
+NODE-13 currently delivers:
 
-Because that commit was authored by `github-actions[bot]`, GitHub marked its automatic PR CI as `action_required` without executing jobs. This status-document commit intentionally creates a normal human-authored head so the final exact-head read-only CI can execute without bypassing the Exit Gate.
+- platform-neutral `@w2f/asset-resolver`;
+- `AssetCapture 1.0.0` sidecar while preserving `RawSnapshot 1.0.0` and W2F IR V2;
+- image / `<picture>` browser-selected `currentSrc` evidence;
+- rendered and intrinsic image dimensions;
+- computed CSS image URL acquisition for background/mask/border/generated-content properties;
+- inline and external SVG byte evidence;
+- `data:` and `blob:` acquisition in page context;
+- SHA-256 content identity and deterministic `assets/<sha>.<ext>` package paths;
+- byte-level de-duplication with full many-reference Resource Provenance;
+- explicit unsupported/missing/oversize/budget diagnostics;
+- same-origin iframe/open Shadow DOM source targeting without cross-realm DOM `instanceof` assumptions;
+- Browser Web Crypto hashing;
+- dedicated AssetCapture IndexedDB persistence;
+- Standard and High Fidelity job-path integration;
+- unified failure/cancellation cleanup;
+- Browser runtime packaging for `@w2f/asset-resolver`;
+- dedicated packaged-output NODE-13 validation;
+- shared Asset Resolver and Browser runtime/store tests;
+- dependency-free NODE-13 guardrail;
+- normative Asset Resolver V2 document;
+- ADR-0013 and NODE-13 implementation/DoD record.
 
-## NODE-12 Exit Criteria
+## NODE-13 Remaining Exit Work
 
-- [x] environment sidecar contract
-- [x] RawSnapshot version preserved
-- [x] runtime/media-feature capture
-- [x] media-rule traces
-- [x] container definitions
-- [x] container-query traces with fail-closed activity evidence
-- [x] Standard CSSOM acquisition
-- [x] Browser environment persistence and cleanup
-- [x] Standard/High Fidelity Browser package integration
-- [x] W2F IR bridges
-- [x] behavior and compatibility tests
-- [x] dependency-free NODE-12 guardrail
-- [x] normative implementation document
-- [x] ADR-0012
-- [x] NODE-12 DoD record
-- [x] authoritative workspace lockfile
-- [x] controlled full `pnpm check` passes
-- [x] temporary write-enabled NODE-12 workflows absent from final tree
-- [ ] exact-head standard read-only frozen-lockfile CI passes
-- [ ] PR #16 marked ready
-- [ ] PR #16 squash merged
+- wire `validate-node-13.mjs` into foundation validation;
+- refresh authoritative `pnpm-lock.yaml` for the new workspace package/dependencies;
+- run canonical formatting;
+- validate Standard and High Fidelity extension packages;
+- run complete `pnpm check`;
+- remove the temporary write-enabled bootstrap from the final branch tree;
+- run exact-head standard read-only frozen-lockfile CI;
+- mark PR ready and squash merge.
 
 ## Blockers
 
-No implementation blocker remains. Only exact-head read-only closure CI, Ready-for-Review transition and squash merge remain.
+No product/architecture blocker is known. Remaining work is validation and controlled branch finalization.
 
 ## Next
 
-After PR #16 squash merge:
+After NODE-13 formal Exit Gate and squash merge:
 
 ```text
-NODE-13 — Asset Resolver
+NODE-14 — Pixel Ground Truth & Raster Engine
 ```

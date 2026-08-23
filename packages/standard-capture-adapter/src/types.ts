@@ -1,3 +1,4 @@
+import type { AssetAcquisitionResult } from "@w2f/asset-resolver";
 import type { RawCaptureTarget, RawSnapshot } from "@w2f/capture-core";
 import type { CssCascadeAcquisition } from "@w2f/css-cascade";
 import type {
@@ -65,4 +66,16 @@ export interface StandardEnvironmentInput {
 
 export interface StandardEnvironmentResult {
   capture: EnvironmentCapture;
+}
+
+export interface StandardAssetInput {
+  frames: StandardCascadeFrameHint[];
+  targets: StandardCascadeTargetHint[];
+  maxAssets?: number;
+  maxAssetBytes?: number;
+  maxTotalBytes?: number;
+}
+
+export interface StandardAssetResult {
+  acquisition: AssetAcquisitionResult;
 }

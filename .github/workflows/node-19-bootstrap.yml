@@ -53,6 +53,22 @@ jobs:
           writeFileSync(path, source);
           EOF
 
+      - name: Fix Standard and CDP render-tree receipt fanout
+        run: |
+          node --input-type=module <<'EOF'
+          import { readFileSync, writeFileSync } from "node:fs";
+          const path = "apps/browser-extension/src/runtime/service-worker.ts";
+          let source = readFileSync(path, "utf8");
+          const before = '        ...tableReceipt,\n        ...environmentReceipt,';
+          const after = '        ...tableReceipt,\n        ...renderTreeReceipt,\n        ...environmentReceipt,';
+          source = source.replaceAll(before, after);
+          const uses = source.match(/\.\.\.renderTreeReceipt/g)?.length ?? 0;
+          if (uses !== 2) {
+            throw new Error(`NODE-19 expected renderTreeReceipt in Standard/CDP receipts, found ${uses}`);
+          }
+          writeFileSync(path, source);
+          EOF
+
       - name: Refresh patched workspace lockfile
         run: pnpm install --no-frozen-lockfile
 

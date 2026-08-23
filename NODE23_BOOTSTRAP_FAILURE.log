@@ -1,12 +1,12 @@
 Scope: all 23 workspace projects
 ? Verifying lockfile against supply-chain policies (188 entries)...
-✓ Lockfile passes supply-chain policies (188 entries in 1.6s)
+✓ Lockfile passes supply-chain policies (188 entries in 1.8s)
 Progress: resolved 1, reused 0, downloaded 0, added 0
 Progress: resolved 7, reused 0, downloaded 7, added 0
 Progress: resolved 8, reused 0, downloaded 7, added 0
 Progress: resolved 90, reused 0, downloaded 58, added 0
-Progress: resolved 136, reused 0, downloaded 104, added 0
-Progress: resolved 152, reused 0, downloaded 122, added 0
+Progress: resolved 136, reused 0, downloaded 105, added 0
+Progress: resolved 173, reused 0, downloaded 129, added 0
 Packages: +133
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Packages are hard linked from the content-addressable store to the virtual store.
@@ -28,30 +28,30 @@ Done in 11.4s using pnpm v11.22.0
 NODE-23 integration finalizer applied successfully.
 Scope: all 23 workspace projects
 Already up to date
-Done in 450ms using pnpm v11.22.0
+Done in 437ms using pnpm v11.22.0
 [90mpackages/wtf-parser/package.json[39m 27ms (unchanged)
-[90mpackages/wtf-parser/src/index.ts[39m 43ms (unchanged)
-[90mpackages/wtf-parser/src/migrations.ts[39m 32ms (unchanged)
-packages/wtf-parser/src/parser.ts 84ms
-packages/wtf-parser/src/svg-sanitize.ts 16ms
-[90mpackages/wtf-parser/src/types.ts[39m 17ms (unchanged)
-packages/wtf-parser/src/zip-reader.ts 46ms
+[90mpackages/wtf-parser/src/index.ts[39m 42ms (unchanged)
+[90mpackages/wtf-parser/src/migrations.ts[39m 38ms (unchanged)
+packages/wtf-parser/src/parser.ts 94ms
+packages/wtf-parser/src/svg-sanitize.ts 22ms
+[90mpackages/wtf-parser/src/types.ts[39m 15ms (unchanged)
+packages/wtf-parser/src/zip-reader.ts 47ms
 [90mpackages/wtf-parser/test/migrations.test.ts[39m 6ms (unchanged)
-packages/wtf-parser/test/parser.test.ts 26ms
+packages/wtf-parser/test/parser.test.ts 23ms
 [90mpackages/wtf-parser/test/svg-sanitize.test.ts[39m 3ms (unchanged)
-[90mpackages/wtf-parser/test/zip-reader.test.ts[39m 9ms (unchanged)
+[90mpackages/wtf-parser/test/zip-reader.test.ts[39m 8ms (unchanged)
 [90mpackages/wtf-parser/tsconfig.build.json[39m 2ms (unchanged)
 [90mpackages/wtf-parser/tsconfig.json[39m 1ms (unchanged)
 [90mpackages/w2f-schema/package.json[39m 1ms (unchanged)
-[90mpackages/w2f-schema/src/container-paths.ts[39m 2ms (unchanged)
+[90mpackages/w2f-schema/src/container-paths.ts[39m 1ms (unchanged)
 [90mpackages/w2f-schema/src/public.ts[39m 1ms (unchanged)
 [90mapps/figma-plugin/package.json[39m 1ms (unchanged)
-[90mapps/figma-plugin/src/main.ts[39m 10ms (unchanged)
-[90mapps/figma-plugin/src/protocol.ts[39m 16ms (unchanged)
+[90mapps/figma-plugin/src/main.ts[39m 9ms (unchanged)
+[90mapps/figma-plugin/src/protocol.ts[39m 15ms (unchanged)
 apps/figma-plugin/src/ui.ts 37ms
-apps/figma-plugin/scripts/validate-plugin-package.mjs 20ms
-[90mscripts/validate-node-22.mjs[39m 13ms (unchanged)
-scripts/validate-node-23.mjs 11ms
+apps/figma-plugin/scripts/validate-plugin-package.mjs 17ms
+[90mscripts/validate-node-22.mjs[39m 12ms (unchanged)
+scripts/validate-node-23.mjs 10ms
 [90mscripts/validate-foundation.mjs[39m 25ms (unchanged)
 rm 'scripts/node-23-finalize.mjs'
 $ pnpm validate:foundation && pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm format:check
@@ -72,7 +72,7 @@ NODE-20 foundation validation passed.
 NODE-21 foundation validation passed.
 NODE-22 foundation validation passed.
 NODE-23 foundation validation failed:
-- Figma UI must consume the secure parser through workspace-only resolution
+- Figma UI secure parser dependency must resolve only to the local workspace parser
 Foundation validation passed.
 [ELIFECYCLE] Command failed with exit code 1.
 [ELIFECYCLE] Command failed with exit code 1.

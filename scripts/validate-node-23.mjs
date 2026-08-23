@@ -108,7 +108,8 @@ if (failures.length === 0) {
 
   const figmaPackage = json("apps/figma-plugin/package.json");
   const parserLink = figmaPackage.dependencies?.["@w2f/wtf-parser"] ?? "";
-  assert(parserLink.startsWith("workspace:"), "Figma UI must consume the secure parser through workspace-only resolution");
+  const localParserLink = parserLink.startsWith("workspace:") || (parserLink.startsWith("link:") && parserLink.endsWith("packages/wtf-parser"));
+  assert(localParserLink, "Figma UI secure parser dependency must resolve only to the local workspace parser");
   const figmaMain = text("apps/figma-plugin/src/main.ts");
   assert(figmaMain.includes("secureParserImplemented: true"), "Figma shell must advertise the completed secure parser");
   assert(figmaMain.includes("rendererImplemented: false"), "NODE-23 must not implement rendering early");

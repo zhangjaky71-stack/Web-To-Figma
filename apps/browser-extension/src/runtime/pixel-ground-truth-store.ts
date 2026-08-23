@@ -1,7 +1,4 @@
-import {
-  isPixelGroundTruth,
-  type PixelGroundTruthCapture,
-} from "@w2f/pixel-ground-truth";
+import { isPixelGroundTruth, type PixelGroundTruthCapture } from "@w2f/pixel-ground-truth";
 
 export const W2F_PIXEL_DB_NAME = "w2f-pixel-ground-truth" as const;
 export const W2F_PIXEL_STORE_NAME = "captures" as const;
@@ -56,9 +53,7 @@ export async function writePixelGroundTruth(
   }
 }
 
-export async function readPixelGroundTruth(
-  jobId: string,
-): Promise<PixelGroundTruthCapture | null> {
+export async function readPixelGroundTruth(jobId: string): Promise<PixelGroundTruthCapture | null> {
   const key = pixelGroundTruthStorageKey(jobId);
   const database = await openDatabase();
   try {

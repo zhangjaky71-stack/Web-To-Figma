@@ -43,11 +43,7 @@ describe("pixel ground truth", () => {
   });
 
   it("tiles large full-page references in stable row-major order", () => {
-    const tiles = planRasterTiles(
-      "full:main",
-      { x: 0, y: 0, width: 4096, height: 3072 },
-      1,
-    );
+    const tiles = planRasterTiles("full:main", { x: 0, y: 0, width: 4096, height: 3072 }, 1);
 
     expect(tiles.map((tile) => tile.id)).toEqual([
       "full:main:r0:c0",
@@ -114,11 +110,7 @@ describe("pixel ground truth", () => {
   });
 
   it("rejects captured tiles that drift from the deterministic plan", async () => {
-    const plan = planRasterTiles(
-      "viewport:main",
-      { x: 0, y: 0, width: 100, height: 100 },
-      1,
-    )[0]!;
+    const plan = planRasterTiles("viewport:main", { x: 0, y: 0, width: 100, height: 100 }, 1)[0]!;
     const drifted = captured(plan, [9, 9, 9]);
     drifted.bounds = { ...drifted.bounds, width: 99 };
 

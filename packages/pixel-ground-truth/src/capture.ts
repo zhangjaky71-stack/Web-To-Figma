@@ -264,8 +264,11 @@ async function normalizeReference(
     });
   }
 
-  descriptors.sort((left, right) =>
-    left.bounds.y - right.bounds.y || left.bounds.x - right.bounds.x || left.id.localeCompare(right.id),
+  descriptors.sort(
+    (left, right) =>
+      left.bounds.y - right.bounds.y ||
+      left.bounds.x - right.bounds.x ||
+      left.id.localeCompare(right.id),
   );
   return {
     id,
@@ -325,7 +328,9 @@ export async function buildPixelGroundTruth(
     snapshotId,
     tileSizePx,
     references,
-    tileResources: [...resources.values()].sort((left, right) => left.sha256.localeCompare(right.sha256)),
+    tileResources: [...resources.values()].sort((left, right) =>
+      left.sha256.localeCompare(right.sha256),
+    ),
     diagnostics: diagnostics.sort(diagnosticSort),
   };
 }
@@ -340,7 +345,8 @@ export function summarizePixelGroundTruth(
     referenceCount: capture.references.length,
     viewportReferenceCount: capture.references.filter((item) => item.kind === "viewport").length,
     fullPageReferenceCount: capture.references.filter((item) => item.kind === "full-page").length,
-    fallbackReferenceCount: capture.references.filter((item) => fallbackKinds.has(item.kind)).length,
+    fallbackReferenceCount: capture.references.filter((item) => fallbackKinds.has(item.kind))
+      .length,
     tileReferenceCount: capture.references.reduce((total, item) => total + item.tiles.length, 0),
     uniqueTileCount: capture.tileResources.length,
     uniqueByteCount: capture.tileResources.reduce((total, item) => total + item.bytes.length, 0),

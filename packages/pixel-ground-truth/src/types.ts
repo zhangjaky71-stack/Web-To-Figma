@@ -6,12 +6,7 @@ export const DEFAULT_RASTER_TILE_SIZE_PX = 2048 as const;
 export type PixelGroundTruthVersion = typeof PIXEL_GROUND_TRUTH_VERSION;
 export type PixelCaptureAdapter = "standard" | "cdp";
 export type RasterReferenceKind =
-  | "viewport"
-  | "full-page"
-  | "node-fallback"
-  | "canvas"
-  | "webgl"
-  | "video-frame";
+  "viewport" | "full-page" | "node-fallback" | "canvas" | "webgl" | "video-frame";
 
 export interface RasterTilePlan {
   id: string;

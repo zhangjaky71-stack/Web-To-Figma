@@ -83,7 +83,10 @@ for (const evidence of [
 }
 
 const core = await readFile(`${outputRoot}/runtime/pixel-ground-truth/capture.js`, "utf8");
-assert(!core.includes("@w2f/"), "packaged Pixel Ground Truth core must not contain workspace imports");
+assert(
+  !core.includes("@w2f/"),
+  "packaged Pixel Ground Truth core must not contain workspace imports",
+);
 for (const evidence of [
   "planRasterTiles",
   "buildPixelGroundTruth",

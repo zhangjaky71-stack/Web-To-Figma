@@ -29,10 +29,7 @@ import {
   type PageProbe,
 } from "./job-state.js";
 import { capturePixelGroundTruthForSnapshot } from "./pixel-ground-truth-runtime.js";
-import {
-  deletePixelGroundTruth,
-  writePixelGroundTruth,
-} from "./pixel-ground-truth-store.js";
+import { deletePixelGroundTruth, writePixelGroundTruth } from "./pixel-ground-truth-store.js";
 import {
   W2F_EXTENSION_SHELL_VERSION,
   W2F_JOB_STORAGE_KEY,

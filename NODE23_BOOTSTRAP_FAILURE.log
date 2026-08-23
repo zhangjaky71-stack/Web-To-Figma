@@ -1,18 +1,17 @@
 Scope: all 23 workspace projects
 ? Verifying lockfile against supply-chain policies (188 entries)...
-✓ Lockfile passes supply-chain policies (188 entries in 1.8s)
+✓ Lockfile passes supply-chain policies (188 entries in 1.7s)
 Progress: resolved 1, reused 0, downloaded 0, added 0
 Progress: resolved 7, reused 0, downloaded 7, added 0
 Progress: resolved 8, reused 0, downloaded 7, added 0
-Progress: resolved 91, reused 0, downloaded 59, added 0
+Progress: resolved 90, reused 0, downloaded 58, added 0
 Progress: resolved 136, reused 0, downloaded 105, added 0
-Progress: resolved 152, reused 0, downloaded 122, added 0
+Progress: resolved 162, reused 0, downloaded 123, added 0
 Packages: +133
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Packages are hard linked from the content-addressable store to the virtual store.
   Content-addressable store is at: /home/runner/setup-pnpm/node_modules/.bin/store/v11
   Virtual store is at:             node_modules/.pnpm
-Progress: resolved 188, reused 0, downloaded 132, added 132
 Progress: resolved 188, reused 0, downloaded 133, added 133, done
 .../esbuild@0.28.2/node_modules/esbuild postinstall$ node install.js
 .../esbuild@0.28.2/node_modules/esbuild postinstall: Done
@@ -25,22 +24,22 @@ devDependencies:
 + typescript-eslint 8.67.0
 + vitest 4.1.11
 
-Done in 11.9s using pnpm v11.22.0
+Done in 11.2s using pnpm v11.22.0
 NODE-23 integration finalizer applied successfully.
 Scope: all 23 workspace projects
 Already up to date
-Done in 427ms using pnpm v11.22.0
+Done in 442ms using pnpm v11.22.0
 [90mpackages/wtf-parser/package.json[39m 27ms (unchanged)
 [90mpackages/wtf-parser/src/index.ts[39m 42ms (unchanged)
-[90mpackages/wtf-parser/src/migrations.ts[39m 33ms (unchanged)
+[90mpackages/wtf-parser/src/migrations.ts[39m 32ms (unchanged)
 packages/wtf-parser/src/parser.ts 81ms
 packages/wtf-parser/src/svg-sanitize.ts 15ms
 [90mpackages/wtf-parser/src/types.ts[39m 15ms (unchanged)
-packages/wtf-parser/src/zip-reader.ts 46ms
-[90mpackages/wtf-parser/test/migrations.test.ts[39m 6ms (unchanged)
-packages/wtf-parser/test/parser.test.ts 23ms
+packages/wtf-parser/src/zip-reader.ts 47ms
+[90mpackages/wtf-parser/test/migrations.test.ts[39m 5ms (unchanged)
+packages/wtf-parser/test/parser.test.ts 24ms
 [90mpackages/wtf-parser/test/svg-sanitize.test.ts[39m 4ms (unchanged)
-[90mpackages/wtf-parser/test/zip-reader.test.ts[39m 11ms (unchanged)
+[90mpackages/wtf-parser/test/zip-reader.test.ts[39m 10ms (unchanged)
 [90mpackages/wtf-parser/tsconfig.build.json[39m 2ms (unchanged)
 [90mpackages/wtf-parser/tsconfig.json[39m 1ms (unchanged)
 [90mpackages/w2f-schema/package.json[39m 1ms (unchanged)
@@ -49,8 +48,8 @@ packages/wtf-parser/test/parser.test.ts 23ms
 [90mapps/figma-plugin/package.json[39m 1ms (unchanged)
 [90mapps/figma-plugin/src/main.ts[39m 10ms (unchanged)
 [90mapps/figma-plugin/src/protocol.ts[39m 16ms (unchanged)
-apps/figma-plugin/src/ui.ts 31ms
-apps/figma-plugin/scripts/validate-plugin-package.mjs 17ms
+apps/figma-plugin/src/ui.ts 34ms
+apps/figma-plugin/scripts/validate-plugin-package.mjs 20ms
 [90mscripts/validate-node-22.mjs[39m 13ms (unchanged)
 scripts/validate-node-23.mjs 8ms
 [90mscripts/validate-foundation.mjs[39m 23ms (unchanged)
@@ -87,25 +86,29 @@ https://turborepo.dev/docs/telemetry
    • Running lint in 22 packages
    • Remote caching disabled
 
-::group::@w2f/shared-utils:lint
-cache miss, executing d3da983ad86fa942
-$ eslint src test --max-warnings=0
-::endgroup::
-::group::@w2f/layout-analyzer:lint
-cache miss, executing 6aa31f912c5e65ce
-$ eslint src test --max-warnings=0
-::endgroup::
-::group::@w2f/wtf-packager:lint
-cache miss, executing 327f03420efea5ed
-$ eslint src test --max-warnings=0
-::endgroup::
 ::group::@w2f/cdp-capture-adapter:lint
 cache miss, executing 7a60afa464f6d428
+$ eslint src test --max-warnings=0
+::endgroup::
+::group::@w2f/compositing-engine:lint
+cache miss, executing 782bb7571e894456
+$ eslint src test --max-warnings=0
+::endgroup::
+::group::@w2f/capture-core:lint
+cache miss, executing 3d95a9c08bb44260
+$ eslint src test --max-warnings=0
+::endgroup::
+::group::@w2f/source-providers:lint
+cache miss, executing 70f4d38e20c41404
 $ eslint src test --max-warnings=0
 ::endgroup::
 ::group::@w2f/table-layout-engine:lint
 cache miss, executing 6fb8209352d3554b
 $ eslint src test --max-warnings=0
+::endgroup::
+::group::@w2f/figma-plugin:lint
+cache miss, executing 488afa785b57ace3
+$ eslint src test scripts --max-warnings=0
 ::endgroup::
 ::group::@w2f/w2f-schema:lint
 cache miss, executing 8be10abbf6ed948d
@@ -123,62 +126,58 @@ $ eslint src test --max-warnings=0
 cache miss, executing 6aa7c4450fb82eac
 $ eslint src test --max-warnings=0
 ::endgroup::
-::group::@w2f/browser-extension:lint
-cache miss, executing 760f3f4bb5de1df9
-$ eslint src test scripts --max-warnings=0
-::endgroup::
-::group::@w2f/figma-plugin:lint
-cache miss, executing b5181182fa4edd76
-$ eslint src test scripts --max-warnings=0
-::endgroup::
-::group::@w2f/responsive-inference:lint
-cache miss, executing 91c9712dc83eef1f
-$ eslint src test --max-warnings=0
-::endgroup::
-::group::@w2f/compositing-engine:lint
-cache miss, executing 782bb7571e894456
-$ eslint src test --max-warnings=0
-::endgroup::
-::group::@w2f/stable-identity:lint
-cache miss, executing 034f0078d90b75a1
+::group::@w2f/wtf-packager:lint
+cache miss, executing 327f03420efea5ed
 $ eslint src test --max-warnings=0
 ::endgroup::
 ::group::@w2f/environment-capture:lint
 cache miss, executing f52a7a27cb4c1b37
 $ eslint src test --max-warnings=0
 ::endgroup::
-::group::@w2f/capture-core:lint
-cache miss, executing 3d95a9c08bb44260
-$ eslint src test --max-warnings=0
-::endgroup::
-::group::@w2f/wtf-parser:lint
-cache miss, executing 568745f1ecc81adc
-$ eslint src test --max-warnings=0
-::endgroup::
-::group::@w2f/source-providers:lint
-cache miss, executing 70f4d38e20c41404
+::group::@w2f/responsive-inference:lint
+cache miss, executing 91c9712dc83eef1f
 $ eslint src test --max-warnings=0
 ::endgroup::
 ::group::@w2f/asset-resolver:lint
 cache miss, executing 5b0b3f3aa3397b57
 $ eslint src test --max-warnings=0
 ::endgroup::
-::group::@w2f/w2f-ir:lint
-cache miss, executing 02d0618f45ee1c98
+::group::@w2f/render-tree-optimizer:lint
+cache miss, executing 32caf066f378c13a
+$ eslint src test --max-warnings=0
+::endgroup::
+::group::@w2f/stable-identity:lint
+cache miss, executing 034f0078d90b75a1
 $ eslint src test --max-warnings=0
 ::endgroup::
 ::group::@w2f/responsive-capture:lint
 cache miss, executing bc25721dd1d4d627
 $ eslint src test --max-warnings=0
 ::endgroup::
-::group::@w2f/render-tree-optimizer:lint
-cache miss, executing 32caf066f378c13a
+::group::@w2f/layout-analyzer:lint
+cache miss, executing 6aa31f912c5e65ce
+$ eslint src test --max-warnings=0
+::endgroup::
+::group::@w2f/wtf-parser:lint
+cache miss, executing 568745f1ecc81adc
+$ eslint src test --max-warnings=0
+::endgroup::
+::group::@w2f/browser-extension:lint
+cache miss, executing 760f3f4bb5de1df9
+$ eslint src test scripts --max-warnings=0
+::endgroup::
+::group::@w2f/shared-utils:lint
+cache miss, executing d3da983ad86fa942
+$ eslint src test --max-warnings=0
+::endgroup::
+::group::@w2f/w2f-ir:lint
+cache miss, executing 02d0618f45ee1c98
 $ eslint src test --max-warnings=0
 ::endgroup::
 
  Tasks:    22 successful, 22 total
 Cached:    0 cached, 22 total
-  Time:    16.74s 
+  Time:    17.073s 
 
 $ turbo run typecheck
 
@@ -186,9 +185,17 @@ $ turbo run typecheck
    • Running typecheck in 22 packages
    • Remote caching disabled
 
+::group::@w2f/source-providers:build
+cache miss, executing 05a6b49ad6ede1f5
+$ tsc -p tsconfig.build.json
+::endgroup::
 ::group::@w2f/shared-utils:typecheck
 cache miss, executing 47f135e994b2b505
 $ tsc -p tsconfig.json --noEmit
+::endgroup::
+::group::@w2f/w2f-schema:build
+cache miss, executing b09b7d77ac760c14
+$ tsc -p tsconfig.build.json
 ::endgroup::
 ::group::@w2f/w2f-schema:typecheck
 cache miss, executing 36b9e7b5f4e887bd
@@ -196,22 +203,6 @@ $ tsc -p tsconfig.json --noEmit
 ::endgroup::
 ::group::@w2f/source-providers:typecheck
 cache miss, executing ed0ca5fd4e1625e1
-$ tsc -p tsconfig.json --noEmit
-::endgroup::
-::group::@w2f/w2f-schema:build
-cache miss, executing b09b7d77ac760c14
-$ tsc -p tsconfig.build.json
-::endgroup::
-::group::@w2f/source-providers:build
-cache miss, executing 05a6b49ad6ede1f5
-$ tsc -p tsconfig.build.json
-::endgroup::
-::group::@w2f/w2f-ir:typecheck
-cache miss, executing 1137d92322853e30
-$ tsc -p tsconfig.json --noEmit
-::endgroup::
-::group::@w2f/wtf-packager:typecheck
-cache miss, executing 9a8d1a2be9a8faef
 $ tsc -p tsconfig.json --noEmit
 ::endgroup::
 ::group::@w2f/wtf-packager:build
@@ -222,18 +213,6 @@ $ tsc -p tsconfig.build.json
 cache miss, executing 0ec9e730a8228bce
 $ tsc -p tsconfig.build.json
 ::endgroup::
-::group::@w2f/capture-core:build
-cache miss, executing 5fc2ce2798645db4
-$ tsc -p tsconfig.build.json
-::endgroup::
-::group::@w2f/capture-core:typecheck
-cache miss, executing 4c8368049a9dc1d0
-$ tsc -p tsconfig.json --noEmit
-::endgroup::
-::group::@w2f/pixel-ground-truth:typecheck
-cache miss, executing ab90e04d8cf05d6f
-$ tsc -p tsconfig.json --noEmit
-::endgroup::
 ::group::@w2f/pixel-ground-truth:build
 cache miss, executing 86957dad08a77af0
 $ tsc -p tsconfig.build.json
@@ -242,57 +221,29 @@ $ tsc -p tsconfig.build.json
 cache miss, executing 823ec1cb6581ed21
 $ tsc -p tsconfig.build.json
 ::endgroup::
+::group::@w2f/capture-core:build
+cache miss, executing 5fc2ce2798645db4
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/pixel-ground-truth:typecheck
+cache miss, executing ab90e04d8cf05d6f
+$ tsc -p tsconfig.json --noEmit
+::endgroup::
+::group::@w2f/w2f-ir:typecheck
+cache miss, executing 1137d92322853e30
+$ tsc -p tsconfig.json --noEmit
+::endgroup::
+::group::@w2f/capture-core:typecheck
+cache miss, executing 4c8368049a9dc1d0
+$ tsc -p tsconfig.json --noEmit
+::endgroup::
+::group::@w2f/wtf-packager:typecheck
+cache miss, executing 9a8d1a2be9a8faef
+$ tsc -p tsconfig.json --noEmit
+::endgroup::
 ::group::@w2f/responsive-capture:typecheck
 cache miss, executing 12db461f08ed7938
 $ tsc -p tsconfig.json --noEmit
-::endgroup::
-::group::@w2f/cdp-capture-adapter:build
-cache miss, executing 1d70710dfdce2280
-$ tsc -p tsconfig.build.json
-::endgroup::
-::group::@w2f/stable-identity:build
-cache miss, executing 8429d5177ac4e6f4
-$ tsc -p tsconfig.build.json
-::endgroup::
-::group::@w2f/cdp-capture-adapter:typecheck
-cache miss, executing 02348a831af1d154
-$ tsc -p tsconfig.json --noEmit
-::endgroup::
-::group::@w2f/css-cascade:build
-cache miss, executing 7d270fcfddeffc76
-$ tsc -p tsconfig.build.json
-::endgroup::
-::group::@w2f/layout-analyzer:typecheck
-cache miss, executing 01ab6b801cc1c2b1
-$ tsc -p tsconfig.json --noEmit
-::endgroup::
-::group::@w2f/layout-analyzer:build
-cache miss, executing 370850ca2e2de6fd
-$ tsc -p tsconfig.build.json
-::endgroup::
-::group::@w2f/wtf-parser:build
-cache miss, executing 53dfb04607cd0fbd
-$ tsc -p tsconfig.build.json
-::endgroup::
-::group::@w2f/css-cascade:typecheck
-cache miss, executing c4f9b9b6806102a7
-$ tsc -p tsconfig.json --noEmit
-::endgroup::
-::group::@w2f/stable-identity:typecheck
-cache miss, executing 4a64d493f90a1297
-$ tsc -p tsconfig.json --noEmit
-::endgroup::
-::group::@w2f/wtf-parser:typecheck
-cache miss, executing 2d6402c36141f31c
-$ tsc -p tsconfig.json --noEmit
-::endgroup::
-::group::@w2f/environment-capture:typecheck
-cache miss, executing 1bbf82c52a5b99b0
-$ tsc -p tsconfig.json --noEmit
-::endgroup::
-::group::@w2f/compositing-engine:build
-cache miss, executing 4ef16d88aa6da6af
-$ tsc -p tsconfig.build.json
 ::endgroup::
 ::group::@w2f/responsive-inference:build
 cache miss, executing 231ade3c9649acfd
@@ -302,20 +253,68 @@ $ tsc -p tsconfig.build.json
 cache miss, executing 1a18a658d8064d4f
 $ tsc -p tsconfig.build.json
 ::endgroup::
-::group::@w2f/responsive-inference:typecheck
-cache miss, executing 28705a5bc0cad95c
+::group::@w2f/css-cascade:build
+cache miss, executing 7d270fcfddeffc76
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/layout-analyzer:build
+cache miss, executing 370850ca2e2de6fd
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/compositing-engine:build
+cache miss, executing 4ef16d88aa6da6af
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/stable-identity:build
+cache miss, executing 8429d5177ac4e6f4
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/css-cascade:typecheck
+cache miss, executing c4f9b9b6806102a7
 $ tsc -p tsconfig.json --noEmit
 ::endgroup::
-::group::@w2f/table-layout-engine:build
-cache miss, executing e0465e0715535e13
+::group::@w2f/cdp-capture-adapter:build
+cache miss, executing 1d70710dfdce2280
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/wtf-parser:build
+cache miss, executing 53dfb04607cd0fbd
 $ tsc -p tsconfig.build.json
 ::endgroup::
 ::group::@w2f/compositing-engine:typecheck
 cache miss, executing aae1d6927d2306c5
 $ tsc -p tsconfig.json --noEmit
 ::endgroup::
+::group::@w2f/environment-capture:typecheck
+cache miss, executing 1bbf82c52a5b99b0
+$ tsc -p tsconfig.json --noEmit
+::endgroup::
+::group::@w2f/layout-analyzer:typecheck
+cache miss, executing 01ab6b801cc1c2b1
+$ tsc -p tsconfig.json --noEmit
+::endgroup::
+::group::@w2f/responsive-inference:typecheck
+cache miss, executing 28705a5bc0cad95c
+$ tsc -p tsconfig.json --noEmit
+::endgroup::
+::group::@w2f/stable-identity:typecheck
+cache miss, executing 4a64d493f90a1297
+$ tsc -p tsconfig.json --noEmit
+::endgroup::
+::group::@w2f/cdp-capture-adapter:typecheck
+cache miss, executing 02348a831af1d154
+$ tsc -p tsconfig.json --noEmit
+::endgroup::
 ::group::@w2f/asset-resolver:build
 cache miss, executing 8687c1db297b9fd5
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/wtf-parser:typecheck
+cache miss, executing 2d6402c36141f31c
+$ tsc -p tsconfig.json --noEmit
+::endgroup::
+::group::@w2f/table-layout-engine:build
+cache miss, executing e0465e0715535e13
 $ tsc -p tsconfig.build.json
 ::endgroup::
 ::group::@w2f/table-layout-engine:typecheck
@@ -326,42 +325,466 @@ $ tsc -p tsconfig.json --noEmit
 cache miss, executing 95e9b8bdb29fadbf
 $ tsc -p tsconfig.json --noEmit
 ::endgroup::
-[;31m@w2f/figma-plugin:typecheck[;0m
-cache miss, executing ed97c46d394bc598
-$ tsc -p tsconfig.json --noEmit
-src/ui.ts(6,8): error TS2307: Cannot find module '@w2f/wtf-parser' or its corresponding type declarations.
-src/ui.ts(186,49): error TS7006: Parameter 'section' implicitly has an 'any' type.
-src/ui.ts(250,21): error TS18046: 'error' is of type 'unknown'.
-src/ui.ts(251,70): error TS18046: 'error' is of type 'unknown'.
-[ELIFECYCLE] Command failed with exit code 2.
-::group::@w2f/standard-capture-adapter:typecheck
-cache miss, executing 25104f891a8adc86
-$ tsc -p tsconfig.json --noEmit
-[ELIFECYCLE] Command failed.
-::endgroup::
 ::group::@w2f/standard-capture-adapter:build
 cache miss, executing ba271f5fcb2e297e
 $ tsc -p tsconfig.build.json
-[ELIFECYCLE] Command failed.
-::endgroup::
-::group::@w2f/render-tree-optimizer:typecheck
-cache miss, executing 82577f849a0ea929
-$ tsc -p tsconfig.json --noEmit
-[ELIFECYCLE] Command failed.
 ::endgroup::
 ::group::@w2f/render-tree-optimizer:build
 cache miss, executing 40dcc2b3e8a65e72
 $ tsc -p tsconfig.build.json
-[ELIFECYCLE] Command failed.
 ::endgroup::
-::error::command (/home/runner/work/Web-To-Figma/Web-To-Figma/apps/figma-plugin) /home/runner/setup-pnpm/node_modules/.bin/pnpm run typecheck exited (2)
-@w2f/figma-plugin#typecheck:  ERROR  command (/home/runner/work/Web-To-Figma/Web-To-Figma/apps/figma-plugin) /home/runner/setup-pnpm/node_modules/.bin/pnpm run typecheck exited (2)
+::group::@w2f/figma-plugin:typecheck
+cache miss, executing 7a031804938a2908
+$ tsc -p tsconfig.json --noEmit
+::endgroup::
+::group::@w2f/render-tree-optimizer:typecheck
+cache miss, executing 82577f849a0ea929
+$ tsc -p tsconfig.json --noEmit
+::endgroup::
+::group::@w2f/standard-capture-adapter:typecheck
+cache miss, executing 25104f891a8adc86
+$ tsc -p tsconfig.json --noEmit
+::endgroup::
+::group::@w2f/browser-extension:typecheck
+cache miss, executing 2de8854aa200b0f4
+$ tsc -p tsconfig.json --noEmit
+::endgroup::
 
- Tasks:    35 successful, 40 total
-Cached:    0 cached, 40 total
-  Time:    28.335s 
-Failed:    @w2f/figma-plugin#typecheck
+ Tasks:    41 successful, 41 total
+Cached:    0 cached, 41 total
+  Time:    32.85s 
 
- ERROR  run failed: command  exited (2)
-[ELIFECYCLE] Command failed with exit code 2.
-[ELIFECYCLE] Command failed with exit code 2.
+$ turbo run test
+
+   • Packages in scope: @w2f/asset-resolver, @w2f/browser-extension, @w2f/capture-core, @w2f/cdp-capture-adapter, @w2f/compositing-engine, @w2f/css-cascade, @w2f/environment-capture, @w2f/figma-plugin, @w2f/layout-analyzer, @w2f/pixel-ground-truth, @w2f/render-tree-optimizer, @w2f/responsive-capture, @w2f/responsive-inference, @w2f/shared-utils, @w2f/source-providers, @w2f/stable-identity, @w2f/standard-capture-adapter, @w2f/table-layout-engine, @w2f/w2f-ir, @w2f/w2f-schema, @w2f/wtf-packager, @w2f/wtf-parser
+   • Running test in 22 packages
+   • Remote caching disabled
+
+::group::@w2f/w2f-schema:build
+cache hit, replaying logs b09b7d77ac760c14
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/source-providers:build
+cache hit, replaying logs 05a6b49ad6ede1f5
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/capture-core:build
+cache hit, replaying logs 5fc2ce2798645db4
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/pixel-ground-truth:build
+cache hit, replaying logs 86957dad08a77af0
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/w2f-ir:build
+cache hit, replaying logs 823ec1cb6581ed21
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/responsive-capture:build
+cache hit, replaying logs 0ec9e730a8228bce
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/wtf-packager:build
+cache hit, replaying logs 2b156cc9f9a33132
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/source-providers:test
+cache miss, executing 5b0a4de63059419b
+$ vitest run
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90m/home/runner/work/Web-To-Figma/Web-To-Figma/packages/source-providers[39m
+
+ [32m✓[39m test/providers.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 46[2mms[22m[39m
+ [32m✓[39m test/local-folder.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 46[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m2 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[32m13 passed[39m[22m[90m (13)[39m
+[2m   Start at [22m 23:41:26
+[2m   Duration [22m 1.39s[2m (transform 609ms, setup 0ms, import 834ms, tests 92ms, environment 0ms)[22m
+
+::endgroup::
+::group::@w2f/cdp-capture-adapter:build
+cache hit, replaying logs 1d70710dfdce2280
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/css-cascade:build
+cache hit, replaying logs 7d270fcfddeffc76
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/layout-analyzer:build
+cache hit, replaying logs 370850ca2e2de6fd
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/stable-identity:build
+cache hit, replaying logs 8429d5177ac4e6f4
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/environment-capture:build
+cache hit, replaying logs 1a18a658d8064d4f
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/w2f-schema:test
+cache miss, executing 65085ef46bd66fea
+$ vitest run
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90m/home/runner/work/Web-To-Figma/Web-To-Figma/packages/w2f-schema[39m
+
+ [32m✓[39m test/index.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 77[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m15 passed[39m[22m[90m (15)[39m
+[2m   Start at [22m 23:41:26
+[2m   Duration [22m 1.25s[2m (transform 389ms, setup 0ms, import 472ms, tests 77ms, environment 0ms)[22m
+
+::endgroup::
+::group::@w2f/cdp-capture-adapter:test
+cache miss, executing b7d53e4a667487ad
+$ vitest run
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90m/home/runner/work/Web-To-Figma/Web-To-Figma/packages/cdp-capture-adapter[39m
+
+ [32m✓[39m test/normalize.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 113[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m5 passed[39m[22m[90m (5)[39m
+[2m   Start at [22m 23:41:27
+[2m   Duration [22m 1.23s[2m (transform 318ms, setup 0ms, import 391ms, tests 113ms, environment 0ms)[22m
+
+::endgroup::
+::group::@w2f/compositing-engine:build
+cache hit, replaying logs 4ef16d88aa6da6af
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/responsive-inference:build
+cache hit, replaying logs 231ade3c9649acfd
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/capture-core:test
+cache miss, executing 7d98127fa25cee86
+$ vitest run
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90m/home/runner/work/Web-To-Figma/Web-To-Figma/packages/capture-core[39m
+
+ [32m✓[39m test/raw-snapshot.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 49[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m7 passed[39m[22m[90m (7)[39m
+[2m   Start at [22m 23:41:27
+[2m   Duration [22m 1.32s[2m (transform 363ms, setup 0ms, import 430ms, tests 49ms, environment 0ms)[22m
+
+::endgroup::
+::group::@w2f/w2f-ir:test
+cache miss, executing 64b35fe98cc57dee
+$ vitest run
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90m/home/runner/work/Web-To-Figma/Web-To-Figma/packages/w2f-ir[39m
+
+ [32m✓[39m test/validation.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 72[2mms[22m[39m
+ [32m✓[39m test/roundtrip.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 82[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m2 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[32m16 passed[39m[22m[90m (16)[39m
+[2m   Start at [22m 23:41:27
+[2m   Duration [22m 1.52s[2m (transform 1.04s, setup 0ms, import 1.41s, tests 154ms, environment 0ms)[22m
+
+::endgroup::
+::group::@w2f/shared-utils:test
+cache miss, executing 6ff15e30bdfa5afd
+$ vitest run
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90m/home/runner/work/Web-To-Figma/Web-To-Figma/packages/shared-utils[39m
+
+ [32m✓[39m test/index.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 32[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m2 passed[39m[22m[90m (2)[39m
+[2m   Start at [22m 23:41:28
+[2m   Duration [22m 1.10s[2m (transform 188ms, setup 0ms, import 271ms, tests 32ms, environment 0ms)[22m
+
+::endgroup::
+::group::@w2f/wtf-parser:build
+cache hit, replaying logs 53dfb04607cd0fbd
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/responsive-capture:test
+cache miss, executing 3ece3bba807be690
+$ vitest run
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90m/home/runner/work/Web-To-Figma/Web-To-Figma/packages/responsive-capture[39m
+
+ [32m✓[39m test/responsive-capture.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 75[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m7 passed[39m[22m[90m (7)[39m
+[2m   Start at [22m 23:41:28
+[2m   Duration [22m 1.11s[2m (transform 132ms, setup 0ms, import 176ms, tests 75ms, environment 2ms)[22m
+
+::endgroup::
+::group::@w2f/layout-analyzer:test
+cache miss, executing 66cef91633bfe9b5
+$ vitest run
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90m/home/runner/work/Web-To-Figma/Web-To-Figma/packages/layout-analyzer[39m
+
+ [32m✓[39m test/geometry.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 76[2mms[22m[39m
+ [32m✓[39m test/layout-analyzer.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 115[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m2 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[32m10 passed[39m[22m[90m (10)[39m
+[2m   Start at [22m 23:41:28
+[2m   Duration [22m 1.33s[2m (transform 488ms, setup 0ms, import 770ms, tests 191ms, environment 0ms)[22m
+
+::endgroup::
+::group::@w2f/table-layout-engine:build
+cache hit, replaying logs e0465e0715535e13
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/asset-resolver:build
+cache hit, replaying logs 8687c1db297b9fd5
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/wtf-packager:test
+cache miss, executing 71be15a4f074f972
+$ vitest run
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90m/home/runner/work/Web-To-Figma/Web-To-Figma/packages/wtf-packager[39m
+
+ [32m✓[39m test/packager.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 410[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m5 passed[39m[22m[90m (5)[39m
+[2m   Start at [22m 23:41:27
+[2m   Duration [22m 1.81s[2m (transform 517ms, setup 0ms, import 659ms, tests 410ms, environment 0ms)[22m
+
+::endgroup::
+::group::@w2f/pixel-ground-truth:test
+cache miss, executing 3c04b023c17a853d
+$ vitest run
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90m/home/runner/work/Web-To-Figma/Web-To-Figma/packages/pixel-ground-truth[39m
+
+ [32m✓[39m test/pixel-ground-truth.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 71[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m4 passed[39m[22m[90m (4)[39m
+[2m   Start at [22m 23:41:28
+[2m   Duration [22m 1.07s[2m (transform 244ms, setup 0ms, import 311ms, tests 71ms, environment 0ms)[22m
+
+::endgroup::
+::group::@w2f/render-tree-optimizer:build
+cache hit, replaying logs 40dcc2b3e8a65e72
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/environment-capture:test
+cache miss, executing 56d04f8f2904019b
+$ vitest run
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90m/home/runner/work/Web-To-Figma/Web-To-Figma/packages/environment-capture[39m
+
+ [32m✓[39m test/compatibility.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 30[2mms[22m[39m
+ [32m✓[39m test/environment-capture.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 86[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m2 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[32m8 passed[39m[22m[90m (8)[39m
+[2m   Start at [22m 23:41:31
+[2m   Duration [22m 1.10s[2m (transform 317ms, setup 0ms, import 505ms, tests 116ms, environment 0ms)[22m
+
+::endgroup::
+::group::@w2f/standard-capture-adapter:build
+cache hit, replaying logs ba271f5fcb2e297e
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/stable-identity:test
+cache miss, executing e428069b3c4f39b6
+$ vitest run
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90m/home/runner/work/Web-To-Figma/Web-To-Figma/packages/stable-identity[39m
+
+ [32m✓[39m test/mapping.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 138[2mms[22m[39m
+ [32m✓[39m test/identity.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 256[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m2 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[32m11 passed[39m[22m[90m (11)[39m
+[2m   Start at [22m 23:41:31
+[2m   Duration [22m 1.58s[2m (transform 712ms, setup 0ms, import 1.03s, tests 395ms, environment 3ms)[22m
+
+::endgroup::
+::group::@w2f/table-layout-engine:test
+cache miss, executing 63129cd02d6271ba
+$ vitest run
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90m/home/runner/work/Web-To-Figma/Web-To-Figma/packages/table-layout-engine[39m
+
+ [32m✓[39m test/table-layout-engine.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 152[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m4 passed[39m[22m[90m (4)[39m
+[2m   Start at [22m 23:41:32
+[2m   Duration [22m 1.74s[2m (transform 556ms, setup 0ms, import 680ms, tests 152ms, environment 0ms)[22m
+
+::endgroup::
+::group::@w2f/responsive-inference:test
+cache miss, executing ea192362abc5edf7
+$ vitest run
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90m/home/runner/work/Web-To-Figma/Web-To-Figma/packages/responsive-inference[39m
+
+ [32m✓[39m test/responsive-inference.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 127[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m7 passed[39m[22m[90m (7)[39m
+[2m   Start at [22m 23:41:32
+[2m   Duration [22m 1.74s[2m (transform 451ms, setup 0ms, import 562ms, tests 127ms, environment 0ms)[22m
+
+::endgroup::
+::group::@w2f/css-cascade:test
+cache miss, executing f002b0f452373562
+$ vitest run
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90m/home/runner/work/Web-To-Figma/Web-To-Figma/packages/css-cascade[39m
+
+ [32m✓[39m test/capture.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 36[2mms[22m[39m
+ [32m✓[39m test/css-cascade.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 144[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m2 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[32m11 passed[39m[22m[90m (11)[39m
+[2m   Start at [22m 23:41:33
+[2m   Duration [22m 1.60s[2m (transform 467ms, setup 0ms, import 838ms, tests 180ms, environment 0ms)[22m
+
+::endgroup::
+::group::@w2f/figma-plugin:test
+cache miss, executing d8eadaef92de5c43
+$ vitest run
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90m/home/runner/work/Web-To-Figma/Web-To-Figma/apps/figma-plugin[39m
+
+ [32m✓[39m test/intake-state.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 41[2mms[22m[39m
+ [32m✓[39m test/protocol.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 33[2mms[22m[39m
+ [32m✓[39m test/index.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 26[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m3 passed[39m[22m[90m (3)[39m
+[2m      Tests [22m [1m[32m12 passed[39m[22m[90m (12)[39m
+[2m   Start at [22m 23:41:33
+[2m   Duration [22m 1.62s[2m (transform 937ms, setup 0ms, import 1.40s, tests 99ms, environment 1ms)[22m
+
+::endgroup::
+::group::@w2f/render-tree-optimizer:test
+cache miss, executing 1d348ee95298c2f9
+$ vitest run
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90m/home/runner/work/Web-To-Figma/Web-To-Figma/packages/render-tree-optimizer[39m
+
+ [32m✓[39m test/render-tree-optimizer.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 152[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m5 passed[39m[22m[90m (5)[39m
+[2m   Start at [22m 23:41:33
+[2m   Duration [22m 2.15s[2m (transform 730ms, setup 0ms, import 878ms, tests 152ms, environment 0ms)[22m
+
+::endgroup::
+::group::@w2f/compositing-engine:test
+cache miss, executing bed7dc14ab02e5fd
+$ vitest run
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90m/home/runner/work/Web-To-Figma/Web-To-Figma/packages/compositing-engine[39m
+
+ [32m✓[39m test/compositing-engine.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 93[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m8 passed[39m[22m[90m (8)[39m
+[2m   Start at [22m 23:41:33
+[2m   Duration [22m 1.44s[2m (transform 321ms, setup 0ms, import 427ms, tests 93ms, environment 0ms)[22m
+
+::endgroup::
+::group::@w2f/asset-resolver:test
+cache miss, executing 0713df8b85d50caf
+$ vitest run
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90m/home/runner/work/Web-To-Figma/Web-To-Figma/packages/asset-resolver[39m
+
+ [32m✓[39m test/asset-resolver.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 75[2mms[22m[39m
+ [32m✓[39m test/discovery-acquisition.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 106[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m2 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[32m9 passed[39m[22m[90m (9)[39m
+[2m   Start at [22m 23:41:33
+[2m   Duration [22m 1.66s[2m (transform 899ms, setup 0ms, import 1.17s, tests 181ms, environment 0ms)[22m
+
+::endgroup::
+[;31m@w2f/wtf-parser:test[;0m
+cache miss, executing ff51a57b9a1c0376
+$ vitest run
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90m/home/runner/work/Web-To-Figma/Web-To-Figma/packages/wtf-parser[39m
+
+ [32m✓[39m test/migrations.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 26[2mms[22m[39m
+ [31m❯[39m test/zip-reader.test.ts [2m([22m[2m3 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 88[2mms[22m[39m
+     [32m✓[39m reads deterministic Store entries and verifies CRC[32m 49[2mms[22m[39m
+     [32m✓[39m rejects Zip Slip paths before entry data is trusted[32m 4[2mms[22m[39m
+[31m     [31m×[31m rejects duplicate paths and overlapping metadata[39m[32m 28[2mms[22m[39m
+ [32m✓[39m test/parser.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 231[2mms[22m[39m
+ [32m✓[39m test/svg-sanitize.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m test/zip-reader.test.ts[2m > [22mNODE-23 secure ZIP reader[2m > [22mrejects duplicate paths and overlapping metadata
+[31m[1mAssertionError[22m: expected [Function] to throw an error[39m
+[36m [2m❯[22m test/zip-reader.test.ts:[2m57:44[22m[39m
+    [90m 55|[39m       }
+    [90m 56|[39m     }
+    [90m 57|[39m     [34mexpect[39m(() [33m=>[39m [34mopenSecureZip[39m(duplicate))[33m.[39m[34mtoThrow[39m()[33m;[39m
+    [90m   |[39m                                            [31m^[39m
+    [90m 58|[39m   })[33m;[39m
+    [90m 59|[39m })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m3 passed[39m[22m[90m (4)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m18 passed[39m[22m[90m (19)[39m
+[2m   Start at [22m 23:41:33
+[2m   Duration [22m 2.16s[2m (transform 1.51s, setup 0ms, import 2.46s, tests 356ms, environment 10ms)[22m
+
+
+::error file=/home/runner/work/Web-To-Figma/Web-To-Figma/packages/wtf-parser/test/zip-reader.test.ts,title=test/zip-reader.test.ts > NODE-23 secure ZIP reader > rejects duplicate paths and overlapping metadata,line=57,column=44::AssertionError: expected [Function] to throw an error%0A ❯ test/zip-reader.test.ts:57:44%0A%0A
+[ELIFECYCLE] Test failed. See above for more details.
+::group::@w2f/standard-capture-adapter:test
+cache miss, executing c134f5a619f1cef0
+$ vitest run
+[ELIFECYCLE] Test failed. See above for more details.
+::endgroup::
+::group::@w2f/browser-extension:test
+cache miss, executing d43ac5595f823956
+$ vitest run
+[ELIFECYCLE] Test failed. See above for more details.
+::endgroup::
+::error::command (/home/runner/work/Web-To-Figma/Web-To-Figma/packages/wtf-parser) /home/runner/setup-pnpm/node_modules/.bin/pnpm run test exited (1)
+@w2f/wtf-parser#test:  ERROR  command (/home/runner/work/Web-To-Figma/Web-To-Figma/packages/wtf-parser) /home/runner/setup-pnpm/node_modules/.bin/pnpm run test exited (1)
+
+ Tasks:    38 successful, 41 total
+Cached:    19 cached, 41 total
+  Time:    11.48s 
+Failed:    @w2f/wtf-parser#test
+
+ WARNING  no output files found for task @w2f/asset-resolver#test. Please check your `outputs` key in `turbo.json`
+ WARNING  no output files found for task @w2f/capture-core#test. Please check your `outputs` key in `turbo.json`
+ WARNING  no output files found for task @w2f/cdp-capture-adapter#test. Please check your `outputs` key in `turbo.json`
+ WARNING  no output files found for task @w2f/compositing-engine#test. Please check your `outputs` key in `turbo.json`
+ WARNING  no output files found for task @w2f/css-cascade#test. Please check your `outputs` key in `turbo.json`
+ WARNING  no output files found for task @w2f/environment-capture#test. Please check your `outputs` key in `turbo.json`
+ WARNING  no output files found for task @w2f/figma-plugin#test. Please check your `outputs` key in `turbo.json`
+ WARNING  no output files found for task @w2f/layout-analyzer#test. Please check your `outputs` key in `turbo.json`
+ WARNING  no output files found for task @w2f/pixel-ground-truth#test. Please check your `outputs` key in `turbo.json`
+ WARNING  no output files found for task @w2f/render-tree-optimizer#test. Please check your `outputs` key in `turbo.json`
+ WARNING  no output files found for task @w2f/responsive-capture#test. Please check your `outputs` key in `turbo.json`
+ WARNING  no output files found for task @w2f/responsive-inference#test. Please check your `outputs` key in `turbo.json`
+ WARNING  no output files found for task @w2f/shared-utils#test. Please check your `outputs` key in `turbo.json`
+ WARNING  no output files found for task @w2f/source-providers#test. Please check your `outputs` key in `turbo.json`
+ WARNING  no output files found for task @w2f/stable-identity#test. Please check your `outputs` key in `turbo.json`
+ WARNING  no output files found for task @w2f/table-layout-engine#test. Please check your `outputs` key in `turbo.json`
+ WARNING  no output files found for task @w2f/w2f-ir#test. Please check your `outputs` key in `turbo.json`
+ WARNING  no output files found for task @w2f/w2f-schema#test. Please check your `outputs` key in `turbo.json`
+ WARNING  no output files found for task @w2f/wtf-packager#test. Please check your `outputs` key in `turbo.json`
+ ERROR  run failed: command  exited (1)
+[ELIFECYCLE] Test failed. See above for more details.
+[ELIFECYCLE] Command failed with exit code 1.

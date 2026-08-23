@@ -124,7 +124,7 @@ jobs:
           if [ "$status" -ne 0 ]; then
             git reset --hard HEAD
             tail -n 700 /tmp/node21-bootstrap.log > NODE21_BOOTSTRAP_FAILURE.log
-            git add NODE21_BOOTSTRAP_FAILURE.log
+            git add -f NODE21_BOOTSTRAP_FAILURE.log
             git commit -m "ci(node-21): record bootstrap failure"
             git push origin HEAD:feat/node-21-wtf-packager
             echo "NODE-21 bootstrap failed; diagnostic report committed."

@@ -37,7 +37,7 @@ export function decodeDataUrl(value: string): AssetBinaryFetchResult {
   const base64 = parts.some((part) => part.toLowerCase() === "base64");
   const bytes = base64
     ? decodeBase64(payload)
-    : new TextEncoder().encode(decodeURIComponent(payload.replace(/\+/g, "%20")));
+    : new TextEncoder().encode(decodeURIComponent(payload));
   return {
     bytes,
     ...(mediaType ? { mediaTypeHint: mediaType } : {}),
@@ -48,12 +48,11 @@ function toAcquired(
   candidate: AssetResourceCandidate,
   result: AssetBinaryFetchResult,
 ): AssetAcquiredResource {
+  const mediaTypeHint = result.mediaTypeHint ?? candidate.mediaTypeHint;
   return {
     acquisitionId: candidate.acquisitionId,
     bytes: [...result.bytes],
-    ...(result.mediaTypeHint ?? candidate.mediaTypeHint
-      ? { mediaTypeHint: result.mediaTypeHint ?? candidate.mediaTypeHint }
-      : {}),
+    ...(mediaTypeHint ? { mediaTypeHint } : {}),
     ...(candidate.currentSrc ? { currentSrc: candidate.currentSrc } : {}),
     ...(candidate.authoredSrc ? { authoredSrc: candidate.authoredSrc } : {}),
     ...(candidate.intrinsicWidth === undefined
@@ -176,6 +175,7 @@ export async function acquireAssetCandidates(
 }
 
 export async function sha256Hex(bytes: Uint8Array): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  const copy = Uint8Array.from(bytes);
+  const digest = await crypto.subtle.digest("SHA-256", copy.buffer);
   return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }

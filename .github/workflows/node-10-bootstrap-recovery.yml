@@ -59,24 +59,53 @@ jobs:
             .split("\n")
             .map((line) => (line.startsWith("          ") ? line.slice(10) : line));
 
+          const templateStarts = [
+            "const standardHelpers = `",
+            "const newTextBlock = `",
+            "const cdpHelpers = `",
+            "const newCdpLoop = `",
+          ];
+
           const fixed = [];
+          let inGeneratedTemplate = false;
           for (let index = 0; index < payload.length; index += 1) {
-            const line = payload[index];
-            if (line.includes(".replace(") && line.includes("A") && line.includes("gi")) {
-              const indent = line.slice(0, Math.max(0, line.indexOf(".replace")));
-              fixed.push(`${indent}.replace(/\\\\A\\s?/gi, "\\n");`);
-              if (payload[index + 1]?.trim() === '");') index += 1;
+            let line = payload[index];
+            const templateStart = templateStarts.find((marker) => line.includes(marker));
+            if (templateStart) {
+              line = line.replace(templateStart, templateStart.replace("= `", "= String.raw`"));
+              fixed.push(line);
+              inGeneratedTemplate = true;
               continue;
+            }
+
+            if (inGeneratedTemplate && line.trim() === "`;") {
+              fixed.push(line);
+              inGeneratedTemplate = false;
+              continue;
+            }
+
+            if (inGeneratedTemplate) {
+              if (line.includes(".replace(") && line.includes("A") && line.includes("gi")) {
+                const indent = line.slice(0, Math.max(0, line.indexOf(".replace")));
+                fixed.push(`${indent}.replace(/\\\\A\\s?/gi, "\\n");`);
+                if (payload[index + 1]?.trim() === '");') index += 1;
+                continue;
+              }
+              line = line.replaceAll("`", "\\`").replaceAll("${", "\\${");
             }
             fixed.push(line);
           }
 
+          if (inGeneratedTemplate) throw new Error("NODE-10 generated template recovery did not close");
           writeFileSync("/tmp/node-10-bootstrap.mjs", fixed.join("\n") + "\n", "utf8");
           RECOVER
           node /tmp/node-10-bootstrap.mjs
 
       - name: Apply canonical formatting
         run: pnpm exec prettier --write packages/capture-core packages/standard-capture-adapter packages/cdp-capture-adapter scripts
+
+      - name: Hide temporary workflows from final-shape validation
+        run: rm -f .github/workflows/node-10-bootstrap.yml .github/workflows/node-10-bootstrap-recovery.yml
 
       - name: Validate complete repository
         run: pnpm check

@@ -19,6 +19,7 @@
     "@w2f/cdp-capture-adapter": "workspace:*",
     "@w2f/css-cascade": "workspace:*",
     "@w2f/environment-capture": "workspace:*",
+    "@w2f/pixel-ground-truth": "workspace:*",
     "@w2f/source-providers": "workspace:*",
     "@w2f/stable-identity": "workspace:*",
     "@w2f/standard-capture-adapter": "workspace:*",

@@ -216,11 +216,12 @@ function rawDomFallback(snapshot: RawSnapshot): AssetDomEvidence[] {
       authoredSrc = attributes.poster;
     }
     if (!authoredSrc && tagName !== "svg") return [];
+    const origin = node.frameContext.url ? frameOrigin(node.frameContext.url) : undefined;
     return [
       {
         sourceNodeId: node.captureNodeId,
         frameId: node.frameContext.frameId,
-        ...(node.frameContext.url ? { frameOrigin: frameOrigin(node.frameContext.url) } : {}),
+        ...(origin ? { frameOrigin: origin } : {}),
         tagName: tagName ?? "",
         ...(authoredSrc ? { authoredSrc } : {}),
         ...(node.geometry

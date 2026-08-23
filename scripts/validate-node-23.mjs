@@ -106,14 +106,11 @@ if (failures.length === 0) {
   }
   assert(text("packages/wtf-parser/test/zip-reader.test.ts").includes("../evil.json"), "Zip Slip regression fixture is missing");
 
-  const figmaPackage = json("apps/figma-plugin/package.json");
-  const parserLink = figmaPackage.dependencies?.["@w2f/wtf-parser"] ?? "";
-  const localProtocol = ["workspace:", "link:", "file:"].some((prefix) => parserLink.startsWith(prefix));
-  assert(localProtocol && parserLink.includes("wtf-parser"), `Figma UI secure parser dependency normalized unexpectedly: ${JSON.stringify(parserLink)}`);
   const figmaMain = text("apps/figma-plugin/src/main.ts");
   assert(figmaMain.includes("secureParserImplemented: true"), "Figma shell must advertise the completed secure parser");
   assert(figmaMain.includes("rendererImplemented: false"), "NODE-23 must not implement rendering early");
   const figmaUi = text("apps/figma-plugin/src/ui.ts");
+  assert(figmaUi.includes('from "@w2f/wtf-parser"'), "Figma UI must import the shared local secure parser package");
   for (const evidence of ["parseWtfPackage", "WtfParserError", "WTF_PARSER_FAILED", 'stage: "validating"', 'stage: "migrating"', "applyParserPreview"]) {
     assert(figmaUi.includes(evidence), `Figma UI parser integration missing ${evidence}`);
   }

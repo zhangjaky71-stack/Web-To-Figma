@@ -45,6 +45,7 @@ export interface ResponsiveBreakpointCandidate {
   upperSnapshotId: string;
   lowerObservedWidth: number;
   upperObservedWidth: number;
+  boundaryWidth?: number;
   affectedStableNodeIds: string[];
   properties: string[];
   source: "observed-transition" | "authored-media" | "authored-container";

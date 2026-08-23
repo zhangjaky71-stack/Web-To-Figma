@@ -2,7 +2,7 @@
 
 ## Status
 
-**IMPLEMENTED IN PROGRESS — guardrail, lockfile and formal Exit Gate pending**
+**IMPLEMENTED — controlled bootstrap Exit Gate PASS; exact-head read-only CI pending**
 
 ## Entry baseline
 
@@ -193,6 +193,45 @@ Browser tests cover:
 - SHA-256 hashing;
 - dedicated Pixel Ground Truth IndexedDB namespace/key behavior.
 
+## Controlled bootstrap evidence
+
+NODE-14 controlled bootstrap #5 completed successfully after the implementation fixes were applied.
+
+Bootstrap run:
+
+```text
+32624863474
+```
+
+Validated pre-finalization head:
+
+```text
+3fa71ce9ed9206e5587f28e621ec20cf2cc0a021
+```
+
+Bootstrap finalization commit:
+
+```text
+331587671fc240496e225387d82b93a329720184
+```
+
+The successful bootstrap proved all of the following on the final repository shape before committing it:
+
+- authoritative workspace lockfile refreshed;
+- NODE-14 guardrail wired into `validate-foundation.mjs`;
+- canonical Prettier formatting applied;
+- temporary write-enabled NODE-14 bootstrap workflow removed;
+- complete `pnpm check` PASS;
+- foundation validation PASS through NODE-14;
+- all package lint PASS;
+- all package typecheck PASS;
+- all tests PASS;
+- Standard Browser build/package validation PASS;
+- High Fidelity Browser build/package validation PASS;
+- repository format check PASS.
+
+The final branch tree contains only the permanent `ci.yml` and `diagnostic.yml` workflows. GitHub marked the CI created by the Actions bot finalization commit as `action_required`, so a normal user-authored documentation evidence commit is used to trigger the formal exact-head read-only frozen-lockfile CI.
+
 ## Definition of Done
 
 - [x] `@w2f/pixel-ground-truth` package
@@ -222,13 +261,13 @@ Browser tests cover:
 - [x] NODE-14 packaged-output validator
 - [x] normative implementation document
 - [x] ADR-0014
-- [ ] dependency-free NODE-14 guardrail
-- [ ] guardrail wired into foundation validation
-- [ ] authoritative workspace lockfile refreshed
-- [ ] complete `pnpm check` PASS
-- [ ] Standard package validation PASS
-- [ ] High Fidelity package validation PASS
-- [ ] temporary bootstrap absent from final tree
+- [x] dependency-free NODE-14 guardrail
+- [x] guardrail wired into foundation validation
+- [x] authoritative workspace lockfile refreshed
+- [x] complete `pnpm check` PASS
+- [x] Standard package validation PASS
+- [x] High Fidelity package validation PASS
+- [x] temporary bootstrap absent from final tree
 - [ ] exact-head read-only frozen-lockfile CI PASS
 - [ ] PR ready
 - [ ] PR squash merged
@@ -239,4 +278,8 @@ NODE-14 does not choose final compositing-safe fallback ancestors, infer layout/
 
 ## Next
 
-After NODE-14 formal Exit Gate and squash merge, continue the frozen roadmap with the next implementation node defined by the baseline.
+After NODE-14 formal Exit Gate and squash merge:
+
+```text
+NODE-15 — Multi-Viewport Responsive Capture
+```

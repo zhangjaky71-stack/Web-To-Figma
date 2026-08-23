@@ -48,6 +48,12 @@ export interface CaptureSnapshotReceipt extends RawSnapshotSummary {
   rasterUniqueTileCount?: number;
   rasterUniqueByteCount?: number;
   rasterDiagnosticCount?: number;
+  layoutAnalysisStorageKey?: string;
+  layoutNodeCount?: number;
+  layoutDiagnosticCount?: number;
+  layoutFlexNodeCount?: number;
+  layoutGridNodeCount?: number;
+  layoutAbsoluteNodeCount?: number;
 }
 
 export interface ResponsiveCaptureReceipt {
@@ -168,7 +174,15 @@ function isCaptureSnapshotReceipt(value: unknown): value is CaptureSnapshotRecei
     isOptionalNonNegativeInteger(record.rasterTileReferenceCount) &&
     isOptionalNonNegativeInteger(record.rasterUniqueTileCount) &&
     isOptionalNonNegativeInteger(record.rasterUniqueByteCount) &&
-    isOptionalNonNegativeInteger(record.rasterDiagnosticCount)
+    isOptionalNonNegativeInteger(record.rasterDiagnosticCount) &&
+    (record.layoutAnalysisStorageKey === undefined ||
+      (typeof record.layoutAnalysisStorageKey === "string" &&
+        record.layoutAnalysisStorageKey.length > 0)) &&
+    isOptionalNonNegativeInteger(record.layoutNodeCount) &&
+    isOptionalNonNegativeInteger(record.layoutDiagnosticCount) &&
+    isOptionalNonNegativeInteger(record.layoutFlexNodeCount) &&
+    isOptionalNonNegativeInteger(record.layoutGridNodeCount) &&
+    isOptionalNonNegativeInteger(record.layoutAbsoluteNodeCount)
   );
 }
 

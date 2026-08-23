@@ -3,6 +3,7 @@ import {
   createEnvironmentCapture,
   isEnvironmentCapture,
   type EnvironmentCapture,
+  type EnvironmentMediaFeatureEvidence,
 } from "@w2f/environment-capture";
 import {
   captureStandardEnvironmentInPage,
@@ -37,19 +38,59 @@ export function buildStandardEnvironmentInput(snapshot: RawSnapshot): StandardEn
   };
 }
 
+export function captureEnvironmentMediaFeaturesInPage(): EnvironmentMediaFeatureEvidence[] {
+  const queries = [
+    ["color-scheme-dark", "(prefers-color-scheme: dark)"],
+    ["reduced-motion", "(prefers-reduced-motion: reduce)"],
+    ["contrast-more", "(prefers-contrast: more)"],
+    ["contrast-less", "(prefers-contrast: less)"],
+    ["contrast-custom", "(prefers-contrast: custom)"],
+    ["reduced-transparency", "(prefers-reduced-transparency: reduce)"],
+    ["forced-colors", "(forced-colors: active)"],
+    ["hover", "(hover: hover)"],
+    ["any-hover", "(any-hover: hover)"],
+    ["pointer-coarse", "(pointer: coarse)"],
+    ["pointer-fine", "(pointer: fine)"],
+    ["any-pointer-coarse", "(any-pointer: coarse)"],
+    ["any-pointer-fine", "(any-pointer: fine)"],
+  ] as const;
+
+  return queries.map(([id, query]) => ({
+    id,
+    query,
+    matches: matchMedia(query).matches,
+    availability: "observed" as const,
+  }));
+}
+
 export async function captureEnvironmentForSnapshot(
   tabId: number,
   snapshot: RawSnapshot,
 ): Promise<EnvironmentCapture> {
   const input = buildStandardEnvironmentInput(snapshot);
-  const injectionResults = await chrome.scripting.executeScript({
-    target: { tabId },
-    func: captureStandardEnvironmentInPage,
-    args: [input],
-  });
-  const result = injectionResults[0]?.result as StandardEnvironmentResult | undefined;
+  const [environmentResults, mediaFeatureResults] = await Promise.all([
+    chrome.scripting.executeScript({
+      target: { tabId },
+      func: captureStandardEnvironmentInPage,
+      args: [input],
+    }),
+    chrome.scripting.executeScript({
+      target: { tabId },
+      func: captureEnvironmentMediaFeaturesInPage,
+    }),
+  ]);
+  const result = environmentResults[0]?.result as StandardEnvironmentResult | undefined;
+  const mediaFeatures = mediaFeatureResults[0]?.result as
+    | EnvironmentMediaFeatureEvidence[]
+    | undefined;
   if (!result?.capture) throw new Error("Environment acquisition returned no capture evidence");
-  const capture = createEnvironmentCapture(result.capture);
+  const capture = createEnvironmentCapture({
+    ...result.capture,
+    environment: {
+      ...result.capture.environment,
+      mediaFeatures: mediaFeatures ?? [],
+    },
+  });
   if (!isEnvironmentCapture(capture)) throw new Error("Environment sidecar validation failed");
   return capture;
 }

@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted for NODE-13 implementation; formal Exit Gate pending.
+Implemented and bootstrap-validated; formal read-only frozen-lockfile Exit Gate pending.
 
 ## Context
 

@@ -1,0 +1,86 @@
+name: NODE-17 Base Layout Bootstrap V4
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap:
+    if: github.head_ref == 'feat/node-17-base-layout-analyzer'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v6
+        with:
+          ref: feat/node-17-base-layout-analyzer
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.22.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Refresh workspace lockfile
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Apply complete NODE-17 closure patch
+        run: |
+          node scripts/node-17-finalize.mjs
+          node scripts/node-17-export-fix.mjs
+          node scripts/node-17-expression-fix.mjs
+
+      - name: Apply canonical formatting
+        run: |
+          pnpm exec prettier --write \
+            packages/layout-analyzer \
+            apps/browser-extension/package.json \
+            apps/browser-extension/scripts/package-extension.mjs \
+            apps/browser-extension/scripts/validate-node-17-package.mjs \
+            apps/browser-extension/src/runtime/job-state.ts \
+            apps/browser-extension/src/runtime/layout-analysis-runtime.ts \
+            apps/browser-extension/src/runtime/layout-analysis-store.ts \
+            apps/browser-extension/src/runtime/service-worker.ts \
+            apps/browser-extension/test/layout-analysis-runtime.test.ts \
+            apps/browser-extension/test/layout-analysis-store.test.ts \
+            scripts/validate-foundation.mjs \
+            scripts/validate-node-17.mjs \
+            docs/BASE_LAYOUT_ANALYZER_V2.md \
+            docs/adr/ADR-0017-base-layout-evidence-precedence.md \
+            docs/nodes/NODE-17_BASE_LAYOUT_ANALYZER.md \
+            docs/IMPLEMENTATION_STATUS.md \
+            pnpm-lock.yaml
+
+      - name: Remove temporary finalization files
+        run: |
+          git rm .github/workflows/node-17-bootstrap.yml
+          git rm .github/workflows/node-17-bootstrap-v2.yml
+          git rm .github/workflows/node-17-bootstrap-v3.yml
+          git rm .github/workflows/node-17-bootstrap-v4.yml
+          git rm scripts/node-17-finalize.mjs
+          git rm scripts/node-17-export-fix.mjs
+          git rm scripts/node-17-expression-fix.mjs
+
+      - name: Validate final repository shape
+        run: pnpm check
+
+      - name: Commit validated NODE-17 integration
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No finalization changes"
+          else
+            git commit -m "build(node-17): validate base layout integration"
+            git push origin HEAD:feat/node-17-base-layout-analyzer
+          fi

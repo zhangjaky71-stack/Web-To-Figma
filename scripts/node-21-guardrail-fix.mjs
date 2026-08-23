@@ -39,6 +39,18 @@ await patch("scripts/validate-node-09.mjs", (source) =>
     ),
 );
 
+await patch("apps/browser-extension/scripts/validate-extension-package.mjs", (source) =>
+  source
+    .replace(
+      '? ["activeTab", "debugger", "scripting", "storage"]',
+      '? ["activeTab", "debugger", "downloads", "scripting", "storage"]',
+    )
+    .replace(
+      ': ["activeTab", "scripting", "storage"];',
+      ': ["activeTab", "downloads", "scripting", "storage"];',
+    ),
+);
+
 await patch("scripts/validate-node-21.mjs", (source) =>
   source.replace('    "application/x-wtf",\n', '    "WTF_MIME_TYPE",\n'),
 );

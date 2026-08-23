@@ -31,10 +31,16 @@ for (const path of [
   "packages/css-cascade/tsconfig.build.json",
   "packages/css-cascade/src/types.ts",
   "packages/css-cascade/src/cascade.ts",
+  "packages/css-cascade/src/capture.ts",
   "packages/css-cascade/src/length.ts",
   "packages/css-cascade/src/tokens.ts",
   "packages/css-cascade/src/index.ts",
   "packages/css-cascade/test/css-cascade.test.ts",
+  "packages/css-cascade/test/capture.test.ts",
+  "packages/standard-capture-adapter/src/cascade-capture.ts",
+  "apps/browser-extension/src/runtime/css-cascade-runtime.ts",
+  "apps/browser-extension/src/runtime/css-cascade-store.ts",
+  "apps/browser-extension/test/css-cascade-runtime.test.ts",
 ]) {
   assert(existsSync(resolve(root, path)), `NODE-11 missing ${path}`);
 }
@@ -54,9 +60,14 @@ if (failures.length === 0) {
     "authoredValue",
     "important",
     "inactive-condition",
+    "matched-unresolved",
     "mediaConditions",
     "sourceOrder",
     "referenceDefinitionKeys",
+    "CssCascadeAcquisition",
+    "CssCascadeCapture",
+    "CSS_TOKEN_USAGE_UNRESOLVED",
+    "CSS_CAPTURE_BUDGET_EXCEEDED",
   ]) {
     assert(types.includes(evidence), `NODE-11 evidence contract missing ${evidence}`);
   }
@@ -71,6 +82,16 @@ if (failures.length === 0) {
     "cascadeHash",
   ]) {
     assert(cascade.includes(evidence), `NODE-11 cascade engine missing ${evidence}`);
+  }
+
+  const capture = read("packages/css-cascade/src/capture.ts");
+  for (const evidence of [
+    "createCssCascadeCapture",
+    "isCssCascadeCapture",
+    "summarizeCssCascadeCapture",
+    'style:${node.sourceNodeId}',
+  ]) {
+    assert(capture.includes(evidence), `NODE-11 cascade sidecar missing ${evidence}`);
   }
 
   const length = read("packages/css-cascade/src/length.ts");
@@ -114,6 +135,63 @@ if (failures.length === 0) {
     );
   }
 
+  const standard = read("packages/standard-capture-adapter/src/cascade-capture.ts");
+  for (const evidence of [
+    "styleSheets",
+    "adoptedStyleSheets",
+    "CSSMediaRule",
+    "matchMedia",
+    "getComputedStyle",
+    'status: rule.active ? "matched-unresolved" : "inactive-condition"',
+    "CSS_STYLESHEET_INACCESSIBLE",
+    "CSS_TOKEN_USAGE_UNRESOLVED",
+  ]) {
+    assert(standard.includes(evidence), `NODE-11 Standard acquisition missing ${evidence}`);
+  }
+  for (const forbidden of ["document.cookie", "localStorage", "sessionStorage"]) {
+    assert(!standard.includes(forbidden), `NODE-11 Standard CSS acquisition must not read ${forbidden}`);
+  }
+
+  const browserRuntime = read("apps/browser-extension/src/runtime/css-cascade-runtime.ts");
+  for (const evidence of [
+    "buildStandardCascadeInput",
+    "normalizeCdpMatchedStyleAcquisition",
+    "DOM.pushNodesByBackendIdsToFrontend",
+    "CSS.getMatchedStylesForNode",
+    "CSS.getComputedStyleForNode",
+    "CSS_CAPTURE_BUDGET_EXCEEDED",
+    "captureStandardCascadeInPage",
+  ]) {
+    assert(browserRuntime.includes(evidence), `NODE-11 Browser CSS runtime missing ${evidence}`);
+  }
+
+  const store = read("apps/browser-extension/src/runtime/css-cascade-store.ts");
+  for (const evidence of [
+    'W2F_CSS_CASCADE_DB_NAME = "w2f-css-cascade"',
+    'W2F_CSS_CASCADE_KEY_PREFIX = "css-cascade:"',
+    "writeCssCascadeCapture",
+    "readCssCascadeCapture",
+    "deleteCssCascadeCapture",
+  ]) {
+    assert(store.includes(evidence), `NODE-11 Browser CSS store missing ${evidence}`);
+  }
+
+  const worker = read("apps/browser-extension/src/runtime/service-worker.ts");
+  assert(worker.includes("captureCssCascadeForSnapshot"), "NODE-11 service worker must capture CSS sidecar");
+  assert(worker.includes("writeCssCascadeCapture"), "NODE-11 service worker must persist CSS sidecar");
+  assert(worker.includes("deleteCssCascadeCapture"), "NODE-11 cleanup must delete CSS sidecar");
+
+  const browserPackage = JSON.parse(read("apps/browser-extension/package.json"));
+  assert(
+    browserPackage.dependencies?.["@w2f/css-cascade"] === "workspace:*",
+    "Browser Extension must consume @w2f/css-cascade",
+  );
+  const standardPackage = JSON.parse(read("packages/standard-capture-adapter/package.json"));
+  assert(
+    standardPackage.dependencies?.["@w2f/css-cascade"] === "workspace:*",
+    "Standard adapter must consume @w2f/css-cascade types",
+  );
+
   const ir = read("packages/w2f-ir/src/types.ts");
   assert(ir.includes("WtfCssLengthSemantic"), "NODE-11 requires existing IR CSS length semantics");
   assert(ir.includes("WtfStyleDeclaration"), "NODE-11 requires existing IR style declarations");
@@ -126,6 +204,9 @@ if (failures.length === 0) {
     "NODE-11 requires source/cascade entrypoint",
   );
   assert(schema.includes('tokens: "tokens.json"'), "NODE-11 requires tokens entrypoint");
+
+  const raw = read("packages/capture-core/src/types.ts");
+  assert(raw.includes('RAW_SNAPSHOT_VERSION = "1.0.0"'), "NODE-11 must not version-bump RawSnapshot");
 }
 
 if (failures.length > 0) {

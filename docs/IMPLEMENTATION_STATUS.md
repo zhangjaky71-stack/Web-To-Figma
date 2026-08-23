@@ -23,8 +23,8 @@
 | 10 | Text / Inline / Pseudo Capture | DONE | Text/fragment/pseudo/form behavior + exact-head read-only frozen-lockfile CI PASS | PR #14 merged |
 | 11 | CSS Cascade & Authored Semantics | DONE | Cascade/Token Graph/Standard/CDP/sidecar + exact-head read-only frozen-lockfile CI PASS | PR #15 merged as `6e303818` |
 | 12 | Media / Container / Environment Capture | DONE | Exact-head read-only CI #310 PASS | PR #16 merged as `b9cdca4d` |
-| 13 | Asset Resolver | IN PROGRESS | Implementation assembled; bootstrap/Exit Gate pending | `feat/node-13-asset-resolver` |
-| 14 | Pixel Ground Truth & Raster Engine | TODO | - | - |
+| 13 | Asset Resolver | DONE | Exact-head read-only CI #328 PASS | PR #17 merged as `07978a58` |
+| 14 | Pixel Ground Truth & Raster Engine | IN PROGRESS | Core/Browser integration assembled; Exit Gate pending | `feat/node-14-pixel-ground-truth-raster-engine` |
 | 15 | Multi-Viewport Responsive Capture | TODO | - | - |
 | 16 | Responsive Inference Engine | TODO | - | - |
 | 17 | Base Layout Analyzer | TODO | - | - |
@@ -45,75 +45,83 @@
 
 ## Current Node
 
-`NODE-13 — Asset Resolver`
+`NODE-14 — Pixel Ground Truth & Raster Engine`
 
-NODE-13 starts from merged NODE-12 `main` commit:
+NODE-14 starts from merged NODE-13 `main` commit:
 
 ```text
-b9cdca4dc4bc68a3a46571451de7a30c7eb13ad6
+07978a586f7eb215f5e5aba0022cc6b02c1e6d28
 ```
 
 Working branch:
 
 ```text
-feat/node-13-asset-resolver
+feat/node-14-pixel-ground-truth-raster-engine
 ```
 
-## NODE-12 Closure
+## NODE-13 Closure
 
-NODE-12 PR #16 passed exact-head read-only CI #310 on its final candidate and was squash merged into `main` as:
+NODE-13 PR #17 passed exact-head read-only CI #328 on final head:
 
 ```text
-b9cdca4dc4bc68a3a46571451de7a30c7eb13ad6
+b817a456da4621da4a996489f65911b488f82f51
 ```
 
-The merged tree contains no temporary NODE-12 write-enabled workflow.
+and was squash merged into `main` as:
 
-## NODE-13 Implementation
+```text
+07978a586f7eb215f5e5aba0022cc6b02c1e6d28
+```
 
-NODE-13 currently delivers:
+The merged tree contains no temporary NODE-13 write-enabled bootstrap workflow.
 
-- platform-neutral `@w2f/asset-resolver`;
-- `AssetCapture 1.0.0` sidecar while preserving `RawSnapshot 1.0.0` and W2F IR V2;
-- image / `<picture>` browser-selected `currentSrc` evidence;
-- rendered and intrinsic image dimensions;
-- computed CSS image URL acquisition for background/mask/border/generated-content properties;
-- inline and external SVG byte evidence;
-- `data:` and `blob:` acquisition in page context;
-- SHA-256 content identity and deterministic `assets/<sha>.<ext>` package paths;
-- byte-level de-duplication with full many-reference Resource Provenance;
-- explicit unsupported/missing/oversize/budget diagnostics;
-- same-origin iframe/open Shadow DOM source targeting without cross-realm DOM `instanceof` assumptions;
-- Browser Web Crypto hashing;
-- dedicated AssetCapture IndexedDB persistence;
-- Standard and High Fidelity job-path integration;
-- unified failure/cancellation cleanup;
-- Browser runtime packaging for `@w2f/asset-resolver`;
-- dedicated packaged-output NODE-13 validation;
-- shared Asset Resolver and Browser runtime/store tests;
-- dependency-free NODE-13 guardrail;
-- normative Asset Resolver V2 document;
-- ADR-0013 and NODE-13 implementation/DoD record.
+## NODE-14 Implementation
 
-## NODE-13 Remaining Exit Work
+Current NODE-14 branch delivers:
 
-- wire `validate-node-13.mjs` into foundation validation;
-- refresh authoritative `pnpm-lock.yaml` for the new workspace package/dependencies;
+- platform-neutral `@w2f/pixel-ground-truth`;
+- additive `PixelGroundTruth 1.0.0` sidecar;
+- frozen `WtfReferenceTileDescriptor` reuse without Schema/IR major-version change;
+- deterministic unified 2048×2048 device-pixel Tile Model;
+- DPR-aware document-CSS tile bounds with exact edge closure;
+- SHA-256 content-addressed `references/<sha256>.png` resources;
+- tile-byte deduplication while preserving reference geometry;
+- mandatory complete viewport reference validation;
+- mandatory High Fidelity full-page tiled reference for document capture;
+- Standard `captureVisibleTab → createImageBitmap → OffscreenCanvas` viewport capture;
+- High Fidelity direct CDP `Page.captureScreenshot` clip tiling;
+- explicit incomplete/missing tile diagnostics;
+- NODE-13 asset failure → node-level raster fallback bridge;
+- canvas/WebGL render-surface visual capture without mutating context probes;
+- video current-frame visual capture;
+- Standard off-viewport fail-visible behavior rather than scroll-and-stitch fabrication;
+- dedicated Pixel Ground Truth IndexedDB persistence;
+- capture receipt metrics and unified transaction cleanup;
+- Browser runtime packaging for `@w2f/pixel-ground-truth`;
+- Standard/High Fidelity NODE-14 packaged-output validator;
+- shared core tests and Browser runtime/store tests;
+- normative Pixel Ground Truth & Raster V2 document;
+- ADR-0014 and NODE-14 implementation record;
+- dependency-free NODE-14 guardrail.
+
+## NODE-14 Remaining Exit Work
+
+- wire `validate-node-14.mjs` into foundation validation;
+- refresh authoritative `pnpm-lock.yaml` for the new workspace package/dependency;
 - run canonical formatting;
-- validate Standard and High Fidelity extension packages;
-- run complete `pnpm check`;
-- remove the temporary write-enabled bootstrap from the final branch tree;
+- resolve any compiler/test/package findings from full `pnpm check`;
+- remove temporary write-enabled bootstrap from the final branch tree;
 - run exact-head standard read-only frozen-lockfile CI;
 - mark PR ready and squash merge.
 
 ## Blockers
 
-No product/architecture blocker is known. Remaining work is validation and controlled branch finalization.
+No product/architecture blocker is known. Remaining work is controlled validation/finalization.
 
 ## Next
 
-After NODE-13 formal Exit Gate and squash merge:
+After NODE-14 formal Exit Gate and squash merge:
 
 ```text
-NODE-14 — Pixel Ground Truth & Raster Engine
+NODE-15 — Multi-Viewport Responsive Capture
 ```

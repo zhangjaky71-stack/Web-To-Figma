@@ -7,6 +7,27 @@ async function patch(path, transform) {
   await writeFile(path, after, "utf8");
 }
 
+// TS 6 does not allow a const assertion on an arithmetic expression.
+await patch("apps/figma-plugin/src/intake-state.ts", (source) =>
+  source.replace(
+    "export const W2F_MAX_INTAKE_BYTES = 1024 * 1024 * 1024 as const;",
+    "export const W2F_MAX_INTAKE_BYTES = 1024 * 1024 * 1024;",
+  ),
+);
+
+// Reject non-.wtf and over-limit UI files before allocating their full ArrayBuffer.
+await patch("apps/figma-plugin/src/ui.ts", (source) => {
+  let next = source.replace(
+    "  createInitialIntakeState,\n  normalizeSelectedSections,",
+    "  createInitialIntakeState,\n  assertWtfIntakeCandidate,\n  normalizeSelectedSections,",
+  );
+  next = next.replace(
+    'async function readUiFile(file: File, source: "choose" | "ui-drop"): Promise<void> {\n  try {\n    state =',
+    'async function readUiFile(file: File, source: "choose" | "ui-drop"): Promise<void> {\n  try {\n    assertWtfIntakeCandidate(file.name, file.size);\n    state =',
+  );
+  return next;
+});
+
 await patch("scripts/validate-foundation.mjs", (source) => {
   let next = source.replace(
     'import "./validate-node-21.mjs";',

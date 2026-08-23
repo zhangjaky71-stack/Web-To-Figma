@@ -104,6 +104,12 @@ jobs:
             '      const boundary = Number(match[1] ?? "NaN");',
             "media breakpoint capture strictness",
           );
+          inference = replaceOnce(
+            inference,
+            '  const decisions: ResponsiveSizingDecision[] = [...grouped.entries()]\n    .map(([mode, evidence]) => ({',
+            '  const decisions: ResponsiveSizingDecision[] = [...grouped.entries()]\n    .map<ResponsiveSizingDecision>(([mode, evidence]) => ({',
+            "responsive sizing decision literal typing",
+          );
           writeFileSync(inferencePath, inference);
 
           const foundationPath = "scripts/validate-foundation.mjs";

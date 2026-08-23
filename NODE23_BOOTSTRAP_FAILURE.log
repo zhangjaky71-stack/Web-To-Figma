@@ -1,16 +1,18 @@
 Scope: all 23 workspace projects
 ? Verifying lockfile against supply-chain policies (188 entries)...
-✓ Lockfile passes supply-chain policies (188 entries in 1.4s)
+✓ Lockfile passes supply-chain policies (188 entries in 1.8s)
 Progress: resolved 1, reused 0, downloaded 0, added 0
 Progress: resolved 7, reused 0, downloaded 7, added 0
-Progress: resolved 57, reused 0, downloaded 25, added 0
-Progress: resolved 95, reused 0, downloaded 62, added 0
-Progress: resolved 148, reused 0, downloaded 108, added 0
+Progress: resolved 8, reused 0, downloaded 7, added 0
+Progress: resolved 91, reused 0, downloaded 59, added 0
+Progress: resolved 136, reused 0, downloaded 105, added 0
+Progress: resolved 152, reused 0, downloaded 122, added 0
 Packages: +133
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Packages are hard linked from the content-addressable store to the virtual store.
   Content-addressable store is at: /home/runner/setup-pnpm/node_modules/.bin/store/v11
   Virtual store is at:             node_modules/.pnpm
+Progress: resolved 188, reused 0, downloaded 132, added 132
 Progress: resolved 188, reused 0, downloaded 133, added 133, done
 .../esbuild@0.28.2/node_modules/esbuild postinstall$ node install.js
 .../esbuild@0.28.2/node_modules/esbuild postinstall: Done
@@ -23,35 +25,35 @@ devDependencies:
 + typescript-eslint 8.67.0
 + vitest 4.1.11
 
-Done in 9.5s using pnpm v11.22.0
+Done in 11.9s using pnpm v11.22.0
 NODE-23 integration finalizer applied successfully.
 Scope: all 23 workspace projects
 Already up to date
-Done in 332ms using pnpm v11.22.0
-[90mpackages/wtf-parser/package.json[39m 21ms (unchanged)
-[90mpackages/wtf-parser/src/index.ts[39m 33ms (unchanged)
-[90mpackages/wtf-parser/src/migrations.ts[39m 23ms (unchanged)
-packages/wtf-parser/src/parser.ts 61ms
-packages/wtf-parser/src/svg-sanitize.ts 11ms
-[90mpackages/wtf-parser/src/types.ts[39m 12ms (unchanged)
-packages/wtf-parser/src/zip-reader.ts 34ms
-[90mpackages/wtf-parser/test/migrations.test.ts[39m 4ms (unchanged)
-packages/wtf-parser/test/parser.test.ts 19ms
-[90mpackages/wtf-parser/test/svg-sanitize.test.ts[39m 3ms (unchanged)
-[90mpackages/wtf-parser/test/zip-reader.test.ts[39m 9ms (unchanged)
+Done in 427ms using pnpm v11.22.0
+[90mpackages/wtf-parser/package.json[39m 27ms (unchanged)
+[90mpackages/wtf-parser/src/index.ts[39m 42ms (unchanged)
+[90mpackages/wtf-parser/src/migrations.ts[39m 33ms (unchanged)
+packages/wtf-parser/src/parser.ts 81ms
+packages/wtf-parser/src/svg-sanitize.ts 15ms
+[90mpackages/wtf-parser/src/types.ts[39m 15ms (unchanged)
+packages/wtf-parser/src/zip-reader.ts 46ms
+[90mpackages/wtf-parser/test/migrations.test.ts[39m 6ms (unchanged)
+packages/wtf-parser/test/parser.test.ts 23ms
+[90mpackages/wtf-parser/test/svg-sanitize.test.ts[39m 4ms (unchanged)
+[90mpackages/wtf-parser/test/zip-reader.test.ts[39m 11ms (unchanged)
 [90mpackages/wtf-parser/tsconfig.build.json[39m 2ms (unchanged)
 [90mpackages/wtf-parser/tsconfig.json[39m 1ms (unchanged)
 [90mpackages/w2f-schema/package.json[39m 1ms (unchanged)
 [90mpackages/w2f-schema/src/container-paths.ts[39m 1ms (unchanged)
 [90mpackages/w2f-schema/src/public.ts[39m 1ms (unchanged)
 [90mapps/figma-plugin/package.json[39m 1ms (unchanged)
-[90mapps/figma-plugin/src/main.ts[39m 7ms (unchanged)
-[90mapps/figma-plugin/src/protocol.ts[39m 12ms (unchanged)
-apps/figma-plugin/src/ui.ts 28ms
-apps/figma-plugin/scripts/validate-plugin-package.mjs 15ms
-[90mscripts/validate-node-22.mjs[39m 8ms (unchanged)
-scripts/validate-node-23.mjs 7ms
-[90mscripts/validate-foundation.mjs[39m 17ms (unchanged)
+[90mapps/figma-plugin/src/main.ts[39m 10ms (unchanged)
+[90mapps/figma-plugin/src/protocol.ts[39m 16ms (unchanged)
+apps/figma-plugin/src/ui.ts 31ms
+apps/figma-plugin/scripts/validate-plugin-package.mjs 17ms
+[90mscripts/validate-node-22.mjs[39m 13ms (unchanged)
+scripts/validate-node-23.mjs 8ms
+[90mscripts/validate-foundation.mjs[39m 23ms (unchanged)
 rm 'scripts/node-23-finalize.mjs'
 $ pnpm validate:foundation && pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm format:check
 $ node scripts/validate-foundation.mjs
@@ -85,60 +87,60 @@ https://turborepo.dev/docs/telemetry
    • Running lint in 22 packages
    • Remote caching disabled
 
-::group::@w2f/css-cascade:lint
-cache miss, executing c108cdc85f93c148
+::group::@w2f/shared-utils:lint
+cache miss, executing d3da983ad86fa942
 $ eslint src test --max-warnings=0
 ::endgroup::
-::group::@w2f/asset-resolver:lint
-cache miss, executing 5b0b3f3aa3397b57
-$ eslint src test --max-warnings=0
-::endgroup::
-::group::@w2f/wtf-parser:lint
-cache miss, executing 67bcc54ff104ad75
+::group::@w2f/layout-analyzer:lint
+cache miss, executing 6aa31f912c5e65ce
 $ eslint src test --max-warnings=0
 ::endgroup::
 ::group::@w2f/wtf-packager:lint
 cache miss, executing 327f03420efea5ed
 $ eslint src test --max-warnings=0
 ::endgroup::
-::group::@w2f/source-providers:lint
-cache miss, executing 70f4d38e20c41404
-$ eslint src test --max-warnings=0
-::endgroup::
-::group::@w2f/responsive-inference:lint
-cache miss, executing 91c9712dc83eef1f
+::group::@w2f/cdp-capture-adapter:lint
+cache miss, executing 7a60afa464f6d428
 $ eslint src test --max-warnings=0
 ::endgroup::
 ::group::@w2f/table-layout-engine:lint
 cache miss, executing 6fb8209352d3554b
 $ eslint src test --max-warnings=0
 ::endgroup::
+::group::@w2f/w2f-schema:lint
+cache miss, executing 8be10abbf6ed948d
+$ eslint src test --max-warnings=0
+::endgroup::
 ::group::@w2f/pixel-ground-truth:lint
 cache miss, executing 5d4139484f976e5b
 $ eslint src test --max-warnings=0
 ::endgroup::
-::group::@w2f/compositing-engine:lint
-cache miss, executing 782bb7571e894456
+::group::@w2f/css-cascade:lint
+cache miss, executing c108cdc85f93c148
 $ eslint src test --max-warnings=0
 ::endgroup::
 ::group::@w2f/standard-capture-adapter:lint
 cache miss, executing 6aa7c4450fb82eac
 $ eslint src test --max-warnings=0
 ::endgroup::
-::group::@w2f/shared-utils:lint
-cache miss, executing d3da983ad86fa942
+::group::@w2f/browser-extension:lint
+cache miss, executing 760f3f4bb5de1df9
+$ eslint src test scripts --max-warnings=0
+::endgroup::
+::group::@w2f/figma-plugin:lint
+cache miss, executing b5181182fa4edd76
+$ eslint src test scripts --max-warnings=0
+::endgroup::
+::group::@w2f/responsive-inference:lint
+cache miss, executing 91c9712dc83eef1f
 $ eslint src test --max-warnings=0
 ::endgroup::
-::group::@w2f/cdp-capture-adapter:lint
-cache miss, executing 7a60afa464f6d428
+::group::@w2f/compositing-engine:lint
+cache miss, executing 782bb7571e894456
 $ eslint src test --max-warnings=0
 ::endgroup::
-::group::@w2f/responsive-capture:lint
-cache miss, executing bc25721dd1d4d627
-$ eslint src test --max-warnings=0
-::endgroup::
-::group::@w2f/render-tree-optimizer:lint
-cache miss, executing 32caf066f378c13a
+::group::@w2f/stable-identity:lint
+cache miss, executing 034f0078d90b75a1
 $ eslint src test --max-warnings=0
 ::endgroup::
 ::group::@w2f/environment-capture:lint
@@ -149,34 +151,34 @@ $ eslint src test --max-warnings=0
 cache miss, executing 3d95a9c08bb44260
 $ eslint src test --max-warnings=0
 ::endgroup::
+::group::@w2f/wtf-parser:lint
+cache miss, executing 568745f1ecc81adc
+$ eslint src test --max-warnings=0
+::endgroup::
+::group::@w2f/source-providers:lint
+cache miss, executing 70f4d38e20c41404
+$ eslint src test --max-warnings=0
+::endgroup::
+::group::@w2f/asset-resolver:lint
+cache miss, executing 5b0b3f3aa3397b57
+$ eslint src test --max-warnings=0
+::endgroup::
 ::group::@w2f/w2f-ir:lint
 cache miss, executing 02d0618f45ee1c98
 $ eslint src test --max-warnings=0
 ::endgroup::
-::group::@w2f/w2f-schema:lint
-cache miss, executing 8be10abbf6ed948d
+::group::@w2f/responsive-capture:lint
+cache miss, executing bc25721dd1d4d627
 $ eslint src test --max-warnings=0
 ::endgroup::
-::group::@w2f/browser-extension:lint
-cache miss, executing 760f3f4bb5de1df9
-$ eslint src test scripts --max-warnings=0
-::endgroup::
-::group::@w2f/layout-analyzer:lint
-cache miss, executing 6aa31f912c5e65ce
-$ eslint src test --max-warnings=0
-::endgroup::
-::group::@w2f/figma-plugin:lint
-cache miss, executing b5181182fa4edd76
-$ eslint src test scripts --max-warnings=0
-::endgroup::
-::group::@w2f/stable-identity:lint
-cache miss, executing 034f0078d90b75a1
+::group::@w2f/render-tree-optimizer:lint
+cache miss, executing 32caf066f378c13a
 $ eslint src test --max-warnings=0
 ::endgroup::
 
  Tasks:    22 successful, 22 total
 Cached:    0 cached, 22 total
-  Time:    13.378s 
+  Time:    16.74s 
 
 $ turbo run typecheck
 
@@ -188,10 +190,6 @@ $ turbo run typecheck
 cache miss, executing 47f135e994b2b505
 $ tsc -p tsconfig.json --noEmit
 ::endgroup::
-::group::@w2f/w2f-schema:build
-cache miss, executing b09b7d77ac760c14
-$ tsc -p tsconfig.build.json
-::endgroup::
 ::group::@w2f/w2f-schema:typecheck
 cache miss, executing 36b9e7b5f4e887bd
 $ tsc -p tsconfig.json --noEmit
@@ -200,143 +198,169 @@ $ tsc -p tsconfig.json --noEmit
 cache miss, executing ed0ca5fd4e1625e1
 $ tsc -p tsconfig.json --noEmit
 ::endgroup::
+::group::@w2f/w2f-schema:build
+cache miss, executing b09b7d77ac760c14
+$ tsc -p tsconfig.build.json
+::endgroup::
 ::group::@w2f/source-providers:build
 cache miss, executing 05a6b49ad6ede1f5
 $ tsc -p tsconfig.build.json
 ::endgroup::
-::group::@w2f/capture-core:build
-cache miss, executing 5fc2ce2798645db4
-$ tsc -p tsconfig.build.json
+::group::@w2f/w2f-ir:typecheck
+cache miss, executing 1137d92322853e30
+$ tsc -p tsconfig.json --noEmit
 ::endgroup::
-::group::@w2f/responsive-capture:build
-cache miss, executing 0ec9e730a8228bce
-$ tsc -p tsconfig.build.json
-::endgroup::
-::group::@w2f/responsive-capture:typecheck
-cache miss, executing 12db461f08ed7938
+::group::@w2f/wtf-packager:typecheck
+cache miss, executing 9a8d1a2be9a8faef
 $ tsc -p tsconfig.json --noEmit
 ::endgroup::
 ::group::@w2f/wtf-packager:build
 cache miss, executing 2b156cc9f9a33132
 $ tsc -p tsconfig.build.json
 ::endgroup::
-::group::@w2f/w2f-ir:build
-cache miss, executing 823ec1cb6581ed21
+::group::@w2f/responsive-capture:build
+cache miss, executing 0ec9e730a8228bce
 $ tsc -p tsconfig.build.json
 ::endgroup::
-::group::@w2f/pixel-ground-truth:build
-cache miss, executing 86957dad08a77af0
+::group::@w2f/capture-core:build
+cache miss, executing 5fc2ce2798645db4
 $ tsc -p tsconfig.build.json
-::endgroup::
-::group::@w2f/wtf-packager:typecheck
-cache miss, executing 9a8d1a2be9a8faef
-$ tsc -p tsconfig.json --noEmit
 ::endgroup::
 ::group::@w2f/capture-core:typecheck
 cache miss, executing 4c8368049a9dc1d0
-$ tsc -p tsconfig.json --noEmit
-::endgroup::
-::group::@w2f/w2f-ir:typecheck
-cache miss, executing 1137d92322853e30
 $ tsc -p tsconfig.json --noEmit
 ::endgroup::
 ::group::@w2f/pixel-ground-truth:typecheck
 cache miss, executing ab90e04d8cf05d6f
 $ tsc -p tsconfig.json --noEmit
 ::endgroup::
-::group::@w2f/css-cascade:build
-cache miss, executing 7d270fcfddeffc76
+::group::@w2f/pixel-ground-truth:build
+cache miss, executing 86957dad08a77af0
 $ tsc -p tsconfig.build.json
 ::endgroup::
-::group::@w2f/layout-analyzer:build
-cache miss, executing 370850ca2e2de6fd
+::group::@w2f/w2f-ir:build
+cache miss, executing 823ec1cb6581ed21
 $ tsc -p tsconfig.build.json
 ::endgroup::
-::group::@w2f/responsive-inference:build
-cache miss, executing 231ade3c9649acfd
-$ tsc -p tsconfig.build.json
+::group::@w2f/responsive-capture:typecheck
+cache miss, executing 12db461f08ed7938
+$ tsc -p tsconfig.json --noEmit
 ::endgroup::
 ::group::@w2f/cdp-capture-adapter:build
 cache miss, executing 1d70710dfdce2280
-$ tsc -p tsconfig.build.json
-::endgroup::
-::group::@w2f/compositing-engine:build
-cache miss, executing 4ef16d88aa6da6af
-$ tsc -p tsconfig.build.json
-::endgroup::
-::group::@w2f/environment-capture:build
-cache miss, executing 1a18a658d8064d4f
 $ tsc -p tsconfig.build.json
 ::endgroup::
 ::group::@w2f/stable-identity:build
 cache miss, executing 8429d5177ac4e6f4
 $ tsc -p tsconfig.build.json
 ::endgroup::
-[;31m@w2f/wtf-parser:build[;0m
-cache miss, executing 28b63163771de53d
-$ tsc -p tsconfig.build.json
-src/parser.ts(85,67): error TS2345: Argument of type 'Uint8Array<ArrayBufferLike>' is not assignable to parameter of type 'BufferSource'.
-  Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'ArrayBufferView<ArrayBuffer>'.
-    Types of property 'buffer' are incompatible.
-      Type 'ArrayBufferLike' is not assignable to type 'ArrayBuffer'.
-        Type 'SharedArrayBuffer' is not assignable to type 'ArrayBuffer'.
-          Types of property '[Symbol.toStringTag]' are incompatible.
-            Type '"SharedArrayBuffer"' is not assignable to type '"ArrayBuffer"'.
-src/parser.ts(272,40): error TS2379: Argument of type '{ allowDeflate: boolean | undefined; }' is not assignable to parameter of type '{ allowDeflate?: boolean; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
-  Types of property 'allowDeflate' are incompatible.
-    Type 'boolean | undefined' is not assignable to type 'boolean'.
-      Type 'undefined' is not assignable to type 'boolean'.
-src/zip-reader.ts(167,24): error TS2322: Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'BlobPart'.
-  Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'ArrayBufferView<ArrayBuffer>'.
-    Types of property 'buffer' are incompatible.
-      Type 'ArrayBufferLike' is not assignable to type 'ArrayBuffer'.
-        Type 'SharedArrayBuffer' is not assignable to type 'ArrayBuffer'.
-          Types of property '[Symbol.toStringTag]' are incompatible.
-            Type '"SharedArrayBuffer"' is not assignable to type '"ArrayBuffer"'.
-[ELIFECYCLE] Command failed with exit code 2.
-::group::@w2f/table-layout-engine:build
-cache miss, executing e0465e0715535e13
-::endgroup::
-::group::@w2f/css-cascade:typecheck
-cache miss, executing c4f9b9b6806102a7
-::endgroup::
-::group::@w2f/compositing-engine:typecheck
-cache miss, executing aae1d6927d2306c5
-::endgroup::
-::group::@w2f/responsive-inference:typecheck
-cache miss, executing 28705a5bc0cad95c
-::endgroup::
-::group::@w2f/stable-identity:typecheck
-cache miss, executing 4a64d493f90a1297
-::endgroup::
-::group::@w2f/asset-resolver:build
-cache miss, executing 8687c1db297b9fd5
-::endgroup::
-::group::@w2f/wtf-parser:typecheck
-cache miss, executing 1c473b11737d0bab
-::endgroup::
-::group::@w2f/environment-capture:typecheck
-cache miss, executing 1bbf82c52a5b99b0
+::group::@w2f/cdp-capture-adapter:typecheck
+cache miss, executing 02348a831af1d154
 $ tsc -p tsconfig.json --noEmit
-[ELIFECYCLE] Command failed.
+::endgroup::
+::group::@w2f/css-cascade:build
+cache miss, executing 7d270fcfddeffc76
+$ tsc -p tsconfig.build.json
 ::endgroup::
 ::group::@w2f/layout-analyzer:typecheck
 cache miss, executing 01ab6b801cc1c2b1
 $ tsc -p tsconfig.json --noEmit
-[ELIFECYCLE] Command failed.
 ::endgroup::
-::group::@w2f/cdp-capture-adapter:typecheck
-cache miss, executing 02348a831af1d154
+::group::@w2f/layout-analyzer:build
+cache miss, executing 370850ca2e2de6fd
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/wtf-parser:build
+cache miss, executing 53dfb04607cd0fbd
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/css-cascade:typecheck
+cache miss, executing c4f9b9b6806102a7
+$ tsc -p tsconfig.json --noEmit
+::endgroup::
+::group::@w2f/stable-identity:typecheck
+cache miss, executing 4a64d493f90a1297
+$ tsc -p tsconfig.json --noEmit
+::endgroup::
+::group::@w2f/wtf-parser:typecheck
+cache miss, executing 2d6402c36141f31c
+$ tsc -p tsconfig.json --noEmit
+::endgroup::
+::group::@w2f/environment-capture:typecheck
+cache miss, executing 1bbf82c52a5b99b0
+$ tsc -p tsconfig.json --noEmit
+::endgroup::
+::group::@w2f/compositing-engine:build
+cache miss, executing 4ef16d88aa6da6af
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/responsive-inference:build
+cache miss, executing 231ade3c9649acfd
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/environment-capture:build
+cache miss, executing 1a18a658d8064d4f
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/responsive-inference:typecheck
+cache miss, executing 28705a5bc0cad95c
+$ tsc -p tsconfig.json --noEmit
+::endgroup::
+::group::@w2f/table-layout-engine:build
+cache miss, executing e0465e0715535e13
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/compositing-engine:typecheck
+cache miss, executing aae1d6927d2306c5
+$ tsc -p tsconfig.json --noEmit
+::endgroup::
+::group::@w2f/asset-resolver:build
+cache miss, executing 8687c1db297b9fd5
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/table-layout-engine:typecheck
+cache miss, executing d0a270cfab675504
+$ tsc -p tsconfig.json --noEmit
+::endgroup::
+::group::@w2f/asset-resolver:typecheck
+cache miss, executing 95e9b8bdb29fadbf
+$ tsc -p tsconfig.json --noEmit
+::endgroup::
+[;31m@w2f/figma-plugin:typecheck[;0m
+cache miss, executing ed97c46d394bc598
+$ tsc -p tsconfig.json --noEmit
+src/ui.ts(6,8): error TS2307: Cannot find module '@w2f/wtf-parser' or its corresponding type declarations.
+src/ui.ts(186,49): error TS7006: Parameter 'section' implicitly has an 'any' type.
+src/ui.ts(250,21): error TS18046: 'error' is of type 'unknown'.
+src/ui.ts(251,70): error TS18046: 'error' is of type 'unknown'.
+[ELIFECYCLE] Command failed with exit code 2.
+::group::@w2f/standard-capture-adapter:typecheck
+cache miss, executing 25104f891a8adc86
 $ tsc -p tsconfig.json --noEmit
 [ELIFECYCLE] Command failed.
 ::endgroup::
-::error::command (/home/runner/work/Web-To-Figma/Web-To-Figma/packages/wtf-parser) /home/runner/setup-pnpm/node_modules/.bin/pnpm run build exited (2)
-@w2f/wtf-parser#build:  ERROR  command (/home/runner/work/Web-To-Figma/Web-To-Figma/packages/wtf-parser) /home/runner/setup-pnpm/node_modules/.bin/pnpm run build exited (2)
+::group::@w2f/standard-capture-adapter:build
+cache miss, executing ba271f5fcb2e297e
+$ tsc -p tsconfig.build.json
+[ELIFECYCLE] Command failed.
+::endgroup::
+::group::@w2f/render-tree-optimizer:typecheck
+cache miss, executing 82577f849a0ea929
+$ tsc -p tsconfig.json --noEmit
+[ELIFECYCLE] Command failed.
+::endgroup::
+::group::@w2f/render-tree-optimizer:build
+cache miss, executing 40dcc2b3e8a65e72
+$ tsc -p tsconfig.build.json
+[ELIFECYCLE] Command failed.
+::endgroup::
+::error::command (/home/runner/work/Web-To-Figma/Web-To-Figma/apps/figma-plugin) /home/runner/setup-pnpm/node_modules/.bin/pnpm run typecheck exited (2)
+@w2f/figma-plugin#typecheck:  ERROR  command (/home/runner/work/Web-To-Figma/Web-To-Figma/apps/figma-plugin) /home/runner/setup-pnpm/node_modules/.bin/pnpm run typecheck exited (2)
 
- Tasks:    22 successful, 33 total
-Cached:    0 cached, 33 total
-  Time:    14.295s 
-Failed:    @w2f/wtf-parser#build
+ Tasks:    35 successful, 40 total
+Cached:    0 cached, 40 total
+  Time:    28.335s 
+Failed:    @w2f/figma-plugin#typecheck
 
  ERROR  run failed: command  exited (2)
 [ELIFECYCLE] Command failed with exit code 2.

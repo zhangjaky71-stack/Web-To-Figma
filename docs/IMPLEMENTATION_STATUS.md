@@ -29,8 +29,8 @@
 | 16 | Responsive Inference Engine | DONE | Exact-head read-only CI #375 PASS | PR #20 merged as `7cfb91fe` |
 | 17 | Base Layout Analyzer | DONE | Exact-head read-only CI #422 PASS | PR #21 merged as `0b103261` |
 | 18 | Table Layout Engine | DONE | Exact-head read-only CI #449 PASS | PR #22 merged as `7cd56101` |
-| 19 | Render Tree Optimizer | IN PROGRESS | Bootstrap #5 full `pnpm check` PASS; exact-head read-only CI pending | PR #23 |
-| 20 | Compositing & Fallback Boundary | TODO | - | - |
+| 19 | Render Tree Optimizer | DONE | Exact-head read-only CI #477 PASS | PR #23 merged as `030f433a` |
+| 20 | Compositing & Fallback Boundary | IN PROGRESS | Implementation starting from merged NODE-19 | `feat/node-20-compositing-fallback-boundary` |
 | 21 | WTF Packager | TODO | - | - |
 | 22 | Figma Plugin Shell & File Intake | TODO | - | - |
 | 23 | Secure Parser & Migration | TODO | - | - |
@@ -45,94 +45,67 @@
 
 ## Current Node
 
-`NODE-19 — Render Tree Optimizer`
+`NODE-20 — Compositing & Fallback Boundary`
 
 Entry baseline:
 
 ```text
-7cd56101670f3e9f217ce7eefe3e44e62efeef97
+030f433a0c708bfa05a1d9c27bda3a771c29e2a1
 ```
 
 Working branch:
 
 ```text
-feat/node-19-render-tree-optimizer
+feat/node-20-compositing-fallback-boundary
 ```
 
-## NODE-18 Closure
+## NODE-19 Closure
 
-NODE-18 PR #22 passed exact-head read-only CI #449 (`32631576262`) on final candidate:
+NODE-19 PR #23 passed exact-head read-only CI #477 (`32636707176`) on final candidate:
 
 ```text
-9bd800e6f21001b79e0db0b5e0d215c89f8eda75
+f19493ca7730f0efeb37010f599f0bd564374e7d
 ```
 
 and was squash merged into `main` as:
 
 ```text
-7cd56101670f3e9f217ce7eefe3e44e62efeef97
+030f433a0c708bfa05a1d9c27bda3a771c29e2a1
 ```
 
-The merged tree contains the deterministic `@w2f/table-layout-engine`, Standard/CDP table CSS evidence, Browser table sidecar persistence and permanent NODE-18 guardrails; all temporary bootstrap/finalization files were absent before merge.
+The merged tree contains the deterministic `@w2f/render-tree-optimizer`, conservative wrapper folding, full source/stable mapping, structural fingerprints, subtree-aware revision hashes, Browser render-tree sidecar persistence and permanent NODE-19 guardrails. Temporary bootstrap/finalization files were absent before merge.
 
-## NODE-19 Frozen Scope
+## NODE-20 Frozen Scope
 
-NODE-19 implements the V2 Source Tree -> Render Tree optimization stage.
-
-The frozen IR already provides:
+NODE-20 implements the frozen V2 compositing dependency and minimal fallback-boundary stage:
 
 ```text
-WtfRenderTree
-WtfRenderNode
-WtfSectionOutlineItem
-WtfComponentCandidate
-StructuralFingerprint
-NodeRevisionHashes
-NodeRelationships.composedParentId
+mix-blend-mode
+filter
+backdrop-filter
+mask
+opacity groups
+isolation
+compositing dependency
+fallback promotion
 ```
 
-NODE-19 therefore remains additive and does not version-bump W2F Schema/IR.
+The goal is the smallest **safe** fallback subtree, not the smallest DOM node. A local unsupported visual stays local when independent; a visual whose final pixels depend on sibling/ancestor backdrop is promoted to the smallest compositing ancestor that contains the required contributors.
 
-## Optimizer Principles
+## Compositing Principles
 
-- composed-parent hierarchy is preferred when available, with source-parent hierarchy as deterministic fallback;
-- meaningless wrappers are removed only when they carry no independent paint, padding/border, clipping, transform, opacity/blend/mask/stacking boundary, scroll/position containing-block duty, semantic section boundary, or required flex/grid/table relationship;
-- ambiguity fails closed: keep the wrapper;
-- every RenderNode retains all contributing `sourceNodeIds` and stable source IDs;
-- semantic boundaries (`header`, `nav`, `main`, `section`, `article`, `aside`, `footer`) are preserved and form the deterministic section outline;
-- stacking, clip, scroll, positioning, flex/grid and table boundaries are never optimized away merely to reduce depth;
-- anonymous depth is limited through safe wrapper folding, not arbitrary hierarchy truncation;
-- StructuralFingerprint deliberately excludes copy so repeated structures remain groupable across content differences;
-- revision `contentHash` recursively includes captured descendant content/attributes so real copy/content changes remain observable;
-- NODE-20 owns compositing/fallback promotion; NODE-19 does not rasterize or override later capability policy.
-
-## NODE-19 Validation
-
-Controlled Bootstrap #5, run `32636578608`, passed the complete repository `pnpm check` and successfully pushed the validated integration as:
-
-```text
-a446313352d6e872731a79e02938b9c47a03bf66
-```
-
-The validated candidate includes:
-
-```text
-NODE-19 permanent foundation guardrail
-19/19 workspace package lint
-35/35 dependency-aware TypeScript/build tasks in the typecheck phase
-Render Tree core fixtures for safe wrapper folding, composed-parent precedence and fail-closed boundaries
-StructuralFingerprint repeated-component grouping independent from copy
-subtree-aware revision content hashes
-deterministic repeated optimization
-Browser render-tree runtime/store tests
-Standard and CDP receipt integration
-Standard and High Fidelity Browser package validation
-full build and format checks
-```
-
-All temporary NODE-19 bootstrap/finalization files were removed from the candidate tree before validation and commit. The final changed-file set contains only permanent runtime, package, test, documentation, lockfile and guardrail changes.
-
-This documentation-only evidence commit triggers the final exact-head read-only frozen-lockfile CI. No implementation files will change after that CI passes.
+- consume the NODE-19 Render Tree; do not redo wrapper/semantic optimization;
+- detect local fallback seeds independently from promotion;
+- canvas/video/fallback/unsupported render nodes remain local raster candidates unless coupled by a compositing dependency;
+- `mix-blend-mode` and `backdrop-filter` create backdrop/sibling dependencies that can require promotion to the containing compositing subtree;
+- `filter`, mask and group opacity create flattening boundaries: a descendant fallback is promoted to the effect owner when split native+raster rendering would change pixels;
+- `isolation:isolate` is an explicit dependency stop boundary;
+- overlapping/nested promoted boundaries are deterministically merged so the outer safe boundary owns the contained triggers;
+- every promotion records reasons, trigger node IDs, confidence and source references;
+- the output may revise `WtfRenderNode.renderStrategy` / `renderDecision` but does not change Render Tree hierarchy;
+- NODE-21 owns `.wtf` packaging;
+- NODE-24 owns Figma capability mapping;
+- NODE-28 owns final hybrid native/raster materialization.
 
 ## Blockers
 
@@ -140,8 +113,8 @@ No product/architecture blocker is known.
 
 ## Next
 
-After NODE-19 formal Exit Gate and squash merge:
+After NODE-20 formal Exit Gate and squash merge:
 
 ```text
-NODE-20 — Compositing & Fallback Boundary
+NODE-21 — WTF Packager
 ```

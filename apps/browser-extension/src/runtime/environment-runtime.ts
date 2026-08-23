@@ -81,8 +81,7 @@ export async function captureEnvironmentForSnapshot(
   ]);
   const result = environmentResults[0]?.result as StandardEnvironmentResult | undefined;
   const mediaFeatures = mediaFeatureResults[0]?.result as
-    | EnvironmentMediaFeatureEvidence[]
-    | undefined;
+    EnvironmentMediaFeatureEvidence[] | undefined;
   if (!result?.capture) throw new Error("Environment acquisition returned no capture evidence");
   const capture = createEnvironmentCapture({
     ...result.capture,

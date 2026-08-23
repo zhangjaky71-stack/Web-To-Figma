@@ -1,0 +1,86 @@
+Scope: all 22 workspace projects
+? Verifying lockfile against supply-chain policies (160 entries)...
+✓ Lockfile passes supply-chain policies (160 entries in 1.5s)
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Progress: resolved 5, reused 0, downloaded 5, added 0
+Progress: resolved 6, reused 0, downloaded 5, added 0
+Progress: resolved 62, reused 0, downloaded 57, added 0
+Progress: resolved 108, reused 0, downloaded 102, added 0
+Progress: resolved 124, reused 0, downloaded 119, added 0
+Packages: +130
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Packages are hard linked from the content-addressable store to the virtual store.
+  Content-addressable store is at: /home/runner/setup-pnpm/node_modules/.bin/store/v11
+  Virtual store is at:             node_modules/.pnpm
+Progress: resolved 160, reused 0, downloaded 130, added 130, done
+
+devDependencies:
++ eslint 10.8.1 (10.9.0 is available)
++ prettier 3.9.6
++ turbo 2.10.11
++ typescript 6.0.3 (7.0.2 is available)
++ typescript-eslint 8.67.0
++ vitest 4.1.11
+
+Done in 8.3s using pnpm v11.22.0
+NODE-21 guardrail normalization applied successfully.
+NODE-21 integration finalizer applied successfully.
+Scope: all 22 workspace projects
+✓ Lockfile passes supply-chain policies (verified 747ms ago)
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Progress: resolved 6, reused 6, downloaded 0, added 0
+Progress: resolved 111, reused 106, downloaded 0, added 0
+Already up to date
+Progress: resolved 160, reused 130, downloaded 0, added 0, done
+
+Done in 3.5s using pnpm v11.22.0
+[90mpackages/wtf-packager/package.json[39m 27ms (unchanged)
+[90mpackages/wtf-packager/src/index.ts[39m 43ms (unchanged)
+packages/wtf-packager/src/packager.ts 111ms
+[90mpackages/wtf-packager/src/types.ts[39m 11ms (unchanged)
+[90mpackages/wtf-packager/src/zip.ts[39m 41ms (unchanged)
+packages/wtf-packager/test/packager.test.ts 33ms
+[90mpackages/wtf-packager/tsconfig.build.json[39m 2ms (unchanged)
+[90mpackages/wtf-packager/tsconfig.json[39m 1ms (unchanged)
+[90mapps/browser-extension/package.json[39m 2ms (unchanged)
+[90mapps/browser-extension/scripts/package-extension.mjs[39m 31ms (unchanged)
+apps/browser-extension/scripts/validate-node-21-package.mjs 14ms
+[90mapps/browser-extension/src/chrome.d.ts[39m 10ms (unchanged)
+apps/browser-extension/src/runtime/wtf-package-builder.ts 58ms
+apps/browser-extension/src/runtime/wtf-package-store.ts 20ms
+[90mapps/browser-extension/src/runtime/wtf-export-contract.ts[39m 5ms (unchanged)
+[90mapps/browser-extension/src/runtime/wtf-export-runtime.ts[39m 10ms (unchanged)
+apps/browser-extension/src/runtime/protocol.ts 15ms
+[90mapps/browser-extension/src/runtime/service-worker.ts[39m 100ms (unchanged)
+[90mapps/browser-extension/src/runtime/popup.ts[39m 32ms (unchanged)
+apps/browser-extension/static/manifest.json 2ms
+apps/browser-extension/static/manifest.high-fidelity.json 2ms
+[90mapps/browser-extension/static/popup.html[39m 38ms (unchanged)
+[90mapps/browser-extension/test/wtf-package-store.test.ts[39m 9ms (unchanged)
+[90mscripts/validate-foundation.mjs[39m 25ms (unchanged)
+scripts/validate-node-21.mjs 9ms
+rm '.github/workflows/node-21-bootstrap.yml'
+rm 'scripts/node-21-finalize.mjs'
+rm 'scripts/node-21-guardrail-fix.mjs'
+$ pnpm validate:foundation && pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm format:check
+$ node scripts/validate-foundation.mjs
+NODE-08 foundation validation failed:
+- NODE-08 must preserve activeTab+scripting+storage only
+NODE-09 foundation validation failed:
+- Standard manifest must remain debugger-free
+- High Fidelity manifest must add debugger and nothing broader
+NODE-10 foundation validation passed.
+NODE-11 foundation validation passed.
+NODE-12 foundation validation passed.
+NODE-13 foundation validation passed.
+NODE-14 foundation validation passed.
+NODE-15 foundation validation passed.
+NODE-16 foundation validation passed.
+NODE-17 foundation validation passed.
+NODE-18 foundation validation passed.
+NODE-19 foundation validation passed.
+NODE-20 foundation validation passed.
+NODE-21 foundation validation passed.
+Foundation validation passed.
+[ELIFECYCLE] Command failed with exit code 1.
+[ELIFECYCLE] Command failed with exit code 1.

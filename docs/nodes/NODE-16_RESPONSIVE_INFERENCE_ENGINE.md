@@ -2,7 +2,7 @@
 
 ## Status
 
-**IMPLEMENTATION IN PROGRESS — Browser integration and formal Exit Gate pending**
+**IMPLEMENTED — controlled bootstrap PASS; exact-head read-only Exit Gate pending**
 
 ## Entry baseline
 
@@ -22,7 +22,7 @@ feat/node-16-responsive-inference-engine
 
 Convert NODE-15 multi-viewport evidence into deterministic, confidence-bearing responsive rules while preserving frozen W2F V2 contracts and keeping NODE-17 Base Layout Analyzer ownership intact.
 
-## Delivered so far
+## Delivered
 
 ### Platform-neutral core
 
@@ -102,9 +102,11 @@ Store: captures
 Key: responsive-inference:<jobId>
 ```
 
-### Responsive receipt
+### Responsive receipt and orchestration
 
-Receipt fields prepared:
+Responsive capture completion now performs local inference from already-persisted child artifacts and writes the inference sidecar before the parent job completes.
+
+Receipt fields:
 
 ```text
 inferenceStorageKey
@@ -114,6 +116,8 @@ responsiveSizingDecisionCount
 responsiveInferenceDiagnosticCount
 ```
 
+Responsive cancellation/failure cleanup removes the inference sidecar together with the parent ResponsiveCapture and child capture artifacts.
+
 ### Browser packaging
 
 Browser depends on and packages:
@@ -122,7 +126,7 @@ Browser depends on and packages:
 @w2f/responsive-inference
 ```
 
-Both Standard and High Fidelity builds are configured to require:
+Both Standard and High Fidelity builds require:
 
 ```text
 validate-node-16-package.mjs
@@ -147,6 +151,27 @@ Browser tests cover:
 - media/container aggregation;
 - core inference invocation from child evidence;
 - dedicated inference store key/namespace.
+
+## Controlled bootstrap evidence
+
+NODE-16 Bootstrap #3 completed successfully on GitHub Actions.
+
+The validated finalization step:
+
+- refreshed the authoritative workspace lockfile;
+- permanently wired `validate-node-16.mjs` into foundation validation;
+- applied canonical Prettier formatting;
+- integrated service-worker inference orchestration and cleanup;
+- passed complete `pnpm check` including foundation, lint, typecheck, tests, Standard/High Fidelity build/package validators and format check;
+- removed the temporary write-enabled bootstrap workflow before validation/commit.
+
+Bootstrap finalization commit:
+
+```text
+2b96d334f741c28e0a8b8a3c7465ac0a40890657
+```
+
+The final tree contains only permanent `ci.yml` and `diagnostic.yml` workflows. GitHub marked the bot-triggered CI #373 as `action_required` with no jobs, so this evidence-only commit is used to trigger the authoritative exact-head read-only CI.
 
 ## Definition of Done
 
@@ -177,16 +202,16 @@ Browser tests cover:
 - [x] Browser runtime/store tests
 - [x] normative Responsive Inference V2 document
 - [x] ADR-0016
-- [ ] service-worker inference orchestration
-- [ ] responsive cleanup includes inference sidecar
-- [ ] NODE-16 foundation guardrail
-- [ ] guardrail wired into foundation validation
-- [ ] authoritative workspace lockfile refreshed
-- [ ] canonical formatting PASS
-- [ ] complete `pnpm check` PASS
-- [ ] Standard package validation PASS
-- [ ] High Fidelity package validation PASS
-- [ ] temporary bootstrap absent from final tree
+- [x] service-worker inference orchestration
+- [x] responsive cleanup includes inference sidecar
+- [x] NODE-16 foundation guardrail
+- [x] guardrail wired into foundation validation
+- [x] authoritative workspace lockfile refreshed
+- [x] canonical formatting PASS
+- [x] complete `pnpm check` PASS
+- [x] Standard package validation PASS
+- [x] High Fidelity package validation PASS
+- [x] temporary bootstrap absent from final tree
 - [ ] exact-head read-only frozen-lockfile CI PASS
 - [ ] PR ready
 - [ ] PR squash merged

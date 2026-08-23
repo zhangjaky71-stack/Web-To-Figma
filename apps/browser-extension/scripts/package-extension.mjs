@@ -64,6 +64,11 @@ const runtimePackages = [
     dist: fileURLToPath(new URL("../../../packages/layout-analyzer/dist/", import.meta.url)),
   },
   {
+    specifier: "@w2f/table-layout-engine",
+    directory: "table-layout-engine",
+    dist: fileURLToPath(new URL("../../../packages/table-layout-engine/dist/", import.meta.url)),
+  },
+  {
     specifier: "@w2f/standard-capture-adapter",
     directory: "standard-capture-adapter",
     dist: fileURLToPath(

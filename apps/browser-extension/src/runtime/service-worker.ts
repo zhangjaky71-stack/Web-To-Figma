@@ -7,6 +7,7 @@ import {
 } from "@w2f/capture-core";
 import { summarizeEnvironmentCapture } from "@w2f/environment-capture";
 import { summarizeBaseLayoutAnalysis } from "@w2f/layout-analyzer";
+import { summarizeTableLayout } from "@w2f/table-layout-engine";
 import { summarizePixelGroundTruth } from "@w2f/pixel-ground-truth";
 import {
   buildResponsiveCapture,
@@ -46,6 +47,8 @@ import {
 } from "./job-state.js";
 import { analyzePersistedBaseLayout } from "./layout-analysis-runtime.js";
 import { deleteBaseLayoutAnalysis, writeBaseLayoutAnalysis } from "./layout-analysis-store.js";
+import { analyzePersistedTables } from "./table-layout-runtime.js";
+import { deleteTableLayoutResult, writeTableLayoutResult } from "./table-layout-store.js";
 import { capturePixelGroundTruthForSnapshot } from "./pixel-ground-truth-runtime.js";
 import { deletePixelGroundTruth, writePixelGroundTruth } from "./pixel-ground-truth-store.js";
 import {
@@ -127,6 +130,7 @@ async function deleteAllCaptureArtifacts(jobId: string): Promise<void> {
     deleteAssetCapture(jobId),
     deletePixelGroundTruth(jobId),
     deleteBaseLayoutAnalysis(jobId),
+    deleteTableLayoutResult(jobId),
   ]);
 }
 
@@ -216,6 +220,32 @@ async function persistBaseLayoutAnalysis(
     layoutFlexNodeCount: summary.flexNodeCount,
     layoutGridNodeCount: summary.gridNodeCount,
     layoutAbsoluteNodeCount: summary.absoluteNodeCount,
+  };
+}
+
+async function persistTableLayout(
+  jobId: string,
+): Promise<
+  Pick<
+    CaptureSnapshotReceipt,
+    | "tableLayoutStorageKey"
+    | "tableCount"
+    | "tableRowCount"
+    | "tableCellCount"
+    | "tableSpannedCellCount"
+    | "tableLayoutDiagnosticCount"
+  >
+> {
+  const result = await analyzePersistedTables(jobId);
+  const tableLayoutStorageKey = await writeTableLayoutResult(jobId, result);
+  const summary = summarizeTableLayout(result);
+  return {
+    tableLayoutStorageKey,
+    tableCount: summary.tableCount,
+    tableRowCount: summary.rowCount,
+    tableCellCount: summary.cellCount,
+    tableSpannedCellCount: summary.spannedCellCount,
+    tableLayoutDiagnosticCount: summary.diagnosticCount,
   };
 }
 
@@ -356,6 +386,7 @@ async function captureStandardDom(
     const storageKey = await writeRawSnapshot(jobId, snapshot);
     const cascadeReceipt = await persistCssCascade(tabId, jobId, snapshot);
     const layoutReceipt = await persistBaseLayoutAnalysis(jobId);
+    const tableReceipt = await persistTableLayout(jobId);
     const environmentReceipt = await persistEnvironment(tabId, jobId, snapshot);
     const assetReceipt = await persistAssets(tabId, jobId, snapshot);
     const pixelGroundTruthReceipt = await persistPixelGroundTruth(tabId, jobId, snapshot);
@@ -367,6 +398,7 @@ async function captureStandardDom(
         capturedAt: snapshot.capturedAt,
         ...cascadeReceipt,
         ...layoutReceipt,
+        ...tableReceipt,
         ...environmentReceipt,
         ...assetReceipt,
         ...pixelGroundTruthReceipt,
@@ -399,6 +431,7 @@ async function captureCdpDom(
       : undefined;
     const cascadeReceipt = await persistCssCascade(tabId, jobId, result.snapshot);
     const layoutReceipt = await persistBaseLayoutAnalysis(jobId);
+    const tableReceipt = await persistTableLayout(jobId);
     const environmentReceipt = await persistEnvironment(tabId, jobId, result.snapshot);
     const assetReceipt = await persistAssets(tabId, jobId, result.snapshot);
     const pixelGroundTruthReceipt = await persistPixelGroundTruth(tabId, jobId, result.snapshot);
@@ -411,6 +444,7 @@ async function captureCdpDom(
         capturedAt: result.snapshot.capturedAt,
         ...cascadeReceipt,
         ...layoutReceipt,
+        ...tableReceipt,
         ...environmentReceipt,
         ...assetReceipt,
         ...pixelGroundTruthReceipt,

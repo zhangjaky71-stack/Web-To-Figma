@@ -27,7 +27,7 @@
 | 14 | Pixel Ground Truth & Raster Engine | DONE | Exact-head read-only CI #337 PASS | PR #18 merged as `6bb5fe53` |
 | 15 | Multi-Viewport Responsive Capture | DONE | Exact-head read-only CI #350 PASS | PR #19 merged as `68cfbeac` |
 | 16 | Responsive Inference Engine | DONE | Exact-head read-only CI #375 PASS | PR #20 merged as `7cfb91fe` |
-| 17 | Base Layout Analyzer | IN PROGRESS | Implementation starting from merged NODE-16 | `feat/node-17-base-layout-analyzer` |
+| 17 | Base Layout Analyzer | DONE PENDING MERGE | Exact-head read-only CI #421 PASS | PR #21 |
 | 18 | Table Layout Engine | TODO | - | - |
 | 19 | Render Tree Optimizer | TODO | - | - |
 | 20 | Compositing & Fallback Boundary | TODO | - | - |
@@ -91,6 +91,7 @@ WtfFlexItemModel
 WtfGridContainerModel
 WtfGridItemModel
 WtfAbsoluteConstraints
+WtfBoxModel
 WtfDecisionEvidence
 ```
 
@@ -103,8 +104,10 @@ grid
 absolute/fixed/sticky positioning
 inline
 contents
-base sizing
-padding/gap/overflow
+base sizing/min/max
+padding/overflow
+border-box -> padding-box -> content-box normalization
+effective spacing from resolved Browser geometry
 ```
 
 NODE-18 owns table-specific reconstruction. NODE-19 owns render-tree optimization. NODE-20 owns compositing/fallback boundaries.
@@ -117,8 +120,39 @@ NODE-18 owns table-specific reconstruction. NODE-19 owns render-tree optimizatio
 - sizing remains evidence-bearing and may stay `unknown`;
 - flex/grid models preserve source direction, wrapping, alignment, tracks, gaps and item placement;
 - absolute constraints preserve left/right/top/bottom semantics rather than flattening every node into x/y coordinates;
+- Browser border-box geometry is normalized into padding/content boxes from computed border and padding evidence;
+- effective flow and single-line flex spacing is derived from resolved child geometry so margin collapse, negative overlap and distributed spacing remain observable;
+- `calc(...)`, `clamp(...)`, `min(...)`, `max(...)`, `var(...)` and `env(...)` remain CSS expressions while `fit-content(...)` retains intrinsic HUG semantics;
 - table structure is deliberately not inferred in NODE-17;
 - all outputs are deterministic and carry confidence/reasons/sourceRefs.
+
+## NODE-17 Validation
+
+Controlled Bootstrap V4 (`32630143011`) completed the full repository `pnpm check` successfully before its final push was rejected only because the remote branch advanced concurrently. The validated tree passed:
+
+```text
+NODE-17 foundation guardrail
+lint: 17/17 packages
+typecheck: 31/31 tasks
+layout-analyzer tests: 10/10
+browser-extension tests: 59/59
+build: 17/17 packages
+standard Browser package validation
+high-fidelity Browser package validation
+Prettier format check
+```
+
+The branch then converged to a normal user-authored final candidate with every temporary NODE-17 bootstrap workflow and finalization script removed.
+
+Exact-head read-only CI #421, run `32630253977`, passed on candidate:
+
+```text
+7dfaf4581c4e1e1cc0161bb3fbfe9904253a50ca
+```
+
+Foundation, frozen-lockfile install, lint, typecheck, tests, build and format check all passed.
+
+NODE-17 Exit Gate: PASS. A documentation-only evidence commit follows and must retain the same exact-head read-only CI result before squash merge.
 
 ## Blockers
 
@@ -126,7 +160,7 @@ No product/architecture blocker is known.
 
 ## Next
 
-After NODE-17 formal Exit Gate and squash merge:
+After NODE-17 squash merge:
 
 ```text
 NODE-18 — Table Layout Engine

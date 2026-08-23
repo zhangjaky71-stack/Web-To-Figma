@@ -31,7 +31,7 @@
 | 18 | Table Layout Engine | DONE | Exact-head read-only CI #449 PASS | PR #22 merged as `7cd56101` |
 | 19 | Render Tree Optimizer | DONE | Exact-head read-only CI #477 PASS | PR #23 merged as `030f433a` |
 | 20 | Compositing & Fallback Boundary | DONE | Exact-head read-only CI #503 PASS | PR #24 merged as `f0d10cdb` |
-| 21 | WTF Packager | IN PROGRESS | Implementation starting from merged NODE-20 | `feat/node-21-wtf-packager` |
+| 21 | WTF Packager | EXIT GATE CANDIDATE | Bootstrap CI #538 full `pnpm check` PASS; exact-head read-only CI pending | PR #25 |
 | 22 | Figma Plugin Shell & File Intake | TODO | - | - |
 | 23 | Secure Parser & Migration | TODO | - | - |
 | 24 | Figma Capability Resolver | TODO | - | - |
@@ -111,13 +111,34 @@ The frozen V2 File Spec remains authoritative. NODE-21 must not redefine manifes
 - package generation is writer-side only; NODE-23 owns hostile archive parsing, zip-bomb/zip-slip enforcement, migration and SVG sanitization;
 - Browser export/download is the only UI/runtime responsibility added here; Figma intake begins at NODE-22.
 
+## NODE-21 Exit-Gate Candidate
+
+Controlled Bootstrap CI #538 (`32643842982`) completed successfully and ran the final candidate through the repository-wide `pnpm check`, including:
+
+- permanent foundation validation;
+- lint;
+- TypeScript typecheck across all workspaces;
+- all Vitest suites;
+- deterministic WTF Packager build/tests;
+- Standard Browser Extension build and packaged-output validation;
+- High Fidelity Browser Extension build and packaged-output validation;
+- canonical formatting check.
+
+The validated implementation candidate produced by the controlled Bootstrap is:
+
+```text
+208bda21606630fc1d69d1e281c891f51c5ef9c6
+```
+
+The temporary Bootstrap workflow/finalizer/normalizer and failure log were removed from that candidate. GitHub marked the bot-origin synchronize CI #539 as `action_required`; this documentation-only user-origin candidate commit exists to trigger the formal exact-head read-only CI without altering implementation behavior.
+
 ## Blockers
 
 No product/architecture blocker is known.
 
 ## Next
 
-After NODE-21 formal Exit Gate and squash merge:
+After NODE-21 formal exact-head Exit Gate and squash merge:
 
 ```text
 NODE-22 — Figma Plugin Shell & File Intake

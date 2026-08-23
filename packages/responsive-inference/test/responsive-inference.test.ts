@@ -123,7 +123,10 @@ describe("Responsive Inference Engine", () => {
         parentBounds: { x: 0, y: 0, width: 752, height: 100 },
       }),
     ];
-    const result = inferResponsiveBehavior({ snapshots: snapshots.slice(0, 2), observations: [...fill, ...fixed] });
+    const result = inferResponsiveBehavior({
+      snapshots: snapshots.slice(0, 2),
+      observations: [...fill, ...fixed],
+    });
     expect(
       result.sizingDecisions.find(
         (decision) => decision.stableNodeId === "sid_geometry_fill" && decision.axis === "width",
@@ -158,7 +161,9 @@ describe("Responsive Inference Engine", () => {
     expect(decision?.mode).toBe("fixed");
     expect(decision?.confidence).toBeLessThan(0.96);
     expect(
-      result.diagnostics.some((diagnostic) => diagnostic.code === "RESPONSIVE_INFERENCE_SIZING_CONFLICT"),
+      result.diagnostics.some(
+        (diagnostic) => diagnostic.code === "RESPONSIVE_INFERENCE_SIZING_CONFLICT",
+      ),
     ).toBe(true);
   });
 

@@ -109,7 +109,10 @@ if (failures.length === 0) {
     assert(irTypes.includes(frozen), `Frozen IR responsive vocabulary missing ${frozen}`);
   }
   const schema = readText("packages/w2f-schema/src/index.ts");
-  assert(schema.includes('WTF_SCHEMA_VERSION = "2.0.0"'), "W2F Schema major/version must remain V2");
+  assert(
+    schema.includes('WTF_SCHEMA_VERSION = "2.0.0"'),
+    "W2F Schema major/version must remain V2",
+  );
   assert(
     schema.includes("interface WtfResponsiveSnapshotRef"),
     "NODE-16 must reuse frozen WtfResponsiveSnapshotRef",
@@ -131,7 +134,13 @@ if (failures.length === 0) {
   ]) {
     assert(runtime.includes(evidence), `Browser responsive inference bridge missing ${evidence}`);
   }
-  for (const forbidden of ["document.cookie", "localStorage", "sessionStorage", "window.resizeTo", "fetch("]) {
+  for (const forbidden of [
+    "document.cookie",
+    "localStorage",
+    "sessionStorage",
+    "window.resizeTo",
+    "fetch(",
+  ]) {
     assert(!runtime.includes(forbidden), `Browser inference bridge must not use ${forbidden}`);
   }
 
@@ -186,7 +195,10 @@ if (failures.length === 0) {
     "responsiveRuleCount",
     "breakpointCandidateCount",
   ]) {
-    assert(serviceWorker.includes(evidence), `Service worker inference orchestration missing ${evidence}`);
+    assert(
+      serviceWorker.includes(evidence),
+      `Service worker inference orchestration missing ${evidence}`,
+    );
   }
 
   const normative = readText("docs/RESPONSIVE_INFERENCE_V2.md");

@@ -9,11 +9,7 @@ import {
   type ResponsiveInferenceChildEvidence,
 } from "../src/runtime/responsive-inference-runtime.js";
 
-function rawSnapshot(
-  suffix: string,
-  width: number,
-  includeNav: boolean,
-): RawSnapshot {
+function rawSnapshot(suffix: string, width: number, includeNav: boolean): RawSnapshot {
   return {
     version: "1.0.0",
     adapter: "cdp",
@@ -63,7 +59,9 @@ function rawSnapshot(
           ]
         : []),
     ],
-    frames: [{ context: { frameId: "root" }, rootCaptureNodeId: `root:${suffix}`, accessible: true }],
+    frames: [
+      { context: { frameId: "root" }, rootCaptureNodeId: `root:${suffix}`, accessible: true },
+    ],
     scrollContainers: [],
     diagnostics: [],
   };

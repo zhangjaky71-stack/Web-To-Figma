@@ -16,6 +16,7 @@ import {
   type ResponsiveSnapshotInput,
   type ResponsiveViewportPlan,
 } from "@w2f/responsive-capture";
+import { summarizeResponsiveInference } from "@w2f/responsive-inference";
 import {
   captureStandardSnapshotInPage,
   type StandardCaptureInput,
@@ -62,6 +63,14 @@ import {
   probeCurrentViewport,
 } from "./responsive-capture-runtime.js";
 import { deleteResponsiveCapture, writeResponsiveCapture } from "./responsive-capture-store.js";
+import {
+  inferResponsiveCaptureEvidence,
+  loadResponsiveInferenceEvidence,
+} from "./responsive-inference-runtime.js";
+import {
+  deleteResponsiveInference,
+  writeResponsiveInference,
+} from "./responsive-inference-store.js";
 import {
   deleteCaptureArtifacts,
   writeRawSnapshot,
@@ -123,6 +132,7 @@ async function deleteResponsiveArtifacts(
 ): Promise<void> {
   await Promise.allSettled([
     deleteResponsiveCapture(jobId),
+    deleteResponsiveInference(jobId),
     ...plans.map((plan) => deleteAllCaptureArtifacts(responsiveArtifactId(jobId, plan.id))),
   ]);
 }
@@ -562,8 +572,11 @@ function responsiveSnapshotInput(
 function responsiveReceipt(
   storageKey: string,
   capture: ReturnType<typeof buildResponsiveCapture>,
+  inferenceStorageKey: string,
+  inference: ReturnType<typeof inferResponsiveCaptureEvidence>,
 ): ResponsiveCaptureReceipt {
   const summary = summarizeResponsiveCapture(capture);
+  const inferenceSummary = summarizeResponsiveInference(inference);
   return {
     storageKey,
     mode: capture.mode,
@@ -572,6 +585,11 @@ function responsiveReceipt(
     stableNodeEvidenceCount: summary.stableNodeEvidenceCount,
     diagnosticCount: summary.diagnosticCount,
     viewportWidths: capture.plannedViewports.map((viewport) => viewport.width),
+    inferenceStorageKey,
+    responsiveRuleCount: inferenceSummary.ruleCount,
+    breakpointCandidateCount: inferenceSummary.breakpointCandidateCount,
+    responsiveSizingDecisionCount: inferenceSummary.sizingDecisionCount,
+    responsiveInferenceDiagnosticCount: inferenceSummary.diagnosticCount,
   };
 }
 
@@ -663,12 +681,18 @@ async function startResponsiveJob(request: ResponsiveCaptureRequest): Promise<Ca
       );
     }
     const storageKey = await writeResponsiveCapture(jobId, capture);
+    const inferenceEvidence = await loadResponsiveInferenceEvidence(jobId);
+    const inference = inferResponsiveCaptureEvidence(
+      inferenceEvidence.capture,
+      inferenceEvidence.children,
+    );
+    const inferenceStorageKey = await writeResponsiveInference(jobId, inference);
     job = transitionCaptureJob(job, "completed", "responsive-capture-complete", new Date(), {
       tabId,
       source: descriptor,
       ...(firstPage ? { page: firstPage } : {}),
       responsivePlan: plans,
-      responsive: responsiveReceipt(storageKey, capture),
+      responsive: responsiveReceipt(storageKey, capture, inferenceStorageKey, inference),
     });
     await writeJobState(job);
     return job;

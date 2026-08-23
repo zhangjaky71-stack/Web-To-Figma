@@ -1,8 +1,4 @@
-import type {
-  WtfResponsiveRange,
-  WtfResponsiveRule,
-  WtfSizingMode,
-} from "@w2f/w2f-ir";
+import type { WtfResponsiveRange, WtfResponsiveRule, WtfSizingMode } from "@w2f/w2f-ir";
 import {
   RESPONSIVE_INFERENCE_VERSION,
   type ResponsiveAxis,
@@ -37,7 +33,7 @@ function stableValueKey(value: unknown): string {
   if (value === undefined) return "undefined";
   if (value === null) return "null";
   if (typeof value === "number" && Object.is(value, -0)) return "0";
-  return JSON.stringify(value);
+  return JSON.stringify(value) ?? String(value);
 }
 
 function normalizedStableConfidence(value: number): number {
@@ -53,7 +49,9 @@ function uniqueSorted(values: readonly string[]): string[] {
 }
 
 function buildRanges(values: RuleValue[]): WtfResponsiveRange[] {
-  const sorted = [...values].sort((left, right) => left.width - right.width || left.snapshotId.localeCompare(right.snapshotId));
+  const sorted = [...values].sort(
+    (left, right) => left.width - right.width || left.snapshotId.localeCompare(right.snapshotId),
+  );
   const ranges: WtfResponsiveRange[] = [];
   let run: RuleValue[] = [];
   let runKey = "";
@@ -119,7 +117,9 @@ function addObservedBreakpointTransitions(
   values: RuleValue[],
   map: Map<string, ResponsiveBreakpointCandidate>,
 ): void {
-  const sorted = [...values].sort((left, right) => left.width - right.width || left.snapshotId.localeCompare(right.snapshotId));
+  const sorted = [...values].sort(
+    (left, right) => left.width - right.width || left.snapshotId.localeCompare(right.snapshotId),
+  );
   for (let index = 1; index < sorted.length; index += 1) {
     const lower = sorted[index - 1];
     const upper = sorted[index];
@@ -129,7 +129,10 @@ function addObservedBreakpointTransitions(
     const existing = map.get(key);
     const confidence = clampConfidence(Math.min(lower.confidence, upper.confidence) * 0.9);
     if (existing) {
-      existing.affectedStableNodeIds = uniqueSorted([...existing.affectedStableNodeIds, targetStableNodeId]);
+      existing.affectedStableNodeIds = uniqueSorted([
+        ...existing.affectedStableNodeIds,
+        targetStableNodeId,
+      ]);
       existing.properties = uniqueSorted([...existing.properties, property]);
       existing.confidence = Math.min(existing.confidence, confidence);
       continue;
@@ -175,7 +178,7 @@ function authoredSizing(
       };
     }
     const percent = /^([+-]?(?:\d+\.?\d*|\.\d+))%$/.exec(raw);
-    if (percent && Number(percent[1]) >= 95) {
+    if (percent && Number(percent[1] ?? "NaN") >= 95) {
       return {
         mode: "fill",
         confidence: clampConfidence(confidence * 0.93),
@@ -206,7 +209,9 @@ function geometrySizing(
     (item) => item.present && item.visible && item.bounds && item.parentBounds,
   );
   if (eligible.length < 2) return null;
-  const nodeSizes = eligible.map((item) => (axis === "width" ? item.bounds!.width : item.bounds!.height));
+  const nodeSizes = eligible.map((item) =>
+    axis === "width" ? item.bounds!.width : item.bounds!.height,
+  );
   const parentSizes = eligible.map((item) =>
     axis === "width" ? item.parentBounds!.width : item.parentBounds!.height,
   );
@@ -217,7 +222,9 @@ function geometrySizing(
   const ratios = nodeSizes.map((value, index) => value / (parentSizes[index] ?? value));
   const ratioSpan = Math.max(...ratios) - Math.min(...ratios);
   const minRatio = Math.min(...ratios);
-  const stableConfidence = Math.min(...eligible.map((item) => normalizedStableConfidence(item.stableConfidence)));
+  const stableConfidence = Math.min(
+    ...eligible.map((item) => normalizedStableConfidence(item.stableConfidence)),
+  );
 
   if (minRatio >= 0.9 && ratioSpan <= 0.08) {
     return {
@@ -248,7 +255,9 @@ function authoredPropertyValues(
         snapshotId: observation.snapshotId,
         width: observation.viewportWidth,
         value,
-        confidence: clampConfidence(normalizedStableConfidence(observation.stableConfidence) * 0.94),
+        confidence: clampConfidence(
+          normalizedStableConfidence(observation.stableConfidence) * 0.94,
+        ),
         reason: `authored ${String(property)} differs by captured responsive context`,
       },
     ];
@@ -283,7 +292,10 @@ function inferSizingForNode(
 ): { decisions: ResponsiveSizingDecision[]; rule: WtfResponsiveRule | null } {
   const geometry = geometrySizing(observations, axis);
   const values: RuleValue[] = [];
-  const grouped = new Map<WtfSizingMode, { snapshotIds: string[]; confidences: number[]; reasons: string[] }>();
+  const grouped = new Map<
+    WtfSizingMode,
+    { snapshotIds: string[]; confidences: number[]; reasons: string[] }
+  >();
   let sawAuthored = false;
   let conflict = false;
 
@@ -323,14 +335,20 @@ function inferSizingForNode(
   }
 
   const decisions: ResponsiveSizingDecision[] = [...grouped.entries()]
-    .map(([mode, evidence]) => ({
+    .map<ResponsiveSizingDecision>(([mode, evidence]) => ({
       stableNodeId,
       axis,
       mode,
       confidence: clampConfidence(Math.min(...evidence.confidences)),
       reasons: uniqueSorted(evidence.reasons),
       snapshotIds: uniqueSorted(evidence.snapshotIds),
-      source: sawAuthored ? (geometry ? "combined" : "authored") : geometry ? "geometry" : "insufficient",
+      source: sawAuthored
+        ? geometry
+          ? "combined"
+          : "authored"
+        : geometry
+          ? "geometry"
+          : "insufficient",
     }))
     .sort((left, right) => left.mode.localeCompare(right.mode));
 
@@ -360,12 +378,14 @@ function inferSizingForNode(
 function parseAuthoredMediaBreakpoints(
   input: ResponsiveInferenceInput,
 ): ResponsiveBreakpointCandidate[] {
-  const sortedSnapshots = [...input.snapshots].sort((left, right) => left.viewport.width - right.viewport.width);
+  const sortedSnapshots = [...input.snapshots].sort(
+    (left, right) => left.viewport.width - right.viewport.width,
+  );
   const candidates: ResponsiveBreakpointCandidate[] = [];
   for (const trace of input.mediaRules ?? []) {
     const matches = [...trace.query.matchAll(/(?:min|max)-width\s*:\s*(\d+(?:\.\d+)?)px/gi)];
     for (const match of matches) {
-      const boundary = Number(match[1]);
+      const boundary = Number(match[1] ?? "NaN");
       if (!Number.isFinite(boundary)) continue;
       const lower = [...sortedSnapshots].reverse().find((item) => item.viewport.width < boundary);
       const upper = sortedSnapshots.find((item) => item.viewport.width >= boundary);
@@ -380,22 +400,33 @@ function parseAuthoredMediaBreakpoints(
         properties: uniqueSorted(trace.affectedProperties),
         source: "authored-media",
         confidence: 0.99,
-        reasons: [`authored media query supplies an explicit ${boundary}px viewport boundary`, trace.query],
+        reasons: [
+          `authored media query supplies an explicit ${boundary}px viewport boundary`,
+          trace.query,
+        ],
       });
     }
   }
   return candidates;
 }
 
-export function inferResponsiveBehavior(input: ResponsiveInferenceInput): ResponsiveInferenceResult {
+export function inferResponsiveBehavior(
+  input: ResponsiveInferenceInput,
+): ResponsiveInferenceResult {
   const diagnostics: ResponsiveInferenceDiagnostic[] = [];
   const snapshotById = new Map(input.snapshots.map((snapshot) => [snapshot.id, snapshot]));
   if (snapshotById.size !== input.snapshots.length) {
     throw new TypeError("responsive inference snapshot ids must be unique");
   }
   for (const snapshot of input.snapshots) {
-    if (!snapshot.id.trim() || !validPositive(snapshot.viewport.width) || !validPositive(snapshot.viewport.height)) {
-      throw new TypeError("responsive inference snapshots require positive viewport dimensions and non-empty ids");
+    if (
+      !snapshot.id.trim() ||
+      !validPositive(snapshot.viewport.width) ||
+      !validPositive(snapshot.viewport.height)
+    ) {
+      throw new TypeError(
+        "responsive inference snapshots require positive viewport dimensions and non-empty ids",
+      );
     }
   }
 
@@ -459,14 +490,18 @@ export function inferResponsiveBehavior(input: ResponsiveInferenceInput): Respon
     "flexBasis",
   ];
 
-  for (const [stableNodeId, observations] of [...byStableNode.entries()].sort(([a], [b]) => a.localeCompare(b))) {
+  for (const [stableNodeId, observations] of [...byStableNode.entries()].sort(([a], [b]) =>
+    a.localeCompare(b),
+  )) {
     const sorted = [...observations].sort(
-      (left, right) => left.viewportWidth - right.viewportWidth || left.snapshotId.localeCompare(right.snapshotId),
+      (left, right) =>
+        left.viewportWidth - right.viewportWidth || left.snapshotId.localeCompare(right.snapshotId),
     );
     if (sorted.length < 2) {
       diagnostics.push({
         code: "RESPONSIVE_INFERENCE_INSUFFICIENT_EVIDENCE",
-        message: "Cross-snapshot responsive inference requires at least two observations for this stable node.",
+        message:
+          "Cross-snapshot responsive inference requires at least two observations for this stable node.",
         stableNodeId,
       });
     }
@@ -491,7 +526,9 @@ export function inferResponsiveBehavior(input: ResponsiveInferenceInput): Respon
               snapshotId: observation.snapshotId,
               width: observation.viewportWidth,
               value: observation.display,
-              confidence: clampConfidence(normalizedStableConfidence(observation.stableConfidence) * 0.92),
+              confidence: clampConfidence(
+                normalizedStableConfidence(observation.stableConfidence) * 0.92,
+              ),
               reason: "computed display differs across captured responsive snapshots",
             },
           ]
@@ -544,7 +581,8 @@ export function inferResponsiveBehavior(input: ResponsiveInferenceInput): Respon
     version: RESPONSIVE_INFERENCE_VERSION,
     payload: {
       snapshots: [...input.snapshots].sort(
-        (left, right) => left.viewport.width - right.viewport.width || left.id.localeCompare(right.id),
+        (left, right) =>
+          left.viewport.width - right.viewport.width || left.id.localeCompare(right.id),
       ),
       rules,
       mediaRules: [...(input.mediaRules ?? [])],
@@ -573,7 +611,8 @@ export function isResponsiveInferenceResult(value: unknown): value is Responsive
   if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
   const record = value as Record<string, unknown>;
   if (record.version !== RESPONSIVE_INFERENCE_VERSION) return false;
-  if (!record.payload || typeof record.payload !== "object" || Array.isArray(record.payload)) return false;
+  if (!record.payload || typeof record.payload !== "object" || Array.isArray(record.payload))
+    return false;
   const payload = record.payload as Record<string, unknown>;
   return (
     Array.isArray(payload.snapshots) &&

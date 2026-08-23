@@ -46,7 +46,8 @@ export async function writeResponsiveInference(
   jobId: string,
   capture: ResponsiveInferenceResult,
 ): Promise<string> {
-  if (!isResponsiveInferenceResult(capture)) throw new TypeError("invalid ResponsiveInferenceResult");
+  if (!isResponsiveInferenceResult(capture))
+    throw new TypeError("invalid ResponsiveInferenceResult");
   const key = responsiveInferenceStorageKey(jobId);
   const database = await openDatabase();
   try {

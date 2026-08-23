@@ -22,7 +22,9 @@ export interface ResponsiveInferenceChildEvidence {
   environment: EnvironmentCapture;
 }
 
-function traceMap(cascade: CssNodeCascadeEvidence | undefined): Map<string, CssNodeCascadeEvidence["traces"][number]> {
+function traceMap(
+  cascade: CssNodeCascadeEvidence | undefined,
+): Map<string, CssNodeCascadeEvidence["traces"][number]> {
   return new Map((cascade?.traces ?? []).map((trace) => [trace.property.toLowerCase(), trace]));
 }
 
@@ -184,7 +186,10 @@ function aggregateContainerQueries(
     const child = childByArtifactId.get(responsiveSnapshot.artifactId);
     if (!child) continue;
     const stableByCaptureNodeId = new Map(
-      responsiveSnapshot.stableNodes.map((evidence) => [evidence.captureNodeId, evidence.stableNodeId]),
+      responsiveSnapshot.stableNodes.map((evidence) => [
+        evidence.captureNodeId,
+        evidence.stableNodeId,
+      ]),
     );
     for (const query of child.environment.containerQueries) {
       const container = query.containerSourceNodeId
@@ -192,7 +197,8 @@ function aggregateContainerQueries(
             (candidate) => candidate.sourceNodeId === query.containerSourceNodeId,
           )
         : child.environment.containers.find(
-            (candidate) => candidate.containerName && candidate.containerName === query.containerName,
+            (candidate) =>
+              candidate.containerName && candidate.containerName === query.containerName,
           );
       const key = `${query.containerName ?? ""}\u0000${container?.containerType ?? ""}\u0000${query.condition}`;
       const current = aggregate.get(key) ?? {
@@ -238,7 +244,9 @@ export function buildResponsiveInferenceInput(
   for (const responsiveSnapshot of capture.snapshots) {
     const child = childByArtifactId.get(responsiveSnapshot.artifactId);
     if (!child) {
-      throw new Error(`Responsive inference child artifact is unavailable: ${responsiveSnapshot.artifactId}`);
+      throw new Error(
+        `Responsive inference child artifact is unavailable: ${responsiveSnapshot.artifactId}`,
+      );
     }
     for (const stableNodeId of [...stableNodeIds].sort()) {
       observations.push(observationFor(responsiveSnapshot, child, stableNodeId));

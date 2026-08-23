@@ -94,13 +94,13 @@ if (failures.length === 0) {
   const highManifest = readJson("apps/browser-extension/static/manifest.high-fidelity.json");
   assert(
     JSON.stringify([...(standardManifest.permissions ?? [])].sort()) ===
-      JSON.stringify(["activeTab", "scripting", "storage"].sort()),
-    "Standard manifest must remain debugger-free",
+      JSON.stringify(["activeTab", "downloads", "scripting", "storage"].sort()),
+    "Standard manifest must remain debugger-free while allowing NODE-21 downloads",
   );
   assert(
     JSON.stringify([...(highManifest.permissions ?? [])].sort()) ===
-      JSON.stringify(["activeTab", "debugger", "scripting", "storage"].sort()),
-    "High Fidelity manifest must add debugger and nothing broader",
+      JSON.stringify(["activeTab", "debugger", "downloads", "scripting", "storage"].sort()),
+    "High Fidelity manifest may add debugger and NODE-21 downloads, with nothing broader",
   );
   for (const manifest of [standardManifest, highManifest]) {
     assert(!("host_permissions" in manifest), "NODE-09 must not add broad host permissions");

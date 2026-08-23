@@ -13,6 +13,7 @@ import "./validate-node-17.mjs";
 import "./validate-node-18.mjs";
 import "./validate-node-19.mjs";
 import "./validate-node-20.mjs";
+import "./validate-node-21.mjs";
 
 const root = process.cwd();
 const failures = [];
@@ -238,8 +239,8 @@ if (failures.length === 0) {
   const browserPermissions = [...(browserManifest.permissions ?? [])].sort();
   assert(
     JSON.stringify(browserPermissions) ===
-      JSON.stringify(["activeTab", "scripting", "storage"].sort()),
-    "browser permissions must remain least-privilege activeTab+scripting+storage",
+      JSON.stringify(["activeTab", "downloads", "scripting", "storage"].sort()),
+    "browser permissions must remain least-privilege activeTab+downloads+scripting+storage",
   );
   assert(
     !("host_permissions" in browserManifest),

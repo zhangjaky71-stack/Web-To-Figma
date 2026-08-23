@@ -88,8 +88,8 @@ assert(manifest.options_ui?.open_in_tab === true, "options must open in a tab");
 
 const expectedPermissions =
   profile === "high-fidelity"
-    ? ["activeTab", "debugger", "scripting", "storage"]
-    : ["activeTab", "scripting", "storage"];
+    ? ["activeTab", "debugger", "downloads", "scripting", "storage"]
+    : ["activeTab", "downloads", "scripting", "storage"];
 const permissions = [...(manifest.permissions ?? [])].sort();
 assert(
   JSON.stringify(permissions) === JSON.stringify([...expectedPermissions].sort()),

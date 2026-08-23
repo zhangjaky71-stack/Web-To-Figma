@@ -1,3 +1,5 @@
+import { isWtfExportReceipt } from "./wtf-export-contract.js";
+import { readWtfPackage } from "./wtf-package-store.js";
 import type { ResponsiveCaptureRequest } from "@w2f/responsive-capture";
 import type { CaptureJobMode, CaptureJobState } from "./job-state.js";
 import {
@@ -23,6 +25,7 @@ const responsiveCommon = element<HTMLInputElement>("responsive-common");
 const responsiveCustom = element<HTMLInputElement>("responsive-custom");
 const responsiveCustomWidths = element<HTMLInputElement>("responsive-custom-widths");
 const responsiveCapability = element<HTMLElement>("responsive-capability");
+const exportButton = element<HTMLButtonElement>("export-wtf");
 const cancelButton = element<HTMLButtonElement>("cancel-job");
 const optionsButton = element<HTMLButtonElement>("open-options");
 
@@ -60,6 +63,8 @@ function renderJob(job: CaptureJobState | null): void {
     statusElement.dataset.status = "idle";
     detailsElement.textContent = "Choose a capture mode for the current tab.";
     cancelButton.disabled = true;
+    exportButton.disabled = true;
+    delete exportButton.dataset.jobId;
     return;
   }
 
@@ -85,6 +90,8 @@ function renderJob(job: CaptureJobState | null): void {
   }
   cancelButton.disabled = ["completed", "failed", "cancelled"].includes(job.status);
   cancelButton.dataset.jobId = job.jobId;
+  exportButton.disabled = job.status !== "completed";
+  exportButton.dataset.jobId = job.jobId;
 }
 
 function selectedResponsiveRequest(): ResponsiveCaptureRequest {
@@ -163,12 +170,54 @@ async function startResponsiveJob(): Promise<void> {
   }
 }
 
+async function downloadWtf(jobId: string): Promise<void> {
+  exportButton.disabled = true;
+  exportButton.textContent = "Packaging…";
+  try {
+    const response = await sendRequest({ type: "W2F_EXPORT_WTF", jobId });
+    if (!response.ok) throw new Error(response.error);
+    if (!isWtfExportReceipt(response.data)) throw new Error("Invalid WTF export receipt");
+    const stored = await readWtfPackage(jobId);
+    if (!stored || stored.sha256 !== response.data.archiveSha256) {
+      throw new Error("Stored WTF package does not match the export receipt");
+    }
+    const blobBytes = Uint8Array.from(stored.bytes);
+    const blob = new Blob([blobBytes.buffer], { type: stored.mimeType });
+    const url = URL.createObjectURL(blob);
+    try {
+      await chrome.downloads.download({
+        url,
+        filename: stored.filename,
+        conflictAction: "uniquify",
+        saveAs: false,
+      });
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (error) {
+      URL.revokeObjectURL(url);
+      throw error;
+    }
+    detailsElement.textContent = `${stored.filename} · ${stored.bytes.byteLength.toLocaleString()} bytes · SHA-256 ${stored.sha256.slice(0, 12)}…`;
+  } catch (error) {
+    statusElement.textContent = "failed";
+    statusElement.dataset.status = "failed";
+    detailsElement.textContent = error instanceof Error ? error.message : String(error);
+  } finally {
+    exportButton.textContent = "Export .wtf";
+    const currentJobId = exportButton.dataset.jobId;
+    exportButton.disabled = !currentJobId;
+  }
+}
+
 fullPageButton.addEventListener("click", () => void startJob("full-page"));
 regionButton.addEventListener("click", () => void startJob("region"));
 responsiveButton.addEventListener("click", () => void startResponsiveJob());
 for (const input of [responsiveCurrent, responsiveCommon, responsiveCustom]) {
   input.addEventListener("change", syncCustomInput);
 }
+exportButton.addEventListener("click", () => {
+  const jobId = exportButton.dataset.jobId;
+  if (jobId) void downloadWtf(jobId);
+});
 cancelButton.addEventListener("click", () => {
   const jobId = cancelButton.dataset.jobId;
   if (!jobId) return;

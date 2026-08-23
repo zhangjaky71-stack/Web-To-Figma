@@ -1,3 +1,4 @@
+import type { WtfExportReceipt } from "./wtf-export-contract.js";
 import type { ResponsiveCaptureRequest } from "@w2f/responsive-capture";
 import type { SourceCapability } from "@w2f/source-providers";
 import type { CaptureJobMode, CaptureJobState, PageProbe } from "./job-state.js";
@@ -12,7 +13,8 @@ export type W2fShellRequest =
   | { type: "W2F_GET_JOB_STATE" }
   | { type: "W2F_START_JOB"; mode: Exclude<CaptureJobMode, "responsive"> }
   | { type: "W2F_START_RESPONSIVE_JOB"; capture: ResponsiveCaptureRequest }
-  | { type: "W2F_CANCEL_JOB"; jobId: string };
+  | { type: "W2F_CANCEL_JOB"; jobId: string }
+  | { type: "W2F_EXPORT_WTF"; jobId: string };
 
 export type W2fContentRequest =
   | { type: "W2F_PROBE_PAGE"; jobId: string }
@@ -49,7 +51,8 @@ export interface W2fShellInfo {
   syntheticResponsiveAvailable: boolean;
 }
 
-export type W2fShellResponseData = W2fShellInfo | SourceCapability | CaptureJobState | null;
+export type W2fShellResponseData =
+  W2fShellInfo | SourceCapability | CaptureJobState | WtfExportReceipt | null;
 
 export type W2fShellResponse =
   | { ok: true; requestType: W2fShellRequest["type"]; data: W2fShellResponseData }
@@ -104,6 +107,7 @@ export function isW2fShellRequest(value: unknown): value is W2fShellRequest {
     case "W2F_START_RESPONSIVE_JOB":
       return isResponsiveCaptureRequest(value.capture);
     case "W2F_CANCEL_JOB":
+    case "W2F_EXPORT_WTF":
       return typeof value.jobId === "string" && value.jobId.length > 0;
     default:
       return false;

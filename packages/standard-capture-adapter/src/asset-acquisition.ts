@@ -9,7 +9,9 @@ import type {
   StandardCascadeTargetHint,
 } from "./types.js";
 
-export async function captureStandardAssetsInPage(input: StandardAssetInput): Promise<StandardAssetResult> {
+export async function captureStandardAssetsInPage(
+  input: StandardAssetInput,
+): Promise<StandardAssetResult> {
   type Root = Document | ShadowRoot;
   type ResolvedTarget = {
     hint: StandardCascadeTargetHint;
@@ -36,8 +38,14 @@ export async function captureStandardAssetsInPage(input: StandardAssetInput): Pr
   };
 
   const maxAssets = Math.max(1, Math.min(input.maxAssets ?? 2_000, 10_000));
-  const maxAssetBytes = Math.max(1024, Math.min(input.maxAssetBytes ?? 20 * 1024 * 1024, 100 * 1024 * 1024));
-  const maxTotalBytes = Math.max(maxAssetBytes, Math.min(input.maxTotalBytes ?? 100 * 1024 * 1024, 500 * 1024 * 1024));
+  const maxAssetBytes = Math.max(
+    1024,
+    Math.min(input.maxAssetBytes ?? 20 * 1024 * 1024, 100 * 1024 * 1024),
+  );
+  const maxTotalBytes = Math.max(
+    maxAssetBytes,
+    Math.min(input.maxTotalBytes ?? 100 * 1024 * 1024, 500 * 1024 * 1024),
+  );
   const diagnostics: AssetCaptureDiagnostic[] = [];
   const diagnosticKeys = new Set<string>();
   const frameDocuments = new Map<string, Document>();
@@ -45,7 +53,10 @@ export async function captureStandardAssetsInPage(input: StandardAssetInput): Pr
   const resolvedTargets = new Map<string, ResolvedTarget>();
   const candidates: Candidate[] = [];
   const candidateKeys = new Set<string>();
-  const fetchCache = new Map<string, Promise<{ bytes: number[]; mediaTypeHint?: string }>>();
+  const fetchCache = new Map<
+    string,
+    Promise<{ bytes: number[]; mediaTypeHint?: string }>
+  >();
   let totalBytes = 0;
   let budgetReported = false;
 
@@ -66,7 +77,9 @@ export async function captureStandardAssetsInPage(input: StandardAssetInput): Pr
   }
 
   function rootFrameId(): string | undefined {
-    return input.frames.find((frame) => !frame.parentFrameId)?.frameId ?? input.frames[0]?.frameId;
+    return (
+      input.frames.find((frame) => !frame.parentFrameId)?.frameId ?? input.frames[0]?.frameId
+    );
   }
 
   const mainFrameId = rootFrameId();
@@ -105,11 +118,19 @@ export async function captureStandardAssetsInPage(input: StandardAssetInput): Pr
   while (frameProgress) {
     frameProgress = false;
     for (const frame of input.frames) {
-      if (frameDocuments.has(frame.frameId) || !frame.parentFrameId || !frame.ownerSourceNodeId) continue;
+      if (
+        frameDocuments.has(frame.frameId) ||
+        !frame.parentFrameId ||
+        !frame.ownerSourceNodeId
+      ) {
+        continue;
+      }
       if (!frameDocuments.has(frame.parentFrameId)) continue;
       const owner = resolveElement(frame.ownerSourceNodeId);
-      if (!(owner instanceof HTMLIFrameElement) || !owner.contentDocument) continue;
-      frameDocuments.set(frame.frameId, owner.contentDocument);
+      if (owner?.localName.toLowerCase() !== "iframe") continue;
+      const iframe = owner as HTMLIFrameElement;
+      if (!iframe.contentDocument) continue;
+      frameDocuments.set(frame.frameId, iframe.contentDocument);
       frameProgress = true;
     }
   }
@@ -140,7 +161,10 @@ export async function captureStandardAssetsInPage(input: StandardAssetInput): Pr
     }
   }
 
-  function sourceTypeForUrl(url: string, preferred: AssetResourceSourceType): AssetResourceSourceType {
+  function sourceTypeForUrl(
+    url: string,
+    preferred: AssetResourceSourceType,
+  ): AssetResourceSourceType {
     if (url.startsWith("data:")) return "data-url";
     if (url.startsWith("blob:")) return "blob";
     try {
@@ -216,28 +240,31 @@ export async function captureStandardAssetsInPage(input: StandardAssetInput): Pr
     }
 
     const element = target.element;
+    const localName = element.localName.toLowerCase();
+    const isSvgNamespace = element.namespaceURI === "http://www.w3.org/2000/svg";
     if (!target.pseudoType) {
-      if (element instanceof HTMLImageElement) {
-        const currentSrc = element.currentSrc || element.src;
-        const authoredSrc = element.getAttribute("src") ?? undefined;
+      if (localName === "img" && !isSvgNamespace) {
+        const image = element as HTMLImageElement;
+        const currentSrc = image.currentSrc || image.src;
+        const authoredSrc = image.getAttribute("src") ?? undefined;
         if (currentSrc) {
           addUrlCandidate(
             target,
             currentSrc,
-            element.parentElement instanceof HTMLPictureElement ? "picture" : "img",
+            image.parentElement?.localName.toLowerCase() === "picture" ? "picture" : "img",
             "img",
             {
               currentSrc,
               ...(authoredSrc ? { authoredSrc } : {}),
-              intrinsicWidth: element.naturalWidth,
-              intrinsicHeight: element.naturalHeight,
-              displayWidth: element.getBoundingClientRect().width,
-              displayHeight: element.getBoundingClientRect().height,
+              intrinsicWidth: image.naturalWidth,
+              intrinsicHeight: image.naturalHeight,
+              displayWidth: image.getBoundingClientRect().width,
+              displayHeight: image.getBoundingClientRect().height,
               ...(authoredSrc ? { originalUrl: authoredSrc } : {}),
             },
           );
         }
-      } else if (element instanceof SVGSVGElement) {
+      } else if (isSvgNamespace && localName === "svg") {
         const serializer = new XMLSerializer();
         const inlineSvg = serializer.serializeToString(element);
         const frameOrigin = element.ownerDocument.location?.origin || undefined;
@@ -252,15 +279,24 @@ export async function captureStandardAssetsInPage(input: StandardAssetInput): Pr
           displayWidth: element.getBoundingClientRect().width,
           displayHeight: element.getBoundingClientRect().height,
         });
-      } else if (element instanceof SVGImageElement) {
-        const raw = element.getAttribute("href") ?? element.getAttribute("xlink:href") ?? element.href.baseVal;
+      } else if (isSvgNamespace && localName === "image") {
+        const svgImage = element as SVGImageElement;
+        const raw =
+          svgImage.getAttribute("href") ??
+          svgImage.getAttribute("xlink:href") ??
+          svgImage.href.baseVal;
         if (raw) addUrlCandidate(target, raw, "svg-external", "svg-image");
-      } else if (element instanceof HTMLVideoElement && element.poster) {
-        addUrlCandidate(target, element.poster, "video-poster", "video-poster");
-      } else if (element instanceof HTMLInputElement && element.type.toLowerCase() === "image" && element.src) {
-        addUrlCandidate(target, element.src, "img", "input-image", {
-          authoredSrc: element.getAttribute("src") ?? undefined,
-        });
+      } else if (localName === "video" && !isSvgNamespace) {
+        const video = element as HTMLVideoElement;
+        if (video.poster) addUrlCandidate(target, video.poster, "video-poster", "video-poster");
+      } else if (localName === "input" && !isSvgNamespace) {
+        const inputElement = element as HTMLInputElement;
+        if (inputElement.type.toLowerCase() === "image" && inputElement.src) {
+          const authoredSrc = inputElement.getAttribute("src") ?? undefined;
+          addUrlCandidate(target, inputElement.src, "img", "input-image", {
+            ...(authoredSrc ? { authoredSrc } : {}),
+          });
+        }
       }
     }
 
@@ -278,7 +314,9 @@ export async function captureStandardAssetsInPage(input: StandardAssetInput): Pr
     for (const [property, sourceType] of cssProperties) {
       const value = computed.getPropertyValue(property);
       for (const rawUrl of cssUrls(value)) {
-        addUrlCandidate(target, rawUrl, sourceType, `css:${property}`, { cssProperty: property });
+        addUrlCandidate(target, rawUrl, sourceType, `css:${property}`, {
+          cssProperty: property,
+        });
       }
     }
   }
@@ -288,10 +326,13 @@ export async function captureStandardAssetsInPage(input: StandardAssetInput): Pr
     if (cached) return cached;
     const pending = (async () => {
       const response = await fetch(url, { credentials: "include", cache: "force-cache" });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      if (!response.ok && response.status !== 0) throw new Error(`HTTP ${response.status}`);
       const buffer = await response.arrayBuffer();
-      if (buffer.byteLength > maxAssetBytes) throw new Error(`resource exceeds ${maxAssetBytes} byte limit`);
-      const mediaTypeHint = response.headers.get("content-type")?.split(";", 1)[0]?.trim() || undefined;
+      if (buffer.byteLength > maxAssetBytes) {
+        throw new Error(`resource exceeds ${maxAssetBytes} byte limit`);
+      }
+      const mediaTypeHint =
+        response.headers.get("content-type")?.split(";", 1)[0]?.trim() || undefined;
       return {
         bytes: Array.from(new Uint8Array(buffer)),
         ...(mediaTypeHint ? { mediaTypeHint } : {}),
@@ -307,7 +348,9 @@ export async function captureStandardAssetsInPage(input: StandardAssetInput): Pr
       let loaded: { bytes: number[]; mediaTypeHint?: string };
       if (candidate.inlineSvg !== undefined) {
         const bytes = Array.from(new TextEncoder().encode(candidate.inlineSvg));
-        if (bytes.length > maxAssetBytes) throw new Error(`resource exceeds ${maxAssetBytes} byte limit`);
+        if (bytes.length > maxAssetBytes) {
+          throw new Error(`resource exceeds ${maxAssetBytes} byte limit`);
+        }
         loaded = { bytes, mediaTypeHint: "image/svg+xml" };
       } else if (candidate.url) {
         loaded = await loadUrl(candidate.url);
@@ -326,18 +369,23 @@ export async function captureStandardAssetsInPage(input: StandardAssetInput): Pr
         break;
       }
       totalBytes += loaded.bytes.length;
+      const mediaTypeHint = loaded.mediaTypeHint ?? candidate.mediaTypeHint;
       resources.push({
         acquisitionId: candidate.acquisitionId,
         bytes: loaded.bytes,
-        ...(loaded.mediaTypeHint ?? candidate.mediaTypeHint
-          ? { mediaTypeHint: loaded.mediaTypeHint ?? candidate.mediaTypeHint }
-          : {}),
+        ...(mediaTypeHint ? { mediaTypeHint } : {}),
         ...(candidate.currentSrc ? { currentSrc: candidate.currentSrc } : {}),
         ...(candidate.authoredSrc ? { authoredSrc: candidate.authoredSrc } : {}),
-        ...(candidate.intrinsicWidth === undefined ? {} : { intrinsicWidth: candidate.intrinsicWidth }),
-        ...(candidate.intrinsicHeight === undefined ? {} : { intrinsicHeight: candidate.intrinsicHeight }),
+        ...(candidate.intrinsicWidth === undefined
+          ? {}
+          : { intrinsicWidth: candidate.intrinsicWidth }),
+        ...(candidate.intrinsicHeight === undefined
+          ? {}
+          : { intrinsicHeight: candidate.intrinsicHeight }),
         ...(candidate.displayWidth === undefined ? {} : { displayWidth: candidate.displayWidth }),
-        ...(candidate.displayHeight === undefined ? {} : { displayHeight: candidate.displayHeight }),
+        ...(candidate.displayHeight === undefined
+          ? {}
+          : { displayHeight: candidate.displayHeight }),
         provenance: {
           sourceType: candidate.sourceType,
           sourceNodeId: candidate.sourceNodeId,

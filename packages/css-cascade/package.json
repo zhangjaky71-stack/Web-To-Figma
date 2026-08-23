@@ -1,5 +1,5 @@
 {
-  "name": "@w2f/standard-capture-adapter",
+  "name": "@w2f/css-cascade",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -17,8 +17,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@w2f/capture-core": "workspace:*",
-    "@w2f/css-cascade": "workspace:*"
+    "@w2f/w2f-ir": "workspace:*",
+    "@w2f/w2f-schema": "workspace:*"
   },
   "devDependencies": {
     "typescript": "6.0.3",

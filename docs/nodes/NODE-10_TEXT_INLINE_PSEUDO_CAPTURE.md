@@ -2,7 +2,7 @@
 
 ## Status
 
-**DONE / PASS — implementation, behavior fixtures and formal standard read-only frozen-lockfile documentation/status Exit Gate passed; PR #14 ready to squash merge**
+**DONE / PASS — implementation, behavior fixtures and final exact-head standard read-only frozen-lockfile CI passed; PR #14 squash merged**
 
 ## Goal
 
@@ -194,27 +194,31 @@ Controlled final-shape full repository validation:
 
 Before `pnpm check`, the one-time format workflow removed itself from the working tree. The complete check passed.
 
-Resulting implementation/behavior head before normative docs:
-
-```text
-bc81da6ed366180cd7345e38f8cd95a8c0acd629
-```
-
-The bot-authored push did not receive a normal GitHub Actions job, so it is not counted as the formal Exit Gate.
-
 Formal standard read-only frozen-lockfile documentation/status Exit Gate:
 
 ```text
 32615395336
 ```
 
-Validated head:
+validated head:
 
 ```text
 3a3a89b005b6e919074614bb52ea0393cff8e186
 ```
 
-Every formal gate passed:
+Final exact-head standard read-only frozen-lockfile CI:
+
+```text
+32615506313
+```
+
+validated NODE-10 head:
+
+```text
+f82711f5959505a82c72f6afc91bde7cce5c1b60
+```
+
+Every final gate passed:
 
 - dependency-free NODE-08/NODE-09/NODE-10/global foundation validation;
 - Node.js 24 / pnpm 11.22.0;
@@ -225,6 +229,12 @@ Every formal gate passed:
 - Standard Browser package build/validation;
 - High Fidelity Browser package build/validation;
 - pinned Prettier 3.9.6 format check.
+
+PR #14 was squash merged into `main` as:
+
+```text
+eb31c82bbbaaf15f740aa19f7d343f8a2d884099
+```
 
 ## Definition of Done
 
@@ -257,8 +267,9 @@ Every formal gate passed:
 - [x] normative implementation document added
 - [x] ADR added
 - [x] formal standard read-only frozen-lockfile docs/status CI passed
+- [x] final exact-head standard read-only frozen-lockfile CI passed
 - [x] PR #14 ready for review
-- [ ] PR #14 squash merged
+- [x] PR #14 squash merged
 
 ## Normative documents
 
@@ -280,7 +291,7 @@ NODE-10 does not implement:
 
 ## Next
 
-After PR #14 squash merge:
+Proceed to:
 
 ```text
 NODE-11 — CSS Cascade & Authored Semantics

@@ -52,6 +52,11 @@ docs/TEXT_INLINE_PSEUDO_CAPTURE_V2.md
 packages/capture-core
 packages/standard-capture-adapter
 packages/cdp-capture-adapter
+
+docs/CSS_CASCADE_AUTHORED_SEMANTICS_V2.md
+packages/css-cascade
+packages/standard-capture-adapter
+apps/browser-extension
 ```
 
 ## Current documents
@@ -74,6 +79,7 @@ packages/cdp-capture-adapter
 - `docs/CAPTURE_SEMANTICS.md` — shared RawSnapshot/Standard capture/region semantics.
 - `docs/CDP_HIGH_FIDELITY_ADAPTER_V2.md` — High Fidelity CDP adapter, permission and fallback contract.
 - `docs/TEXT_INLINE_PSEUDO_CAPTURE_V2.md` — NODE-10 text-run, fragment, baseline, inline, pseudo and safe form visual evidence contract.
+- `docs/CSS_CASCADE_AUTHORED_SEMANTICS_V2.md` — NODE-11 authored/computed cascade, CSS length, Token Graph and Browser sidecar contract.
 - `docs/IMPLEMENTATION_STATUS.md` — canonical current implementation status.
 - `docs/nodes/` — per-NODE implementation/DoD records.
 - `docs/adr/` — accepted architecture and engineering decisions.
@@ -120,18 +126,19 @@ NODE-06 — Source Providers & Offline
 NODE-07 — Region Selector & Redaction
 NODE-08 — Standard DOM Capture
 NODE-09 — CDP High Fidelity Adapter
+NODE-10 — Text / Inline / Pseudo Capture
 ```
 
 Current implementation node:
 
 ```text
-NODE-10 — Text / Inline / Pseudo Capture
+NODE-11 — CSS Cascade & Authored Semantics
 ```
 
-NODE-10 implementation and behavior fixtures are complete. Its formal standard read-only documentation/status Exit Gate and PR #14 merge remain before the roadmap advances.
+NODE-11 core engine, Standard/CDP authored acquisition, Token Graph materialization, Browser sidecar persistence and both Browser package paths are implemented and have passed controlled final-shape `pnpm check`. Formal standard read-only documentation/status Exit Gate and PR #15 merge remain before the roadmap advances.
 
-Next implementation node after NODE-10 merge:
+Next implementation node after NODE-11 merge:
 
 ```text
-NODE-11 — CSS Cascade & Authored Semantics
+NODE-12 — Media / Container / Environment Capture
 ```

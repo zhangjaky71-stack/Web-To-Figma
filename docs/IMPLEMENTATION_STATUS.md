@@ -20,8 +20,8 @@
 | 07 | Region Selector & Redaction | DONE | Region interaction/runtime/package + frozen-lockfile GitHub Actions PASS | PR #11 merged |
 | 08 | Standard DOM Capture | DONE | RawSnapshot/Standard capture/runtime/package + frozen-lockfile GitHub Actions PASS | PR #12 merged |
 | 09 | CDP High Fidelity Adapter | DONE | CDP/dual-profile/runtime/package + frozen-lockfile GitHub Actions PASS | PR #13 merged |
-| 10 | Text / Inline / Pseudo Capture | DONE | Text/fragment/pseudo/form behavior + Standard/High Fidelity package + standard read-only frozen-lockfile CI PASS | PR #14 ready to merge |
-| 11 | CSS Cascade & Authored Semantics | TODO | - | - |
+| 10 | Text / Inline / Pseudo Capture | DONE | Text/fragment/pseudo/form behavior + exact-head read-only frozen-lockfile CI PASS | PR #14 merged |
+| 11 | CSS Cascade & Authored Semantics | DONE | Cascade/Token Graph/Standard/CDP/sidecar + formal read-only frozen-lockfile CI PASS | PR #15 ready to merge |
 | 12 | Media / Container / Environment Capture | TODO | - | - |
 | 13 | Asset Resolver | TODO | - | - |
 | 14 | Pixel Ground Truth & Raster Engine | TODO | - | - |
@@ -45,96 +45,100 @@
 
 ## Current Node
 
-`NODE-10 — Text / Inline / Pseudo Capture`
+`NODE-11 — CSS Cascade & Authored Semantics`
 
-NODE-10 started from merged NODE-09 `main` commit:
-
-```text
-80a727e301a7d0c47899e486e3a41a2412fc31b3
-```
-
-PR:
+NODE-11 started from merged NODE-10 `main` commit:
 
 ```text
-#14 — feat(node-10): implement Text Inline Pseudo Capture
+eb31c82bbbaaf15f740aa19f7d343f8a2d884099
 ```
 
-PR #14 is ready for review/merge. NODE-11 must not become the active implementation node until NODE-10 is squash merged into `main`.
-
-## NODE-10 Completion
-
-NODE-10 extends the shared adapter-neutral `RawSnapshot 1.0.0` with:
-
-- text-run evidence;
-- rendered text-fragment geometry;
-- baseline provenance/confidence;
-- inline/ruby fragment evidence;
-- `::before` / `::after` / `::marker` pseudo evidence;
-- safe form-control visual state.
-
-Standard capture uses DOM Range/client-rect and computed-style evidence. CDP normalization preserves repeated DOMSnapshot layout/text evidence and maps it into the same shared contract.
-
-Live input/textarea textual values remain outside the evidence contract. CDP `inputValue` / `textValue` runtime fields are not consumed, and sensitive `INPUT`/`TEXTAREA` `value` attributes remain filtered.
-
-NODE-11 authored cascade semantics were not pulled forward into NODE-10.
-
-## NODE-10 Validation
-
-Controlled final-shape full repository validation:
+Working branch / PR:
 
 ```text
-32615130105
+feat/node-11-css-cascade-authored-semantics
+PR #15
 ```
 
-The one-time format workflow removed itself from the working tree before the complete `pnpm check`, and that final-shape check passed.
+PR #15 is ready for review/merge. NODE-12 must not become the active implementation node until NODE-11 is squash merged into `main`.
+
+## NODE-11 Completion
+
+NODE-11 delivers:
+
+- platform-neutral `@w2f/css-cascade`;
+- `CssCascadeCapture 1.0.0` sidecar with `RawSnapshot 1.0.0` unchanged;
+- authored/computed traces, provenance, `!important` and deterministic cascade hashes;
+- explicit non-fabricating `matched-unresolved` evidence;
+- existing IR CSS length semantics;
+- V2.1 Token Graph definitions/usages/aliases with conservative fail-closed linking;
+- Standard CSSOM acquisition for accessible document/Shadow DOM/same-origin iframe authored evidence;
+- CDP backend-node matched/computed style acquisition;
+- CSS-only Standard fallback without discarding successful CDP RawSnapshot/screenshot evidence;
+- bounded acquisition and explicit diagnostics;
+- separate Browser IndexedDB sidecar persistence, receipts and cleanup;
+- Standard/High Fidelity Chrome runtime package validation.
+
+NODE-11 does not reimplement the browser's complete cascade or variable resolver and does not pull NODE-12 environment orchestration forward.
+
+## NODE-11 Validation
+
+Controlled final-shape authored acquisition/browser integration run:
+
+```text
+32617158205
+```
+
+passed complete `pnpm check` after removing its temporary workflow from the working tree. Resulting validated bot head:
+
+```text
+0473fb18586e458062317a718835d8d7a7eb4b10
+```
 
 Formal standard read-only frozen-lockfile documentation/status Exit Gate:
 
 ```text
-32615395336
+32617337130
 ```
 
-Validated head:
+validated:
 
 ```text
-3a3a89b005b6e919074614bb52ea0393cff8e186
+21fa12cad809c573a0ea3c43b7284de9b2ef6c23
 ```
 
-Every formal gate passed:
+All gates passed: dependency-free foundation validation, frozen install, lint, strict typecheck, complete tests, Standard/High Fidelity build/package validation and pinned Prettier.
 
-- NODE-08/NODE-09/NODE-10/global foundation validation;
-- Node.js 24 / pnpm 11.22.0;
-- `pnpm install --frozen-lockfile`;
-- lint;
-- strict TypeScript typecheck;
-- complete test suite including NODE-10 behavior fixtures;
-- Standard Browser package build/validation;
-- High Fidelity Browser package build/validation;
-- pinned Prettier 3.9.6 format check.
+## NODE-11 Exit Criteria
 
-## NODE-10 Exit Criteria
-
-- [x] implementation complete
-- [x] actual CDP text/fragment/pseudo/form behavior fixture passes
-- [x] temporary write-enabled bootstrap/recovery workflows removed
-- [x] one-time canonical-format workflow removed from resulting branch
+- [x] core cascade/length/Token Graph engine
+- [x] Standard authored acquisition
+- [x] CDP authored acquisition/normalization
+- [x] Browser sidecar persistence and cleanup
+- [x] both Browser package profiles validate
+- [x] controlled complete `pnpm check` passes
+- [x] temporary write-enabled workflows absent from resulting tree
 - [x] normative implementation document added
-- [x] ADR added
-- [x] NODE-10 DoD record added
+- [x] ADR-0011 added
+- [x] NODE-11 DoD record added
 - [x] formal standard read-only frozen-lockfile docs/status CI passes
-- [x] PR #14 marked ready
-- [ ] PR #14 squash merged
+- [x] PR #15 marked ready
+- [ ] PR #15 squash merged
+
+## NODE-11 / NODE-12 Boundary
+
+NODE-11 preserves authored media-condition provenance/current participation only.
+
+NODE-12 owns environment snapshots, media/container/environment query capture and evaluation, color scheme, reduced motion and related environment state.
 
 ## Blockers
 
-No implementation or validation blocker remains. Only the squash merge of PR #14 remains.
+No implementation or validation blocker remains. Only exact-head closure CI and squash merge remain.
 
 ## Next
 
-After NODE-10 PR #14 squash merge:
+After NODE-11 PR #15 squash merge:
 
 ```text
-NODE-11 — CSS Cascade & Authored Semantics
+NODE-12 — Media / Container / Environment Capture
 ```
-
-NODE-11 must build authored selector/cascade/custom-property semantics on top of the computed/browser-observed evidence already captured by NODE-08 through NODE-10, without weakening the existing privacy or adapter-neutral RawSnapshot boundaries.

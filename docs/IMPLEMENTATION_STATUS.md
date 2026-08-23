@@ -25,8 +25,8 @@
 | 12 | Media / Container / Environment Capture | DONE | Exact-head read-only CI #310 PASS | PR #16 merged as `b9cdca4d` |
 | 13 | Asset Resolver | DONE | Exact-head read-only CI #328 PASS | PR #17 merged as `07978a58` |
 | 14 | Pixel Ground Truth & Raster Engine | DONE | Exact-head read-only CI #337 PASS | PR #18 merged as `6bb5fe53` |
-| 15 | Multi-Viewport Responsive Capture | IN PROGRESS | Implementation starting from merged NODE-14 | `feat/node-15-multi-viewport-responsive-capture` |
-| 16 | Responsive Inference Engine | TODO | - | - |
+| 15 | Multi-Viewport Responsive Capture | DONE | Bootstrap #9 + exact-head read-only CI #350 PASS | PR #19 merge pending |
+| 16 | Responsive Inference Engine | NEXT | - | - |
 | 17 | Base Layout Analyzer | TODO | - | - |
 | 18 | Table Layout Engine | TODO | - | - |
 | 19 | Render Tree Optimizer | TODO | - | - |
@@ -45,7 +45,7 @@
 
 ## Current Node
 
-`NODE-15 — Multi-Viewport Responsive Capture`
+`NODE-15 — Multi-Viewport Responsive Capture` implementation is complete and its Exit Gate is PASS. PR #19 squash merge is the only remaining closure action.
 
 Entry baseline:
 
@@ -69,7 +69,7 @@ NODE-14 PR #18 passed exact-head read-only CI #337 (`32624954690`) on final cand
 
 The merged tree contains no temporary NODE-14 write-enabled bootstrap workflow.
 
-## NODE-15 Frozen Scope
+## NODE-15 Delivered Scope
 
 NODE-15 implements only:
 
@@ -96,27 +96,60 @@ The reduced default preset is:
 1440 / 768 / 390
 ```
 
-NODE-15 captures evidence. NODE-16 owns cross-snapshot matching/inference, breakpoint detection, FILL/HUG/FIXED, visibility/layout transitions and rule confidence.
-
-## Implementation Direction
+Delivered behavior includes:
 
 - additive `ResponsiveCapture 1.0.0` sidecar;
-- reuse frozen `WtfResponsiveSnapshotRef` rather than version-bump W2F Schema/IR;
-- deterministic viewport plan and child-artifact identities;
-- High Fidelity synthetic multi-viewport orchestration with mandatory device-metrics cleanup/restore;
-- Standard profile remains current-viewport capable and does not mutate the browser window to fabricate responsive evidence;
-- each responsive snapshot preserves RawSnapshot/CSS/Environment/Assets/Pixel Ground Truth references;
-- stable identity assignments/signals are preserved as NODE-16 matching inputs without performing cross-snapshot inference;
+- frozen `WtfResponsiveSnapshotRef` reuse without W2F Schema/IR version churn;
+- deterministic viewport plans and child-artifact identities;
+- High Fidelity Common/Custom viewport orchestration through `Emulation.setDeviceMetricsOverride`;
+- mandatory `Emulation.clearDeviceMetricsOverride` restoration in `finally`;
+- Standard Current Viewport capture without browser-window resize fabrication;
+- per-viewport RawSnapshot/CSS/Environment/Assets/Pixel Ground Truth persistence;
+- NODE-04 Stable Identity evidence preserved per responsive snapshot as NODE-16 matching inputs;
 - bounded viewport count/dimensions and fail-visible diagnostics;
-- cancellation/failure cleanup covers every child snapshot artifact.
+- cancellation/failure cleanup covering parent and child responsive artifacts;
+- Browser popup controls, protocol `1.4.0`, runtime packaging and Standard/High Fidelity validators.
+
+NODE-15 captures evidence only. NODE-16 owns cross-snapshot matching/inference, breakpoint detection, FILL/HUG/FIXED, visibility/layout transitions and rule confidence.
+
+## NODE-15 Validation
+
+Controlled Bootstrap #9:
+
+```text
+Run: 32627415523
+Finalization commit: 6d8b1c1809d2467ef8ae08f117e1fd68d212beb5
+Result: PASS
+```
+
+The bootstrap removed its temporary write-enabled workflow before running complete `pnpm check`, and the final tree contains only permanent `ci.yml` and `diagnostic.yml` workflows.
+
+Authoritative standard read-only exact-head Exit Gate:
+
+```text
+Run: 32627504377 (#350)
+Head: adc3d1dfce62fca5167fd5b18ad9e98eae494228
+Result: PASS
+```
+
+Validated gates:
+
+- NODE-08 through NODE-15 foundation validation;
+- `pnpm install --frozen-lockfile`;
+- lint;
+- TypeScript typecheck;
+- complete test suite;
+- Standard Browser build/package validators;
+- High Fidelity Browser build/package validators;
+- Prettier format check.
 
 ## Blockers
 
-No product/architecture blocker is known.
+No product, architecture, code, test, build, lockfile or formatting blocker remains for NODE-15.
 
 ## Next
 
-After NODE-15 formal Exit Gate and squash merge:
+After PR #19 squash merge:
 
 ```text
 NODE-16 — Responsive Inference Engine

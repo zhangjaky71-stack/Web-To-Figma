@@ -40,6 +40,13 @@ export interface CaptureSnapshotReceipt extends RawSnapshotSummary {
   assetDeduplicatedReferenceCount?: number;
   assetUniqueByteCount?: number;
   assetDiagnosticCount?: number;
+  pixelGroundTruthStorageKey?: string;
+  pixelGroundTruthAdapter?: "standard" | "cdp";
+  rasterReferenceCount?: number;
+  rasterTileReferenceCount?: number;
+  rasterUniqueTileCount?: number;
+  rasterUniqueByteCount?: number;
+  rasterDiagnosticCount?: number;
 }
 
 export interface CaptureJobState {
@@ -132,7 +139,18 @@ function isCaptureSnapshotReceipt(value: unknown): value is CaptureSnapshotRecei
     isOptionalNonNegativeInteger(record.assetReferenceCount) &&
     isOptionalNonNegativeInteger(record.assetDeduplicatedReferenceCount) &&
     isOptionalNonNegativeInteger(record.assetUniqueByteCount) &&
-    isOptionalNonNegativeInteger(record.assetDiagnosticCount)
+    isOptionalNonNegativeInteger(record.assetDiagnosticCount) &&
+    (record.pixelGroundTruthStorageKey === undefined ||
+      (typeof record.pixelGroundTruthStorageKey === "string" &&
+        record.pixelGroundTruthStorageKey.length > 0)) &&
+    (record.pixelGroundTruthAdapter === undefined ||
+      record.pixelGroundTruthAdapter === "standard" ||
+      record.pixelGroundTruthAdapter === "cdp") &&
+    isOptionalNonNegativeInteger(record.rasterReferenceCount) &&
+    isOptionalNonNegativeInteger(record.rasterTileReferenceCount) &&
+    isOptionalNonNegativeInteger(record.rasterUniqueTileCount) &&
+    isOptionalNonNegativeInteger(record.rasterUniqueByteCount) &&
+    isOptionalNonNegativeInteger(record.rasterDiagnosticCount)
   );
 }
 

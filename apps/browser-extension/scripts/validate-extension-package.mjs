@@ -12,6 +12,8 @@ const requiredFiles = [
   "runtime/service-worker.js",
   "runtime/source-runtime.js",
   "runtime/cdp-runtime.js",
+  "runtime/css-cascade-runtime.js",
+  "runtime/css-cascade-store.js",
   "runtime/source-providers/index.js",
   "runtime/source-providers/http-page-provider.js",
   "runtime/source-providers/file-tab-provider.js",
@@ -22,8 +24,15 @@ const requiredFiles = [
   "runtime/capture-core/index.js",
   "runtime/capture-core/types.js",
   "runtime/capture-core/validation.js",
+  "runtime/css-cascade/index.js",
+  "runtime/css-cascade/types.js",
+  "runtime/css-cascade/cascade.js",
+  "runtime/css-cascade/capture.js",
+  "runtime/css-cascade/length.js",
+  "runtime/css-cascade/tokens.js",
   "runtime/standard-capture-adapter/index.js",
   "runtime/standard-capture-adapter/capture.js",
+  "runtime/standard-capture-adapter/cascade-capture.js",
   "runtime/standard-capture-adapter/privacy.js",
   "runtime/standard-capture-adapter/types.js",
   "runtime/cdp-capture-adapter/index.js",
@@ -125,6 +134,8 @@ for (const importPath of [
   "./capture-core/index.js",
   "./standard-capture-adapter/index.js",
   "./cdp-runtime.js",
+  "./css-cascade-runtime.js",
+  "./css-cascade-store.js",
 ]) {
   assert(serviceWorker.includes(`from "${importPath}"`), `service worker missing ${importPath}`);
 }
@@ -133,6 +144,10 @@ assert(
     serviceWorker.includes("CDP_CAPTURE_FALLBACK_STANDARD") &&
     serviceWorker.includes("high-fidelity-capture-complete"),
   "service worker must preserve CDP preference, explicit fallback and completion paths",
+);
+assert(
+  serviceWorker.includes("persistCssCascade") && serviceWorker.includes("deleteAllCaptureArtifacts"),
+  "service worker must persist and clean up NODE-11 CSS sidecars",
 );
 
 const cdpRuntime = await readFile(`${outputRoot}/runtime/cdp-runtime.js`, "utf8");
@@ -152,6 +167,26 @@ for (const evidence of [
 assert(
   cdpRuntime.includes('from "./cdp-capture-adapter/index.js"'),
   "CDP runtime must use packaged relative CDP adapter modules",
+);
+
+const cssCascadeRuntime = await readFile(`${outputRoot}/runtime/css-cascade-runtime.js`, "utf8");
+for (const evidence of [
+  "DOM.pushNodesByBackendIdsToFrontend",
+  "CSS.getMatchedStylesForNode",
+  "CSS.getComputedStyleForNode",
+  "normalizeCdpMatchedStyleAcquisition",
+  "captureStandardCascadeInPage",
+  "CSS_CAPTURE_BUDGET_EXCEEDED",
+]) {
+  assert(cssCascadeRuntime.includes(evidence), `NODE-11 CSS runtime missing ${evidence}`);
+}
+assert(
+  cssCascadeRuntime.includes('from "./css-cascade/index.js"'),
+  "NODE-11 CSS runtime must use packaged relative css-cascade modules",
+);
+assert(
+  cssCascadeRuntime.includes('from "./standard-capture-adapter/index.js"'),
+  "NODE-11 Standard CSS acquisition must use packaged adapter modules",
 );
 
 const cdpNormalizer = await readFile(
@@ -184,10 +219,27 @@ assert(
   "CDP Page screenshot evidence must be persisted outside chrome.storage.local",
 );
 
+const cssCascadeStore = await readFile(`${outputRoot}/runtime/css-cascade-store.js`, "utf8");
+assert(cssCascadeStore.includes("indexedDB.open"), "NODE-11 CSS sidecar must use IndexedDB persistence");
+assert(
+  cssCascadeStore.includes("w2f-css-cascade") && cssCascadeStore.includes("css-cascade:"),
+  "NODE-11 CSS sidecar store/key contract drifted",
+);
+
 const captureCore = await readFile(`${outputRoot}/runtime/capture-core/validation.js`, "utf8");
 assert(
   !captureCore.includes("@w2f/w2f-schema"),
   "Browser capture-core runtime must remain self-contained",
+);
+
+const cssCascadeCore = await readFile(`${outputRoot}/runtime/css-cascade/capture.js`, "utf8");
+assert(
+  !cssCascadeCore.includes("@w2f/"),
+  "packaged css-cascade core must not contain unresolved workspace imports",
+);
+assert(
+  cssCascadeCore.includes("matched-unresolved") && cssCascadeCore.includes("isCssCascadeCapture"),
+  "packaged css-cascade core must validate non-fabricated authored evidence",
 );
 
 const standardCapture = await readFile(
@@ -210,6 +262,24 @@ assert(
   "Standard capture must not read sessionStorage",
 );
 
+const standardCascade = await readFile(
+  `${outputRoot}/runtime/standard-capture-adapter/cascade-capture.js`,
+  "utf8",
+);
+for (const evidence of [
+  "styleSheets",
+  "adoptedStyleSheets",
+  "CSSMediaRule",
+  "matchMedia",
+  "matched-unresolved",
+  "CSS_STYLESHEET_INACCESSIBLE",
+]) {
+  assert(standardCascade.includes(evidence), `Standard authored CSS runtime missing ${evidence}`);
+}
+assert(!standardCascade.includes("document.cookie"), "Standard authored CSS must not read cookies");
+assert(!standardCascade.includes("localStorage"), "Standard authored CSS must not read localStorage");
+assert(!standardCascade.includes("sessionStorage"), "Standard authored CSS must not read sessionStorage");
+
 const contentScript = await readFile(`${outputRoot}/runtime/content-script.js`, "utf8");
 assert(
   !/^\s*(?:import|export)\s/m.test(contentScript),
@@ -224,7 +294,7 @@ assert(
 const protocol = await readFile(`${outputRoot}/runtime/protocol.js`, "utf8");
 assert(
   protocol.includes('W2F_EXTENSION_SHELL_VERSION = "1.3.0"'),
-  "Browser shell protocol must expose the NODE-09 version",
+  "Browser shell protocol must preserve the NODE-09 version until its external message contract changes",
 );
 
 console.log(`Browser extension package validation (${profile}): PASS`);

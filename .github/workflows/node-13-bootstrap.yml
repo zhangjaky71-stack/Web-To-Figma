@@ -59,6 +59,7 @@ jobs:
             apps/browser-extension/scripts/validate-node-13-package.mjs \
             apps/browser-extension/src/runtime/asset-runtime.ts \
             apps/browser-extension/src/runtime/asset-store.ts \
+            apps/browser-extension/src/runtime/cdp-runtime.ts \
             apps/browser-extension/src/runtime/job-state.ts \
             apps/browser-extension/src/runtime/service-worker.ts \
             apps/browser-extension/test/asset-runtime.test.ts \

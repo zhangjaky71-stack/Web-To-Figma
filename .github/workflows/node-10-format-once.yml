@@ -1,0 +1,61 @@
+name: NODE-10 Format Once
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: node-10-format-once
+  cancel-in-progress: true
+
+jobs:
+  format:
+    if: github.head_ref == 'feat/node-10-text-inline-pseudo-capture' && github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v6
+        with:
+          ref: feat/node-10-text-inline-pseudo-capture
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.22.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Install frozen workspace
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply canonical formatting
+        run: pnpm exec prettier --write packages/cdp-capture-adapter/test/normalize.test.ts
+
+      - name: Remove one-time workflow from final tree
+        run: git rm .github/workflows/node-10-format-once.yml
+
+      - name: Validate final repository shape
+        run: pnpm check
+
+      - name: Commit canonical formatting
+        shell: bash
+        run: |
+          if git diff --quiet && git diff --cached --quiet; then
+            echo "No formatting changes to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add packages/cdp-capture-adapter/test/normalize.test.ts .github/workflows/node-10-format-once.yml
+          git commit -m "style(node-10): format behavior fixture"
+          git push origin HEAD:feat/node-10-text-inline-pseudo-capture

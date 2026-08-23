@@ -14,3 +14,6 @@ export function getFigmaWtfSchemaVersion(): string {
 export function getFigmaWtfIrVersion(): string {
   return WTF_IR_VERSION;
 }
+
+export * from "./intake-state.js";
+export * from "./protocol.js";

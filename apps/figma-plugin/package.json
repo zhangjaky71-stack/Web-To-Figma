@@ -4,8 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
-    "lint": "eslint src test --max-warnings=0",
+    "build": "node scripts/build-plugin.mjs && node scripts/validate-plugin-package.mjs",
+    "validate:package": "node scripts/validate-plugin-package.mjs",
+    "lint": "eslint src test scripts --max-warnings=0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run"
   },
@@ -14,6 +15,8 @@
     "@w2f/w2f-schema": "workspace:*"
   },
   "devDependencies": {
+    "@figma/plugin-typings": "1.134.0",
+    "esbuild": "0.28.2",
     "typescript": "6.0.3",
     "vitest": "4.1.11"
   }

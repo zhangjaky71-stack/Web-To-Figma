@@ -1,3 +1,13 @@
-# Figma Plugin
+# @w2f/figma-plugin
 
-Figma reconstruction application. NODE-01 provides only the build/test/typecheck shell; plugin intake begins in NODE-22.
+NODE-22 loadable W2F for Figma shell.
+
+Development package:
+
+```text
+manifest.json
+  -> dist/code.js
+  -> dist/ui.html
+```
+
+The shell accepts local `.wtf` bytes through Choose File, UI Drop, or active-plugin Canvas Drop and stops at the NODE-23 secure-parser boundary. It performs no network access and does not render archive contents in NODE-22.

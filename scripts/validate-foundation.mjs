@@ -14,6 +14,7 @@ import "./validate-node-18.mjs";
 import "./validate-node-19.mjs";
 import "./validate-node-20.mjs";
 import "./validate-node-21.mjs";
+import "./validate-node-22.mjs";
 
 const root = process.cwd();
 const failures = [];
@@ -191,6 +192,12 @@ if (failures.length === 0) {
         buildCommand.includes("package-extension.mjs") &&
           buildCommand.includes("validate-extension-package.mjs"),
         "browser extension build must package and validate the loadable MV3 output",
+      );
+    } else if (directory === "apps/figma-plugin") {
+      assert(
+        buildCommand ===
+          "node scripts/build-plugin.mjs && node scripts/validate-plugin-package.mjs",
+        "Figma plugin build must bundle and validate the loadable main/UI package",
       );
     } else {
       assert(

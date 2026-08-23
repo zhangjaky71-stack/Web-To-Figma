@@ -5,7 +5,8 @@ import type {
   CssTokenGraphBuildResult,
 } from "./types.js";
 
-const COLOR_PATTERN = /^(?:#(?:[0-9a-f]{3,8})|(?:rgb|rgba|hsl|hsla|hwb|lab|lch|oklab|oklch|color)\()/i;
+const COLOR_PATTERN =
+  /^(?:#(?:[0-9a-f]{3,8})|(?:rgb|rgba|hsl|hsla|hwb|lab|lch|oklab|oklch|color)\()/i;
 const DIMENSION_PATTERN = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:px|%|em|rem|vw|vh|vmin|vmax)$/i;
 const NUMBER_PATTERN = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/;
 const VAR_REFERENCE_PATTERN = /var\(\s*(--[A-Za-z0-9_-]+)/g;
@@ -61,7 +62,8 @@ export function buildTokenGraph(input: CssTokenGraphBuildInput): CssTokenGraphBu
   const definitionIds: Record<string, string> = {};
 
   for (const definition of definitions) {
-    if (!definition.definitionKey.trim()) throw new TypeError("token definitionKey must not be empty");
+    if (!definition.definitionKey.trim())
+      throw new TypeError("token definitionKey must not be empty");
     if (!definition.name.startsWith("--")) {
       throw new TypeError(`CSS custom property token must start with --: ${definition.name}`);
     }
@@ -88,7 +90,9 @@ export function buildTokenGraph(input: CssTokenGraphBuildInput): CssTokenGraphBu
       name: definition.name,
       kind: definition.kind ?? inferTokenKind(resolvedKindSource),
       rawValue: definition.rawValue,
-      ...(definition.resolvedValue === undefined ? {} : { resolvedValue: definition.resolvedValue }),
+      ...(definition.resolvedValue === undefined
+        ? {}
+        : { resolvedValue: definition.resolvedValue }),
       scope: {
         ...(definition.sourceNodeId ? { sourceNodeId: definition.sourceNodeId } : {}),
         ...(definition.stylesheetRef ? { stylesheetRef: definition.stylesheetRef } : {}),
@@ -103,8 +107,10 @@ export function buildTokenGraph(input: CssTokenGraphBuildInput): CssTokenGraphBu
   const usages = input.usages
     .map((usage) => {
       const id = definitionIds[usage.definitionKey];
-      if (!id) throw new TypeError(`token usage references unknown definition ${usage.definitionKey}`);
-      if (!usage.sourceNodeId.trim()) throw new TypeError("token usage sourceNodeId must not be empty");
+      if (!id)
+        throw new TypeError(`token usage references unknown definition ${usage.definitionKey}`);
+      if (!usage.sourceNodeId.trim())
+        throw new TypeError("token usage sourceNodeId must not be empty");
       if (!usage.property.trim()) throw new TypeError("token usage property must not be empty");
       return {
         tokenId: id,

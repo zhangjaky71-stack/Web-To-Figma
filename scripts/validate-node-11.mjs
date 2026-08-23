@@ -74,7 +74,15 @@ if (failures.length === 0) {
   }
 
   const length = read("packages/css-cascade/src/length.ts");
-  for (const evidence of ["percent", "em", "rem", "viewport", "keyword", "expression", "resolvedPx"]) {
+  for (const evidence of [
+    "percent",
+    "em",
+    "rem",
+    "viewport",
+    "keyword",
+    "expression",
+    "resolvedPx",
+  ]) {
     assert(length.includes(evidence), `NODE-11 CSS length model missing ${evidence}`);
   }
 
@@ -93,7 +101,13 @@ if (failures.length === 0) {
     .filter((path) => path.endsWith(".ts"))
     .map((path) => read(path))
     .join("\n");
-  for (const forbidden of ["getComputedStyle(", "document.", "window.", "CSSStyleSheet", "CSSRuleList"]) {
+  for (const forbidden of [
+    "getComputedStyle(",
+    "document.",
+    "window.",
+    "CSSStyleSheet",
+    "CSSRuleList",
+  ]) {
     assert(
       !runtimeSources.includes(forbidden),
       `NODE-11 core engine must remain platform-neutral; found ${forbidden}`,
@@ -107,7 +121,10 @@ if (failures.length === 0) {
 
   const schema = read("packages/w2f-schema/src/index.ts");
   assert(schema.includes("WtfTokenGraph"), "NODE-11 requires V2.1 Token Graph schema");
-  assert(schema.includes('sourceCascade: "source/cascade.json"'), "NODE-11 requires source/cascade entrypoint");
+  assert(
+    schema.includes('sourceCascade: "source/cascade.json"'),
+    "NODE-11 requires source/cascade entrypoint",
+  );
   assert(schema.includes('tokens: "tokens.json"'), "NODE-11 requires tokens entrypoint");
 }
 

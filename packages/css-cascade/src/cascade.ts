@@ -14,7 +14,8 @@ function normalizedProperty(property: string): string {
 }
 
 function nonNegativeInteger(value: number, label: string): number {
-  if (!Number.isSafeInteger(value) || value < 0) throw new TypeError(`${label} must be a non-negative integer`);
+  if (!Number.isSafeInteger(value) || value < 0)
+    throw new TypeError(`${label} must be a non-negative integer`);
   return value;
 }
 
@@ -36,7 +37,9 @@ function normalizeCandidate(
 ): CssAuthoredDeclarationEvidence {
   const candidateProperty = normalizedProperty(candidate.property);
   if (candidateProperty !== property) {
-    throw new TypeError(`cascade candidate property mismatch: expected ${property}, received ${candidateProperty}`);
+    throw new TypeError(
+      `cascade candidate property mismatch: expected ${property}, received ${candidateProperty}`,
+    );
   }
   const sourceOrder = nonNegativeInteger(candidate.sourceOrder, "sourceOrder");
   const specificity = candidate.specificity;
@@ -45,7 +48,8 @@ function normalizeCandidate(
     nonNegativeInteger(specificity.classes, "specificity.classes");
     nonNegativeInteger(specificity.types, "specificity.types");
   }
-  if (candidate.source.ruleIndex !== undefined) nonNegativeInteger(candidate.source.ruleIndex, "ruleIndex");
+  if (candidate.source.ruleIndex !== undefined)
+    nonNegativeInteger(candidate.source.ruleIndex, "ruleIndex");
   if (candidate.source.declarationIndex !== undefined) {
     nonNegativeInteger(candidate.source.declarationIndex, "declarationIndex");
   }
@@ -71,12 +75,18 @@ function normalizeCandidate(
       type: candidate.source.type,
       ...(candidate.source.stylesheetRef ? { stylesheetRef: candidate.source.stylesheetRef } : {}),
       ...(candidate.source.selector ? { selector: candidate.source.selector } : {}),
-      ...(candidate.source.ruleIndex === undefined ? {} : { ruleIndex: candidate.source.ruleIndex }),
+      ...(candidate.source.ruleIndex === undefined
+        ? {}
+        : { ruleIndex: candidate.source.ruleIndex }),
       ...(candidate.source.declarationIndex === undefined
         ? {}
         : { declarationIndex: candidate.source.declarationIndex }),
       ...(candidate.source.mediaConditions?.length
-        ? { mediaConditions: candidate.source.mediaConditions.map((condition) => condition.trim()).filter(Boolean) }
+        ? {
+            mediaConditions: candidate.source.mediaConditions
+              .map((condition) => condition.trim())
+              .filter(Boolean),
+          }
         : {}),
       ...(candidate.source.layer ? { layer: candidate.source.layer } : {}),
     },
@@ -112,10 +122,15 @@ export function createCascadePropertyTrace(
   const normalized = normalizedProperty(property);
   const normalizedCandidates = candidates
     .map((candidate) => normalizeCandidate(normalized, candidate))
-    .sort((left, right) => left.sourceOrder - right.sourceOrder || candidateKey(left).localeCompare(candidateKey(right)));
+    .sort(
+      (left, right) =>
+        left.sourceOrder - right.sourceOrder ||
+        candidateKey(left).localeCompare(candidateKey(right)),
+    );
 
   const winners = normalizedCandidates.filter((candidate) => candidate.status === "winner");
-  if (winners.length > 1) throw new TypeError(`cascade trace for ${normalized} has multiple winners`);
+  if (winners.length > 1)
+    throw new TypeError(`cascade trace for ${normalized} has multiple winners`);
 
   return {
     property: normalized,
@@ -144,14 +159,16 @@ export function createNodeCascadeEvidence(
 
   const properties = new Set<string>();
   for (const trace of normalizedTraces) {
-    if (properties.has(trace.property)) throw new TypeError(`duplicate cascade trace for ${trace.property}`);
+    if (properties.has(trace.property))
+      throw new TypeError(`duplicate cascade trace for ${trace.property}`);
     properties.add(trace.property);
   }
 
   const normalizedCustomProperties = Object.fromEntries(
     Object.entries(customProperties)
       .map(([name, value]) => {
-        if (!name.startsWith("--")) throw new TypeError(`custom property must start with --: ${name}`);
+        if (!name.startsWith("--"))
+          throw new TypeError(`custom property must start with --: ${name}`);
         return [name, value] as const;
       })
       .sort(([left], [right]) => left.localeCompare(right)),
@@ -170,7 +187,8 @@ export function createCascadePayload(nodes: CssNodeCascadeEvidence[]): CssCascad
     .sort((left, right) => left.sourceNodeId.localeCompare(right.sourceNodeId));
   const ids = new Set<string>();
   for (const node of normalizedNodes) {
-    if (ids.has(node.sourceNodeId)) throw new TypeError(`duplicate cascade node ${node.sourceNodeId}`);
+    if (ids.has(node.sourceNodeId))
+      throw new TypeError(`duplicate cascade node ${node.sourceNodeId}`);
     ids.add(node.sourceNodeId);
   }
   return { version: CSS_CASCADE_ENGINE_VERSION, nodes: normalizedNodes };

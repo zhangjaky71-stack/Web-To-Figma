@@ -65,10 +65,7 @@ describe("NODE-11 CSS cascade engine", () => {
       source: { mediaConditions: ["(min-width: 800px)"] },
     });
 
-    const style = toWtfStyleRecord(
-      "style:card",
-      createNodeCascadeEvidence("node:card", [trace]),
-    );
+    const style = toWtfStyleRecord("style:card", createNodeCascadeEvidence("node:card", [trace]));
     expect(style.declarations[0]).toMatchObject({
       property: "color",
       computedValue: "rgb(0, 0, 255)",

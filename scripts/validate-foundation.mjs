@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import "./validate-node-08.mjs";
 import "./validate-node-09.mjs";
 import "./validate-node-10.mjs";
+import "./validate-node-11.mjs";
 
 const root = process.cwd();
 const failures = [];

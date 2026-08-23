@@ -379,9 +379,10 @@ assert(
 );
 
 const protocol = await readFile(`${outputRoot}/runtime/protocol.js`, "utf8");
+const shellVersionMatch = protocol.match(/W2F_EXTENSION_SHELL_VERSION = "(\d+)\.(\d+)\.(\d+)"/);
 assert(
-  protocol.includes('W2F_EXTENSION_SHELL_VERSION = "1.3.0"'),
-  "Browser shell protocol must preserve the NODE-09 version until its external message contract changes",
+  shellVersionMatch && Number(shellVersionMatch[1]) === 1 && Number(shellVersionMatch[2]) >= 3,
+  "Browser shell protocol must preserve NODE-09 compatibility while allowing additive 1.x minor versions",
 );
 
 console.log(`Browser extension package validation (${profile}): PASS`);

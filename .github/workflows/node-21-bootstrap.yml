@@ -1,6 +1,5 @@
 name: NODE-21 Bootstrap
 
-# Existing-workflow push trigger for the controlled NODE-21 integration run.
 on:
   push:
     branches:
@@ -32,57 +31,60 @@ jobs:
           node-version: 24
           cache: pnpm
 
-      - name: Install current workspace
-        run: pnpm install --no-frozen-lockfile
-
-      - name: Normalize NODE-21 guardrails
-        run: node scripts/node-21-guardrail-fix.mjs
-
-      - name: Apply NODE-21 integration closure
-        run: node scripts/node-21-finalize.mjs
-
-      - name: Refresh patched workspace lockfile
-        run: pnpm install --no-frozen-lockfile
-
-      - name: Apply canonical formatting
-        run: >-
-          pnpm exec prettier --write
-          packages/wtf-packager
-          apps/browser-extension/package.json
-          apps/browser-extension/scripts/package-extension.mjs
-          apps/browser-extension/scripts/validate-node-21-package.mjs
-          apps/browser-extension/src/chrome.d.ts
-          apps/browser-extension/src/runtime/wtf-package-builder.ts
-          apps/browser-extension/src/runtime/wtf-package-store.ts
-          apps/browser-extension/src/runtime/wtf-export-contract.ts
-          apps/browser-extension/src/runtime/wtf-export-runtime.ts
-          apps/browser-extension/src/runtime/protocol.ts
-          apps/browser-extension/src/runtime/service-worker.ts
-          apps/browser-extension/src/runtime/popup.ts
-          apps/browser-extension/static/manifest.json
-          apps/browser-extension/static/manifest.high-fidelity.json
-          apps/browser-extension/static/popup.html
-          apps/browser-extension/test/wtf-package-store.test.ts
-          scripts/validate-foundation.mjs
-          scripts/validate-node-21.mjs
-          docs/WTF_PACKAGER_V2.md
-          docs/adr/ADR-0021-deterministic-wtf-writer.md
-          docs/nodes/NODE-21_WTF_PACKAGER.md
-          docs/IMPLEMENTATION_STATUS.md
-
-      - name: Remove temporary finalization files
-        run: git rm .github/workflows/node-21-bootstrap.yml scripts/node-21-finalize.mjs scripts/node-21-guardrail-fix.mjs
-
-      - name: Validate final repository shape
-        run: pnpm check
-
-      - name: Commit validated NODE-21 integration
+      - name: Run controlled NODE-21 closure
+        shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm -f NODE21_BOOTSTRAP_FAILURE.log
+          set +e
+          {
+            pnpm install --no-frozen-lockfile
+            node scripts/node-21-guardrail-fix.mjs
+            node scripts/node-21-finalize.mjs
+            pnpm install --no-frozen-lockfile
+            pnpm exec prettier --write \
+              packages/wtf-packager \
+              apps/browser-extension/package.json \
+              apps/browser-extension/scripts/package-extension.mjs \
+              apps/browser-extension/scripts/validate-node-21-package.mjs \
+              apps/browser-extension/src/chrome.d.ts \
+              apps/browser-extension/src/runtime/wtf-package-builder.ts \
+              apps/browser-extension/src/runtime/wtf-package-store.ts \
+              apps/browser-extension/src/runtime/wtf-export-contract.ts \
+              apps/browser-extension/src/runtime/wtf-export-runtime.ts \
+              apps/browser-extension/src/runtime/protocol.ts \
+              apps/browser-extension/src/runtime/service-worker.ts \
+              apps/browser-extension/src/runtime/popup.ts \
+              apps/browser-extension/static/manifest.json \
+              apps/browser-extension/static/manifest.high-fidelity.json \
+              apps/browser-extension/static/popup.html \
+              apps/browser-extension/test/wtf-package-store.test.ts \
+              scripts/validate-foundation.mjs \
+              scripts/validate-node-21.mjs \
+              docs/WTF_PACKAGER_V2.md \
+              docs/adr/ADR-0021-deterministic-wtf-writer.md \
+              docs/nodes/NODE-21_WTF_PACKAGER.md \
+              docs/IMPLEMENTATION_STATUS.md
+            git rm .github/workflows/node-21-bootstrap.yml scripts/node-21-finalize.mjs scripts/node-21-guardrail-fix.mjs
+            pnpm check
+          } > /tmp/node21-bootstrap.log 2>&1
+          status=$?
+          set -e
+
+          if [ "$status" -ne 0 ]; then
+            git reset --hard HEAD
+            tail -n 500 /tmp/node21-bootstrap.log > NODE21_BOOTSTRAP_FAILURE.log
+            git add NODE21_BOOTSTRAP_FAILURE.log
+            git commit -m "ci(node-21): record bootstrap failure"
+            git push origin HEAD:feat/node-21-wtf-packager
+            echo "NODE-21 bootstrap failed; diagnostic report committed to branch."
+            exit "$status"
+          fi
+
           git add -A
           if git diff --cached --quiet; then
-            echo "No changes to commit"
+            echo "No candidate changes to commit"
             exit 0
           fi
           git commit -m "feat(node-21): complete WTF Packager integration"

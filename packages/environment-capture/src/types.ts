@@ -19,7 +19,7 @@ export interface RuntimeEnvironmentEvidence {
   direction: "ltr" | "rtl";
   colorScheme: "light" | "dark";
   reducedMotion: boolean;
-  mediaFeatures: EnvironmentMediaFeatureEvidence[];
+  mediaFeatures?: EnvironmentMediaFeatureEvidence[];
   viewportWidth: number;
   viewportHeight: number;
   dpr: number;
@@ -55,7 +55,7 @@ export interface ContainerQueryEvidence {
   containerName?: string;
   condition: string;
   active?: boolean;
-  activeAvailability: EnvironmentEvidenceAvailability;
+  activeAvailability?: EnvironmentEvidenceAvailability;
   containerSourceNodeId?: string;
   affectedProperties: string[];
   affectedSourceNodeIds: string[];

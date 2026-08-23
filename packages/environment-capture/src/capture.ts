@@ -1,8 +1,4 @@
-import type {
-  WtfCaptureEnvironment,
-  WtfContainerQueryInfo,
-  WtfMediaRuleTrace,
-} from "@w2f/w2f-ir";
+import type { WtfCaptureEnvironment, WtfContainerQueryInfo, WtfMediaRuleTrace } from "@w2f/w2f-ir";
 import {
   ENVIRONMENT_CAPTURE_VERSION,
   type ContainerDefinitionEvidence,
@@ -196,14 +192,18 @@ export function toWtfContainerQueryInfo(
     );
     return {
       ...(query.containerName ? { containerName: query.containerName } : {}),
-      ...(matchingContainer?.containerType ? { containerType: matchingContainer.containerType } : {}),
+      ...(matchingContainer?.containerType
+        ? { containerType: matchingContainer.containerType }
+        : {}),
       conditions: [query.condition],
       affectedStableNodeIds: stableIds,
     };
   });
 }
 
-export function summarizeEnvironmentCapture(capture: EnvironmentCapture): EnvironmentCaptureSummary {
+export function summarizeEnvironmentCapture(
+  capture: EnvironmentCapture,
+): EnvironmentCaptureSummary {
   return {
     version: capture.version,
     adapter: capture.adapter,

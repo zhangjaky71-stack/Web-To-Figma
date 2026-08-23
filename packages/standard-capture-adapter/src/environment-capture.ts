@@ -188,7 +188,10 @@ export function captureStandardEnvironmentInPage(
         const computed = view.getComputedStyle(target.element);
         const containerName = computed.getPropertyValue("container-name").trim();
         const containerType = computed.getPropertyValue("container-type").trim();
-        if ((containerName && containerName !== "none") || (containerType && containerType !== "normal")) {
+        if (
+          (containerName && containerName !== "none") ||
+          (containerType && containerType !== "normal")
+        ) {
           containers.set(hint.sourceNodeId, {
             sourceNodeId: hint.sourceNodeId,
             ...(containerName && containerName !== "none" ? { containerName } : {}),
@@ -232,7 +235,9 @@ export function captureStandardEnvironmentInPage(
     const selectors = splitSelectorList(selectorText);
     const pseudoMarker = target.pseudoType ? `::${target.pseudoType}` : undefined;
     const applicable = selectors
-      .filter((selector) => (pseudoMarker ? selector.includes(pseudoMarker) : !selector.includes("::")))
+      .filter((selector) =>
+        pseudoMarker ? selector.includes(pseudoMarker) : !selector.includes("::"),
+      )
       .map((selector) => (pseudoMarker ? selector.replaceAll(pseudoMarker, "") : selector))
       .filter(Boolean);
     if (!applicable.length) return false;
@@ -286,7 +291,11 @@ export function captureStandardEnvironmentInPage(
     return value;
   }
 
-  function containerContext(rule: CSSRule, ref: string, index: number): ContainerContext | undefined {
+  function containerContext(
+    rule: CSSRule,
+    ref: string,
+    index: number,
+  ): ContainerContext | undefined {
     if (rule.constructor.name !== "CSSContainerRule") return undefined;
     const record = rule as CSSRule & {
       conditionText?: string;
@@ -331,7 +340,8 @@ export function captureStandardEnvironmentInPage(
             break;
           }
           const property = rule.style.item(index);
-          if (property) properties.push(property.startsWith("--") ? property : property.toLowerCase());
+          if (property)
+            properties.push(property.startsWith("--") ? property : property.toLowerCase());
           scannedDeclarations += 1;
         }
         if (!properties.length || (!mediaStack.length && !containerStack.length)) continue;
@@ -433,7 +443,8 @@ export function captureStandardEnvironmentInPage(
   if (environment.pageZoomAvailability !== "observed") {
     diagnostic({
       code: "ENV_PAGE_ZOOM_UNAVAILABLE",
-      message: "Browser page zoom could not be separated from other scale factors for this capture profile.",
+      message:
+        "Browser page zoom could not be separated from other scale factors for this capture profile.",
     });
   }
 

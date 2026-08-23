@@ -113,7 +113,9 @@ describe("NODE-12 environment capture", () => {
         affectedProperties: ["color"],
       },
     ]);
-    expect(toWtfContainerQueryInfo(capture, (id) => (id === "node:text" ? "stable:text" : undefined))).toEqual([
+    expect(
+      toWtfContainerQueryInfo(capture, (id) => (id === "node:text" ? "stable:text" : undefined)),
+    ).toEqual([
       {
         containerName: "card",
         containerType: "inline-size",

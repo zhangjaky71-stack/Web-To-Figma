@@ -1,7 +1,4 @@
-import {
-  isEnvironmentCapture,
-  type EnvironmentCapture,
-} from "@w2f/environment-capture";
+import { isEnvironmentCapture, type EnvironmentCapture } from "@w2f/environment-capture";
 
 export const W2F_ENVIRONMENT_DB_NAME = "w2f-environment" as const;
 export const W2F_ENVIRONMENT_STORE_NAME = "captures" as const;

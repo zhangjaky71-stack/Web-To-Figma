@@ -46,9 +46,7 @@ function snapshot(adapter: "standard" | "cdp"): RawSnapshot {
         source: { sourceSelector: ".card" },
       },
     ],
-    frames: [
-      { context: { frameId: "root" }, rootCaptureNodeId: "doc:root", accessible: true },
-    ],
+    frames: [{ context: { frameId: "root" }, rootCaptureNodeId: "doc:root", accessible: true }],
     scrollContainers: [],
     diagnostics: [],
   };
@@ -56,9 +54,7 @@ function snapshot(adapter: "standard" | "cdp"): RawSnapshot {
 
 describe("Browser environment runtime", () => {
   it("uses the raw capture timestamp as a stable single-snapshot identity", () => {
-    expect(environmentSnapshotId(snapshot("standard"))).toBe(
-      "snapshot:2026-08-23T04:30:00.000Z",
-    );
+    expect(environmentSnapshotId(snapshot("standard"))).toBe("snapshot:2026-08-23T04:30:00.000Z");
   });
 
   it("preserves Standard unavailable page zoom without fabricating a value", () => {

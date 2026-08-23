@@ -17,9 +17,12 @@ for (const path of [
   "packages/asset-resolver/tsconfig.json",
   "packages/asset-resolver/tsconfig.build.json",
   "packages/asset-resolver/src/types.ts",
+  "packages/asset-resolver/src/discovery.ts",
+  "packages/asset-resolver/src/acquisition.ts",
   "packages/asset-resolver/src/resolver.ts",
   "packages/asset-resolver/src/index.ts",
   "packages/asset-resolver/test/asset-resolver.test.ts",
+  "packages/asset-resolver/test/discovery-acquisition.test.ts",
   "packages/standard-capture-adapter/src/asset-acquisition.ts",
   "apps/browser-extension/src/runtime/asset-runtime.ts",
   "apps/browser-extension/src/runtime/asset-store.ts",
@@ -36,15 +39,24 @@ for (const path of [
 if (failures.length === 0) {
   const packageJson = JSON.parse(read("packages/asset-resolver/package.json"));
   assert(packageJson.name === "@w2f/asset-resolver", "NODE-13 asset package name drifted");
-  assert(
-    packageJson.dependencies?.["@w2f/w2f-ir"] === "workspace:*",
-    "NODE-13 asset resolver must reuse W2F IR",
-  );
+  for (const dependency of [
+    "@w2f/capture-core",
+    "@w2f/css-cascade",
+    "@w2f/source-providers",
+    "@w2f/w2f-ir",
+  ]) {
+    assert(
+      packageJson.dependencies?.[dependency] === "workspace:*",
+      `NODE-13 asset resolver must declare ${dependency}`,
+    );
+  }
 
   const types = read("packages/asset-resolver/src/types.ts");
   for (const evidence of [
     'ASSET_CAPTURE_VERSION = "1.0.0"',
     "AssetResourceProvenance",
+    "AssetDomEvidence",
+    "AssetResourceCandidate",
     "AssetAcquiredResource",
     "ResolvedAssetResource",
     "AssetCapture",
@@ -60,6 +72,32 @@ if (failures.length === 0) {
     '"blob"',
   ]) {
     assert(types.includes(evidence), `NODE-13 asset contract missing ${evidence}`);
+  }
+
+  const discovery = read("packages/asset-resolver/src/discovery.ts");
+  for (const evidence of [
+    "discoverAssetCandidates",
+    "extractCssUrls",
+    "currentSrc",
+    "authoredSrc",
+    "resolveUrlReference",
+    "background-image",
+    "stylesheetRef",
+    "svg-inline",
+  ]) {
+    assert(discovery.includes(evidence), `NODE-13 discovery missing ${evidence}`);
+  }
+
+  const genericAcquisition = read("packages/asset-resolver/src/acquisition.ts");
+  for (const evidence of [
+    "acquireAssetCandidates",
+    "decodeDataUrl",
+    "AssetBinaryFetcher",
+    "ASSET_COUNT_BUDGET_EXCEEDED",
+    "ASSET_TOTAL_BUDGET_EXCEEDED",
+    "fetchCache",
+  ]) {
+    assert(genericAcquisition.includes(evidence), `NODE-13 generic acquisition missing ${evidence}`);
   }
 
   const resolver = read("packages/asset-resolver/src/resolver.ts");
@@ -80,7 +118,7 @@ if (failures.length === 0) {
   for (const forbidden of ["document.", "window.", "fetch(", "indexedDB", "crypto.subtle"]) {
     assert(
       !resolver.includes(forbidden),
-      `NODE-13 asset core must remain platform-neutral; found ${forbidden}`,
+      `NODE-13 resolver normalization core must remain platform-neutral; found ${forbidden}`,
     );
   }
 
@@ -213,7 +251,7 @@ if (failures.length === 0) {
     "data:",
     "blob:",
     "Resource Provenance",
-    "cross-origin",
+    "CORS/origin",
     "NODE-14",
     "NODE-21",
   ]) {

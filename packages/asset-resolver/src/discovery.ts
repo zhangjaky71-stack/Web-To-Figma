@@ -29,10 +29,7 @@ function frameOrigin(url: string): string | undefined {
   }
 }
 
-function sourceTypeForUrl(
-  url: string,
-  fallback: AssetResourceSourceType,
-): AssetResourceSourceType {
+function sourceTypeForUrl(url: string, fallback: AssetResourceSourceType): AssetResourceSourceType {
   const lowered = url.trim().toLowerCase();
   if (lowered.startsWith("data:")) return "data-url";
   if (lowered.startsWith("blob:")) return "blob";
@@ -190,7 +187,9 @@ function pushDomCandidate(
     ...(evidence.currentSrc ? { currentSrc: evidence.currentSrc } : {}),
     ...(evidence.authoredSrc ? { authoredSrc: evidence.authoredSrc } : {}),
     ...(evidence.intrinsicWidth === undefined ? {} : { intrinsicWidth: evidence.intrinsicWidth }),
-    ...(evidence.intrinsicHeight === undefined ? {} : { intrinsicHeight: evidence.intrinsicHeight }),
+    ...(evidence.intrinsicHeight === undefined
+      ? {}
+      : { intrinsicHeight: evidence.intrinsicHeight }),
     ...(evidence.displayWidth === undefined ? {} : { displayWidth: evidence.displayWidth }),
     ...(evidence.displayHeight === undefined ? {} : { displayHeight: evidence.displayHeight }),
     provenance: {
@@ -244,7 +243,8 @@ export function discoverAssetCandidates(input: DiscoverAssetCandidatesInput): As
     return live ? { ...fallback, ...live } : fallback;
   });
   for (const live of input.domEvidence ?? []) {
-    if (!domEvidence.some((item) => item.sourceNodeId === live.sourceNodeId)) domEvidence.push(live);
+    if (!domEvidence.some((item) => item.sourceNodeId === live.sourceNodeId))
+      domEvidence.push(live);
   }
   for (const evidence of domEvidence) {
     pushDomCandidate(candidates, diagnostics, input.snapshot.url, evidence);

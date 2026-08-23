@@ -53,10 +53,7 @@ export async function captureStandardAssetsInPage(
   const resolvedTargets = new Map<string, ResolvedTarget>();
   const candidates: Candidate[] = [];
   const candidateKeys = new Set<string>();
-  const fetchCache = new Map<
-    string,
-    Promise<{ bytes: number[]; mediaTypeHint?: string }>
-  >();
+  const fetchCache = new Map<string, Promise<{ bytes: number[]; mediaTypeHint?: string }>>();
   let totalBytes = 0;
   let budgetReported = false;
 
@@ -77,9 +74,7 @@ export async function captureStandardAssetsInPage(
   }
 
   function rootFrameId(): string | undefined {
-    return (
-      input.frames.find((frame) => !frame.parentFrameId)?.frameId ?? input.frames[0]?.frameId
-    );
+    return input.frames.find((frame) => !frame.parentFrameId)?.frameId ?? input.frames[0]?.frameId;
   }
 
   const mainFrameId = rootFrameId();
@@ -118,11 +113,7 @@ export async function captureStandardAssetsInPage(
   while (frameProgress) {
     frameProgress = false;
     for (const frame of input.frames) {
-      if (
-        frameDocuments.has(frame.frameId) ||
-        !frame.parentFrameId ||
-        !frame.ownerSourceNodeId
-      ) {
+      if (frameDocuments.has(frame.frameId) || !frame.parentFrameId || !frame.ownerSourceNodeId) {
         continue;
       }
       if (!frameDocuments.has(frame.parentFrameId)) continue;

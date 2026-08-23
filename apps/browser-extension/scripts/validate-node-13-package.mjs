@@ -95,7 +95,10 @@ for (const evidence of [
   assert(resolver.includes(evidence), `packaged asset resolver missing ${evidence}`);
 }
 for (const forbidden of ["document.", "window.", "fetch(", "indexedDB"]) {
-  assert(!resolver.includes(forbidden), `asset resolver core must remain platform-neutral: ${forbidden}`);
+  assert(
+    !resolver.includes(forbidden),
+    `asset resolver core must remain platform-neutral: ${forbidden}`,
+  );
 }
 
 const discovery = await readFile(`${outputRoot}/runtime/asset-resolver/discovery.js`, "utf8");

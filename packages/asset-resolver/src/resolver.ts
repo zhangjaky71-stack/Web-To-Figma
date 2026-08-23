@@ -52,17 +52,10 @@ export function sniffAssetMediaType(
   if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
     return "image/jpeg";
   }
-  if (
-    bytes.length >= 6 &&
-    (ascii(bytes, 0, 6) === "GIF87a" || ascii(bytes, 0, 6) === "GIF89a")
-  ) {
+  if (bytes.length >= 6 && (ascii(bytes, 0, 6) === "GIF87a" || ascii(bytes, 0, 6) === "GIF89a")) {
     return "image/gif";
   }
-  if (
-    bytes.length >= 12 &&
-    ascii(bytes, 0, 4) === "RIFF" &&
-    ascii(bytes, 8, 12) === "WEBP"
-  ) {
+  if (bytes.length >= 12 && ascii(bytes, 0, 4) === "RIFF" && ascii(bytes, 8, 12) === "WEBP") {
     return "image/webp";
   }
   if (bytes.length >= 12 && ascii(bytes, 4, 8) === "ftyp") {
@@ -160,7 +153,9 @@ function toRecord(
     ...(resource.displayWidth === undefined ? {} : { width: resource.displayWidth }),
     ...(resource.displayHeight === undefined ? {} : { height: resource.displayHeight }),
     ...(resource.intrinsicWidth === undefined ? {} : { intrinsicWidth: resource.intrinsicWidth }),
-    ...(resource.intrinsicHeight === undefined ? {} : { intrinsicHeight: resource.intrinsicHeight }),
+    ...(resource.intrinsicHeight === undefined
+      ? {}
+      : { intrinsicHeight: resource.intrinsicHeight }),
     ...(resource.currentSrc ? { currentSrc: resource.currentSrc } : {}),
     ...(resource.authoredSrc ? { authoredSrc: resource.authoredSrc } : {}),
     provenance: {
@@ -184,8 +179,12 @@ function mergeRecord(existing: WtfAssetRecord, next: WtfAssetRecord): WtfAssetRe
     ...(existing.intrinsicHeight === undefined && next.intrinsicHeight !== undefined
       ? { intrinsicHeight: next.intrinsicHeight }
       : {}),
-    ...(existing.currentSrc === undefined && next.currentSrc ? { currentSrc: next.currentSrc } : {}),
-    ...(existing.authoredSrc === undefined && next.authoredSrc ? { authoredSrc: next.authoredSrc } : {}),
+    ...(existing.currentSrc === undefined && next.currentSrc
+      ? { currentSrc: next.currentSrc }
+      : {}),
+    ...(existing.authoredSrc === undefined && next.authoredSrc
+      ? { authoredSrc: next.authoredSrc }
+      : {}),
   };
 }
 

@@ -147,7 +147,11 @@ export async function fetchHighFidelityResourceContents(
     await api.attach(target, CDP_REQUIRED_PROTOCOL_VERSION);
     attached = true;
     await command(api, target, "Page.enable");
-    const resourceTree = await command<CdpResourceTreeResponse>(api, target, "Page.getResourceTree");
+    const resourceTree = await command<CdpResourceTreeResponse>(
+      api,
+      target,
+      "Page.getResourceTree",
+    );
     const resourceMap = new Map<string, { frameId: string; resource: CdpPageResource }>();
     collectResources(resourceTree.frameTree, resourceMap);
 

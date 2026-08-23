@@ -55,9 +55,7 @@ function toAcquired(
     ...(mediaTypeHint ? { mediaTypeHint } : {}),
     ...(candidate.currentSrc ? { currentSrc: candidate.currentSrc } : {}),
     ...(candidate.authoredSrc ? { authoredSrc: candidate.authoredSrc } : {}),
-    ...(candidate.intrinsicWidth === undefined
-      ? {}
-      : { intrinsicWidth: candidate.intrinsicWidth }),
+    ...(candidate.intrinsicWidth === undefined ? {} : { intrinsicWidth: candidate.intrinsicWidth }),
     ...(candidate.intrinsicHeight === undefined
       ? {}
       : { intrinsicHeight: candidate.intrinsicHeight }),
@@ -86,7 +84,8 @@ function diagnosticFor(
 function policyWithDefaults(policy?: Partial<AssetAcquisitionPolicy>): AssetAcquisitionPolicy {
   const resolved = { ...DEFAULT_ASSET_ACQUISITION_POLICY, ...policy };
   for (const [key, value] of Object.entries(resolved)) {
-    if (!Number.isSafeInteger(value) || value <= 0) throw new TypeError(`${key} must be a positive integer`);
+    if (!Number.isSafeInteger(value) || value <= 0)
+      throw new TypeError(`${key} must be a positive integer`);
   }
   return resolved;
 }
@@ -132,7 +131,11 @@ export async function acquireAssetCandidates(
         result = await pending;
       } else {
         diagnostics.push(
-          diagnosticFor(candidate, "ASSET_FETCH_FAILED", "Asset candidate has no fetchable locator."),
+          diagnosticFor(
+            candidate,
+            "ASSET_FETCH_FAILED",
+            "Asset candidate has no fetchable locator.",
+          ),
         );
         continue;
       }

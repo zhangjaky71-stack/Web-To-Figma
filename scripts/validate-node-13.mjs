@@ -100,7 +100,10 @@ if (failures.length === 0) {
     "ASSET_TOTAL_BUDGET_EXCEEDED",
     "fetchCache",
   ]) {
-    assert(genericAcquisition.includes(evidence), `NODE-13 generic acquisition missing ${evidence}`);
+    assert(
+      genericAcquisition.includes(evidence),
+      `NODE-13 generic acquisition missing ${evidence}`,
+    );
   }
 
   const resolver = read("packages/asset-resolver/src/resolver.ts");

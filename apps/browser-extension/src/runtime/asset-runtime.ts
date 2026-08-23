@@ -35,9 +35,7 @@ export function buildStandardAssetInput(snapshot: RawSnapshot): StandardAssetInp
 export const sha256AssetBytes: AssetHasher = async (bytes) => {
   const copy = Uint8Array.from(bytes);
   const digest = await crypto.subtle.digest("SHA-256", copy.buffer);
-  return [...new Uint8Array(digest)]
-    .map((value) => value.toString(16).padStart(2, "0"))
-    .join("");
+  return [...new Uint8Array(digest)].map((value) => value.toString(16).padStart(2, "0")).join("");
 };
 
 function sourceTypeForRecovery(

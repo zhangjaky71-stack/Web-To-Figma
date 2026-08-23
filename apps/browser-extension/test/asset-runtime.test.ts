@@ -43,9 +43,7 @@ function snapshot(adapter: "standard" | "cdp" = "standard"): RawSnapshot {
         source: { tagName: "img", sourceSelector: "#hero", attributes: { src: "hero.png" } },
       },
     ],
-    frames: [
-      { context: { frameId: "root" }, rootCaptureNodeId: "doc:root", accessible: true },
-    ],
+    frames: [{ context: { frameId: "root" }, rootCaptureNodeId: "doc:root", accessible: true }],
     scrollContainers: [],
     diagnostics: [],
   };

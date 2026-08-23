@@ -164,7 +164,9 @@ describe("NODE-13 asset discovery", () => {
         originalUrl: "images/hero-small.png",
       },
     });
-    const css = result.candidates.find((item) => item.provenance.cssProperty === "background-image");
+    const css = result.candidates.find(
+      (item) => item.provenance.cssProperty === "background-image",
+    );
     expect(css).toMatchObject({
       locator: "https://cdn.example.com/card@2x.webp",
       authoredSrc: "../images/card.webp",
@@ -188,7 +190,9 @@ describe("NODE-13 asset discovery", () => {
 
 describe("NODE-13 asset acquisition", () => {
   it("decodes data URLs and hashes bytes with SHA-256", async () => {
-    expect(new TextDecoder().decode(decodeDataUrl("data:text/plain;base64,YWJj").bytes)).toBe("abc");
+    expect(new TextDecoder().decode(decodeDataUrl("data:text/plain;base64,YWJj").bytes)).toBe(
+      "abc",
+    );
     expect(new TextDecoder().decode(decodeDataUrl("data:text/plain,a+b").bytes)).toBe("a+b");
     expect(await sha256Hex(new TextEncoder().encode("abc"))).toBe(
       "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
@@ -206,12 +210,20 @@ describe("NODE-13 asset acquisition", () => {
           {
             acquisitionId: "a",
             locator: "https://example.com/a.png",
-            provenance: { sourceType: "img", sourceNodeId: "node:a", sourceUrl: "https://example.com/a.png" },
+            provenance: {
+              sourceType: "img",
+              sourceNodeId: "node:a",
+              sourceUrl: "https://example.com/a.png",
+            },
           },
           {
             acquisitionId: "b",
             locator: "https://example.com/a.png",
-            provenance: { sourceType: "css-background", sourceNodeId: "node:b", sourceUrl: "https://example.com/a.png" },
+            provenance: {
+              sourceType: "css-background",
+              sourceNodeId: "node:b",
+              sourceUrl: "https://example.com/a.png",
+            },
           },
         ],
         diagnostics: [],

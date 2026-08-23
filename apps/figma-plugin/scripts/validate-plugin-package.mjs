@@ -31,7 +31,7 @@ if (failures.length === 0) {
   );
   assert(
     JSON.stringify(manifest.networkAccess?.allowedDomains) === JSON.stringify(["none"]),
-    "NODE-22 must remain local-first with no network domains",
+    "Figma import must remain local-first with no network domains",
   );
 
   const main = text("dist/code.js");
@@ -40,14 +40,14 @@ if (failures.length === 0) {
     "W2F_FILE_BYTES",
     "W2F_IMPORT_SELECTION",
     "W2F_CANCEL_IMPORT",
-    "awaiting-secure-parser",
+    "secureParserImplemented",
     'figma.on("drop"',
     "getBytesAsync",
     "showUI",
   ]) {
     assert(main.includes(evidence), `packaged Figma main missing ${evidence}`);
   }
-  for (const forbidden of ["require(", 'from "@w2f/', "fetch(", "XMLHttpRequest", "WebSocket"]) {
+  for (const forbidden of ["require(", 'from "@w2f/', "fetch(", "XMLHttpRequest", "WebSocket", "eval("]) {
     assert(!main.includes(forbidden), `packaged Figma main must not contain ${forbidden}`);
   }
 
@@ -59,15 +59,28 @@ if (failures.length === 0) {
     "Balanced",
     "Design Friendly",
     "Literal Import",
-    "awaiting-secure-parser",
     "arrayBuffer",
     "W2F_INTAKE_METADATA",
     "section-outline",
+    "Validating archive",
+    "Secure validation complete",
+    "WTF_PARSER_ZIP_SIGNATURE",
+    "WTF_PARSER_CHECKSUM_MISMATCH",
+    "WTF_PARSER_SVG_UNSAFE",
+    "v2-compatible-pass-through",
   ]) {
     assert(ui.includes(evidence), `packaged Figma UI missing ${evidence}`);
   }
-  for (const forbidden of ["https://", "http://", "fetch(", "XMLHttpRequest", "WebSocket"]) {
-    assert(!ui.includes(forbidden), `packaged Figma UI must remain local-only; found ${forbidden}`);
+  for (const forbidden of [
+    "https://",
+    "http://",
+    "fetch(",
+    "XMLHttpRequest",
+    "WebSocket",
+    "eval(",
+    "new Function(",
+  ]) {
+    assert(!ui.includes(forbidden), `packaged Figma UI must remain local-only/data-only; found ${forbidden}`);
   }
 }
 

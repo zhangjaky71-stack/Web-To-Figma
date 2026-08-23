@@ -32,8 +32,8 @@
 | 19 | Render Tree Optimizer | DONE | Exact-head read-only CI #477 PASS | PR #23 merged as `030f433a` |
 | 20 | Compositing & Fallback Boundary | DONE | Exact-head read-only CI #503 PASS | PR #24 merged as `f0d10cdb` |
 | 21 | WTF Packager | DONE | Exact-head read-only CI #540 PASS | PR #25 merged as `5395d1eb` |
-| 22 | Figma Plugin Shell & File Intake | EXIT GATE CANDIDATE | Bootstrap CI #569 full `pnpm check` PASS; exact-head read-only CI pending | PR #26 |
-| 23 | Secure Parser & Migration | TODO | - | - |
+| 22 | Figma Plugin Shell & File Intake | DONE | Exact-head read-only CI #571 PASS | PR #26 merged as `84ebc5ed` |
+| 23 | Secure Parser & Migration | IN PROGRESS | Implementation starting from merged NODE-22 | `feat/node-23-secure-parser-migration` |
 | 24 | Figma Capability Resolver | TODO | - | - |
 | 25 | Basic Figma Renderer | TODO | - | - |
 | 26 | Text / Font / Asset / Paint Renderer | TODO | - | - |
@@ -45,92 +45,74 @@
 
 ## Current Node
 
-`NODE-22 — Figma Plugin Shell & File Intake`
+`NODE-23 — Secure Parser & Migration`
 
 Entry baseline:
 
 ```text
-5395d1eb3c29187f6a07cacccd6b6ddfab4890ee
+84ebc5eddec06b38dd757aecbcdcf7f49a1a76e1
 ```
 
 Working branch:
 
 ```text
-feat/node-22-figma-plugin-shell-file-intake
+feat/node-23-secure-parser-migration
 ```
 
-## NODE-21 Closure
+## NODE-22 Closure
 
-NODE-21 PR #25 passed final exact-head read-only CI #540 (`32643983427`) on:
+NODE-22 PR #26 passed final exact-head read-only CI #571 (`32646653514`) on:
 
 ```text
-62724c3a9f03ae0980427823b4fee8d69e8ceab0
+531f6784c2a2b2af3c3d1dcfaef0ca197b8de5c4
 ```
 
 and was squash merged into `main` as:
 
 ```text
-5395d1eb3c29187f6a07cacccd6b6ddfab4890ee
+84ebc5eddec06b38dd757aecbcdcf7f49a1a76e1
 ```
 
-The merged tree closes Phase B with deterministic `.wtf` packaging, manifest/checksum inventory, reference/assets payloads, ZIP output, Browser package persistence and local download for both Standard and High Fidelity extension profiles.
+The merged tree provides a loadable Local First Figma main/UI shell, Choose/UI Drop/Canvas Drop intake, versioned protocol, progress/import policy, Whole Page / Selected Sections contracts, revision/stable-source/literal-token handoff and package validation while preserving the secure-parser trust boundary.
 
-## NODE-22 Frozen Scope
+## NODE-23 Frozen Scope
 
-V2 requires:
+V2 Baseline requires:
 
 ```text
-main / ui
-choose
-drop
-progress
-import modes
-section outline
+schema
+version
+zip bomb
+zip slip
+checksum
+SVG sanitize
+migration
 ```
 
-V2 partial import requires Whole Page and Selected Sections backed by the Render Tree section model.
+The secure parser must treat every `.wtf` as hostile input. Validation must fail closed before data becomes renderer input.
 
-V2.1 additionally requires NODE-22~28 Figma Import/Render to preserve:
+## NODE-23 Security Order
 
-- revision metadata;
-- stable source mapping;
-- literal token values by default;
-- RenderProfile policy.
+The implementation follows the frozen security sequence:
 
-## NODE-22 Boundary
+1. archive signature/container structure;
+2. entry count and declared/compressed/uncompressed limits;
+3. portable path normalization, duplicate detection and Zip Slip rejection;
+4. required `manifest.json` / `checksums.json` presence;
+5. manifest kind/version/schema/feature compatibility;
+6. canonical inventory and per-entry size agreement;
+7. SHA-256 checksum verification over exact uncompressed bytes;
+8. JSON decode/schema/IR validation only after integrity passes;
+9. asset MIME/path policy and no nested archive auto-expansion;
+10. SVG sanitization before any SVG reaches later Figma rendering;
+11. explicit version migration into the current reader model;
+12. parser preview / validated document handoff to NODE-22 protocol.
 
-NODE-22 is the shell and file-intake boundary only:
+## Boundaries
 
-- accept local `.wtf` file bytes from UI choose/drop and active-plugin Canvas drop;
-- keep main ↔ UI communication versioned and typed;
-- model file intake, progress, import profile/mode and section selection;
-- preserve parser/render handoff metadata without interpreting untrusted archive internals;
-- do not unzip or trust archive content in the shell.
+NODE-23 does not create Figma nodes and does not decide native/emulated/raster capability policy. Those remain NODE-24+ responsibilities.
 
-NODE-23 owns schema/version parsing, ZIP security, checksums, SVG sanitization and migration. NODE-24+ own capability resolution and rendering.
-
-## NODE-22 Exit-Gate Candidate
-
-Controlled Bootstrap CI #569 (`32646508846`) completed successfully and ran the final candidate through repository-wide `pnpm check`, including:
-
-- permanent NODE-22 foundation validation;
-- lint across all workspaces;
-- TypeScript typecheck across all workspaces;
-- all Vitest suites;
-- loadable Figma main/UI esbuild bundle;
-- Figma manifest/package validation;
-- all existing Browser Extension package builds and validators;
-- repository-wide formatting check.
-
-The validated implementation candidate produced by the controlled Bootstrap is:
-
-```text
-9d5964b13ff96b165330e579c3f0b09f8d0acbcb
-```
-
-The candidate also pins Figma typings/esbuild, uses pnpm `allowBuilds` only for `esbuild@0.28.2`, rejects invalid/over-limit UI files before full `arrayBuffer()` allocation, and preserves the NODE-23 secure-parser boundary.
-
-Temporary Bootstrap workflow/finalizer and diagnostic failure log are absent from the candidate. GitHub marked bot-origin synchronize CI #570 as `action_required`; this documentation-only user-origin commit triggers the formal exact-head read-only CI without changing implementation behavior.
+No `.wtf` HTML or JavaScript is executed. No `eval` is permitted. Parsing remains Local First and data-only.
 
 ## Blockers
 
@@ -138,8 +120,4 @@ No product/architecture blocker is known.
 
 ## Next
 
-After NODE-22 formal exact-head Exit Gate and squash merge:
-
-```text
-NODE-23 — Secure Parser & Migration
-```
+Implement the secure archive reader, bounded ZIP decoder, manifest/checksum/schema validation, SVG sanitizer, migration registry and Figma parser-preview integration, then run the NODE-23 Exit Gate.

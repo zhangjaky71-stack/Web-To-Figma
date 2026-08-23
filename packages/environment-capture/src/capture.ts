@@ -7,6 +7,7 @@ import {
   type EnvironmentCapture,
   type EnvironmentCaptureDiagnostic,
   type EnvironmentCaptureSummary,
+  type EnvironmentMediaFeatureEvidence,
   type MediaRuleEvidence,
   type RuntimeEnvironmentEvidence,
 } from "./types.js";
@@ -22,10 +23,26 @@ function positive(value: number, label: string): number {
   return value;
 }
 
+function nonNegative(value: number, label: string): number {
+  if (!Number.isFinite(value) || value < 0) throw new TypeError(`${label} must be non-negative`);
+  return value;
+}
+
 function uniqueSorted(values: string[]): string[] {
   return [...new Set(values.map((value) => value.trim()).filter(Boolean))].sort((a, b) =>
     a.localeCompare(b),
   );
+}
+
+function normalizeMediaFeature(
+  value: EnvironmentMediaFeatureEvidence,
+): EnvironmentMediaFeatureEvidence {
+  return {
+    id: nonEmpty(value.id, "media feature id"),
+    query: nonEmpty(value.query, "media feature query"),
+    matches: value.matches,
+    availability: value.availability,
+  };
 }
 
 function normalizeEnvironment(value: RuntimeEnvironmentEvidence): RuntimeEnvironmentEvidence {
@@ -41,6 +58,12 @@ function normalizeEnvironment(value: RuntimeEnvironmentEvidence): RuntimeEnviron
   if (value.cssZoomAvailability === "observed" && cssZoom === undefined) {
     throw new TypeError("observed css zoom requires a value");
   }
+  const mediaFeatures = value.mediaFeatures.map(normalizeMediaFeature).sort((a, b) =>
+    a.id.localeCompare(b.id),
+  );
+  if (new Set(mediaFeatures.map((item) => item.id)).size !== mediaFeatures.length) {
+    throw new TypeError("duplicate media feature id");
+  }
   return {
     browserName: nonEmpty(value.browserName, "browserName"),
     browserVersion: nonEmpty(value.browserVersion, "browserVersion"),
@@ -49,6 +72,7 @@ function normalizeEnvironment(value: RuntimeEnvironmentEvidence): RuntimeEnviron
     direction: value.direction,
     colorScheme: value.colorScheme,
     reducedMotion: value.reducedMotion,
+    mediaFeatures,
     viewportWidth: positive(value.viewportWidth, "viewportWidth"),
     viewportHeight: positive(value.viewportHeight, "viewportHeight"),
     dpr: positive(value.dpr, "dpr"),
@@ -75,18 +99,36 @@ function normalizeMedia(rule: MediaRuleEvidence, snapshotId: string): MediaRuleE
 }
 
 function normalizeContainer(value: ContainerDefinitionEvidence): ContainerDefinitionEvidence {
+  const inlineSize =
+    value.inlineSize === undefined ? undefined : nonNegative(value.inlineSize, "container inlineSize");
+  const blockSize =
+    value.blockSize === undefined ? undefined : nonNegative(value.blockSize, "container blockSize");
   return {
     sourceNodeId: nonEmpty(value.sourceNodeId, "container sourceNodeId"),
     ...(value.containerName?.trim() ? { containerName: value.containerName.trim() } : {}),
     ...(value.containerType?.trim() ? { containerType: value.containerType.trim() } : {}),
+    ...(value.writingMode?.trim() ? { writingMode: value.writingMode.trim() } : {}),
+    ...(inlineSize === undefined ? {} : { inlineSize }),
+    ...(blockSize === undefined ? {} : { blockSize }),
   };
 }
 
 function normalizeContainerQuery(value: ContainerQueryEvidence): ContainerQueryEvidence {
+  if (value.activeAvailability === "observed" && value.active === undefined) {
+    throw new TypeError("observed container query status requires active");
+  }
+  if (value.activeAvailability !== "observed" && value.active !== undefined) {
+    throw new TypeError("unobserved container query status must not fabricate active");
+  }
   return {
     id: nonEmpty(value.id, "container query id"),
     ...(value.containerName?.trim() ? { containerName: value.containerName.trim() } : {}),
     condition: nonEmpty(value.condition, "container query condition"),
+    ...(value.active === undefined ? {} : { active: value.active }),
+    activeAvailability: value.activeAvailability,
+    ...(value.containerSourceNodeId?.trim()
+      ? { containerSourceNodeId: value.containerSourceNodeId.trim() }
+      : {}),
     affectedProperties: uniqueSorted(value.affectedProperties),
     affectedSourceNodeIds: uniqueSorted(value.affectedSourceNodeIds),
     ...(value.stylesheetRef ? { stylesheetRef: value.stylesheetRef } : {}),
@@ -187,9 +229,14 @@ export function toWtfContainerQueryInfo(
         return stableId ? [stableId] : [];
       }),
     );
-    const matchingContainer = [...containerBySource.values()].find((container) =>
-      query.containerName ? container.containerName === query.containerName : false,
-    );
+    const directContainer = query.containerSourceNodeId
+      ? containerBySource.get(query.containerSourceNodeId)
+      : undefined;
+    const matchingContainer =
+      directContainer ??
+      [...containerBySource.values()].find((container) =>
+        query.containerName ? container.containerName === query.containerName : false,
+      );
     return {
       ...(query.containerName ? { containerName: query.containerName } : {}),
       ...(matchingContainer?.containerType
@@ -211,6 +258,10 @@ export function summarizeEnvironmentCapture(
     activeMediaRuleCount: capture.mediaRules.filter((item) => item.active).length,
     containerCount: capture.containers.length,
     containerQueryCount: capture.containerQueries.length,
+    observedContainerQueryCount: capture.containerQueries.filter(
+      (item) => item.activeAvailability === "observed",
+    ).length,
+    activeContainerQueryCount: capture.containerQueries.filter((item) => item.active === true).length,
     diagnosticCount: capture.diagnostics.length,
   };
 }

@@ -26,8 +26,8 @@
 | 13 | Asset Resolver | DONE | Exact-head read-only CI #328 PASS | PR #17 merged as `07978a58` |
 | 14 | Pixel Ground Truth & Raster Engine | DONE | Exact-head read-only CI #337 PASS | PR #18 merged as `6bb5fe53` |
 | 15 | Multi-Viewport Responsive Capture | DONE | Exact-head read-only CI #350 PASS | PR #19 merged as `68cfbeac` |
-| 16 | Responsive Inference Engine | IN PROGRESS | Bootstrap #3 full `pnpm check` PASS; exact-head read-only CI pending | PR #20 |
-| 17 | Base Layout Analyzer | TODO | - | - |
+| 16 | Responsive Inference Engine | DONE | Exact-head read-only CI #375 PASS | PR #20 merged as `7cfb91fe` |
+| 17 | Base Layout Analyzer | IN PROGRESS | Implementation starting from merged NODE-16 | `feat/node-17-base-layout-analyzer` |
 | 18 | Table Layout Engine | TODO | - | - |
 | 19 | Render Tree Optimizer | TODO | - | - |
 | 20 | Compositing & Fallback Boundary | TODO | - | - |
@@ -45,94 +45,80 @@
 
 ## Current Node
 
-`NODE-16 — Responsive Inference Engine`
+`NODE-17 — Base Layout Analyzer`
 
 Entry baseline:
 
 ```text
-68cfbeacff1d4dacc958fe0b6bb8a8d797a7efe7
+7cfb91fedff68a2e5338c62c0fbd46508bd38ad2
 ```
 
 Working branch:
 
 ```text
-feat/node-16-responsive-inference-engine
+feat/node-17-base-layout-analyzer
 ```
 
-## NODE-15 Closure
+## NODE-16 Closure
 
-NODE-15 PR #19 passed exact-head read-only CI #350 (`32627504377`) on final candidate:
+NODE-16 PR #20 passed exact-head read-only CI #375 (`32629279087`) on final candidate:
 
 ```text
-adc3d1dfce62fca5167fd5b18ad9e98eae494228
+f0176d19957d4374d0404c62ab7d95ab91ff772f
 ```
 
 and was squash merged into `main` as:
 
 ```text
-68cfbeacff1d4dacc958fe0b6bb8a8d797a7efe7
+7cfb91fedff68a2e5338c62c0fbd46508bd38ad2
 ```
 
-The merged tree contains no temporary NODE-15 write-enabled bootstrap workflow.
+The merged tree contains no temporary NODE-16 write-enabled bootstrap workflow.
 
-## NODE-16 Frozen Scope
+## NODE-17 Frozen Scope
 
-NODE-16 consumes NODE-15 multi-viewport evidence and infers responsive behavior without performing base render-tree layout analysis.
+NODE-17 converts captured source/CSS/geometry evidence into frozen W2F IR base layout semantics.
 
-Inputs include:
+Primary output vocabulary already exists in W2F IR V2:
 
 ```text
-ResponsiveCapture snapshots
-Stable Identity evidence
-RawSnapshot geometry/relationships
-CSS Cascade authored/computed evidence
-Environment media/container query evidence
+WtfLayoutModel
+WtfLayoutMode
+WtfAxisSizing
+WtfSizingDecision
+WtfFlexContainerModel
+WtfFlexItemModel
+WtfGridContainerModel
+WtfGridItemModel
+WtfAbsoluteConstraints
+WtfDecisionEvidence
 ```
 
-Frozen W2F IR V2 already provides:
+NODE-17 owns base semantics for:
 
 ```text
-WtfResponsiveSnapshotRef
-WtfResponsiveRule
-WtfResponsiveRange
-WtfMediaRuleTrace
-WtfContainerQueryInfo
-WtfResponsivePayload
-WtfSizingMode = fill | hug | fixed | intrinsic | content | unknown
+flow
+flex
+grid
+absolute/fixed/sticky positioning
+inline
+contents
+base sizing
+padding/gap/overflow
 ```
 
-NODE-16 therefore remains additive and does not version-bump W2F Schema/IR.
+NODE-18 owns table-specific reconstruction. NODE-19 owns render-tree optimization. NODE-20 owns compositing/fallback boundaries.
 
-## Inference Principles
+## Analysis Principles
 
-- stable-node identity is the primary cross-snapshot join key;
-- rules require at least two comparable viewport snapshots unless directly supported by authored media/container evidence;
-- breakpoint boundaries are inferred only between observed viewport widths or from explicit authored query evidence;
-- visibility changes are fail-visible and evidence-backed;
-- FILL/HUG/FIXED decisions use authored CSS first, geometry trends second, and return `unknown` when confidence is insufficient;
-- repeated equal values are coalesced into deterministic responsive ranges;
-- every emitted rule carries confidence, reasons and source references;
-- conflicting authored/computed/geometry evidence lowers confidence and emits diagnostics instead of fabricating certainty;
-- NODE-17 owns base layout-tree semantics; NODE-27 owns Figma responsive rendering.
-
-## NODE-16 Validation
-
-Controlled finalization Bootstrap #3, run `32629175649`, passed the complete repository `pnpm check` after:
-
-- refreshing the authoritative workspace lockfile;
-- applying Browser runtime integration;
-- applying the responsive inference TypeScript literal-typing fix;
-- canonical formatting;
-- permanently wiring the NODE-16 foundation guardrail;
-- removing the temporary write-enabled NODE-16 bootstrap workflow from the final tree.
-
-Validated bootstrap candidate:
-
-```text
-2b96d334f741c28e0a8b8a3c7465ac0a40890657
-```
-
-The bot-triggered follow-up CI #373 was `action_required` with no jobs, so a normal evidence commit is used to trigger the authoritative exact-head read-only CI.
+- authored CSS semantics take precedence over geometry heuristics when available;
+- computed layout establishes the active mode but authored values preserve editability intent;
+- geometry can strengthen or lower confidence but must not fabricate unavailable authored semantics;
+- sizing remains evidence-bearing and may stay `unknown`;
+- flex/grid models preserve source direction, wrapping, alignment, tracks, gaps and item placement;
+- absolute constraints preserve left/right/top/bottom semantics rather than flattening every node into x/y coordinates;
+- table structure is deliberately not inferred in NODE-17;
+- all outputs are deterministic and carry confidence/reasons/sourceRefs.
 
 ## Blockers
 
@@ -140,8 +126,8 @@ No product/architecture blocker is known.
 
 ## Next
 
-After NODE-16 formal Exit Gate and squash merge:
+After NODE-17 formal Exit Gate and squash merge:
 
 ```text
-NODE-17 — Base Layout Analyzer
+NODE-18 — Table Layout Engine
 ```

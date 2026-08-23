@@ -4,7 +4,7 @@
 **Portable package:** `.wtf`  
 **MIME:** `application/x-wtf`  
 **Architecture:** FROZEN FOR IMPLEMENTATION  
-**Updated:** 2026-08-23
+**Updated:** 2026-08-24
 
 ## Roadmap
 
@@ -33,7 +33,7 @@
 | 20 | Compositing & Fallback Boundary | DONE | Exact-head read-only CI #503 PASS | PR #24 merged as `f0d10cdb` |
 | 21 | WTF Packager | DONE | Exact-head read-only CI #540 PASS | PR #25 merged as `5395d1eb` |
 | 22 | Figma Plugin Shell & File Intake | DONE | Exact-head read-only CI #571 PASS | PR #26 merged as `84ebc5ed` |
-| 23 | Secure Parser & Migration | IN PROGRESS | Implementation starting from merged NODE-22 | `feat/node-23-secure-parser-migration` |
+| 23 | Secure Parser & Migration | EXIT GATE CANDIDATE | Bootstrap CI #622 PASS; exact-head read-only CI pending | PR #27; candidate `8162922d` |
 | 24 | Figma Capability Resolver | TODO | - | - |
 | 25 | Basic Figma Renderer | TODO | - | - |
 | 26 | Text / Font / Asset / Paint Renderer | TODO | - | - |
@@ -89,7 +89,7 @@ SVG sanitize
 migration
 ```
 
-The secure parser must treat every `.wtf` as hostile input. Validation must fail closed before data becomes renderer input.
+The secure parser treats every `.wtf` as hostile input. Validation fails closed before data becomes renderer input.
 
 ## NODE-23 Security Order
 
@@ -108,6 +108,16 @@ The implementation follows the frozen security sequence:
 11. explicit version migration into the current reader model;
 12. parser preview / validated document handoff to NODE-22 protocol.
 
+## NODE-23 Bootstrap Closure
+
+Controlled Bootstrap CI #622 (`32674411827`) passed the full repository `pnpm check` and pushed the validated candidate:
+
+```text
+8162922d0d99b820ff756de0143a2b8ecbb58404
+```
+
+The closure validated the permanent NODE-23 foundation gate, refreshed frozen lockfile, repository-wide lint/typecheck/tests/build, Figma bundle/package validation and format gate. The temporary write-enabled bootstrap job, finalizer and failure log were removed from the candidate tree before handoff.
+
 ## Boundaries
 
 NODE-23 does not create Figma nodes and does not decide native/emulated/raster capability policy. Those remain NODE-24+ responsibilities.
@@ -120,4 +130,4 @@ No product/architecture blocker is known.
 
 ## Next
 
-Implement the secure archive reader, bounded ZIP decoder, manifest/checksum/schema validation, SVG sanitizer, migration registry and Figma parser-preview integration, then run the NODE-23 Exit Gate.
+Run exact-head read-only frozen-lockfile CI on the normal evidence commit. Only after that exact head is fully green may PR #27 be marked Ready and squash merged to `main`, after which NODE-24 begins.

@@ -52,17 +52,30 @@ export function sniffAssetMediaType(
   if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
     return "image/jpeg";
   }
-  if (bytes.length >= 6 && (ascii(bytes, 0, 6) === "GIF87a" || ascii(bytes, 0, 6) === "GIF89a")) {
+  if (
+    bytes.length >= 6 &&
+    (ascii(bytes, 0, 6) === "GIF87a" || ascii(bytes, 0, 6) === "GIF89a")
+  ) {
     return "image/gif";
   }
-  if (bytes.length >= 12 && ascii(bytes, 0, 4) === "RIFF" && ascii(bytes, 8, 12) === "WEBP") {
+  if (
+    bytes.length >= 12 &&
+    ascii(bytes, 0, 4) === "RIFF" &&
+    ascii(bytes, 8, 12) === "WEBP"
+  ) {
     return "image/webp";
   }
   if (bytes.length >= 12 && ascii(bytes, 4, 8) === "ftyp") {
     const brand = ascii(bytes, 8, 12);
     if (brand === "avif" || brand === "avis") return "image/avif";
   }
-  if (bytes.length >= 4 && bytes[0] === 0x00 && bytes[1] === 0x00 && bytes[2] === 0x01 && bytes[3] === 0x00) {
+  if (
+    bytes.length >= 4 &&
+    bytes[0] === 0x00 &&
+    bytes[1] === 0x00 &&
+    bytes[2] === 0x01 &&
+    bytes[3] === 0x00
+  ) {
     return "image/x-icon";
   }
   if (bytes.length >= 2 && ascii(bytes, 0, 2) === "BM") return "image/bmp";
@@ -130,7 +143,11 @@ function mergeProvenances(
   return [...map.values()].sort((a, b) => provenanceKey(a).localeCompare(provenanceKey(b)));
 }
 
-function toRecord(resource: AssetAcquiredResource, sha256: string, mediaType: string): WtfAssetRecord {
+function toRecord(
+  resource: AssetAcquiredResource,
+  sha256: string,
+  mediaType: string,
+): WtfAssetRecord {
   const provenance = resource.provenance;
   const sourceUrl = provenance.sourceUrl ?? resource.currentSrc;
   return {
@@ -271,7 +288,10 @@ export async function buildAssetCapture(
 }
 
 export function summarizeAssetCapture(capture: AssetCapture): AssetCaptureSummary {
-  const referenceCount = capture.assets.reduce((total, item) => total + item.acquisitionIds.length, 0);
+  const referenceCount = capture.assets.reduce(
+    (total, item) => total + item.acquisitionIds.length,
+    0,
+  );
   return {
     version: capture.version,
     adapter: capture.adapter,
@@ -284,7 +304,10 @@ export function summarizeAssetCapture(capture: AssetCapture): AssetCaptureSummar
 }
 
 export function toWtfAssetRecords(capture: AssetCapture): WtfAssetRecord[] {
-  return capture.assets.map((item) => ({ ...item.record, provenance: item.record.provenance && { ...item.record.provenance } }));
+  return capture.assets.map((item) => ({
+    ...item.record,
+    ...(item.record.provenance ? { provenance: { ...item.record.provenance } } : {}),
+  }));
 }
 
 export function isAssetCapture(value: unknown): value is AssetCapture {
@@ -307,7 +330,9 @@ export function isAssetCapture(value: unknown): value is AssetCapture {
       typeof item.record !== "object" ||
       item.record === null ||
       !Array.isArray(item.bytes) ||
-      !item.bytes.every((byte) => Number.isInteger(byte) && Number(byte) >= 0 && Number(byte) <= 255) ||
+      !item.bytes.every(
+        (byte) => Number.isInteger(byte) && Number(byte) >= 0 && Number(byte) <= 255,
+      ) ||
       !Array.isArray(item.provenances) ||
       !Array.isArray(item.sourceNodeIds) ||
       !Array.isArray(item.acquisitionIds)

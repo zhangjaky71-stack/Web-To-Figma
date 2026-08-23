@@ -26,7 +26,7 @@
 | 13 | Asset Resolver | DONE | Exact-head read-only CI #328 PASS | PR #17 merged as `07978a58` |
 | 14 | Pixel Ground Truth & Raster Engine | DONE | Exact-head read-only CI #337 PASS | PR #18 merged as `6bb5fe53` |
 | 15 | Multi-Viewport Responsive Capture | DONE | Exact-head read-only CI #350 PASS | PR #19 merged as `68cfbeac` |
-| 16 | Responsive Inference Engine | IN PROGRESS | Core inference implementation starting | `feat/node-16-responsive-inference-engine` |
+| 16 | Responsive Inference Engine | IN PROGRESS | Bootstrap #3 full `pnpm check` PASS; exact-head read-only CI pending | PR #20 |
 | 17 | Base Layout Analyzer | TODO | - | - |
 | 18 | Table Layout Engine | TODO | - | - |
 | 19 | Render Tree Optimizer | TODO | - | - |
@@ -114,6 +114,25 @@ NODE-16 therefore remains additive and does not version-bump W2F Schema/IR.
 - every emitted rule carries confidence, reasons and source references;
 - conflicting authored/computed/geometry evidence lowers confidence and emits diagnostics instead of fabricating certainty;
 - NODE-17 owns base layout-tree semantics; NODE-27 owns Figma responsive rendering.
+
+## NODE-16 Validation
+
+Controlled finalization Bootstrap #3, run `32629175649`, passed the complete repository `pnpm check` after:
+
+- refreshing the authoritative workspace lockfile;
+- applying Browser runtime integration;
+- applying the responsive inference TypeScript literal-typing fix;
+- canonical formatting;
+- permanently wiring the NODE-16 foundation guardrail;
+- removing the temporary write-enabled NODE-16 bootstrap workflow from the final tree.
+
+Validated bootstrap candidate:
+
+```text
+2b96d334f741c28e0a8b8a3c7465ac0a40890657
+```
+
+The bot-triggered follow-up CI #373 was `action_required` with no jobs, so a normal evidence commit is used to trigger the authoritative exact-head read-only CI.
 
 ## Blockers
 

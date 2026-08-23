@@ -58,7 +58,7 @@ function normalizeEnvironment(value: RuntimeEnvironmentEvidence): RuntimeEnviron
   if (value.cssZoomAvailability === "observed" && cssZoom === undefined) {
     throw new TypeError("observed css zoom requires a value");
   }
-  const mediaFeatures = value.mediaFeatures
+  const mediaFeatures = (value.mediaFeatures ?? [])
     .map(normalizeMediaFeature)
     .sort((a, b) => a.id.localeCompare(b.id));
   if (new Set(mediaFeatures.map((item) => item.id)).size !== mediaFeatures.length) {
@@ -116,10 +116,11 @@ function normalizeContainer(value: ContainerDefinitionEvidence): ContainerDefini
 }
 
 function normalizeContainerQuery(value: ContainerQueryEvidence): ContainerQueryEvidence {
-  if (value.activeAvailability === "observed" && value.active === undefined) {
+  const activeAvailability = value.activeAvailability ?? "unavailable";
+  if (activeAvailability === "observed" && value.active === undefined) {
     throw new TypeError("observed container query status requires active");
   }
-  if (value.activeAvailability !== "observed" && value.active !== undefined) {
+  if (activeAvailability !== "observed" && value.active !== undefined) {
     throw new TypeError("unobserved container query status must not fabricate active");
   }
   return {
@@ -127,7 +128,7 @@ function normalizeContainerQuery(value: ContainerQueryEvidence): ContainerQueryE
     ...(value.containerName?.trim() ? { containerName: value.containerName.trim() } : {}),
     condition: nonEmpty(value.condition, "container query condition"),
     ...(value.active === undefined ? {} : { active: value.active }),
-    activeAvailability: value.activeAvailability,
+    activeAvailability,
     ...(value.containerSourceNodeId?.trim()
       ? { containerSourceNodeId: value.containerSourceNodeId.trim() }
       : {}),

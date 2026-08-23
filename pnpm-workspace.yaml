@@ -3,4 +3,4 @@ packages:
   - packages/*
 
 allowBuilds:
-  'esbuild@0.28.2': true
+  esbuild@0.28.2: true

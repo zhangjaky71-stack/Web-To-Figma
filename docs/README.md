@@ -57,6 +57,17 @@ docs/CSS_CASCADE_AUTHORED_SEMANTICS_V2.md
 packages/css-cascade
 packages/standard-capture-adapter
 apps/browser-extension
+
+docs/MEDIA_CONTAINER_ENVIRONMENT_CAPTURE_V2.md
+packages/environment-capture
+
+docs/ASSET_RESOLVER_V2.md
+packages/asset-resolver
+
+packages/pixel-ground-truth
+
+docs/RESPONSIVE_CAPTURE_V2.md
+packages/responsive-capture
 ```
 
 ## Current documents
@@ -80,6 +91,9 @@ apps/browser-extension
 - `docs/CDP_HIGH_FIDELITY_ADAPTER_V2.md` — High Fidelity CDP adapter, permission and fallback contract.
 - `docs/TEXT_INLINE_PSEUDO_CAPTURE_V2.md` — NODE-10 text-run, fragment, baseline, inline, pseudo and safe form visual evidence contract.
 - `docs/CSS_CASCADE_AUTHORED_SEMANTICS_V2.md` — NODE-11 authored/computed cascade, CSS length, Token Graph and Browser sidecar contract.
+- `docs/MEDIA_CONTAINER_ENVIRONMENT_CAPTURE_V2.md` — NODE-12 media/container/environment evidence contract.
+- `docs/ASSET_RESOLVER_V2.md` — NODE-13 asset discovery, acquisition and resolution contract.
+- `docs/RESPONSIVE_CAPTURE_V2.md` — NODE-15 multi-viewport evidence capture and orchestration contract.
 - `docs/IMPLEMENTATION_STATUS.md` — canonical current implementation status.
 - `docs/nodes/` — per-NODE implementation/DoD records.
 - `docs/adr/` — accepted architecture and engineering decisions.
@@ -113,7 +127,7 @@ Verification targets:
 
 ## Current development point
 
-Completed:
+Completed implementation Exit Gates:
 
 ```text
 NODE-00 — Product Baseline & Acceptance Contract
@@ -127,18 +141,17 @@ NODE-07 — Region Selector & Redaction
 NODE-08 — Standard DOM Capture
 NODE-09 — CDP High Fidelity Adapter
 NODE-10 — Text / Inline / Pseudo Capture
-```
-
-Current implementation node:
-
-```text
 NODE-11 — CSS Cascade & Authored Semantics
+NODE-12 — Media / Container / Environment Capture
+NODE-13 — Asset Resolver
+NODE-14 — Pixel Ground Truth & Raster Engine
+NODE-15 — Multi-Viewport Responsive Capture
 ```
 
-NODE-11 core engine, Standard/CDP authored acquisition, Token Graph materialization, Browser sidecar persistence and both Browser package paths are implemented and have passed controlled final-shape `pnpm check`. Formal standard read-only documentation/status Exit Gate and PR #15 merge remain before the roadmap advances.
+NODE-15 controlled Bootstrap #9 and authoritative exact-head read-only CI #350 (`32627504377`) are PASS. PR #19 squash merge is the only remaining NODE-15 closure action.
 
-Next implementation node after NODE-11 merge:
+Next implementation node after PR #19 merge:
 
 ```text
-NODE-12 — Media / Container / Environment Capture
+NODE-16 — Responsive Inference Engine
 ```

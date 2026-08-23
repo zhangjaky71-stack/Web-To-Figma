@@ -18,7 +18,8 @@
   },
   "dependencies": {
     "@w2f/capture-core": "workspace:*",
-    "@w2f/css-cascade": "workspace:*"
+    "@w2f/css-cascade": "workspace:*",
+    "@w2f/environment-capture": "workspace:*"
   },
   "devDependencies": {
     "typescript": "6.0.3",

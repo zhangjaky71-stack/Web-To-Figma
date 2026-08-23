@@ -1,12 +1,11 @@
 Scope: all 22 workspace projects
 ? Verifying lockfile against supply-chain policies (160 entries)...
-✓ Lockfile passes supply-chain policies (160 entries in 1.5s)
+✓ Lockfile passes supply-chain policies (160 entries in 1.4s)
 Progress: resolved 1, reused 0, downloaded 0, added 0
 Progress: resolved 7, reused 0, downloaded 7, added 0
-Progress: resolved 8, reused 0, downloaded 7, added 0
-Progress: resolved 90, reused 0, downloaded 58, added 0
-Progress: resolved 134, reused 0, downloaded 102, added 0
-Progress: resolved 152, reused 0, downloaded 121, added 0
+Progress: resolved 71, reused 0, downloaded 56, added 0
+Progress: resolved 133, reused 0, downloaded 102, added 0
+Progress: resolved 152, reused 0, downloaded 122, added 0
 Packages: +133
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Packages are hard linked from the content-addressable store to the virtual store.
@@ -27,7 +26,7 @@ devDependencies:
 Run "pnpm approve-builds" to pick which dependencies should be allowed to run scripts.
 NODE-22 integration finalizer applied successfully.
 Scope: all 22 workspace projects
-✓ Lockfile passes supply-chain policies (verified 656ms ago)
+✓ Lockfile passes supply-chain policies (verified 485ms ago)
 Lockfile is up to date, resolution step is skipped
 Already up to date
 
@@ -57,7 +56,7 @@ pnpm: Command failed with exit code 1: /opt/hostedtoolcache/node/24.19.0/x64/bin
     at runDepsStatusCheck (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:273323:7)
 rm 'scripts/node-22-finalize.mjs'
 Scope: all 22 workspace projects
-✓ Lockfile passes supply-chain policies (verified 3s ago)
+✓ Lockfile passes supply-chain policies (verified 2s ago)
 Lockfile is up to date, resolution step is skipped
 Already up to date
 

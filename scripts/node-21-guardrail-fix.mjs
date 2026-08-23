@@ -7,6 +7,38 @@ async function patch(path, transform) {
   await writeFile(path, after, "utf8");
 }
 
+await patch("scripts/validate-node-08.mjs", (source) =>
+  source
+    .replace(
+      'JSON.stringify(["activeTab", "scripting", "storage"].sort()),',
+      'JSON.stringify(["activeTab", "downloads", "scripting", "storage"].sort()),',
+    )
+    .replace(
+      '"NODE-08 must preserve activeTab+scripting+storage only",',
+      '"NODE-08 must preserve activeTab+downloads+scripting+storage without host expansion",',
+    ),
+);
+
+await patch("scripts/validate-node-09.mjs", (source) =>
+  source
+    .replace(
+      'JSON.stringify(["activeTab", "scripting", "storage"].sort()),',
+      'JSON.stringify(["activeTab", "downloads", "scripting", "storage"].sort()),',
+    )
+    .replace(
+      'JSON.stringify(["activeTab", "debugger", "scripting", "storage"].sort()),',
+      'JSON.stringify(["activeTab", "debugger", "downloads", "scripting", "storage"].sort()),',
+    )
+    .replace(
+      '"Standard manifest must remain debugger-free",',
+      '"Standard manifest must remain debugger-free while allowing NODE-21 downloads",',
+    )
+    .replace(
+      '"High Fidelity manifest must add debugger and nothing broader",',
+      '"High Fidelity manifest may add debugger and NODE-21 downloads, with nothing broader",',
+    ),
+);
+
 await patch("scripts/validate-node-21.mjs", (source) =>
   source.replace('    "application/x-wtf",\n', '    "WTF_MIME_TYPE",\n'),
 );

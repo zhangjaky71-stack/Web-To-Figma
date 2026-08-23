@@ -13,7 +13,7 @@ import {
   type StandardCaptureResult,
 } from "@w2f/standard-capture-adapter";
 import { captureAssetsForSnapshot } from "./asset-runtime.js";
-import { deleteAssetCapture, writeAssetCapture } from "./asset-store.js";
+import { deleteAssetCapture, readAssetCapture, writeAssetCapture } from "./asset-store.js";
 import { captureHighFidelityWithCdp, getCdpRuntimeCapability } from "./cdp-runtime.js";
 import { captureCssCascadeForSnapshot } from "./css-cascade-runtime.js";
 import { deleteCssCascadeCapture, writeCssCascadeCapture } from "./css-cascade-store.js";
@@ -51,6 +51,18 @@ import {
   writeReferenceScreenshot,
 } from "./snapshot-store.js";
 import { resolveActiveTabSource } from "./source-runtime.js";
+
+const ASSET_RASTER_FALLBACK_CODES = new Set([
+  "ASSET_FETCH_FAILED",
+  "ASSET_EMPTY_RESOURCE",
+  "ASSET_TOO_LARGE",
+  "ASSET_TOTAL_BUDGET_EXCEEDED",
+  "ASSET_COUNT_BUDGET_EXCEEDED",
+  "ASSET_UNSUPPORTED_MEDIA_TYPE",
+  "ASSET_HASH_FAILED",
+  "ASSET_REFERENCE_INVALID",
+  "ASSET_REFERENCE_UNSUPPORTED",
+]);
 
 function shellInfo(): W2fShellInfo {
   const cdp = getCdpRuntimeCapability();
@@ -214,7 +226,18 @@ async function persistPixelGroundTruth(
     | "rasterDiagnosticCount"
   >
 > {
-  const capture = await capturePixelGroundTruthForSnapshot(tabId, snapshot);
+  const assetCapture = await readAssetCapture(jobId);
+  const fallbackRequests = (assetCapture?.diagnostics ?? []).flatMap((diagnostic) =>
+    diagnostic.sourceNodeId && ASSET_RASTER_FALLBACK_CODES.has(diagnostic.code)
+      ? [
+          {
+            sourceNodeId: diagnostic.sourceNodeId,
+            reason: `asset:${diagnostic.code}`,
+          },
+        ]
+      : [],
+  );
+  const capture = await capturePixelGroundTruthForSnapshot(tabId, snapshot, fallbackRequests);
   const pixelGroundTruthStorageKey = await writePixelGroundTruth(jobId, capture);
   const summary = summarizePixelGroundTruth(capture);
   return {

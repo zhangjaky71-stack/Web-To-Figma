@@ -37,6 +37,7 @@ jobs:
         run: |
           node scripts/node-17-finalize.mjs
           node scripts/node-17-export-fix.mjs
+          node scripts/node-17-expression-fix.mjs
 
       - name: Apply canonical formatting
         run: |
@@ -66,6 +67,7 @@ jobs:
           git rm .github/workflows/node-17-bootstrap-v3.yml
           git rm scripts/node-17-finalize.mjs
           git rm scripts/node-17-export-fix.mjs
+          git rm scripts/node-17-expression-fix.mjs
 
       - name: Validate final repository shape
         run: pnpm check

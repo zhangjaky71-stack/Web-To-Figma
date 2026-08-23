@@ -9,9 +9,19 @@ const outputRoot = `${appRoot}/${profile === "high-fidelity" ? "dist-high-fideli
 
 const runtimePackages = [
   {
+    specifier: "@w2f/w2f-schema",
+    directory: "w2f-schema",
+    dist: fileURLToPath(new URL("../../../packages/w2f-schema/dist/", import.meta.url)),
+  },
+  {
     specifier: "@w2f/source-providers",
     directory: "source-providers",
     dist: fileURLToPath(new URL("../../../packages/source-providers/dist/", import.meta.url)),
+  },
+  {
+    specifier: "@w2f/stable-identity",
+    directory: "stable-identity",
+    dist: fileURLToPath(new URL("../../../packages/stable-identity/dist/", import.meta.url)),
   },
   {
     specifier: "@w2f/capture-core",
@@ -37,6 +47,11 @@ const runtimePackages = [
     specifier: "@w2f/pixel-ground-truth",
     directory: "pixel-ground-truth",
     dist: fileURLToPath(new URL("../../../packages/pixel-ground-truth/dist/", import.meta.url)),
+  },
+  {
+    specifier: "@w2f/responsive-capture",
+    directory: "responsive-capture",
+    dist: fileURLToPath(new URL("../../../packages/responsive-capture/dist/", import.meta.url)),
   },
   {
     specifier: "@w2f/standard-capture-adapter",

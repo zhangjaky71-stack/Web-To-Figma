@@ -110,6 +110,15 @@ export interface CssCascadeDiagnostic {
   stylesheetRef?: string;
 }
 
+export interface CssCascadeAcquisition {
+  adapter: CssCascadeAdapter;
+  nodes: CssNodeCascadeEvidence[];
+  tokenDefinitions: CssTokenDefinitionEvidence[];
+  tokenUsages: CssTokenUsageEvidence[];
+  unresolvedTokenUsages: CssUnresolvedTokenUsage[];
+  diagnostics: CssCascadeDiagnostic[];
+}
+
 export interface CssCascadeCapture {
   version: CssCascadeEngineVersion;
   adapter: CssCascadeAdapter;

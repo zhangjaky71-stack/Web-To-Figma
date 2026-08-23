@@ -27,8 +27,8 @@
 | 14 | Pixel Ground Truth & Raster Engine | DONE | Exact-head read-only CI #337 PASS | PR #18 merged as `6bb5fe53` |
 | 15 | Multi-Viewport Responsive Capture | DONE | Exact-head read-only CI #350 PASS | PR #19 merged as `68cfbeac` |
 | 16 | Responsive Inference Engine | DONE | Exact-head read-only CI #375 PASS | PR #20 merged as `7cfb91fe` |
-| 17 | Base Layout Analyzer | IN PROGRESS | Implementation starting from merged NODE-16 | `feat/node-17-base-layout-analyzer` |
-| 18 | Table Layout Engine | TODO | - | - |
+| 17 | Base Layout Analyzer | DONE | Exact-head read-only CI #422 PASS | PR #21 merged as `0b103261` |
+| 18 | Table Layout Engine | IN PROGRESS | Implementation starting from merged NODE-17 | `feat/node-18-table-layout-engine` |
 | 19 | Render Tree Optimizer | TODO | - | - |
 | 20 | Compositing & Fallback Boundary | TODO | - | - |
 | 21 | WTF Packager | TODO | - | - |
@@ -45,80 +45,71 @@
 
 ## Current Node
 
-`NODE-17 — Base Layout Analyzer`
+`NODE-18 — Table Layout Engine`
 
 Entry baseline:
 
 ```text
-7cfb91fedff68a2e5338c62c0fbd46508bd38ad2
+0b1032611fcf2f29bed38d7a629f75090d9d824d
 ```
 
 Working branch:
 
 ```text
-feat/node-17-base-layout-analyzer
+feat/node-18-table-layout-engine
 ```
 
-## NODE-16 Closure
+## NODE-17 Closure
 
-NODE-16 PR #20 passed exact-head read-only CI #375 (`32629279087`) on final candidate:
+NODE-17 PR #21 passed exact-head read-only CI #422 (`32630298557`) on final candidate:
 
 ```text
-f0176d19957d4374d0404c62ab7d95ab91ff772f
+a15e3d8a722c723c31f8042cf53bd13186119aec
 ```
 
 and was squash merged into `main` as:
 
 ```text
-7cfb91fedff68a2e5338c62c0fbd46508bd38ad2
+0b1032611fcf2f29bed38d7a629f75090d9d824d
 ```
 
-The merged tree contains no temporary NODE-16 write-enabled bootstrap workflow.
+The final tree contains the canonical `@w2f/layout-analyzer`, Browser layout sidecar integration, complete box-model normalization and resolved effective spacing; temporary NODE-17 bootstrap/finalization files were removed before merge.
 
-## NODE-17 Frozen Scope
+## NODE-18 Frozen Scope
 
-NODE-17 converts captured source/CSS/geometry evidence into frozen W2F IR base layout semantics.
-
-Primary output vocabulary already exists in W2F IR V2:
+The V2 Baseline defines a dedicated `packages/table-layout-engine` covering:
 
 ```text
-WtfLayoutModel
-WtfLayoutMode
-WtfAxisSizing
-WtfSizingDecision
-WtfFlexContainerModel
-WtfFlexItemModel
-WtfGridContainerModel
-WtfGridItemModel
-WtfAbsoluteConstraints
-WtfDecisionEvidence
+table
+thead
+tbody
+tfoot
+tr
+td
+th
+caption
+rowspan
+colspan
+border-collapse
+border-spacing
+table-layout
 ```
 
-NODE-17 owns base semantics for:
+NODE-18 reconstructs semantic table rows/cells and an occupancy grid from captured source hierarchy, attributes, computed/authored CSS and resolved geometry.
 
-```text
-flow
-flex
-grid
-absolute/fixed/sticky positioning
-inline
-contents
-base sizing
-padding/gap/overflow
-```
+## Table Principles
 
-NODE-18 owns table-specific reconstruction. NODE-19 owns render-tree optimization. NODE-20 owns compositing/fallback boundaries.
-
-## Analysis Principles
-
-- authored CSS semantics take precedence over geometry heuristics when available;
-- computed layout establishes the active mode but authored values preserve editability intent;
-- geometry can strengthen or lower confidence but must not fabricate unavailable authored semantics;
-- sizing remains evidence-bearing and may stay `unknown`;
-- flex/grid models preserve source direction, wrapping, alignment, tracks, gaps and item placement;
-- absolute constraints preserve left/right/top/bottom semantics rather than flattening every node into x/y coordinates;
-- table structure is deliberately not inferred in NODE-17;
-- all outputs are deterministic and carry confidence/reasons/sourceRefs.
+- source table semantics are preserved rather than flattened into generic flow nodes;
+- `rowspan` and `colspan` are parsed as positive spans and applied through deterministic occupancy placement;
+- malformed/overlapping spans remain fail-visible diagnostics rather than silently shifting unrelated cells;
+- row groups (`thead`/`tbody`/`tfoot`) and `caption` remain explicit semantic boundaries;
+- `border-collapse`, `border-spacing` and `table-layout` are captured as table-level evidence;
+- simple regular tables are suitable for Grid/row-stack rendering downstream;
+- complex spans are eligible for Grid/Absolute hybrid rendering while preserving semantic cells;
+- visual mismatch alone must not cause unconditional rasterization;
+- NODE-19 owns wrapper elimination/semantic render-tree optimization;
+- NODE-20 owns compositing/fallback promotion;
+- Figma rendering decisions remain downstream.
 
 ## Blockers
 
@@ -126,8 +117,8 @@ No product/architecture blocker is known.
 
 ## Next
 
-After NODE-17 formal Exit Gate and squash merge:
+After NODE-18 formal Exit Gate and squash merge:
 
 ```text
-NODE-18 — Table Layout Engine
+NODE-19 — Render Tree Optimizer
 ```

@@ -71,7 +71,7 @@ if (failures.length === 0) {
     "geometrySizing",
     'mode: "unknown"',
     "RESPONSIVE_INFERENCE_SIZING_CONFLICT",
-    'property: "visibility"',
+    'ruleFromValues(stableNodeId, "visibility"',
     "sizing.${axis}.mode",
     "boundaryWidth",
     "sourceRefs",

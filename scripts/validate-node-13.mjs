@@ -81,7 +81,10 @@ if (failures.length === 0) {
     "currentSrc",
     "authoredSrc",
     "resolveUrlReference",
-    "background-image",
+    'normalized.includes("background")',
+    'return "css-background"',
+    "trace.computedValue",
+    "winner.authoredValue",
     "stylesheetRef",
     "svg-inline",
   ]) {
@@ -165,8 +168,21 @@ if (failures.length === 0) {
     "crypto.subtle.digest",
     '"SHA-256"',
     "buildAssetCapture",
+    "recoverHighFidelityAssets",
+    "fetchHighFidelityResourceContents",
   ]) {
     assert(runtime.includes(evidence), `NODE-13 Browser asset runtime missing ${evidence}`);
+  }
+
+  const cdpRuntime = read("apps/browser-extension/src/runtime/cdp-runtime.ts");
+  for (const evidence of [
+    "fetchHighFidelityResourceContents",
+    '"Page.getResourceTree"',
+    '"Page.getResourceContent"',
+    "decodeCdpContent",
+    "api.detach",
+  ]) {
+    assert(cdpRuntime.includes(evidence), `NODE-13 High Fidelity provider missing ${evidence}`);
   }
 
   const store = read("apps/browser-extension/src/runtime/asset-store.ts");
@@ -251,7 +267,9 @@ if (failures.length === 0) {
     "data:",
     "blob:",
     "Resource Provenance",
-    "CORS/origin",
+    "CORS",
+    "alternate provider",
+    "Page.getResourceContent",
     "NODE-14",
     "NODE-21",
   ]) {

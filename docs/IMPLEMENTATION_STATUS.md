@@ -21,8 +21,8 @@
 | 08 | Standard DOM Capture | DONE | RawSnapshot/Standard capture/runtime/package + frozen-lockfile GitHub Actions PASS | PR #12 merged |
 | 09 | CDP High Fidelity Adapter | DONE | CDP/dual-profile/runtime/package + frozen-lockfile GitHub Actions PASS | PR #13 merged |
 | 10 | Text / Inline / Pseudo Capture | DONE | Text/fragment/pseudo/form behavior + exact-head read-only frozen-lockfile CI PASS | PR #14 merged |
-| 11 | CSS Cascade & Authored Semantics | DONE | Cascade/Token Graph/Standard/CDP/sidecar + formal read-only frozen-lockfile CI PASS | PR #15 ready to merge |
-| 12 | Media / Container / Environment Capture | TODO | - | - |
+| 11 | CSS Cascade & Authored Semantics | DONE | Cascade/Token Graph/Standard/CDP/sidecar + formal read-only frozen-lockfile CI PASS | PR #15 merged as `6e303818` |
+| 12 | Media / Container / Environment Capture | IMPLEMENTED | Full `pnpm check` + bootstrap final-shape validation PASS; exact-head read-only closure CI pending | PR #16 |
 | 13 | Asset Resolver | TODO | - | - |
 | 14 | Pixel Ground Truth & Raster Engine | TODO | - | - |
 | 15 | Multi-Viewport Responsive Capture | TODO | - | - |
@@ -45,100 +45,108 @@
 
 ## Current Node
 
-`NODE-11 — CSS Cascade & Authored Semantics`
+`NODE-12 — Media / Container / Environment Capture`
 
-NODE-11 started from merged NODE-10 `main` commit:
+NODE-12 started from merged NODE-11 `main` commit:
 
 ```text
-eb31c82bbbaaf15f740aa19f7d343f8a2d884099
+6e3038184c29b63ad5c346c413d2675aeba52513
 ```
 
 Working branch / PR:
 
 ```text
-feat/node-11-css-cascade-authored-semantics
-PR #15
+feat/node-12-media-container-environment-capture
+PR #16
 ```
 
-PR #15 is ready for review/merge. NODE-12 must not become the active implementation node until NODE-11 is squash merged into `main`.
+## NODE-12 Completion
 
-## NODE-11 Completion
+NODE-12 delivers:
 
-NODE-11 delivers:
+- platform-neutral `@w2f/environment-capture`;
+- `EnvironmentCapture 1.0.0` sidecar while preserving `RawSnapshot 1.0.0`;
+- runtime browser/environment state including color scheme, reduced motion, viewport, DPR and scale evidence;
+- fail-closed Standard page-zoom evidence without fabricating `pageZoom = 1`;
+- extended media-feature state for contrast, reduced transparency, forced colors, hover and pointer capabilities;
+- active/inactive `@media` rule traces with affected properties and source-node evidence;
+- computed `container-name` / `container-type` evidence;
+- authored `@container` rule traces with explicit unavailable activity semantics where the browser cannot prove current participation;
+- W2F IR bridges for capture environment, media traces and container-query info;
+- Standard CSSOM traversal across document/adopted/open Shadow DOM/same-origin iframe boundaries;
+- dedicated Browser IndexedDB environment sidecar persistence, capture receipts and failure/cancellation cleanup;
+- Standard and High Fidelity Browser package integration and package validation;
+- dependency-free NODE-12 guardrail, behavior tests, compatibility tests, normative implementation document and ADR-0012.
 
-- platform-neutral `@w2f/css-cascade`;
-- `CssCascadeCapture 1.0.0` sidecar with `RawSnapshot 1.0.0` unchanged;
-- authored/computed traces, provenance, `!important` and deterministic cascade hashes;
-- explicit non-fabricating `matched-unresolved` evidence;
-- existing IR CSS length semantics;
-- V2.1 Token Graph definitions/usages/aliases with conservative fail-closed linking;
-- Standard CSSOM acquisition for accessible document/Shadow DOM/same-origin iframe authored evidence;
-- CDP backend-node matched/computed style acquisition;
-- CSS-only Standard fallback without discarding successful CDP RawSnapshot/screenshot evidence;
-- bounded acquisition and explicit diagnostics;
-- separate Browser IndexedDB sidecar persistence, receipts and cleanup;
-- Standard/High Fidelity Chrome runtime package validation.
+NODE-12 does not pull NODE-15 multi-viewport scheduling or NODE-16 responsive inference forward.
 
-NODE-11 does not reimplement the browser's complete cascade or variable resolver and does not pull NODE-12 environment orchestration forward.
+## NODE-12 Validation
 
-## NODE-11 Validation
-
-Controlled final-shape authored acquisition/browser integration run:
+Formal repository CI on pre-finalization head:
 
 ```text
-32617158205
+run 32619068828
+head c6c4978dd5ddf40c0cdc5cd774aca515c0f95a29
 ```
 
-passed complete `pnpm check` after removing its temporary workflow from the working tree. Resulting validated bot head:
+passed all read-only repository gates:
+
+- dependency-free NODE-08 through NODE-12 foundation validation;
+- `pnpm install --frozen-lockfile`;
+- ESLint;
+- strict TypeScript typecheck;
+- complete Vitest suite;
+- Standard + High Fidelity Browser build/package validation;
+- pinned Prettier format check.
+
+Controlled final-shape bootstrap:
 
 ```text
-0473fb18586e458062317a718835d8d7a7eb4b10
+run 32619068827
 ```
 
-Formal standard read-only frozen-lockfile documentation/status Exit Gate:
+also passed complete validation, then committed the final Browser package-validator integration and removed the temporary NODE-12 write-enabled workflow from the resulting branch tree.
+
+Resulting finalization commit:
 
 ```text
-32617337130
+98baec5a1c643d620bf528c5245d4682fb959511
 ```
 
-validated:
+Because that commit was authored by `github-actions[bot]`, GitHub marked its automatic PR CI as `action_required` without executing jobs. This status-document commit intentionally creates a normal human-authored head so the final exact-head read-only CI can execute without bypassing the Exit Gate.
 
-```text
-21fa12cad809c573a0ea3c43b7284de9b2ef6c23
-```
+## NODE-12 Exit Criteria
 
-All gates passed: dependency-free foundation validation, frozen install, lint, strict typecheck, complete tests, Standard/High Fidelity build/package validation and pinned Prettier.
-
-## NODE-11 Exit Criteria
-
-- [x] core cascade/length/Token Graph engine
-- [x] Standard authored acquisition
-- [x] CDP authored acquisition/normalization
-- [x] Browser sidecar persistence and cleanup
-- [x] both Browser package profiles validate
-- [x] controlled complete `pnpm check` passes
-- [x] temporary write-enabled workflows absent from resulting tree
-- [x] normative implementation document added
-- [x] ADR-0011 added
-- [x] NODE-11 DoD record added
-- [x] formal standard read-only frozen-lockfile docs/status CI passes
-- [x] PR #15 marked ready
-- [ ] PR #15 squash merged
-
-## NODE-11 / NODE-12 Boundary
-
-NODE-11 preserves authored media-condition provenance/current participation only.
-
-NODE-12 owns environment snapshots, media/container/environment query capture and evaluation, color scheme, reduced motion and related environment state.
+- [x] environment sidecar contract
+- [x] RawSnapshot version preserved
+- [x] runtime/media-feature capture
+- [x] media-rule traces
+- [x] container definitions
+- [x] container-query traces with fail-closed activity evidence
+- [x] Standard CSSOM acquisition
+- [x] Browser environment persistence and cleanup
+- [x] Standard/High Fidelity Browser package integration
+- [x] W2F IR bridges
+- [x] behavior and compatibility tests
+- [x] dependency-free NODE-12 guardrail
+- [x] normative implementation document
+- [x] ADR-0012
+- [x] NODE-12 DoD record
+- [x] authoritative workspace lockfile
+- [x] controlled full `pnpm check` passes
+- [x] temporary write-enabled NODE-12 workflows absent from final tree
+- [ ] exact-head standard read-only frozen-lockfile CI passes
+- [ ] PR #16 marked ready
+- [ ] PR #16 squash merged
 
 ## Blockers
 
-No implementation or validation blocker remains. Only exact-head closure CI and squash merge remain.
+No implementation blocker remains. Only exact-head read-only closure CI, Ready-for-Review transition and squash merge remain.
 
 ## Next
 
-After NODE-11 PR #15 squash merge:
+After PR #16 squash merge:
 
 ```text
-NODE-12 — Media / Container / Environment Capture
+NODE-13 — Asset Resolver
 ```

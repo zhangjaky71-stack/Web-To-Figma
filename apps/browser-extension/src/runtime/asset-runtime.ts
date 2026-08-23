@@ -89,6 +89,7 @@ function recoveredResource(
   const authoredSrc = authoredSource(node);
   const sourceType = sourceTypeForRecovery(diagnostic, node);
   const tagName = node?.source.tagName?.toLowerCase();
+  const recoveredFrameOrigin = frameOrigin(node);
   return {
     acquisitionId: diagnostic.acquisitionId,
     bytes: resource.bytes,
@@ -109,7 +110,7 @@ function recoveredResource(
       sourceUrl: diagnostic.sourceUrl,
       ...(authoredSrc ? { originalUrl: authoredSrc } : {}),
       ...(node ? { frameId: node.frameContext.frameId } : { frameId: resource.frameId }),
-      ...(frameOrigin(node) ? { frameOrigin: frameOrigin(node) } : {}),
+      ...(recoveredFrameOrigin ? { frameOrigin: recoveredFrameOrigin } : {}),
       ...(sourceType === "css-background" ? { cssProperty: "background-image" } : {}),
       ...(sourceType === "css-mask" ? { cssProperty: "mask-image" } : {}),
       ...(sourceType === "css-border" ? { cssProperty: "border-image-source" } : {}),

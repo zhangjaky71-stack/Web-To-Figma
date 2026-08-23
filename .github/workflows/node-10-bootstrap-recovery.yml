@@ -73,7 +73,6 @@ jobs:
             if (!activeTemplate) {
               const candidate = templates.find((template) => line.includes(template.marker));
               if (candidate) {
-                line = line.replace(candidate.marker, candidate.marker.replace("= `", "= String.raw`"));
                 fixed.push(line);
                 activeTemplate = candidate;
                 continue;
@@ -89,7 +88,7 @@ jobs:
             if (activeTemplate) {
               if (line.includes(".replace(") && line.includes("A") && line.includes("gi")) {
                 const indent = line.slice(0, Math.max(0, line.indexOf(".replace")));
-                fixed.push(`${indent}.replace(/\\\\A\\s?/gi, "\\n");`);
+                fixed.push(`${indent}.replace(/\\\\\\\\A\\\\s?/gi, "\\\\n");`);
                 if (payload[index + 1]?.trim() === '");') index += 1;
                 continue;
               }

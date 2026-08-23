@@ -60,6 +60,7 @@ export interface PixelGroundTruthDiagnostic {
   code:
     | "RASTER_REFERENCE_INVALID"
     | "RASTER_TILE_INVALID"
+    | "RASTER_TILE_MISSING"
     | "RASTER_TILE_EMPTY"
     | "RASTER_TILE_HASH_FAILED"
     | "RASTER_TILE_COUNT_EXCEEDED"

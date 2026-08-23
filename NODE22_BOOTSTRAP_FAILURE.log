@@ -1,0 +1,79 @@
+Scope: all 22 workspace projects
+? Verifying lockfile against supply-chain policies (160 entries)...
+✓ Lockfile passes supply-chain policies (160 entries in 1.5s)
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Progress: resolved 7, reused 0, downloaded 7, added 0
+Progress: resolved 8, reused 0, downloaded 7, added 0
+Progress: resolved 90, reused 0, downloaded 58, added 0
+Progress: resolved 134, reused 0, downloaded 102, added 0
+Progress: resolved 152, reused 0, downloaded 121, added 0
+Packages: +133
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Packages are hard linked from the content-addressable store to the virtual store.
+  Content-addressable store is at: /home/runner/setup-pnpm/node_modules/.bin/store/v11
+  Virtual store is at:             node_modules/.pnpm
+Progress: resolved 188, reused 0, downloaded 133, added 133, done
+
+devDependencies:
++ eslint 10.8.1 (10.9.0 is available)
++ prettier 3.9.6
++ turbo 2.10.11
++ typescript 6.0.3 (7.0.2 is available)
++ typescript-eslint 8.67.0
++ vitest 4.1.11
+
+[ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: esbuild@0.28.2
+
+Run "pnpm approve-builds" to pick which dependencies should be allowed to run scripts.
+NODE-22 integration finalizer applied successfully.
+Scope: all 22 workspace projects
+✓ Lockfile passes supply-chain policies (verified 656ms ago)
+Lockfile is up to date, resolution step is skipped
+Already up to date
+
+[ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: esbuild@0.28.2
+
+Run "pnpm approve-builds" to pick which dependencies should be allowed to run scripts.
+Scope: all 22 workspace projects
+✓ Lockfile passes supply-chain policies (verified 1s ago)
+Lockfile is up to date, resolution step is skipped
+Already up to date
+
+[ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: esbuild@0.28.2
+
+Run "pnpm approve-builds" to pick which dependencies should be allowed to run scripts.
+[ERROR] Command failed with exit code 1: /opt/hostedtoolcache/node/24.19.0/x64/bin/node /home/runner/setup-pnpm/node_modules/pnpm/bin/pnpm.mjs install
+
+pnpm: Command failed with exit code 1: /opt/hostedtoolcache/node/24.19.0/x64/bin/node /home/runner/setup-pnpm/node_modules/pnpm/bin/pnpm.mjs install
+    at getFinalError (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:89203:14)
+    at makeError (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:91510:21)
+    at getSyncResult (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:93354:10)
+    at spawnSubprocessSync (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:93314:14)
+    at execaCoreSync (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:93244:23)
+    at callBoundExeca (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:95772:23)
+    at boundExeca (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:95749:49)
+    at sync2 (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:95908:10)
+    at runPnpmCli (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:271523:5)
+    at runDepsStatusCheck (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:273323:7)
+rm 'scripts/node-22-finalize.mjs'
+Scope: all 22 workspace projects
+✓ Lockfile passes supply-chain policies (verified 3s ago)
+Lockfile is up to date, resolution step is skipped
+Already up to date
+
+[ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: esbuild@0.28.2
+
+Run "pnpm approve-builds" to pick which dependencies should be allowed to run scripts.
+[ERROR] Command failed with exit code 1: /opt/hostedtoolcache/node/24.19.0/x64/bin/node /home/runner/setup-pnpm/node_modules/pnpm/bin/pnpm.mjs install
+
+pnpm: Command failed with exit code 1: /opt/hostedtoolcache/node/24.19.0/x64/bin/node /home/runner/setup-pnpm/node_modules/pnpm/bin/pnpm.mjs install
+    at getFinalError (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:89203:14)
+    at makeError (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:91510:21)
+    at getSyncResult (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:93354:10)
+    at spawnSubprocessSync (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:93314:14)
+    at execaCoreSync (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:93244:23)
+    at callBoundExeca (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:95772:23)
+    at boundExeca (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:95749:49)
+    at sync2 (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:95908:10)
+    at runPnpmCli (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:271523:5)
+    at runDepsStatusCheck (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:273323:7)

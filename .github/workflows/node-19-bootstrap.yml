@@ -36,6 +36,23 @@ jobs:
       - name: Apply NODE-19 integration closure
         run: node scripts/node-19-finalize.mjs
 
+      - name: Fix core global-name guard collision
+        run: |
+          node --input-type=module <<'EOF'
+          import { readFileSync, writeFileSync } from "node:fs";
+          const path = "packages/render-tree-optimizer/src/optimizer.ts";
+          let source = readFileSync(path, "utf8");
+          source = source.replace(
+            "const document = await createDocumentIdentity({",
+            "const documentIdentity = await createDocumentIdentity({",
+          );
+          source = source.replaceAll("document.documentId", "documentIdentity.documentId");
+          if (source.includes("document.documentId")) {
+            throw new Error("NODE-19 document global-name collision remains");
+          }
+          writeFileSync(path, source);
+          EOF
+
       - name: Refresh patched workspace lockfile
         run: pnpm install --no-frozen-lockfile
 

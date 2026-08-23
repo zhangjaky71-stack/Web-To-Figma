@@ -190,9 +190,8 @@ describe("Browser CSS cascade runtime", () => {
     ]);
 
     expect(
-      acquisition.nodes[0]?.traces
-        .find((trace) => trace.property === "background")
-        ?.candidates[0]?.status,
+      acquisition.nodes[0]?.traces.find((trace) => trace.property === "background")?.candidates[0]
+        ?.status,
     ).toBe("inactive-condition");
     expect(acquisition.tokenUsages).toHaveLength(0);
     expect(acquisition.unresolvedTokenUsages[0]).toMatchObject({

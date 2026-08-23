@@ -71,7 +71,7 @@ function shadowHostForNode(node: RawNode, byId: Map<string, RawNode>): string | 
   while (current && !visited.has(current.captureNodeId)) {
     visited.add(current.captureNodeId);
     if (current.kind === "shadow-root") return current.relationships.shadowHostId;
-    const parentId = current.relationships.sourceParentId;
+    const parentId: string | undefined = current.relationships.sourceParentId;
     current = parentId ? byId.get(parentId) : undefined;
   }
   return undefined;
@@ -115,7 +115,10 @@ export function buildStandardCascadeInput(snapshot: RawSnapshot): StandardCascad
   return { frames, targets };
 }
 
-async function captureStandardCascade(tabId: number, snapshot: RawSnapshot): Promise<CssCascadeCapture> {
+async function captureStandardCascade(
+  tabId: number,
+  snapshot: RawSnapshot,
+): Promise<CssCascadeCapture> {
   const input = buildStandardCascadeInput(snapshot);
   const injectionResults = await chrome.scripting.executeScript({
     target: { tabId },
@@ -140,7 +143,8 @@ function computedMap(response: Record<string, unknown>): Map<string, string> {
   const result = new Map<string, string>();
   if (!Array.isArray(response.computedStyle)) return result;
   for (const item of response.computedStyle) {
-    if (!isRecord(item) || typeof item.name !== "string" || typeof item.value !== "string") continue;
+    if (!isRecord(item) || typeof item.name !== "string" || typeof item.value !== "string")
+      continue;
     result.set(item.name.startsWith("--") ? item.name : item.name.toLowerCase(), item.value);
   }
   return result;
@@ -219,7 +223,8 @@ export function normalizeCdpMatchedStyleAcquisition(
               ? { stylesheetRef: candidate.source.stylesheetRef }
               : {}),
             ...(candidate.source.selector ? { selector: candidate.source.selector } : {}),
-            sourceType: candidate.source.type === "inline" ? "inline-variable" : "css-custom-property",
+            sourceType:
+              candidate.source.type === "inline" ? "inline-variable" : "css-custom-property",
             referenceDefinitionKeys: [],
             confidence: candidate.status === "inactive-condition" ? 0.8 : 0.98,
             referenceNames: extractVarReferenceNames(candidate.authoredValue),
@@ -279,7 +284,10 @@ export function normalizeCdpMatchedStyleAcquisition(
         const selector =
           selectorList && typeof selectorList.text === "string" ? selectorList.text : undefined;
         const style = rule.style;
-        const ref = isRecord(style) && typeof style.styleSheetId === "string" ? style.styleSheetId : undefined;
+        const ref =
+          isRecord(style) && typeof style.styleSheetId === "string"
+            ? style.styleSheetId
+            : undefined;
         const media = mediaEvidence(rule);
         const layer = layerName(rule);
         addStyle(
@@ -327,7 +335,10 @@ export function normalizeCdpMatchedStyleAcquisition(
     }
   }
 
-  const definitionsByName = new Map<string, Array<CssTokenDefinitionEvidence & { referenceNames: string[] }>>();
+  const definitionsByName = new Map<
+    string,
+    Array<CssTokenDefinitionEvidence & { referenceNames: string[] }>
+  >();
   for (const definition of provisionalDefinitions.values()) {
     const list = definitionsByName.get(definition.name) ?? [];
     list.push(definition);
@@ -424,7 +435,8 @@ async function captureCdpCascade(tabId: number, snapshot: RawSnapshot): Promise<
       if (typeof frontendNodeId !== "number" || frontendNodeId <= 0) {
         diagnostics.push({
           code: "CSS_CDP_NODE_UNAVAILABLE",
-          message: "CDP could not materialize the captured backend node for authored CSS inspection.",
+          message:
+            "CDP could not materialize the captured backend node for authored CSS inspection.",
           sourceNodeId: sourceNode.captureNodeId,
         });
         continue;

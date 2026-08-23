@@ -146,7 +146,8 @@ assert(
   "service worker must preserve CDP preference, explicit fallback and completion paths",
 );
 assert(
-  serviceWorker.includes("persistCssCascade") && serviceWorker.includes("deleteAllCaptureArtifacts"),
+  serviceWorker.includes("persistCssCascade") &&
+    serviceWorker.includes("deleteAllCaptureArtifacts"),
   "service worker must persist and clean up NODE-11 CSS sidecars",
 );
 
@@ -220,7 +221,10 @@ assert(
 );
 
 const cssCascadeStore = await readFile(`${outputRoot}/runtime/css-cascade-store.js`, "utf8");
-assert(cssCascadeStore.includes("indexedDB.open"), "NODE-11 CSS sidecar must use IndexedDB persistence");
+assert(
+  cssCascadeStore.includes("indexedDB.open"),
+  "NODE-11 CSS sidecar must use IndexedDB persistence",
+);
 assert(
   cssCascadeStore.includes("w2f-css-cascade") && cssCascadeStore.includes("css-cascade:"),
   "NODE-11 CSS sidecar store/key contract drifted",
@@ -277,8 +281,14 @@ for (const evidence of [
   assert(standardCascade.includes(evidence), `Standard authored CSS runtime missing ${evidence}`);
 }
 assert(!standardCascade.includes("document.cookie"), "Standard authored CSS must not read cookies");
-assert(!standardCascade.includes("localStorage"), "Standard authored CSS must not read localStorage");
-assert(!standardCascade.includes("sessionStorage"), "Standard authored CSS must not read sessionStorage");
+assert(
+  !standardCascade.includes("localStorage"),
+  "Standard authored CSS must not read localStorage",
+);
+assert(
+  !standardCascade.includes("sessionStorage"),
+  "Standard authored CSS must not read sessionStorage",
+);
 
 const contentScript = await readFile(`${outputRoot}/runtime/content-script.js`, "utf8");
 assert(

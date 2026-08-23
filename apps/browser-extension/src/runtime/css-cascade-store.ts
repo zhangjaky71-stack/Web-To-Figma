@@ -20,7 +20,8 @@ function openDatabase(): Promise<IDBDatabase> {
         database.createObjectStore(W2F_CSS_CASCADE_STORE_NAME);
       }
     };
-    request.onerror = () => reject(request.error ?? new Error("failed to open CSS cascade database"));
+    request.onerror = () =>
+      reject(request.error ?? new Error("failed to open CSS cascade database"));
     request.onsuccess = () => resolve(request.result);
   });
 }
@@ -59,7 +60,8 @@ export async function readCssCascadeCapture(jobId: string): Promise<CssCascadeCa
     const transaction = database.transaction(W2F_CSS_CASCADE_STORE_NAME, "readonly");
     const request = transaction.objectStore(W2F_CSS_CASCADE_STORE_NAME).get(key);
     const value = await new Promise<unknown>((resolve, reject) => {
-      request.onerror = () => reject(request.error ?? new Error("failed to read CSS cascade capture"));
+      request.onerror = () =>
+        reject(request.error ?? new Error("failed to read CSS cascade capture"));
       request.onsuccess = () => resolve(request.result);
     });
     await waitForTransaction(transaction);

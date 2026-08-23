@@ -76,7 +76,8 @@ function isStringRecord(value: unknown): value is Record<string, string> {
 }
 
 function isNodeEvidence(value: unknown): boolean {
-  if (!isRecord(value) || typeof value.sourceNodeId !== "string" || !value.sourceNodeId) return false;
+  if (!isRecord(value) || typeof value.sourceNodeId !== "string" || !value.sourceNodeId)
+    return false;
   if (!Array.isArray(value.traces) || !isStringRecord(value.customProperties)) return false;
   return value.traces.every((trace) => {
     if (
@@ -123,10 +124,12 @@ function isStyleRecord(value: unknown): boolean {
 }
 
 function isTokenGraph(value: unknown): boolean {
-  if (!isRecord(value) || !Array.isArray(value.tokens) || !Array.isArray(value.usages)) return false;
+  if (!isRecord(value) || !Array.isArray(value.tokens) || !Array.isArray(value.usages))
+    return false;
   const ids = new Set<string>();
   for (const token of value.tokens) {
-    if (!isRecord(token) || typeof token.id !== "string" || !token.id || ids.has(token.id)) return false;
+    if (!isRecord(token) || typeof token.id !== "string" || !token.id || ids.has(token.id))
+      return false;
     ids.add(token.id);
   }
   return value.usages.every(
@@ -178,7 +181,9 @@ export function isCssCascadeCapture(value: unknown): value is CssCascadeCapture 
   ) {
     return false;
   }
-  const sourceIds = new Set((value.cascade.nodes as CssNodeCascadeEvidence[]).map((node) => node.sourceNodeId));
+  const sourceIds = new Set(
+    (value.cascade.nodes as CssNodeCascadeEvidence[]).map((node) => node.sourceNodeId),
+  );
   if (sourceIds.size !== value.cascade.nodes.length) return false;
   if (value.styles.length !== value.cascade.nodes.length) return false;
   return value.styles.every((style) => {

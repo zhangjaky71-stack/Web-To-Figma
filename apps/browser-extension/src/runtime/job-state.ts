@@ -64,7 +64,9 @@ function isSourceDescriptor(value: unknown): value is SourceDescriptor {
 }
 
 function isOptionalNonNegativeInteger(value: unknown): boolean {
-  return value === undefined || (typeof value === "number" && Number.isSafeInteger(value) && value >= 0);
+  return (
+    value === undefined || (typeof value === "number" && Number.isSafeInteger(value) && value >= 0)
+  );
 }
 
 function isCaptureSnapshotReceipt(value: unknown): value is CaptureSnapshotReceipt {
@@ -88,7 +90,8 @@ function isCaptureSnapshotReceipt(value: unknown): value is CaptureSnapshotRecei
         record.referenceScreenshotKey.length > 0)) &&
     (record.fallbackFromCdp === undefined || typeof record.fallbackFromCdp === "boolean") &&
     (record.cssCascadeStorageKey === undefined ||
-      (typeof record.cssCascadeStorageKey === "string" && record.cssCascadeStorageKey.length > 0)) &&
+      (typeof record.cssCascadeStorageKey === "string" &&
+        record.cssCascadeStorageKey.length > 0)) &&
     (record.cssCascadeAdapter === undefined ||
       record.cssCascadeAdapter === "standard" ||
       record.cssCascadeAdapter === "cdp") &&

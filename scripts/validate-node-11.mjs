@@ -89,7 +89,7 @@ if (failures.length === 0) {
     "createCssCascadeCapture",
     "isCssCascadeCapture",
     "summarizeCssCascadeCapture",
-    'style:${node.sourceNodeId}',
+    "style:${node.sourceNodeId}",
   ]) {
     assert(capture.includes(evidence), `NODE-11 cascade sidecar missing ${evidence}`);
   }
@@ -149,7 +149,10 @@ if (failures.length === 0) {
     assert(standard.includes(evidence), `NODE-11 Standard acquisition missing ${evidence}`);
   }
   for (const forbidden of ["document.cookie", "localStorage", "sessionStorage"]) {
-    assert(!standard.includes(forbidden), `NODE-11 Standard CSS acquisition must not read ${forbidden}`);
+    assert(
+      !standard.includes(forbidden),
+      `NODE-11 Standard CSS acquisition must not read ${forbidden}`,
+    );
   }
 
   const browserRuntime = read("apps/browser-extension/src/runtime/css-cascade-runtime.ts");
@@ -177,8 +180,14 @@ if (failures.length === 0) {
   }
 
   const worker = read("apps/browser-extension/src/runtime/service-worker.ts");
-  assert(worker.includes("captureCssCascadeForSnapshot"), "NODE-11 service worker must capture CSS sidecar");
-  assert(worker.includes("writeCssCascadeCapture"), "NODE-11 service worker must persist CSS sidecar");
+  assert(
+    worker.includes("captureCssCascadeForSnapshot"),
+    "NODE-11 service worker must capture CSS sidecar",
+  );
+  assert(
+    worker.includes("writeCssCascadeCapture"),
+    "NODE-11 service worker must persist CSS sidecar",
+  );
   assert(worker.includes("deleteCssCascadeCapture"), "NODE-11 cleanup must delete CSS sidecar");
 
   const browserPackage = JSON.parse(read("apps/browser-extension/package.json"));
@@ -206,7 +215,10 @@ if (failures.length === 0) {
   assert(schema.includes('tokens: "tokens.json"'), "NODE-11 requires tokens entrypoint");
 
   const raw = read("packages/capture-core/src/types.ts");
-  assert(raw.includes('RAW_SNAPSHOT_VERSION = "1.0.0"'), "NODE-11 must not version-bump RawSnapshot");
+  assert(
+    raw.includes('RAW_SNAPSHOT_VERSION = "1.0.0"'),
+    "NODE-11 must not version-bump RawSnapshot",
+  );
 }
 
 if (failures.length > 0) {

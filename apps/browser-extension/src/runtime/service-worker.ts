@@ -99,14 +99,16 @@ async function persistCssCascade(
   tabId: number,
   jobId: string,
   snapshot: RawSnapshot,
-): Promise<Pick<
-  CaptureSnapshotReceipt,
-  | "cssCascadeStorageKey"
-  | "cssCascadeAdapter"
-  | "cssStyleCount"
-  | "cssTokenCount"
-  | "cssCascadeDiagnosticCount"
->> {
+): Promise<
+  Pick<
+    CaptureSnapshotReceipt,
+    | "cssCascadeStorageKey"
+    | "cssCascadeAdapter"
+    | "cssStyleCount"
+    | "cssTokenCount"
+    | "cssCascadeDiagnosticCount"
+  >
+> {
   const cascade = await captureCssCascadeForSnapshot(tabId, snapshot);
   const cssCascadeStorageKey = await writeCssCascadeCapture(jobId, cascade);
   return {

@@ -302,7 +302,8 @@ export function captureStandardCascadeInPage(input: StandardCascadeInput): Stand
   while (madeFrameProgress) {
     madeFrameProgress = false;
     for (const frame of input.frames) {
-      if (frameDocuments.has(frame.frameId) || !frame.parentFrameId || !frame.ownerSourceNodeId) continue;
+      if (frameDocuments.has(frame.frameId) || !frame.parentFrameId || !frame.ownerSourceNodeId)
+        continue;
       if (!frameDocuments.has(frame.parentFrameId)) continue;
       const owner = resolveElement(frame.ownerSourceNodeId);
       if (!(owner instanceof HTMLIFrameElement) || !owner.contentDocument) continue;
@@ -413,7 +414,8 @@ export function captureStandardCascadeInPage(input: StandardCascadeInput): Stand
               ? { stylesheetRef: candidate.source.stylesheetRef }
               : {}),
             ...(candidate.source.selector ? { selector: candidate.source.selector } : {}),
-            sourceType: candidate.source.type === "inline" ? "inline-variable" : "css-custom-property",
+            sourceType:
+              candidate.source.type === "inline" ? "inline-variable" : "css-custom-property",
             referenceDefinitionKeys: [],
             confidence: candidate.status === "inactive-condition" ? 0.75 : 0.95,
             referenceNames: extractVarNames(candidate.authoredValue),

@@ -35,6 +35,9 @@ importers:
       '@w2f/cdp-capture-adapter':
         specifier: workspace:*
         version: link:../../packages/cdp-capture-adapter
+      '@w2f/css-cascade':
+        specifier: workspace:*
+        version: link:../../packages/css-cascade
       '@w2f/source-providers':
         specifier: workspace:*
         version: link:../../packages/source-providers
@@ -155,6 +158,9 @@ importers:
       '@w2f/capture-core':
         specifier: workspace:*
         version: link:../capture-core
+      '@w2f/css-cascade':
+        specifier: workspace:*
+        version: link:../css-cascade
     devDependencies:
       typescript:
         specifier: 6.0.3

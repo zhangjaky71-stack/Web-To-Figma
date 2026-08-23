@@ -6,10 +6,7 @@ export const CSS_CASCADE_ENGINE_VERSION = "1.0.0" as const;
 export type CssCascadeEngineVersion = typeof CSS_CASCADE_ENGINE_VERSION;
 export type CssCascadeAdapter = "standard" | "cdp";
 export type CssDeclarationStatus =
-  | "winner"
-  | "overridden"
-  | "inactive-condition"
-  | "matched-unresolved";
+  "winner" | "overridden" | "inactive-condition" | "matched-unresolved";
 
 export interface CssSpecificity {
   ids: number;

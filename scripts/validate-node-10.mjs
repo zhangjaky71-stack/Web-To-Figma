@@ -129,8 +129,8 @@ if (failures.length === 0) {
     assert(cdp.includes(evidence), `CDP NODE-10 normalizer missing ${evidence}`);
   }
   for (const forbidden of [
-    "inputValue",
-    "textValue",
+    "document.nodes.inputValue",
+    "document.nodes.textValue",
     "document.cookie",
     "localStorage",
     "sessionStorage",

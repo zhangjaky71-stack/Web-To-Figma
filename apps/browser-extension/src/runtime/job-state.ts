@@ -21,6 +21,11 @@ export interface CaptureSnapshotReceipt extends RawSnapshotSummary {
   capturedAt: string;
   referenceScreenshotKey?: string;
   fallbackFromCdp?: boolean;
+  cssCascadeStorageKey?: string;
+  cssCascadeAdapter?: "standard" | "cdp";
+  cssStyleCount?: number;
+  cssTokenCount?: number;
+  cssCascadeDiagnosticCount?: number;
 }
 
 export interface CaptureJobState {
@@ -58,6 +63,10 @@ function isSourceDescriptor(value: unknown): value is SourceDescriptor {
   );
 }
 
+function isOptionalNonNegativeInteger(value: unknown): boolean {
+  return value === undefined || (typeof value === "number" && Number.isSafeInteger(value) && value >= 0);
+}
+
 function isCaptureSnapshotReceipt(value: unknown): value is CaptureSnapshotReceipt {
   if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
   const record = value as Record<string, unknown>;
@@ -77,7 +86,15 @@ function isCaptureSnapshotReceipt(value: unknown): value is CaptureSnapshotRecei
     (record.referenceScreenshotKey === undefined ||
       (typeof record.referenceScreenshotKey === "string" &&
         record.referenceScreenshotKey.length > 0)) &&
-    (record.fallbackFromCdp === undefined || typeof record.fallbackFromCdp === "boolean")
+    (record.fallbackFromCdp === undefined || typeof record.fallbackFromCdp === "boolean") &&
+    (record.cssCascadeStorageKey === undefined ||
+      (typeof record.cssCascadeStorageKey === "string" && record.cssCascadeStorageKey.length > 0)) &&
+    (record.cssCascadeAdapter === undefined ||
+      record.cssCascadeAdapter === "standard" ||
+      record.cssCascadeAdapter === "cdp") &&
+    isOptionalNonNegativeInteger(record.cssStyleCount) &&
+    isOptionalNonNegativeInteger(record.cssTokenCount) &&
+    isOptionalNonNegativeInteger(record.cssCascadeDiagnosticCount)
   );
 }
 

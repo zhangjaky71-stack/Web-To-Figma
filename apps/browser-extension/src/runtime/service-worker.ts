@@ -8,13 +8,26 @@ import {
 import { summarizeEnvironmentCapture } from "@w2f/environment-capture";
 import { summarizePixelGroundTruth } from "@w2f/pixel-ground-truth";
 import {
+  buildResponsiveCapture,
+  planResponsiveViewports,
+  responsiveArtifactId,
+  summarizeResponsiveCapture,
+  type ResponsiveCaptureRequest,
+  type ResponsiveSnapshotInput,
+  type ResponsiveViewportPlan,
+} from "@w2f/responsive-capture";
+import {
   captureStandardSnapshotInPage,
   type StandardCaptureInput,
   type StandardCaptureResult,
 } from "@w2f/standard-capture-adapter";
 import { captureAssetsForSnapshot } from "./asset-runtime.js";
 import { deleteAssetCapture, readAssetCapture, writeAssetCapture } from "./asset-store.js";
-import { captureHighFidelityWithCdp, getCdpRuntimeCapability } from "./cdp-runtime.js";
+import {
+  captureHighFidelityWithCdp,
+  getCdpRuntimeCapability,
+  withHighFidelityViewportOverride,
+} from "./cdp-runtime.js";
 import { captureCssCascadeForSnapshot } from "./css-cascade-runtime.js";
 import { deleteCssCascadeCapture, writeCssCascadeCapture } from "./css-cascade-store.js";
 import { captureEnvironmentForSnapshot } from "./environment-runtime.js";
@@ -27,6 +40,7 @@ import {
   type CaptureJobState,
   type CaptureSnapshotReceipt,
   type PageProbe,
+  type ResponsiveCaptureReceipt,
 } from "./job-state.js";
 import { capturePixelGroundTruthForSnapshot } from "./pixel-ground-truth-runtime.js";
 import { deletePixelGroundTruth, writePixelGroundTruth } from "./pixel-ground-truth-store.js";
@@ -42,6 +56,12 @@ import {
   type W2fShellResponse,
 } from "./protocol.js";
 import { type RegionSelectionResult } from "./region-selection.js";
+import {
+  assertSnapshotMatchesResponsivePlan,
+  buildResponsiveStableNodeEvidence,
+  probeCurrentViewport,
+} from "./responsive-capture-runtime.js";
+import { deleteResponsiveCapture, writeResponsiveCapture } from "./responsive-capture-store.js";
 import {
   deleteCaptureArtifacts,
   writeRawSnapshot,
@@ -70,8 +90,10 @@ function shellInfo(): W2fShellInfo {
     standardCaptureImplemented: true,
     cdpCaptureImplemented: true,
     regionSelectionImplemented: true,
+    responsiveCaptureImplemented: true,
     captureProfile: cdp.buildProfile,
     cdpAvailable: cdp.available,
+    syntheticResponsiveAvailable: cdp.available,
   };
 }
 
@@ -92,6 +114,16 @@ async function deleteAllCaptureArtifacts(jobId: string): Promise<void> {
     deleteEnvironmentCapture(jobId),
     deleteAssetCapture(jobId),
     deletePixelGroundTruth(jobId),
+  ]);
+}
+
+async function deleteResponsiveArtifacts(
+  jobId: string,
+  plans: readonly ResponsiveViewportPlan[],
+): Promise<void> {
+  await Promise.allSettled([
+    deleteResponsiveCapture(jobId),
+    ...plans.map((plan) => deleteAllCaptureArtifacts(responsiveArtifactId(jobId, plan.id))),
   ]);
 }
 
@@ -311,6 +343,7 @@ async function captureCdpDom(
   captureTarget: RawCaptureTarget,
   fallbackUrl?: string,
   fallbackTitle?: string,
+  persistLegacyReferenceScreenshot = true,
 ): Promise<{ snapshot: RawSnapshot; receipt: CaptureSnapshotReceipt }> {
   const result = await captureHighFidelityWithCdp(tabId, captureTarget, fallbackUrl, fallbackTitle);
   if (!isRawSnapshot(result.snapshot) || result.snapshot.adapter !== "cdp") {
@@ -319,7 +352,9 @@ async function captureCdpDom(
 
   try {
     const storageKey = await writeRawSnapshot(jobId, result.snapshot);
-    const referenceScreenshotKey = await writeReferenceScreenshot(jobId, result.screenshot);
+    const referenceScreenshotKey = persistLegacyReferenceScreenshot
+      ? await writeReferenceScreenshot(jobId, result.screenshot)
+      : undefined;
     const cascadeReceipt = await persistCssCascade(tabId, jobId, result.snapshot);
     const environmentReceipt = await persistEnvironment(tabId, jobId, result.snapshot);
     const assetReceipt = await persistAssets(tabId, jobId, result.snapshot);
@@ -329,7 +364,7 @@ async function captureCdpDom(
       receipt: {
         ...summarizeRawSnapshot(result.snapshot),
         storageKey,
-        referenceScreenshotKey,
+        ...(referenceScreenshotKey ? { referenceScreenshotKey } : {}),
         capturedAt: result.snapshot.capturedAt,
         ...cascadeReceipt,
         ...environmentReceipt,
@@ -392,7 +427,9 @@ async function wasJobCancelled(jobId: string): Promise<CaptureJobState | null> {
   return current?.jobId === jobId && current.status === "cancelled" ? current : null;
 }
 
-async function startShellJob(mode: CaptureJobMode): Promise<CaptureJobState> {
+async function startShellJob(
+  mode: Exclude<CaptureJobMode, "responsive">,
+): Promise<CaptureJobState> {
   const jobId = crypto.randomUUID();
   let job = createCaptureJob(mode, jobId);
   await writeJobState(job);
@@ -486,6 +523,168 @@ async function startShellJob(mode: CaptureJobMode): Promise<CaptureJobState> {
   }
 }
 
+function responsiveSnapshotInput(
+  plan: ResponsiveViewportPlan,
+  artifactId: string,
+  snapshot: RawSnapshot,
+  receipt: CaptureSnapshotReceipt,
+  stableNodes: Awaited<ReturnType<typeof buildResponsiveStableNodeEvidence>>,
+): ResponsiveSnapshotInput {
+  if (!receipt.environmentStorageKey) {
+    throw new Error(`Responsive snapshot ${plan.id} is missing EnvironmentCapture persistence`);
+  }
+  return {
+    plan,
+    ref: {
+      id: plan.id,
+      viewport: {
+        width: snapshot.environment.viewportWidth,
+        height: snapshot.environment.viewportHeight,
+        dpr: snapshot.environment.scale.context.devicePixelRatio,
+      },
+      rootNodeId: snapshot.rootCaptureNodeId,
+      environmentRef: receipt.environmentStorageKey,
+    },
+    artifactId,
+    artifacts: {
+      rawSnapshot: receipt.storageKey,
+      ...(receipt.cssCascadeStorageKey ? { cssCascade: receipt.cssCascadeStorageKey } : {}),
+      environment: receipt.environmentStorageKey,
+      ...(receipt.assetStorageKey ? { assets: receipt.assetStorageKey } : {}),
+      ...(receipt.pixelGroundTruthStorageKey
+        ? { pixelGroundTruth: receipt.pixelGroundTruthStorageKey }
+        : {}),
+    },
+    stableNodes,
+  };
+}
+
+function responsiveReceipt(
+  storageKey: string,
+  capture: ReturnType<typeof buildResponsiveCapture>,
+): ResponsiveCaptureReceipt {
+  const summary = summarizeResponsiveCapture(capture);
+  return {
+    storageKey,
+    mode: capture.mode,
+    plannedViewportCount: summary.plannedViewportCount,
+    capturedSnapshotCount: summary.capturedSnapshotCount,
+    stableNodeEvidenceCount: summary.stableNodeEvidenceCount,
+    diagnosticCount: summary.diagnosticCount,
+    viewportWidths: capture.plannedViewports.map((viewport) => viewport.width),
+  };
+}
+
+async function startResponsiveJob(request: ResponsiveCaptureRequest): Promise<CaptureJobState> {
+  const jobId = crypto.randomUUID();
+  let job = createCaptureJob("responsive", jobId);
+  let plans: ResponsiveViewportPlan[] = [];
+  await writeJobState(job);
+
+  try {
+    const sourceResolution = await resolveActiveTabSource();
+    const { capability, descriptor, tabId, tab } = sourceResolution;
+    if (!capability.available || !descriptor) {
+      const action = capability.requiredUserAction
+        ? `; action required: ${capability.requiredUserAction}`
+        : "";
+      throw new Error(`${capability.reason}${action}`);
+    }
+
+    const baseViewport = await probeCurrentViewport(tabId);
+    plans = planResponsiveViewports(request, baseViewport);
+    const cdp = getCdpRuntimeCapability();
+    if (plans.some((plan) => plan.source === "synthetic") && !cdp.available) {
+      throw new Error(
+        "Common and Custom responsive capture require the High Fidelity build; Standard supports Current Viewport only.",
+      );
+    }
+
+    job = transitionCaptureJob(
+      job,
+      "running",
+      "capturing-responsive-0-of-" + plans.length,
+      new Date(),
+      {
+        tabId,
+        source: descriptor,
+        responsivePlan: plans,
+      },
+    );
+    await writeJobState(job);
+
+    const snapshots: ResponsiveSnapshotInput[] = [];
+    let firstPage: PageProbe | undefined;
+    for (let index = 0; index < plans.length; index += 1) {
+      const plan = plans[index];
+      if (!plan) continue;
+      const cancelledBefore = await wasJobCancelled(jobId);
+      if (cancelledBefore) {
+        await deleteResponsiveArtifacts(jobId, plans);
+        return cancelledBefore;
+      }
+
+      job = transitionCaptureJob(
+        job,
+        "running",
+        `capturing-responsive-${index + 1}-of-${plans.length}`,
+      );
+      await writeJobState(job);
+
+      const artifactId = responsiveArtifactId(jobId, plan.id);
+      const captureOperation = () =>
+        captureCdpDom(tabId, artifactId, { type: "document" }, tab.url, tab.title, false);
+      const result =
+        plan.source === "synthetic"
+          ? await withHighFidelityViewportOverride(tabId, plan, captureOperation)
+          : await capturePreferredDom(tabId, artifactId, { type: "document" }, tab.url, tab.title);
+      assertSnapshotMatchesResponsivePlan(result.snapshot, plan);
+      const stableNodes = await buildResponsiveStableNodeEvidence(result.snapshot);
+      snapshots.push(
+        responsiveSnapshotInput(plan, artifactId, result.snapshot, result.receipt, stableNodes),
+      );
+      firstPage ??= pageProbeFromSnapshot(result.snapshot);
+
+      const cancelledAfter = await wasJobCancelled(jobId);
+      if (cancelledAfter) {
+        await deleteResponsiveArtifacts(jobId, plans);
+        return cancelledAfter;
+      }
+    }
+
+    const capture = buildResponsiveCapture({
+      request,
+      baseViewport,
+      snapshots,
+    });
+    if (capture.snapshots.length !== plans.length) {
+      throw new Error(
+        `Responsive capture incomplete: ${capture.snapshots.length}/${plans.length} snapshots persisted`,
+      );
+    }
+    const storageKey = await writeResponsiveCapture(jobId, capture);
+    job = transitionCaptureJob(job, "completed", "responsive-capture-complete", new Date(), {
+      tabId,
+      source: descriptor,
+      ...(firstPage ? { page: firstPage } : {}),
+      responsivePlan: plans,
+      responsive: responsiveReceipt(storageKey, capture),
+    });
+    await writeJobState(job);
+    return job;
+  } catch (error) {
+    await deleteResponsiveArtifacts(jobId, plans);
+    const current = await readJobState();
+    if (current?.jobId === jobId && current.status === "cancelled") return current;
+    job = transitionCaptureJob(job, "failed", "responsive-capture-failed", new Date(), {
+      error: error instanceof Error ? error.message : String(error),
+      ...(plans.length > 0 ? { responsivePlan: plans } : {}),
+    });
+    await writeJobState(job);
+    return job;
+  }
+}
+
 async function cancelShellJob(jobId: string): Promise<CaptureJobState | null> {
   const current = await readJobState();
   if (!current || current.jobId !== jobId) return current;
@@ -506,7 +705,11 @@ async function cancelShellJob(jobId: string): Promise<CaptureJobState | null> {
 
   const cancelled = transitionCaptureJob(current, "cancelled", "cancelled-by-user");
   await writeJobState(cancelled);
-  await deleteAllCaptureArtifacts(jobId);
+  if (current.mode === "responsive") {
+    await deleteResponsiveArtifacts(jobId, current.responsivePlan ?? []);
+  } else {
+    await deleteAllCaptureArtifacts(jobId);
+  }
   return cancelled;
 }
 
@@ -520,6 +723,8 @@ async function handleShellRequest(request: W2fShellRequest): Promise<W2fShellRes
       return shellSuccess(request.type, await readJobState());
     case "W2F_START_JOB":
       return shellSuccess(request.type, await startShellJob(request.mode));
+    case "W2F_START_RESPONSIVE_JOB":
+      return shellSuccess(request.type, await startResponsiveJob(request.capture));
     case "W2F_CANCEL_JOB":
       return shellSuccess(request.type, await cancelShellJob(request.jobId));
   }

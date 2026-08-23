@@ -24,8 +24,8 @@
 | 11 | CSS Cascade & Authored Semantics | DONE | Cascade/Token Graph/Standard/CDP/sidecar + exact-head read-only frozen-lockfile CI PASS | PR #15 merged as `6e303818` |
 | 12 | Media / Container / Environment Capture | DONE | Exact-head read-only CI #310 PASS | PR #16 merged as `b9cdca4d` |
 | 13 | Asset Resolver | DONE | Exact-head read-only CI #328 PASS | PR #17 merged as `07978a58` |
-| 14 | Pixel Ground Truth & Raster Engine | IN PROGRESS | Core/Browser integration assembled; Exit Gate pending | `feat/node-14-pixel-ground-truth-raster-engine` |
-| 15 | Multi-Viewport Responsive Capture | TODO | - | - |
+| 14 | Pixel Ground Truth & Raster Engine | DONE | Exact-head read-only CI #337 PASS | PR #18 merged as `6bb5fe53` |
+| 15 | Multi-Viewport Responsive Capture | IN PROGRESS | Implementation starting from merged NODE-14 | `feat/node-15-multi-viewport-responsive-capture` |
 | 16 | Responsive Inference Engine | TODO | - | - |
 | 17 | Base Layout Analyzer | TODO | - | - |
 | 18 | Table Layout Engine | TODO | - | - |
@@ -45,83 +45,79 @@
 
 ## Current Node
 
-`NODE-14 — Pixel Ground Truth & Raster Engine`
+`NODE-15 — Multi-Viewport Responsive Capture`
 
-NODE-14 starts from merged NODE-13 `main` commit:
+Entry baseline:
 
 ```text
-07978a586f7eb215f5e5aba0022cc6b02c1e6d28
+6bb5fe537d9dfbcf4cbb32b5223979ea15f019b8
 ```
 
 Working branch:
 
 ```text
-feat/node-14-pixel-ground-truth-raster-engine
+feat/node-15-multi-viewport-responsive-capture
 ```
 
-## NODE-13 Closure
+## NODE-14 Closure
 
-NODE-13 PR #17 passed exact-head read-only CI #328 on final head:
+NODE-14 PR #18 passed exact-head read-only CI #337 (`32624954690`) on final candidate `78fa1f0a2d2c717d480d50a2338e99c7253cdf66` and was squash merged into `main` as:
 
 ```text
-b817a456da4621da4a996489f65911b488f82f51
+6bb5fe537d9dfbcf4cbb32b5223979ea15f019b8
 ```
 
-and was squash merged into `main` as:
+The merged tree contains no temporary NODE-14 write-enabled bootstrap workflow.
+
+## NODE-15 Frozen Scope
+
+NODE-15 implements only:
 
 ```text
-07978a586f7eb215f5e5aba0022cc6b02c1e6d28
+responsive snapshot mode
+multiple viewport capture
+snapshot orchestration
+stable node matching inputs
 ```
 
-The merged tree contains no temporary NODE-13 write-enabled bootstrap workflow.
+The frozen common candidates are:
 
-## NODE-14 Implementation
+```text
+1440
+1280
+1024
+768
+390
+```
 
-Current NODE-14 branch delivers:
+The reduced default preset is:
 
-- platform-neutral `@w2f/pixel-ground-truth`;
-- additive `PixelGroundTruth 1.0.0` sidecar;
-- frozen `WtfReferenceTileDescriptor` reuse without Schema/IR major-version change;
-- deterministic unified 2048×2048 device-pixel Tile Model;
-- DPR-aware document-CSS tile bounds with exact edge closure;
-- SHA-256 content-addressed `references/<sha256>.png` resources;
-- tile-byte deduplication while preserving reference geometry;
-- mandatory complete viewport reference validation;
-- mandatory High Fidelity full-page tiled reference for document capture;
-- Standard `captureVisibleTab → createImageBitmap → OffscreenCanvas` viewport capture;
-- High Fidelity direct CDP `Page.captureScreenshot` clip tiling;
-- explicit incomplete/missing tile diagnostics;
-- NODE-13 asset failure → node-level raster fallback bridge;
-- canvas/WebGL render-surface visual capture without mutating context probes;
-- video current-frame visual capture;
-- Standard off-viewport fail-visible behavior rather than scroll-and-stitch fabrication;
-- dedicated Pixel Ground Truth IndexedDB persistence;
-- capture receipt metrics and unified transaction cleanup;
-- Browser runtime packaging for `@w2f/pixel-ground-truth`;
-- Standard/High Fidelity NODE-14 packaged-output validator;
-- shared core tests and Browser runtime/store tests;
-- normative Pixel Ground Truth & Raster V2 document;
-- ADR-0014 and NODE-14 implementation record;
-- dependency-free NODE-14 guardrail.
+```text
+1440 / 768 / 390
+```
 
-## NODE-14 Remaining Exit Work
+NODE-15 captures evidence. NODE-16 owns cross-snapshot matching/inference, breakpoint detection, FILL/HUG/FIXED, visibility/layout transitions and rule confidence.
 
-- wire `validate-node-14.mjs` into foundation validation;
-- refresh authoritative `pnpm-lock.yaml` for the new workspace package/dependency;
-- run canonical formatting;
-- resolve any compiler/test/package findings from full `pnpm check`;
-- remove temporary write-enabled bootstrap from the final branch tree;
-- run exact-head standard read-only frozen-lockfile CI;
-- mark PR ready and squash merge.
+## Implementation Direction
+
+- additive `ResponsiveCapture 1.0.0` sidecar;
+- reuse frozen `WtfResponsiveSnapshotRef` rather than version-bump W2F Schema/IR;
+- deterministic viewport plan and child-artifact identities;
+- High Fidelity synthetic multi-viewport orchestration with mandatory device-metrics cleanup/restore;
+- Standard profile remains current-viewport capable and does not mutate the browser window to fabricate responsive evidence;
+- each responsive snapshot preserves RawSnapshot/CSS/Environment/Assets/Pixel Ground Truth references;
+- stable identity assignments/signals are preserved as NODE-16 matching inputs without performing cross-snapshot inference;
+- bounded viewport count/dimensions and fail-visible diagnostics;
+- cancellation/failure cleanup covers every child snapshot artifact.
 
 ## Blockers
 
-No product/architecture blocker is known. Remaining work is controlled validation/finalization.
+No product/architecture blocker is known.
 
 ## Next
 
-After NODE-14 formal Exit Gate and squash merge:
+After NODE-15 formal Exit Gate and squash merge:
 
 ```text
-NODE-15 — Multi-Viewport Responsive Capture
+NODE-16 — Responsive Inference Engine
 ```

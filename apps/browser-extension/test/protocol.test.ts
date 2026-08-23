@@ -9,11 +9,33 @@ import {
 } from "../src/runtime/protocol.js";
 
 describe("browser shell message protocol", () => {
-  it("accepts the frozen shell plus source capability vocabulary", () => {
-    expect(W2F_EXTENSION_SHELL_VERSION).toBe("1.3.0");
+  it("accepts the additive shell plus source and responsive capture vocabulary", () => {
+    expect(W2F_EXTENSION_SHELL_VERSION).toBe("1.4.0");
     expect(isW2fShellRequest({ type: "W2F_GET_SOURCE_CAPABILITY" })).toBe(true);
     expect(isW2fShellRequest({ type: "W2F_GET_JOB_STATE" })).toBe(true);
     expect(isW2fShellRequest({ type: "W2F_START_JOB", mode: "region" })).toBe(true);
+    expect(
+      isW2fShellRequest({ type: "W2F_START_RESPONSIVE_JOB", capture: { mode: "current" } }),
+    ).toBe(true);
+    expect(
+      isW2fShellRequest({ type: "W2F_START_RESPONSIVE_JOB", capture: { mode: "common" } }),
+    ).toBe(true);
+    expect(
+      isW2fShellRequest({
+        type: "W2F_START_RESPONSIVE_JOB",
+        capture: {
+          mode: "custom",
+          viewports: [{ width: 390 }, { width: 1440, height: 900, dpr: 2 }],
+        },
+      }),
+    ).toBe(true);
+    expect(
+      isW2fShellRequest({
+        type: "W2F_START_RESPONSIVE_JOB",
+        capture: { mode: "custom", viewports: [] },
+      }),
+    ).toBe(false);
+    expect(isW2fShellRequest({ type: "W2F_START_JOB", mode: "responsive" })).toBe(false);
     expect(isW2fShellRequest({ type: "W2F_START_JOB", mode: "unsupported" })).toBe(false);
     expect(isW2fShellRequest({ type: "W2F_CANCEL_JOB", jobId: "" })).toBe(false);
     expect(isW2fShellRequest({ type: "W2F_CAPTURE_INTERNAL_PAGE" })).toBe(false);
@@ -86,7 +108,7 @@ describe("browser shell message protocol", () => {
     ).toBe(false);
   });
 
-  it("reports Standard and High Fidelity capture capability through shell info", () => {
+  it("reports Standard, High Fidelity and responsive capture capability through shell info", () => {
     const success = shellSuccess("W2F_GET_SOURCE_CAPABILITY", {
       provider: "http-page",
       supported: true,
@@ -101,8 +123,10 @@ describe("browser shell message protocol", () => {
       standardCaptureImplemented: true,
       cdpCaptureImplemented: true,
       regionSelectionImplemented: true,
+      responsiveCaptureImplemented: true,
       captureProfile: "high-fidelity",
       cdpAvailable: true,
+      syntheticResponsiveAvailable: true,
     });
     const failure = shellFailure("W2F_START_JOB", new Error("fixture failure"));
     expect(isW2fShellResponse(success)).toBe(true);

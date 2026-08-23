@@ -193,12 +193,16 @@ if (failures.length === 0) {
   }
 
   const protocol = readText("apps/browser-extension/src/runtime/protocol.ts");
+  const shellVersion = /W2F_EXTENSION_SHELL_VERSION = "(\d+)\.(\d+)\.(\d+)"/.exec(protocol);
+  const shellMajor = shellVersion ? Number(shellVersion[1]) : -1;
+  const shellMinor = shellVersion ? Number(shellVersion[2]) : -1;
   assert(
-    protocol.includes('W2F_EXTENSION_SHELL_VERSION = "1.3.0"') &&
+    shellMajor === 1 &&
+      shellMinor >= 3 &&
       protocol.includes("cdpCaptureImplemented: true") &&
       protocol.includes("captureProfile") &&
       protocol.includes("cdpAvailable"),
-    "Browser shell must expose NODE-09 CDP capability",
+    "Browser shell must expose NODE-09 CDP capability without regressing below shell 1.3.x",
   );
 }
 

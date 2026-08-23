@@ -22,7 +22,8 @@ body {
   color: CanvasText;
 }
 
-button {
+button,
+input {
   font: inherit;
 }
 
@@ -38,7 +39,8 @@ button {
   padding: 20px;
 }
 
-.panel-header {
+.panel-header,
+.section-heading {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -116,7 +118,8 @@ button:hover:not(:disabled) {
   background: color-mix(in srgb, CanvasText 6%, Canvas);
 }
 
-button:disabled {
+button:disabled,
+input:disabled {
   cursor: not-allowed;
   opacity: 0.42;
 }
@@ -124,6 +127,48 @@ button:disabled {
 button.primary {
   background: CanvasText;
   color: Canvas;
+}
+
+.responsive-card {
+  display: grid;
+  gap: 9px;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, CanvasText 14%, transparent);
+  border-radius: 12px;
+}
+
+.section-heading h2 {
+  margin-bottom: 0;
+}
+
+.capability-note {
+  max-width: 150px;
+  font-size: 10px;
+  line-height: 1.3;
+  text-align: right;
+  opacity: 0.6;
+}
+
+.radio-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.radio-row small {
+  margin-left: 4px;
+  opacity: 0.58;
+}
+
+.compact-input {
+  width: 100%;
+  min-height: 36px;
+  border: 1px solid color-mix(in srgb, CanvasText 18%, transparent);
+  border-radius: 8px;
+  padding: 7px 9px;
+  background: Canvas;
+  color: CanvasText;
 }
 
 .footer-actions {

@@ -43,7 +43,7 @@ describe("browser extension foundation", () => {
     expect(getBrowserCdpCaptureAdapterVersion()).toBe("1.0.0");
   });
 
-  it("advances the Browser shell protocol for NODE-09", () => {
-    expect(getBrowserExtensionShellVersion()).toBe("1.3.0");
+  it("advances the Browser shell protocol through NODE-15", () => {
+    expect(getBrowserExtensionShellVersion()).toBe("1.4.0");
   });
 });

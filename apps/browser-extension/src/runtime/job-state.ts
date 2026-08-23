@@ -1,8 +1,9 @@
 import type { RawSnapshotSummary } from "@w2f/capture-core";
+import type { ResponsiveCaptureMode, ResponsiveViewportPlan } from "@w2f/responsive-capture";
 import type { SourceDescriptor } from "@w2f/source-providers";
 import { isRegionSelectionResult, type RegionSelectionResult } from "./region-selection.js";
 
-export type CaptureJobMode = "full-page" | "region";
+export type CaptureJobMode = "full-page" | "region" | "responsive";
 
 export type CaptureJobStatus = "idle" | "queued" | "running" | "completed" | "failed" | "cancelled";
 
@@ -49,6 +50,16 @@ export interface CaptureSnapshotReceipt extends RawSnapshotSummary {
   rasterDiagnosticCount?: number;
 }
 
+export interface ResponsiveCaptureReceipt {
+  storageKey: string;
+  mode: ResponsiveCaptureMode;
+  plannedViewportCount: number;
+  capturedSnapshotCount: number;
+  stableNodeEvidenceCount: number;
+  diagnosticCount: number;
+  viewportWidths: number[];
+}
+
 export interface CaptureJobState {
   jobId: string;
   mode: CaptureJobMode;
@@ -61,6 +72,8 @@ export interface CaptureJobState {
   page?: PageProbe;
   region?: RegionSelectionResult;
   capture?: CaptureSnapshotReceipt;
+  responsivePlan?: ResponsiveViewportPlan[];
+  responsive?: ResponsiveCaptureReceipt;
   error?: string;
 }
 
@@ -154,6 +167,40 @@ function isCaptureSnapshotReceipt(value: unknown): value is CaptureSnapshotRecei
   );
 }
 
+function isResponsiveViewportPlan(value: unknown): value is ResponsiveViewportPlan {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+  const record = value as Record<string, unknown>;
+  return (
+    typeof record.id === "string" &&
+    record.id.length > 0 &&
+    typeof record.width === "number" &&
+    Number.isFinite(record.width) &&
+    typeof record.height === "number" &&
+    Number.isFinite(record.height) &&
+    typeof record.dpr === "number" &&
+    Number.isFinite(record.dpr) &&
+    (record.source === "current" || record.source === "synthetic")
+  );
+}
+
+function isResponsiveCaptureReceipt(value: unknown): value is ResponsiveCaptureReceipt {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+  const record = value as Record<string, unknown>;
+  return (
+    typeof record.storageKey === "string" &&
+    record.storageKey.length > 0 &&
+    (record.mode === "current" || record.mode === "common" || record.mode === "custom") &&
+    isOptionalNonNegativeInteger(record.plannedViewportCount) &&
+    isOptionalNonNegativeInteger(record.capturedSnapshotCount) &&
+    isOptionalNonNegativeInteger(record.stableNodeEvidenceCount) &&
+    isOptionalNonNegativeInteger(record.diagnosticCount) &&
+    Array.isArray(record.viewportWidths) &&
+    record.viewportWidths.every(
+      (width) => typeof width === "number" && Number.isSafeInteger(width) && width > 0,
+    )
+  );
+}
+
 export function createCaptureJob(
   mode: CaptureJobMode,
   jobId: string,
@@ -180,7 +227,10 @@ export function transitionCaptureJob(
   next: CaptureJobStatus,
   phase: string,
   now: string | Date = new Date(),
-  patch: Pick<CaptureJobState, "tabId" | "source" | "page" | "region" | "capture" | "error"> = {},
+  patch: Pick<
+    CaptureJobState,
+    "tabId" | "source" | "page" | "region" | "capture" | "responsivePlan" | "responsive" | "error"
+  > = {},
 ): CaptureJobState {
   if (isTerminalJobStatus(current.status)) {
     throw new TypeError(`cannot transition terminal job ${current.jobId} from ${current.status}`);
@@ -197,6 +247,10 @@ export function transitionCaptureJob(
     ...(patch.page === undefined ? {} : { page: patch.page }),
     ...(patch.region === undefined ? {} : { region: patch.region }),
     ...(patch.capture === undefined ? {} : { capture: patch.capture }),
+    ...(patch.responsivePlan === undefined
+      ? {}
+      : { responsivePlan: patch.responsivePlan.map((item) => ({ ...item })) }),
+    ...(patch.responsive === undefined ? {} : { responsive: patch.responsive }),
     ...(patch.error === undefined ? {} : { error: patch.error }),
   };
 }
@@ -206,7 +260,7 @@ export function isCaptureJobState(value: unknown): value is CaptureJobState {
   const record = value as Record<string, unknown>;
   return (
     typeof record.jobId === "string" &&
-    (record.mode === "full-page" || record.mode === "region") &&
+    (record.mode === "full-page" || record.mode === "region" || record.mode === "responsive") &&
     typeof record.status === "string" &&
     ["idle", "queued", "running", "completed", "failed", "cancelled"].includes(record.status) &&
     typeof record.phase === "string" &&
@@ -214,6 +268,10 @@ export function isCaptureJobState(value: unknown): value is CaptureJobState {
     typeof record.updatedAt === "string" &&
     (record.source === undefined || isSourceDescriptor(record.source)) &&
     (record.region === undefined || isRegionSelectionResult(record.region)) &&
-    (record.capture === undefined || isCaptureSnapshotReceipt(record.capture))
+    (record.capture === undefined || isCaptureSnapshotReceipt(record.capture)) &&
+    (record.responsivePlan === undefined ||
+      (Array.isArray(record.responsivePlan) &&
+        record.responsivePlan.every(isResponsiveViewportPlan))) &&
+    (record.responsive === undefined || isResponsiveCaptureReceipt(record.responsive))
   );
 }

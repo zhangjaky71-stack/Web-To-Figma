@@ -59,6 +59,11 @@ const runtimePackages = [
     dist: fileURLToPath(new URL("../../../packages/responsive-inference/dist/", import.meta.url)),
   },
   {
+    specifier: "@w2f/layout-analyzer",
+    directory: "layout-analyzer",
+    dist: fileURLToPath(new URL("../../../packages/layout-analyzer/dist/", import.meta.url)),
+  },
+  {
     specifier: "@w2f/standard-capture-adapter",
     directory: "standard-capture-adapter",
     dist: fileURLToPath(

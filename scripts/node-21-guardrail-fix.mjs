@@ -51,6 +51,22 @@ await patch("apps/browser-extension/scripts/validate-extension-package.mjs", (so
     ),
 );
 
+await patch("apps/browser-extension/scripts/package-extension.mjs", (source) => {
+  let next = source;
+  const packageMarker = `  {\n    specifier: "@w2f/standard-capture-adapter",`;
+  const irPackage = `  {\n    specifier: "@w2f/w2f-ir",\n    directory: "w2f-ir",\n    dist: fileURLToPath(new URL("../../../packages/w2f-ir/dist/", import.meta.url)),\n  },\n`;
+  if (!next.includes('specifier: "@w2f/w2f-ir"')) {
+    next = next.replace(packageMarker, irPackage + packageMarker);
+  }
+
+  const writeMarker = `  if (rewritten !== source) await writeFile(runtimePath, rewritten, "utf8");`;
+  const schemaSubpathRewrite = `  for (const schemaSubpath of ["frame-context", "scale-context"]) {\n    const target = \`w2f-schema/\${schemaSubpath}.js\`;\n    const relative = posix.relative(posix.dirname(relativeFile), target);\n    const replacement = relative.startsWith(".") ? relative : \`./\${relative}\`;\n    rewritten = rewritten.replaceAll(\n      \`from "@w2f/w2f-schema/\${schemaSubpath}"\`,\n      \`from "\${replacement}"\`,\n    );\n  }\n`;
+  if (!next.includes('for (const schemaSubpath of ["frame-context", "scale-context"])')) {
+    next = next.replace(writeMarker, schemaSubpathRewrite + writeMarker);
+  }
+  return next;
+});
+
 await patch("scripts/validate-node-21.mjs", (source) =>
   source.replace('    "application/x-wtf",\n', '    "WTF_MIME_TYPE",\n'),
 );
@@ -58,7 +74,7 @@ await patch("scripts/validate-node-21.mjs", (source) =>
 await patch("apps/browser-extension/scripts/validate-node-21-package.mjs", (source) => {
   let next = source.replace(
     '  "runtime/wtf-packager/zip.js",\n',
-    '  "runtime/wtf-packager/zip.js",\n  "runtime/w2f-schema/index.js",\n',
+    '  "runtime/wtf-packager/zip.js",\n  "runtime/w2f-ir/index.js",\n  "runtime/w2f-schema/index.js",\n  "runtime/w2f-schema/frame-context.js",\n',
   );
   next = next.replace(
     `for (const evidence of [\n  "packageWtf",\n  "manifest.json",\n  "checksums.json",\n  "canonicalStringify",\n  "SHA-256",\n  "encodeDeterministicZip",\n  "application/x-wtf",\n]) {`,
@@ -70,7 +86,7 @@ await patch("apps/browser-extension/scripts/validate-node-21-package.mjs", (sour
   );
   next = next.replace(
     `  assert(builder.includes(evidence), \`packaged WTF payload builder missing \${evidence}\`);\n}\n\nconst store = text("runtime/wtf-package-store.js");`,
-    `  assert(builder.includes(evidence), \`packaged WTF payload builder missing \${evidence}\`);\n}\n\nconst schema = text("runtime/w2f-schema/index.js");\nfor (const evidence of [\n  "application/x-wtf",\n  "document.json",\n  "source-graph.json",\n  "render-tree.json",\n  "styles.json",\n  "assets.json",\n  "responsive.json",\n  "states.json",\n  "diagnostics.json",\n  "tokens.json",\n  "source/cascade.json",\n  "source/metadata.json",\n]) {\n  assert(schema.includes(evidence), \`packaged shared schema missing canonical WTF contract \${evidence}\`);\n}\n\nconst typeRuntime = text("runtime/wtf-packager/types.js");\nfor (const evidence of ["manifest.json", "checksums.json"]) {\n  assert(typeRuntime.includes(evidence), \`packaged WTF type runtime missing reserved path \${evidence}\`);\n}\n\nconst store = text("runtime/wtf-package-store.js");`,
+    `  assert(builder.includes(evidence), \`packaged WTF payload builder missing \${evidence}\`);\n}\n\nconst ir = text("runtime/w2f-ir/index.js");\nassert(ir.includes("./types.js"), "packaged W2F IR runtime must expose the shared IR version contract");\n\nconst schema = text("runtime/w2f-schema/index.js");\nfor (const evidence of [\n  "application/x-wtf",\n  "document.json",\n  "source-graph.json",\n  "render-tree.json",\n  "styles.json",\n  "assets.json",\n  "responsive.json",\n  "states.json",\n  "diagnostics.json",\n  "tokens.json",\n  "source/cascade.json",\n  "source/metadata.json",\n]) {\n  assert(schema.includes(evidence), \`packaged shared schema missing canonical WTF contract \${evidence}\`);\n}\n\nconst typeRuntime = text("runtime/wtf-packager/types.js");\nfor (const evidence of ["manifest.json", "checksums.json"]) {\n  assert(typeRuntime.includes(evidence), \`packaged WTF type runtime missing reserved path \${evidence}\`);\n}\n\nconst store = text("runtime/wtf-package-store.js");`,
   );
   return next;
 });

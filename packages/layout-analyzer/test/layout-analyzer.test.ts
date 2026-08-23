@@ -29,7 +29,9 @@ describe("Base Layout Analyzer", () => {
       authoredValue: "50%",
       resolvedPx: 480,
     });
-    expect(parseLayoutCssLength({ authored: "clamp(20rem, 50vw, 60rem)", computed: "800px" })).toEqual({
+    expect(
+      parseLayoutCssLength({ authored: "clamp(20rem, 50vw, 60rem)", computed: "800px" }),
+    ).toEqual({
       semantic: { type: "expression", raw: "clamp(20rem, 50vw, 60rem)" },
       authoredValue: "clamp(20rem, 50vw, 60rem)",
       resolvedPx: 800,
@@ -111,17 +113,21 @@ describe("Base Layout Analyzer", () => {
   it("keeps absolute constraints and does not convert partial percentages into full Fill", () => {
     const analysis = analyzeBaseLayout({
       nodes: [
-        node("badge", {
-          display: { computed: "block" },
-          position: { authored: "absolute", computed: "absolute" },
-          width: { authored: "50%", computed: "200px" },
-          height: { authored: "32px", computed: "32px" },
-          left: { authored: "12px", computed: "12px" },
-          top: { authored: "calc(50% - 16px)", computed: "84px" },
-        }, {
-          bounds: { x: 12, y: 84, width: 200, height: 32 },
-          parentBounds: { x: 0, y: 0, width: 400, height: 200 },
-        }),
+        node(
+          "badge",
+          {
+            display: { computed: "block" },
+            position: { authored: "absolute", computed: "absolute" },
+            width: { authored: "50%", computed: "200px" },
+            height: { authored: "32px", computed: "32px" },
+            left: { authored: "12px", computed: "12px" },
+            top: { authored: "calc(50% - 16px)", computed: "84px" },
+          },
+          {
+            bounds: { x: 12, y: 84, width: 200, height: 32 },
+            parentBounds: { x: 0, y: 0, width: 400, height: 200 },
+          },
+        ),
       ],
     });
     const layout = analysis.nodes[0]?.layout;
@@ -137,12 +143,14 @@ describe("Base Layout Analyzer", () => {
 
   it("defers table reconstruction and emits visible diagnostics", () => {
     const analysis = analyzeBaseLayout({
-      nodes: [node("pricing-table", {
-        display: { computed: "table" },
-        position: { computed: "static" },
-        width: { authored: "100%", computed: "1000px" },
-        height: { authored: "auto", computed: "500px" },
-      })],
+      nodes: [
+        node("pricing-table", {
+          display: { computed: "table" },
+          position: { computed: "static" },
+          width: { authored: "100%", computed: "1000px" },
+          height: { authored: "auto", computed: "500px" },
+        }),
+      ],
     });
     expect(analysis.nodes[0]?.layout.mode).toBe("table");
     expect(analysis.diagnostics.some((item) => item.code === "LAYOUT_TABLE_DEFERRED")).toBe(true);
@@ -151,21 +159,25 @@ describe("Base Layout Analyzer", () => {
   it("retains authored base sizing on responsive conflict and lowers confidence", () => {
     const analysis = analyzeBaseLayout({
       nodes: [
-        node("card", {
-          display: { computed: "block" },
-          position: { computed: "static" },
-          width: { authored: "320px", computed: "320px", sourceRef: "css:card:width" },
-          height: { authored: "auto", computed: "180px" },
-        }, {
-          responsiveSizing: {
-            width: {
-              mode: "fill",
-              confidence: 0.9,
-              reasons: ["width tracks parent across captured viewports"],
-              sourceRefs: ["responsive:card"],
+        node(
+          "card",
+          {
+            display: { computed: "block" },
+            position: { computed: "static" },
+            width: { authored: "320px", computed: "320px", sourceRef: "css:card:width" },
+            height: { authored: "auto", computed: "180px" },
+          },
+          {
+            responsiveSizing: {
+              width: {
+                mode: "fill",
+                confidence: 0.9,
+                reasons: ["width tracks parent across captured viewports"],
+                sourceRefs: ["responsive:card"],
+              },
             },
           },
-        }),
+        ),
       ],
     });
     const width = analysis.nodes[0]?.layout.sizing.width;
@@ -181,6 +193,8 @@ describe("Base Layout Analyzer", () => {
     const analysis = analyzeBaseLayout({ nodes: [first, second] });
     expect(analysis.nodes.map((item) => item.sourceNodeId)).toEqual(["a", "b"]);
     expect(summarizeBaseLayoutAnalysis(analysis).flexNodeCount).toBe(1);
-    expect(() => analyzeBaseLayout({ nodes: [first, first] })).toThrow(/duplicate layout observation/);
+    expect(() => analyzeBaseLayout({ nodes: [first, first] })).toThrow(
+      /duplicate layout observation/,
+    );
   });
 });

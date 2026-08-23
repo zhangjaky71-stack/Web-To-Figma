@@ -20,7 +20,8 @@ function openDatabase(): Promise<IDBDatabase> {
         database.createObjectStore(W2F_LAYOUT_ANALYSIS_STORE_NAME);
       }
     };
-    request.onerror = () => reject(request.error ?? new Error("failed to open layout analysis database"));
+    request.onerror = () =>
+      reject(request.error ?? new Error("failed to open layout analysis database"));
     request.onsuccess = () => resolve(request.result);
   });
 }
@@ -28,8 +29,10 @@ function openDatabase(): Promise<IDBDatabase> {
 function waitForTransaction(transaction: IDBTransaction): Promise<void> {
   return new Promise((resolve, reject) => {
     transaction.oncomplete = () => resolve();
-    transaction.onerror = () => reject(transaction.error ?? new Error("layout analysis transaction failed"));
-    transaction.onabort = () => reject(transaction.error ?? new Error("layout analysis transaction aborted"));
+    transaction.onerror = () =>
+      reject(transaction.error ?? new Error("layout analysis transaction failed"));
+    transaction.onabort = () =>
+      reject(transaction.error ?? new Error("layout analysis transaction aborted"));
   });
 }
 
@@ -57,7 +60,8 @@ export async function readBaseLayoutAnalysis(jobId: string): Promise<BaseLayoutA
     const transaction = database.transaction(W2F_LAYOUT_ANALYSIS_STORE_NAME, "readonly");
     const request = transaction.objectStore(W2F_LAYOUT_ANALYSIS_STORE_NAME).get(key);
     const value = await new Promise<unknown>((resolve, reject) => {
-      request.onerror = () => reject(request.error ?? new Error("failed to read BaseLayoutAnalysis"));
+      request.onerror = () =>
+        reject(request.error ?? new Error("failed to read BaseLayoutAnalysis"));
       request.onsuccess = () => resolve(request.result);
     });
     await waitForTransaction(transaction);

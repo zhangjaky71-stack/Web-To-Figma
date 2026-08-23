@@ -70,7 +70,8 @@ export function isBaseLayoutAnalysis(value: unknown): value is BaseLayoutAnalysi
   if (!Array.isArray(value.nodes) || !Array.isArray(value.diagnostics)) return false;
   const ids = new Set<string>();
   for (const node of value.nodes) {
-    if (!isRecord(node) || typeof node.sourceNodeId !== "string" || !node.sourceNodeId) return false;
+    if (!isRecord(node) || typeof node.sourceNodeId !== "string" || !node.sourceNodeId)
+      return false;
     if (ids.has(node.sourceNodeId) || !isLayout(node.layout)) return false;
     if (!Array.isArray(node.diagnostics) || !node.diagnostics.every(isDiagnostic)) return false;
     ids.add(node.sourceNodeId);

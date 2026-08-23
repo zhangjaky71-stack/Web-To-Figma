@@ -44,6 +44,9 @@ importers:
       '@w2f/environment-capture':
         specifier: workspace:*
         version: link:../../packages/environment-capture
+      '@w2f/layout-analyzer':
+        specifier: workspace:*
+        version: link:../../packages/layout-analyzer
       '@w2f/pixel-ground-truth':
         specifier: workspace:*
         version: link:../../packages/pixel-ground-truth
@@ -161,6 +164,22 @@ importers:
       '@w2f/w2f-ir':
         specifier: workspace:*
         version: link:../w2f-ir
+    devDependencies:
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: 4.1.11
+        version: 4.1.11(vite@8.2.2)
+
+  packages/layout-analyzer:
+    dependencies:
+      '@w2f/w2f-ir':
+        specifier: workspace:*
+        version: link:../w2f-ir
+      '@w2f/w2f-schema':
+        specifier: workspace:*
+        version: link:../w2f-schema
     devDependencies:
       typescript:
         specifier: 6.0.3

@@ -12,6 +12,7 @@ import type {
   WtfSizingDecision,
   WtfSizingMode,
 } from "@w2f/w2f-ir";
+import { deriveBoxModel, deriveEffectiveGap } from "./geometry.js";
 import {
   BASE_LAYOUT_ANALYSIS_VERSION,
   type BaseLayoutAnalysis,
@@ -75,7 +76,7 @@ function parseCssLengthRaw(raw: string): WtfCssLength {
       return { semantic: { type: "viewport", unit, value }, authoredValue: raw };
     }
   }
-  if (/^[a-z-]+(?:\([^)]*\))?$/i.test(normalized)) {
+  if (/^fit-content\([^)]*\)$/i.test(normalized) || /^[a-z-]+$/i.test(normalized)) {
     return { semantic: { type: "keyword", value: normalized }, authoredValue: raw };
   }
   return { semantic: { type: "expression", raw }, authoredValue: raw };
@@ -106,10 +107,14 @@ function layoutMode(display: string, position: string): WtfLayoutMode {
   return "unknown";
 }
 
-function geometryFillEvidence(observation: LayoutNodeObservation, axis: "width" | "height"): boolean {
+function geometryFillEvidence(
+  observation: LayoutNodeObservation,
+  axis: "width" | "height",
+): boolean {
   if (!observation.bounds || !observation.parentBounds) return false;
   const nodeSize = axis === "width" ? observation.bounds.width : observation.bounds.height;
-  const parentSize = axis === "width" ? observation.parentBounds.width : observation.parentBounds.height;
+  const parentSize =
+    axis === "width" ? observation.parentBounds.width : observation.parentBounds.height;
   if (!(Number.isFinite(nodeSize) && Number.isFinite(parentSize) && parentSize > 0)) return false;
   const ratio = nodeSize / parentSize;
   return ratio >= 0.88 && ratio <= 1.05;
@@ -130,7 +135,12 @@ function authoredSizingMode(
   }
   if (value.semantic.type === "percent") {
     if (value.semantic.value >= 95) {
-      return { mode: "fill", confidence: 0.94, reason: `${axis} uses an authored near-full percentage`, value };
+      return {
+        mode: "fill",
+        confidence: 0.94,
+        reason: `${axis} uses an authored near-full percentage`,
+        value,
+      };
     }
     return {
       mode: "unknown",
@@ -140,26 +150,63 @@ function authoredSizingMode(
     };
   }
   if (value.semantic.type === "viewport") {
-    return { mode: "fill", confidence: 0.84, reason: `${axis} uses viewport-relative sizing`, value };
+    return {
+      mode: "fill",
+      confidence: 0.84,
+      reason: `${axis} uses viewport-relative sizing`,
+      value,
+    };
   }
   if (value.semantic.type === "keyword") {
     const keyword = value.semantic.value;
-    if (keyword.startsWith("fit-content") || keyword === "min-content" || keyword === "max-content") {
-      return { mode: "hug", confidence: 0.96, reason: `${axis} uses intrinsic-content sizing`, value };
+    if (
+      keyword.startsWith("fit-content") ||
+      keyword === "min-content" ||
+      keyword === "max-content"
+    ) {
+      return {
+        mode: "hug",
+        confidence: 0.96,
+        reason: `${axis} uses intrinsic-content sizing`,
+        value,
+      };
     }
     if (keyword === "auto") {
       if (axis === "width" && ["block", "flow-root", "flex", "grid", "table"].includes(display)) {
         return geometryFillEvidence(observation, axis)
-          ? { mode: "fill", confidence: 0.82, reason: "auto width occupies the available parent width", value }
-          : { mode: "unknown", confidence: 0.55, reason: "auto width is context-dependent without strong geometry evidence", value };
+          ? {
+              mode: "fill",
+              confidence: 0.82,
+              reason: "auto width occupies the available parent width",
+              value,
+            }
+          : {
+              mode: "unknown",
+              confidence: 0.55,
+              reason: "auto width is context-dependent without strong geometry evidence",
+              value,
+            };
       }
-      return { mode: "content", confidence: 0.7, reason: `auto ${axis} is content-dependent`, value };
+      return {
+        mode: "content",
+        confidence: 0.7,
+        reason: `auto ${axis} is content-dependent`,
+        value,
+      };
     }
   }
-  return { mode: "unknown", confidence: 0.5, reason: `${axis} authored sizing cannot be safely reduced to fill/hug/fixed`, value };
+  return {
+    mode: "unknown",
+    confidence: 0.5,
+    reason: `${axis} authored sizing cannot be safely reduced to fill/hug/fixed`,
+    value,
+  };
 }
 
-function flexGrowFillEvidence(observation: LayoutNodeObservation, axis: "width" | "height"): boolean {
+function flexGrowFillEvidence(
+  observation: LayoutNodeObservation,
+  axis: "width" | "height",
+): boolean {
   if (axis !== "width") return false;
   const grow = numericValue(effectiveValue(observation.style.flexGrow));
   return grow !== undefined && grow > 0;
@@ -172,12 +219,23 @@ function sizingDecision(
   diagnostics: BaseLayoutDiagnostic[],
 ): WtfSizingDecision {
   const authored = authoredSizingMode(observation, axis, display);
-  const responsiveHint = axis === "width" ? observation.responsiveSizing?.width : observation.responsiveSizing?.height;
-  const min = parseLayoutCssLength(axis === "width" ? observation.style.minWidth : observation.style.minHeight);
-  const max = parseLayoutCssLength(axis === "width" ? observation.style.maxWidth : observation.style.maxHeight);
+  const responsiveHint =
+    axis === "width" ? observation.responsiveSizing?.width : observation.responsiveSizing?.height;
+  const min = parseLayoutCssLength(
+    axis === "width" ? observation.style.minWidth : observation.style.minHeight,
+  );
+  const max = parseLayoutCssLength(
+    axis === "width" ? observation.style.maxWidth : observation.style.maxHeight,
+  );
   const sourceRefs = sourceRefsForObservation(observation);
 
-  if (authored && responsiveHint && responsiveHint.mode !== "unknown" && authored.mode !== "unknown" && authored.mode !== responsiveHint.mode) {
+  if (
+    authored &&
+    responsiveHint &&
+    responsiveHint.mode !== "unknown" &&
+    authored.mode !== "unknown" &&
+    authored.mode !== responsiveHint.mode
+  ) {
     diagnostics.push({
       code: "LAYOUT_SIZING_CONFLICT",
       message: `Authored ${axis} sizing conflicts with responsive multi-viewport inference; authored base semantics are retained with reduced confidence.`,
@@ -190,7 +248,11 @@ function sizingDecision(
       ...(min ? { min } : {}),
       ...(max ? { max } : {}),
       confidence: clampConfidence(authored.confidence * 0.8),
-      reasons: uniqueSorted([authored.reason, ...responsiveHint.reasons, "responsive sizing evidence conflicts with authored base semantics"]),
+      reasons: uniqueSorted([
+        authored.reason,
+        ...responsiveHint.reasons,
+        "responsive sizing evidence conflicts with authored base semantics",
+      ]),
       sourceRefs: uniqueSorted([...sourceRefs, ...(responsiveHint.sourceRefs ?? [])]),
     };
   }
@@ -214,7 +276,10 @@ function sizingDecision(
       ...(min ? { min } : {}),
       ...(max ? { max } : {}),
       confidence: clampConfidence(responsiveHint.confidence * 0.92),
-      reasons: uniqueSorted([...responsiveHint.reasons, "multi-viewport responsive inference strengthens base sizing"]),
+      reasons: uniqueSorted([
+        ...responsiveHint.reasons,
+        "multi-viewport responsive inference strengthens base sizing",
+      ]),
       sourceRefs: uniqueSorted([...sourceRefs, ...(responsiveHint.sourceRefs ?? [])]),
     };
   }
@@ -238,7 +303,9 @@ function sizingDecision(
       ...(min ? { min } : {}),
       ...(max ? { max } : {}),
       confidence: 0.68,
-      reasons: [`${axis} geometry approximately fills parent bounds; geometry-only evidence remains moderate-confidence`],
+      reasons: [
+        `${axis} geometry approximately fills parent bounds; geometry-only evidence remains moderate-confidence`,
+      ],
       ...(sourceRefs.length > 0 ? { sourceRefs } : {}),
     };
   }
@@ -315,7 +382,8 @@ function flexItem(observation: LayoutNodeObservation): WtfFlexItemModel | undefi
   const basis = parseLayoutCssLength(observation.style.flexBasis);
   const alignSelf = effectiveValue(observation.style.alignSelf);
   const order = numericValue(effectiveValue(observation.style.order));
-  if (grow === undefined && shrink === undefined && !basis && !alignSelf && order === undefined) return undefined;
+  if (grow === undefined && shrink === undefined && !basis && !alignSelf && order === undefined)
+    return undefined;
   return {
     ...(grow === undefined ? {} : { grow }),
     ...(shrink === undefined ? {} : { shrink }),
@@ -326,8 +394,14 @@ function flexItem(observation: LayoutNodeObservation): WtfFlexItemModel | undefi
 }
 
 function gridContainer(observation: LayoutNodeObservation): WtfGridContainerModel {
-  const columns = splitCssTrackList(authoredValue(observation.style.gridTemplateColumns) ?? effectiveValue(observation.style.gridTemplateColumns)).map(gridTrack);
-  const rows = splitCssTrackList(authoredValue(observation.style.gridTemplateRows) ?? effectiveValue(observation.style.gridTemplateRows)).map(gridTrack);
+  const columns = splitCssTrackList(
+    authoredValue(observation.style.gridTemplateColumns) ??
+      effectiveValue(observation.style.gridTemplateColumns),
+  ).map(gridTrack);
+  const rows = splitCssTrackList(
+    authoredValue(observation.style.gridTemplateRows) ??
+      effectiveValue(observation.style.gridTemplateRows),
+  ).map(gridTrack);
   return {
     columns,
     rows,
@@ -344,7 +418,13 @@ function gridItem(observation: LayoutNodeObservation): WtfGridItemModel | undefi
   const columnEnd = parseGridPlacement(effectiveValue(observation.style.gridColumnEnd));
   const rowStart = parseGridPlacement(effectiveValue(observation.style.gridRowStart));
   const rowEnd = parseGridPlacement(effectiveValue(observation.style.gridRowEnd));
-  if (columnStart === undefined && columnEnd === undefined && rowStart === undefined && rowEnd === undefined) return undefined;
+  if (
+    columnStart === undefined &&
+    columnEnd === undefined &&
+    rowStart === undefined &&
+    rowEnd === undefined
+  )
+    return undefined;
   return {
     ...(columnStart === undefined ? {} : { columnStart }),
     ...(columnEnd === undefined ? {} : { columnEnd }),
@@ -353,7 +433,9 @@ function gridItem(observation: LayoutNodeObservation): WtfGridItemModel | undefi
   };
 }
 
-function absoluteConstraints(observation: LayoutNodeObservation): WtfLayoutModel["absoluteConstraints"] {
+function absoluteConstraints(
+  observation: LayoutNodeObservation,
+): WtfLayoutModel["absoluteConstraints"] {
   const left = parseLayoutCssLength(observation.style.left);
   const right = parseLayoutCssLength(observation.style.right);
   const top = parseLayoutCssLength(observation.style.top);
@@ -389,10 +471,16 @@ function layoutDecision(
   };
 }
 
-function analyzeNode(observation: LayoutNodeObservation): BaseLayoutNodeAnalysis {
-  if (!observation.sourceNodeId.trim()) throw new TypeError("layout observation sourceNodeId must be non-empty");
+function analyzeNode(
+  observation: LayoutNodeObservation,
+  observationsById: ReadonlyMap<string, LayoutNodeObservation>,
+): BaseLayoutNodeAnalysis {
+  if (!observation.sourceNodeId.trim())
+    throw new TypeError("layout observation sourceNodeId must be non-empty");
   const diagnostics: BaseLayoutDiagnostic[] = [];
-  const display = (effectiveValue(observation.style.display) ?? (observation.kind === "text" ? "inline" : "block")).toLowerCase();
+  const display = (
+    effectiveValue(observation.style.display) ?? (observation.kind === "text" ? "inline" : "block")
+  ).toLowerCase();
   const position = (effectiveValue(observation.style.position) ?? "static").toLowerCase();
   const mode = layoutMode(display, position);
 
@@ -414,7 +502,8 @@ function analyzeNode(observation: LayoutNodeObservation): BaseLayoutNodeAnalysis
   if (mode === "table") {
     diagnostics.push({
       code: "LAYOUT_TABLE_DEFERRED",
-      message: "Table display is classified but detailed table reconstruction is deferred to NODE-18.",
+      message:
+        "Table display is classified but detailed table reconstruction is deferred to NODE-18.",
       sourceNodeId: observation.sourceNodeId,
     });
   }
@@ -429,8 +518,7 @@ function analyzeNode(observation: LayoutNodeObservation): BaseLayoutNodeAnalysis
     bottom: pxOrZero(observation.style.paddingBottom),
     left: pxOrZero(observation.style.paddingLeft),
   };
-  const rowGap = pxOrZero(observation.style.rowGap);
-  const columnGap = pxOrZero(observation.style.columnGap);
+  const effectiveGap = deriveEffectiveGap(observation, observationsById, mode);
   const itemFlex = flexItem(observation);
   const itemGrid = gridItem(observation);
   const constraints = mode === "absolute" ? absoluteConstraints(observation) : undefined;
@@ -441,7 +529,7 @@ function analyzeNode(observation: LayoutNodeObservation): BaseLayoutNodeAnalysis
     position,
     sizing,
     padding,
-    effectiveGap: { row: rowGap, column: columnGap },
+    effectiveGap,
     ...(effectiveValue(observation.style.overflowX)
       ? { overflowX: effectiveValue(observation.style.overflowX)! }
       : {}),
@@ -456,23 +544,30 @@ function analyzeNode(observation: LayoutNodeObservation): BaseLayoutNodeAnalysis
     decision: layoutDecision(observation, mode, display, position),
   };
 
+  const boxModel = deriveBoxModel(observation);
   return {
     sourceNodeId: observation.sourceNodeId,
     ...(observation.stableNodeId ? { stableNodeId: observation.stableNodeId } : {}),
     layout,
+    ...(boxModel ? { boxModel } : {}),
     diagnostics,
   };
 }
 
 export function analyzeBaseLayout(input: BaseLayoutAnalysisInput): BaseLayoutAnalysis {
   const seen = new Set<string>();
+  const observationsById = new Map(
+    input.nodes.map((observation) => [observation.sourceNodeId, observation]),
+  );
   const nodes: BaseLayoutNodeAnalysis[] = [];
-  for (const observation of [...input.nodes].sort((a, b) => a.sourceNodeId.localeCompare(b.sourceNodeId))) {
+  for (const observation of [...input.nodes].sort((a, b) =>
+    a.sourceNodeId.localeCompare(b.sourceNodeId),
+  )) {
     if (seen.has(observation.sourceNodeId)) {
       throw new TypeError(`duplicate layout observation for ${observation.sourceNodeId}`);
     }
     seen.add(observation.sourceNodeId);
-    nodes.push(analyzeNode(observation));
+    nodes.push(analyzeNode(observation, observationsById));
   }
   return {
     version: BASE_LAYOUT_ANALYSIS_VERSION,
@@ -481,7 +576,9 @@ export function analyzeBaseLayout(input: BaseLayoutAnalysisInput): BaseLayoutAna
   };
 }
 
-export function summarizeBaseLayoutAnalysis(analysis: BaseLayoutAnalysis): BaseLayoutAnalysisSummary {
+export function summarizeBaseLayoutAnalysis(
+  analysis: BaseLayoutAnalysis,
+): BaseLayoutAnalysisSummary {
   return {
     version: analysis.version,
     nodeCount: analysis.nodes.length,
@@ -497,5 +594,9 @@ export function summarizeBaseLayoutAnalysis(analysis: BaseLayoutAnalysis): BaseL
 export function isBaseLayoutAnalysis(value: unknown): value is BaseLayoutAnalysis {
   if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
   const record = value as Record<string, unknown>;
-  return record.version === BASE_LAYOUT_ANALYSIS_VERSION && Array.isArray(record.nodes) && Array.isArray(record.diagnostics);
+  return (
+    record.version === BASE_LAYOUT_ANALYSIS_VERSION &&
+    Array.isArray(record.nodes) &&
+    Array.isArray(record.diagnostics)
+  );
 }

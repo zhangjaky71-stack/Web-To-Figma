@@ -23,7 +23,9 @@ const requiredFiles = [
   "packages/layout-analyzer/src/index.ts",
   "packages/layout-analyzer/src/types.ts",
   "packages/layout-analyzer/src/analyzer.ts",
+  "packages/layout-analyzer/src/geometry.ts",
   "packages/layout-analyzer/test/layout-analyzer.test.ts",
+  "packages/layout-analyzer/test/geometry.test.ts",
   "apps/browser-extension/src/runtime/layout-analysis-runtime.ts",
   "apps/browser-extension/src/runtime/layout-analysis-store.ts",
   "apps/browser-extension/test/layout-analysis-runtime.test.ts",
@@ -70,6 +72,8 @@ if (failures.length === 0) {
     "flexContainer",
     "gridContainer",
     "absoluteConstraints",
+    "deriveBoxModel",
+    "deriveEffectiveGap",
     "LAYOUT_TABLE_DEFERRED",
     "LAYOUT_SIZING_CONFLICT",
     'mode: "unknown"',
@@ -122,12 +126,18 @@ if (failures.length === 0) {
     "analyzePersistedBaseLayout",
     "readRawSnapshot",
     "readCssCascadeCapture",
-    "status === \"winner\"",
+    'status === "winner"',
     "parentBounds",
   ]) {
     assert(runtime.includes(evidence), `Browser layout bridge missing ${evidence}`);
   }
-  for (const forbidden of ["document.cookie", "localStorage", "sessionStorage", "window.resizeTo", "fetch("]) {
+  for (const forbidden of [
+    "document.cookie",
+    "localStorage",
+    "sessionStorage",
+    "window.resizeTo",
+    "fetch(",
+  ]) {
     assert(!runtime.includes(forbidden), `Browser layout bridge must not use ${forbidden}`);
   }
 
@@ -183,7 +193,10 @@ if (failures.length === 0) {
     "layoutAnalysisStorageKey",
     "layoutNodeCount",
   ]) {
-    assert(serviceWorker.includes(evidence), `Service worker layout orchestration missing ${evidence}`);
+    assert(
+      serviceWorker.includes(evidence),
+      `Service worker layout orchestration missing ${evidence}`,
+    );
   }
 
   const normative = readText("docs/BASE_LAYOUT_ANALYZER_V2.md");

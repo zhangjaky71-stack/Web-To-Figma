@@ -240,3 +240,10 @@ Diagnostics remain visible; the analyzer must not silently convert uncertainty i
 - **NODE-27** later maps responsive layout semantics into Figma capabilities.
 
 NODE-17 must not absorb these responsibilities.
+
+
+## Border-box normalization and effective spacing
+
+NODE-17 treats captured Browser geometry as the authoritative border box. It derives paddingBox and contentBox from computed border widths and padding while preserving computed margin extents, including negative margins.
+
+For normal flow and single-line flex containers, effectiveGap is derived from resolved child geometry rather than by adding adjacent margins. This preserves margin collapse, negative overlap and distributed spacing such as justify-content: space-between. CSS row-gap/column-gap remain the deterministic fallback when resolved child geometry is insufficient or the layout is multi-line/grid.

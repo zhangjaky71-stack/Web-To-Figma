@@ -9,6 +9,7 @@ import "./validate-node-13.mjs";
 import "./validate-node-14.mjs";
 import "./validate-node-15.mjs";
 import "./validate-node-16.mjs";
+import "./validate-node-17.mjs";
 
 const root = process.cwd();
 const failures = [];

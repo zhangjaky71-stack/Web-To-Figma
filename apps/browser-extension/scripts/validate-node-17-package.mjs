@@ -90,11 +90,16 @@ for (const evidence of [
   "layoutAnalysisStorageKey",
   "layoutNodeCount",
 ]) {
-  assert(serviceWorker.includes(evidence), `packaged service worker missing layout integration ${evidence}`);
+  assert(
+    serviceWorker.includes(evidence),
+    `packaged service worker missing layout integration ${evidence}`,
+  );
 }
 
 if (failures.length > 0) {
-  console.error(`NODE-17 package validation failed (${profile}):\n${failures.map((item) => `- ${item}`).join("\n")}`);
+  console.error(
+    `NODE-17 package validation failed (${profile}):\n${failures.map((item) => `- ${item}`).join("\n")}`,
+  );
   process.exitCode = 1;
 } else {
   console.log(`NODE-17 package validation passed (${profile}).`);

@@ -1,7 +1,4 @@
-import type {
-  WtfLayoutModel,
-  WtfSizingMode,
-} from "@w2f/w2f-ir";
+import type { WtfBoxModel, WtfLayoutModel, WtfSizingMode } from "@w2f/w2f-ir";
 import type { Rect } from "@w2f/w2f-schema";
 
 export const BASE_LAYOUT_ANALYSIS_VERSION = "1.0.0" as const;
@@ -27,6 +24,14 @@ export interface LayoutStyleEvidence {
   paddingRight?: LayoutPropertyEvidence;
   paddingBottom?: LayoutPropertyEvidence;
   paddingLeft?: LayoutPropertyEvidence;
+  marginTop?: LayoutPropertyEvidence;
+  marginRight?: LayoutPropertyEvidence;
+  marginBottom?: LayoutPropertyEvidence;
+  marginLeft?: LayoutPropertyEvidence;
+  borderTopWidth?: LayoutPropertyEvidence;
+  borderRightWidth?: LayoutPropertyEvidence;
+  borderBottomWidth?: LayoutPropertyEvidence;
+  borderLeftWidth?: LayoutPropertyEvidence;
   rowGap?: LayoutPropertyEvidence;
   columnGap?: LayoutPropertyEvidence;
   overflowX?: LayoutPropertyEvidence;
@@ -102,6 +107,7 @@ export interface BaseLayoutNodeAnalysis {
   sourceNodeId: string;
   stableNodeId?: string;
   layout: WtfLayoutModel;
+  boxModel?: WtfBoxModel;
   diagnostics: BaseLayoutDiagnostic[];
 }
 

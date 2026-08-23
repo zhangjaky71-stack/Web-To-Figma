@@ -30,7 +30,7 @@
 | 17 | Base Layout Analyzer | DONE | Exact-head read-only CI #422 PASS | PR #21 merged as `0b103261` |
 | 18 | Table Layout Engine | DONE | Exact-head read-only CI #449 PASS | PR #22 merged as `7cd56101` |
 | 19 | Render Tree Optimizer | DONE | Exact-head read-only CI #477 PASS | PR #23 merged as `030f433a` |
-| 20 | Compositing & Fallback Boundary | DONE | Exact-head read-only CI #501 PASS | PR #24 ready for merge |
+| 20 | Compositing & Fallback Boundary | DONE | Exact-head read-only CI #502 PASS | PR #24 ready for merge |
 | 21 | WTF Packager | TODO | - | - |
 | 22 | Figma Plugin Shell & File Intake | TODO | - | - |
 | 23 | Secure Parser & Migration | TODO | - | - |
@@ -130,13 +130,19 @@ full lint, typecheck, tests, build and format checks
 
 All temporary NODE-20 bootstrap/finalization files were removed from the candidate tree before validation and commit. The permanent PR changed-file set contains only runtime, package, tests, documentation, lockfile and guardrail files.
 
-The documentation-only evidence candidate:
+The implementation evidence candidate:
 
 ```text
 dd2f142ff9cf0445acbdb2e7167873f3f60769bb
 ```
 
-passed exact-head read-only CI #501, run `32637722359`. Foundation, frozen-lockfile install, lint, typecheck, tests, build/package validation and format check all passed. NODE-20 Exit Gate is PASS.
+passed read-only CI #501, run `32637722359`. The status-closure candidate:
+
+```text
+17b40178023014235078d78be72b4f492b0c7e9d
+```
+
+then passed final exact-head read-only CI #502, run `32637825352`. Foundation, frozen-lockfile install, lint, typecheck, tests, build/package validation and format check all passed. NODE-20 Exit Gate is PASS.
 
 ## Blockers
 

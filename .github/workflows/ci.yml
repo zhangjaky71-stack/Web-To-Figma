@@ -53,3 +53,72 @@ jobs:
 
       - name: Format check
         run: pnpm format:check
+
+  node24-bootstrap:
+    if: github.event_name == 'pull_request' && github.head_ref == 'feat/node-24-figma-capability-resolver'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout NODE-24 head
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.22.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Close and validate NODE-24
+        shell: bash
+        run: |
+          LOG=/tmp/node24-bootstrap.log
+          set +e
+          {
+            rm -f NODE24_BOOTSTRAP_FAILURE.log
+            pnpm install --no-frozen-lockfile
+            node scripts/node-24-finalize.mjs
+            pnpm install --no-frozen-lockfile
+            pnpm exec prettier --write \
+              packages/figma-capability-resolver \
+              docs/adr/ADR-0024-figma-capability-resolver.md \
+              docs/nodes/NODE-24_FIGMA_CAPABILITY_RESOLVER.md \
+              scripts/validate-node-24.mjs \
+              scripts/validate-foundation.mjs \
+              pnpm-lock.yaml
+            git show origin/main:.github/workflows/ci.yml > .github/workflows/ci.yml
+            git rm scripts/node-24-finalize.mjs
+            pnpm check
+          } >"$LOG" 2>&1
+          STATUS=$?
+          set -e
+          cat "$LOG"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if [ "$STATUS" -eq 0 ]; then
+            git add -A
+            if ! git diff --cached --quiet; then
+              git commit -m "feat(node-24): complete Figma capability resolver integration"
+              git push origin "HEAD:${{ github.head_ref }}"
+            fi
+            exit 0
+          fi
+
+          git reset --hard HEAD
+          tail -n 900 "$LOG" > NODE24_BOOTSTRAP_FAILURE.log
+          git add -f NODE24_BOOTSTRAP_FAILURE.log
+          git commit -m "ci(node-24): record bootstrap failure"
+          git push origin "HEAD:${{ github.head_ref }}"
+          exit "$STATUS"

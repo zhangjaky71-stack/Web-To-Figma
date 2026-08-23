@@ -20,8 +20,8 @@
 | 07 | Region Selector & Redaction | DONE | Region interaction/runtime/package + frozen-lockfile GitHub Actions PASS | PR #11 merged |
 | 08 | Standard DOM Capture | DONE | RawSnapshot/Standard capture/runtime/package + frozen-lockfile GitHub Actions PASS | PR #12 merged |
 | 09 | CDP High Fidelity Adapter | DONE | CDP/dual-profile/runtime/package + frozen-lockfile GitHub Actions PASS | PR #13 merged |
-| 10 | Text / Inline / Pseudo Capture | DONE | Text/fragment/pseudo/form behavior + exact-head read-only frozen-lockfile CI PASS | PR #14 merged |
-| 11 | CSS Cascade & Authored Semantics | DONE | Cascade/Token Graph/Standard/CDP/sidecar + exact-head read-only frozen-lockfile CI PASS | PR #15 merged as `6e303818` |
+| 10 | Text / Inline / Pseudo Capture | DONE | Exact-head read-only frozen-lockfile CI PASS | PR #14 merged |
+| 11 | CSS Cascade & Authored Semantics | DONE | Exact-head read-only frozen-lockfile CI PASS | PR #15 merged as `6e303818` |
 | 12 | Media / Container / Environment Capture | DONE | Exact-head read-only CI #310 PASS | PR #16 merged as `b9cdca4d` |
 | 13 | Asset Resolver | DONE | Exact-head read-only CI #328 PASS | PR #17 merged as `07978a58` |
 | 14 | Pixel Ground Truth & Raster Engine | DONE | Exact-head read-only CI #337 PASS | PR #18 merged as `6bb5fe53` |
@@ -30,8 +30,8 @@
 | 17 | Base Layout Analyzer | DONE | Exact-head read-only CI #422 PASS | PR #21 merged as `0b103261` |
 | 18 | Table Layout Engine | DONE | Exact-head read-only CI #449 PASS | PR #22 merged as `7cd56101` |
 | 19 | Render Tree Optimizer | DONE | Exact-head read-only CI #477 PASS | PR #23 merged as `030f433a` |
-| 20 | Compositing & Fallback Boundary | DONE | Exact-head read-only CI #502 PASS | PR #24 ready for merge |
-| 21 | WTF Packager | TODO | - | - |
+| 20 | Compositing & Fallback Boundary | DONE | Exact-head read-only CI #503 PASS | PR #24 merged as `f0d10cdb` |
+| 21 | WTF Packager | IN PROGRESS | Implementation starting from merged NODE-20 | `feat/node-21-wtf-packager` |
 | 22 | Figma Plugin Shell & File Intake | TODO | - | - |
 | 23 | Secure Parser & Migration | TODO | - | - |
 | 24 | Figma Capability Resolver | TODO | - | - |
@@ -45,104 +45,71 @@
 
 ## Current Node
 
-`NODE-20 — Compositing & Fallback Boundary`
+`NODE-21 — WTF Packager`
 
 Entry baseline:
 
 ```text
-030f433a0c708bfa05a1d9c27bda3a771c29e2a1
+f0d10cdbec3fe805468a0ff8a8ccce701e4896c6
 ```
 
 Working branch:
 
 ```text
-feat/node-20-compositing-fallback-boundary
+feat/node-21-wtf-packager
 ```
 
-## NODE-19 Closure
+## NODE-20 Closure
 
-NODE-19 PR #23 passed exact-head read-only CI #477 (`32636707176`) on final candidate:
+NODE-20 PR #24 passed final exact-head read-only CI #503 (`32637903639`) on:
 
 ```text
-f19493ca7730f0efeb37010f599f0bd564374e7d
+6070b76be8dc9728c3f03c95a16c25b6dad7c8d6
 ```
 
 and was squash merged into `main` as:
 
 ```text
-030f433a0c708bfa05a1d9c27bda3a771c29e2a1
+f0d10cdbec3fe805468a0ff8a8ccce701e4896c6
 ```
 
-The merged tree contains the deterministic `@w2f/render-tree-optimizer`, conservative wrapper folding, full source/stable mapping, structural fingerprints, subtree-aware revision hashes, Browser render-tree sidecar persistence and permanent NODE-19 guardrails. Temporary bootstrap/finalization files were absent before merge.
+The merged tree contains deterministic minimal-safe compositing/fallback boundaries, Browser compositing sidecar persistence, Standard/CDP receipt metrics, NODE-14 Pixel Ground Truth fallback requests, dual-profile package validation and permanent NODE-20 guardrails.
 
-## NODE-20 Frozen Scope
+## NODE-21 Frozen Scope
 
-NODE-20 implements the frozen V2 compositing dependency and minimal fallback-boundary stage:
+The V2 Baseline defines NODE-21 as the final Browser Capture phase node and requires:
 
 ```text
-mix-blend-mode
-filter
-backdrop-filter
-mask
-opacity groups
-isolation
-compositing dependency
-fallback promotion
+files
+manifests
+references
+feature flags
+checksums
+zip
+download
 ```
 
-The goal is the smallest **safe** fallback subtree, not the smallest DOM node. A local unsupported visual stays local when independent; a visual whose final pixels depend on sibling/ancestor backdrop is promoted to the smallest compositing ancestor that contains the required contributors.
-
-## Compositing Principles
-
-- consume the NODE-19 Render Tree; do not redo wrapper/semantic optimization;
-- detect local fallback seeds independently from promotion;
-- canvas/video/fallback/unsupported render nodes remain local raster candidates unless coupled by a compositing dependency;
-- `mix-blend-mode` and `backdrop-filter` create backdrop/sibling dependencies that can require promotion to the containing compositing subtree;
-- `filter`, mask and group opacity create flattening boundaries: a descendant fallback is promoted to the effect owner when split native+raster rendering would change pixels;
-- `isolation:isolate` is an explicit dependency stop boundary;
-- overlapping/nested promoted boundaries are deterministically merged so the outer safe boundary owns the contained triggers;
-- every promotion records reasons, trigger node IDs, confidence and source references;
-- the output may revise `WtfRenderNode.renderStrategy` / `renderDecision` but does not change Render Tree hierarchy;
-- NODE-21 owns `.wtf` packaging;
-- NODE-24 owns Figma capability mapping;
-- NODE-28 owns final hybrid native/raster materialization.
-
-## NODE-20 Validation
-
-Controlled Bootstrap #2, run `32637598197`, passed the complete repository `pnpm check` and pushed the validated integration as:
+Exit outcome:
 
 ```text
-b5a25bcd46b6819be7d5faa57437eaf5cb3dd964
+Web -> .wtf
 ```
 
-The validated candidate includes:
+The frozen V2 File Spec remains authoritative. NODE-21 must not redefine manifest fields, canonical entrypoint paths, path rules, feature vocabulary, checksum semantics or security ceilings.
 
-```text
-NODE-20 permanent foundation guardrail
-21-workspace dependency graph with frozen lockfile refreshed
-Compositing Engine unit coverage for local canvas fallback, blend/backdrop promotion, filter-mask-opacity group promotion, isolation stop boundaries and deterministic merge behavior
-Browser compositing runtime/store sidecar tests
-Standard and CDP compositing receipt integration
-safe fallback boundaries translated into NODE-14 node-fallback Pixel Ground Truth requests
-Standard and High Fidelity Browser packaged-output validation
-full lint, typecheck, tests, build and format checks
-```
+## Packager Principles
 
-All temporary NODE-20 bootstrap/finalization files were removed from the candidate tree before validation and commit. The permanent PR changed-file set contains only runtime, package, tests, documentation, lockfile and guardrail files.
-
-The implementation evidence candidate:
-
-```text
-dd2f142ff9cf0445acbdb2e7167873f3f60769bb
-```
-
-passed read-only CI #501, run `32637722359`. The status-closure candidate:
-
-```text
-17b40178023014235078d78be72b4f492b0c7e9d
-```
-
-then passed final exact-head read-only CI #502, run `32637825352`. Foundation, frozen-lockfile install, lint, typecheck, tests, build/package validation and format check all passed. NODE-20 Exit Gate is PASS.
+- use `@w2f/w2f-schema` as the single format contract;
+- emit canonical required payload entrypoints exactly as frozen by `WTF_DEFAULT_ENTRYPOINTS`;
+- inventory every non-reserved payload in `manifest.files`;
+- reserve `manifest.json` and `checksums.json` outside `manifest.files`;
+- serialize protocol JSON canonically before hashing;
+- compute lowercase SHA-256 over exact uncompressed payload bytes;
+- make `checksums.json.files` match the manifest inventory exactly;
+- include binary assets, reference tiles and fallback raster payloads through portable relative paths;
+- generate deterministic ZIP bytes from identical logical input;
+- package generation is writer-side only; NODE-23 owns hostile archive parsing, zip-bomb/zip-slip enforcement, migration and SVG sanitization;
+- Browser export/download is the only UI/runtime responsibility added here; Figma intake begins at NODE-22.
 
 ## Blockers
 
@@ -150,8 +117,8 @@ No product/architecture blocker is known.
 
 ## Next
 
-After NODE-20 squash merge:
+After NODE-21 formal Exit Gate and squash merge:
 
 ```text
-NODE-21 — WTF Packager
+NODE-22 — Figma Plugin Shell & File Intake
 ```

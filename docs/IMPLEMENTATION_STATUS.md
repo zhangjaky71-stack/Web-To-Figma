@@ -28,8 +28,8 @@
 | 15 | Multi-Viewport Responsive Capture | DONE | Exact-head read-only CI #350 PASS | PR #19 merged as `68cfbeac` |
 | 16 | Responsive Inference Engine | DONE | Exact-head read-only CI #375 PASS | PR #20 merged as `7cfb91fe` |
 | 17 | Base Layout Analyzer | DONE | Exact-head read-only CI #422 PASS | PR #21 merged as `0b103261` |
-| 18 | Table Layout Engine | IN PROGRESS | Bootstrap V3 full `pnpm check` PASS; exact-head read-only CI pending | PR #22 |
-| 19 | Render Tree Optimizer | TODO | - | - |
+| 18 | Table Layout Engine | DONE | Exact-head read-only CI #449 PASS | PR #22 merged as `7cd56101` |
+| 19 | Render Tree Optimizer | IN PROGRESS | Bootstrap #5 full `pnpm check` PASS; exact-head read-only CI pending | PR #23 |
 | 20 | Compositing & Fallback Boundary | TODO | - | - |
 | 21 | WTF Packager | TODO | - | - |
 | 22 | Figma Plugin Shell & File Intake | TODO | - | - |
@@ -45,99 +45,94 @@
 
 ## Current Node
 
-`NODE-18 — Table Layout Engine`
+`NODE-19 — Render Tree Optimizer`
 
 Entry baseline:
 
 ```text
-0b1032611fcf2f29bed38d7a629f75090d9d824d
+7cd56101670f3e9f217ce7eefe3e44e62efeef97
 ```
 
 Working branch:
 
 ```text
-feat/node-18-table-layout-engine
+feat/node-19-render-tree-optimizer
 ```
 
-## NODE-17 Closure
+## NODE-18 Closure
 
-NODE-17 PR #21 passed exact-head read-only CI #422 (`32630298557`) on final candidate:
+NODE-18 PR #22 passed exact-head read-only CI #449 (`32631576262`) on final candidate:
 
 ```text
-a15e3d8a722c723c31f8042cf53bd13186119aec
+9bd800e6f21001b79e0db0b5e0d215c89f8eda75
 ```
 
 and was squash merged into `main` as:
 
 ```text
-0b1032611fcf2f29bed38d7a629f75090d9d824d
+7cd56101670f3e9f217ce7eefe3e44e62efeef97
 ```
 
-The final tree contains the canonical `@w2f/layout-analyzer`, Browser layout sidecar integration, complete box-model normalization and resolved effective spacing; temporary NODE-17 bootstrap/finalization files were removed before merge.
+The merged tree contains the deterministic `@w2f/table-layout-engine`, Standard/CDP table CSS evidence, Browser table sidecar persistence and permanent NODE-18 guardrails; all temporary bootstrap/finalization files were absent before merge.
 
-## NODE-18 Frozen Scope
+## NODE-19 Frozen Scope
 
-The V2 Baseline defines a dedicated `packages/table-layout-engine` covering:
+NODE-19 implements the V2 Source Tree -> Render Tree optimization stage.
+
+The frozen IR already provides:
 
 ```text
-table
-thead
-tbody
-tfoot
-tr
-td
-th
-caption
-rowspan
-colspan
-border-collapse
-border-spacing
-table-layout
+WtfRenderTree
+WtfRenderNode
+WtfSectionOutlineItem
+WtfComponentCandidate
+StructuralFingerprint
+NodeRevisionHashes
+NodeRelationships.composedParentId
 ```
 
-NODE-18 reconstructs semantic table rows/cells and an occupancy grid from captured source hierarchy, attributes, computed/authored CSS and resolved geometry.
+NODE-19 therefore remains additive and does not version-bump W2F Schema/IR.
 
-## Table Principles
+## Optimizer Principles
 
-- source table semantics are preserved rather than flattened into generic flow nodes;
-- `rowspan` and `colspan` are parsed as positive spans and applied through deterministic occupancy placement;
-- HTML `rowspan="0"` spans to the end of its captured row group, not across later groups;
-- malformed/overlapping spans remain fail-visible diagnostics rather than silently shifting unrelated cells;
-- row groups (`thead`/`tbody`/`tfoot`) and `caption` remain explicit semantic boundaries;
-- `border-collapse`, `border-spacing`, `table-layout`, and `caption-side` are retained as computed CSS evidence in Standard and CDP paths even when no authored declaration exists;
-- row/column tracks are derived from resolved Browser cell geometry when boundaries are available;
-- simple regular tables are suitable for Grid/row-stack rendering downstream;
-- complex spans are eligible for Grid/Absolute hybrid rendering while preserving semantic cells;
-- incomplete geometry preserves semantic cells and becomes an absolute-semantic candidate rather than fabricated Grid structure;
-- visual mismatch alone must not cause unconditional rasterization;
-- NODE-19 owns wrapper elimination/semantic render-tree optimization;
-- NODE-20 owns compositing/fallback promotion;
-- Figma rendering decisions remain downstream.
+- composed-parent hierarchy is preferred when available, with source-parent hierarchy as deterministic fallback;
+- meaningless wrappers are removed only when they carry no independent paint, padding/border, clipping, transform, opacity/blend/mask/stacking boundary, scroll/position containing-block duty, semantic section boundary, or required flex/grid/table relationship;
+- ambiguity fails closed: keep the wrapper;
+- every RenderNode retains all contributing `sourceNodeIds` and stable source IDs;
+- semantic boundaries (`header`, `nav`, `main`, `section`, `article`, `aside`, `footer`) are preserved and form the deterministic section outline;
+- stacking, clip, scroll, positioning, flex/grid and table boundaries are never optimized away merely to reduce depth;
+- anonymous depth is limited through safe wrapper folding, not arbitrary hierarchy truncation;
+- StructuralFingerprint deliberately excludes copy so repeated structures remain groupable across content differences;
+- revision `contentHash` recursively includes captured descendant content/attributes so real copy/content changes remain observable;
+- NODE-20 owns compositing/fallback promotion; NODE-19 does not rasterize or override later capability policy.
 
-## NODE-18 Validation
+## NODE-19 Validation
 
-Controlled Bootstrap V3, run `32631457092`, passed the complete repository `pnpm check` and successfully pushed the validated integration as:
+Controlled Bootstrap #5, run `32636578608`, passed the complete repository `pnpm check` and successfully pushed the validated integration as:
 
 ```text
-7ab3eec9c7e9e989138eed94bc9faed5abe00e23
+a446313352d6e872731a79e02938b9c47a03bf66
 ```
 
 The validated candidate includes:
 
 ```text
-NODE-18 foundation guardrail
-18/18 package lint
-strict TypeScript/typecheck
-Table Layout Engine fixtures for regular tables, row groups, rowspan/colspan, malformed spans, occupancy and geometry tracks
-Browser table runtime/store tests
-Standard and CDP computed table CSS evidence
+NODE-19 permanent foundation guardrail
+19/19 workspace package lint
+35/35 dependency-aware TypeScript/build tasks in the typecheck phase
+Render Tree core fixtures for safe wrapper folding, composed-parent precedence and fail-closed boundaries
+StructuralFingerprint repeated-component grouping independent from copy
+subtree-aware revision content hashes
+deterministic repeated optimization
+Browser render-tree runtime/store tests
+Standard and CDP receipt integration
 Standard and High Fidelity Browser package validation
-build and format checks
+full build and format checks
 ```
 
-All temporary NODE-18 bootstrap workflows and the finalization script were removed from the candidate tree before validation/commit.
+All temporary NODE-19 bootstrap/finalization files were removed from the candidate tree before validation and commit. The final changed-file set contains only permanent runtime, package, test, documentation, lockfile and guardrail changes.
 
-The bot-triggered follow-up CI #448 was `action_required` with no authoritative read-only jobs. This documentation-only evidence commit is used to trigger the final exact-head read-only frozen-lockfile CI.
+This documentation-only evidence commit triggers the final exact-head read-only frozen-lockfile CI. No implementation files will change after that CI passes.
 
 ## Blockers
 
@@ -145,8 +140,8 @@ No product/architecture blocker is known.
 
 ## Next
 
-After NODE-18 formal Exit Gate and squash merge:
+After NODE-19 formal Exit Gate and squash merge:
 
 ```text
-NODE-19 — Render Tree Optimizer
+NODE-20 — Compositing & Fallback Boundary
 ```

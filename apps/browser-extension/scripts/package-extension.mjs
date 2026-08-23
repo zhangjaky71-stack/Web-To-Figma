@@ -69,6 +69,11 @@ const runtimePackages = [
     dist: fileURLToPath(new URL("../../../packages/table-layout-engine/dist/", import.meta.url)),
   },
   {
+    specifier: "@w2f/render-tree-optimizer",
+    directory: "render-tree-optimizer",
+    dist: fileURLToPath(new URL("../../../packages/render-tree-optimizer/dist/", import.meta.url)),
+  },
+  {
     specifier: "@w2f/standard-capture-adapter",
     directory: "standard-capture-adapter",
     dist: fileURLToPath(

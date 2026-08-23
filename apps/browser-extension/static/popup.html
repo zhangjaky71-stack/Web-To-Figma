@@ -16,12 +16,41 @@
         <span id="job-status" class="status" data-status="idle">Ready</span>
       </header>
 
-      <p id="job-details" class="details">Choose Full page or Select area for the current tab.</p>
+      <p id="job-details" class="details">Choose a capture mode for the current tab.</p>
 
       <div class="actions">
         <button id="capture-full-page" class="primary" type="button">Full page</button>
         <button id="capture-region" type="button">Select area</button>
       </div>
+
+      <section class="responsive-card" aria-labelledby="responsive-title">
+        <div class="section-heading">
+          <h2 id="responsive-title">Responsive Capture</h2>
+          <span id="responsive-capability" class="capability-note">Checking…</span>
+        </div>
+        <label class="radio-row">
+          <input id="responsive-current" type="radio" name="responsive-mode" value="current" checked />
+          <span>Current Viewport</span>
+        </label>
+        <label class="radio-row">
+          <input id="responsive-common" type="radio" name="responsive-mode" value="common" />
+          <span>Common Breakpoints <small>1440 / 768 / 390</small></span>
+        </label>
+        <label class="radio-row">
+          <input id="responsive-custom" type="radio" name="responsive-mode" value="custom" />
+          <span>Custom</span>
+        </label>
+        <input
+          id="responsive-custom-widths"
+          class="compact-input"
+          type="text"
+          inputmode="numeric"
+          placeholder="e.g. 1440, 1024, 768, 390"
+          aria-label="Custom viewport widths"
+          disabled
+        />
+        <button id="capture-responsive" type="button">Capture responsive snapshots</button>
+      </section>
 
       <div class="footer-actions">
         <button id="cancel-job" class="text-button" type="button" disabled>Cancel</button>
@@ -29,8 +58,8 @@
       </div>
 
       <p class="note">
-        NODE-07 adds interactive Free/Smart region selection plus Redact/Exclude masks. DOM capture
-        starts in NODE-08.
+        Current Viewport works in both builds. Common and Custom synthetic viewports require the High
+        Fidelity build and are restored automatically after capture.
       </p>
     </main>
     <script type="module" src="runtime/popup.js"></script>

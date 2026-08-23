@@ -104,7 +104,8 @@ export interface CssCascadeDiagnostic {
     | "CSS_SOURCE_NODE_UNRESOLVED"
     | "CSS_CDP_NODE_UNAVAILABLE"
     | "CSS_CDP_MATCHED_STYLES_UNAVAILABLE"
-    | "CSS_TOKEN_USAGE_UNRESOLVED";
+    | "CSS_TOKEN_USAGE_UNRESOLVED"
+    | "CSS_CAPTURE_BUDGET_EXCEEDED";
   message: string;
   sourceNodeId?: string;
   stylesheetRef?: string;

@@ -56,7 +56,7 @@ export interface ResponsiveSnapshotInput {
   stableNodes: ResponsiveStableNodeEvidence[];
 }
 
-export interface ResponsiveSnapshotEvidence extends ResponsiveSnapshotInput {}
+export type ResponsiveSnapshotEvidence = ResponsiveSnapshotInput;
 
 export interface ResponsiveCaptureDiagnostic {
   code:

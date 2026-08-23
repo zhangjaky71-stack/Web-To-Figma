@@ -52,6 +52,7 @@ jobs:
             packages/responsive-capture \
             apps/browser-extension/package.json \
             apps/browser-extension/scripts/package-extension.mjs \
+            apps/browser-extension/scripts/validate-extension-package.mjs \
             apps/browser-extension/scripts/validate-node-15-package.mjs \
             apps/browser-extension/src/runtime/cdp-runtime.ts \
             apps/browser-extension/src/runtime/job-state.ts \

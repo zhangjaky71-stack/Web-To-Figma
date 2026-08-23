@@ -29,6 +29,11 @@ interface ChromeDebuggerApi {
   ): Promise<Record<string, unknown>>;
 }
 
+interface ActiveCdpSession {
+  api: ChromeDebuggerApi;
+  target: ChromeDebuggee;
+}
+
 interface CdpPageResource {
   url: string;
   type?: string;
@@ -64,6 +69,14 @@ export interface CdpRecoveredResource {
   mediaTypeHint?: string;
 }
 
+export interface HighFidelityViewportOverride {
+  width: number;
+  height: number;
+  dpr: number;
+}
+
+const activeSessions = new Map<number, ActiveCdpSession>();
+
 function debuggerApi(): ChromeDebuggerApi {
   const runtime = globalThis as typeof globalThis & {
     chrome?: { debugger?: ChromeDebuggerApi };
@@ -96,6 +109,69 @@ async function command<T>(
   params?: Record<string, unknown>,
 ): Promise<T> {
   return (await api.sendCommand(target, method, params)) as T;
+}
+
+async function withCdpSession<T>(
+  tabId: number,
+  operation: (session: ActiveCdpSession) => Promise<T>,
+): Promise<T> {
+  const existing = activeSessions.get(tabId);
+  if (existing) return operation(existing);
+
+  const capability = getCdpRuntimeCapability();
+  if (!capability.available) throw new Error(capability.reason);
+  const api = debuggerApi();
+  const target: ChromeDebuggee = { tabId };
+  let attached = false;
+  try {
+    await api.attach(target, CDP_REQUIRED_PROTOCOL_VERSION);
+    attached = true;
+    const session = { api, target } satisfies ActiveCdpSession;
+    activeSessions.set(tabId, session);
+    return await operation(session);
+  } finally {
+    activeSessions.delete(tabId);
+    if (attached) await api.detach(target).catch(() => undefined);
+  }
+}
+
+function normalizedViewportOverride(value: HighFidelityViewportOverride): HighFidelityViewportOverride {
+  const width = Math.round(value.width);
+  const height = Math.round(value.height);
+  const dpr = value.dpr;
+  if (!Number.isSafeInteger(width) || width < 240 || width > 10_000) {
+    throw new TypeError("responsive viewport width must be an integer between 240 and 10000");
+  }
+  if (!Number.isSafeInteger(height) || height < 240 || height > 10_000) {
+    throw new TypeError("responsive viewport height must be an integer between 240 and 10000");
+  }
+  if (!Number.isFinite(dpr) || dpr < 0.5 || dpr > 8) {
+    throw new TypeError("responsive viewport dpr must be between 0.5 and 8");
+  }
+  return { width, height, dpr };
+}
+
+export async function withHighFidelityViewportOverride<T>(
+  tabId: number,
+  viewport: HighFidelityViewportOverride,
+  operation: () => Promise<T>,
+): Promise<T> {
+  const normalized = normalizedViewportOverride(viewport);
+  return withCdpSession(tabId, async ({ api, target }) => {
+    await command(api, target, "Emulation.setDeviceMetricsOverride", {
+      width: normalized.width,
+      height: normalized.height,
+      deviceScaleFactor: normalized.dpr,
+      mobile: false,
+      screenWidth: normalized.width,
+      screenHeight: normalized.height,
+    });
+    try {
+      return await operation();
+    } finally {
+      await command(api, target, "Emulation.clearDeviceMetricsOverride").catch(() => undefined);
+    }
+  });
 }
 
 function readDevicePixelRatio(value: Record<string, unknown>): number {
@@ -146,12 +222,7 @@ export async function fetchHighFidelityResourceContents(
   const capability = getCdpRuntimeCapability();
   if (!capability.available || urls.length === 0) return [];
 
-  const api = debuggerApi();
-  const target: ChromeDebuggee = { tabId };
-  let attached = false;
-  try {
-    await api.attach(target, CDP_REQUIRED_PROTOCOL_VERSION);
-    attached = true;
+  return withCdpSession(tabId, async ({ api, target }) => {
     await command(api, target, "Page.enable");
     const resourceTree = await command<CdpResourceTreeResponse>(
       api,
@@ -183,9 +254,7 @@ export async function fetchHighFidelityResourceContents(
       }
     }
     return results;
-  } finally {
-    if (attached) await api.detach(target).catch(() => undefined);
-  }
+  });
 }
 
 export async function captureHighFidelityRasterTiles(
@@ -198,12 +267,7 @@ export async function captureHighFidelityRasterTiles(
   if (!Number.isFinite(dpr) || dpr <= 0) throw new TypeError("raster dpr must be positive");
   if (plans.length === 0) return [];
 
-  const api = debuggerApi();
-  const target: ChromeDebuggee = { tabId };
-  let attached = false;
-  try {
-    await api.attach(target, CDP_REQUIRED_PROTOCOL_VERSION);
-    attached = true;
+  return withCdpSession(tabId, async ({ api, target }) => {
     await command(api, target, "Page.enable");
     const tiles: RasterCapturedTileInput[] = [];
     for (const plan of plans) {
@@ -233,9 +297,7 @@ export async function captureHighFidelityRasterTiles(
       });
     }
     return tiles;
-  } finally {
-    if (attached) await api.detach(target).catch(() => undefined);
-  }
+  });
 }
 
 export async function captureHighFidelityWithCdp(
@@ -247,13 +309,7 @@ export async function captureHighFidelityWithCdp(
   const capability = getCdpRuntimeCapability();
   if (!capability.available) throw new Error(capability.reason);
 
-  const api = debuggerApi();
-  const target: ChromeDebuggee = { tabId };
-  let attached = false;
-  try {
-    await api.attach(target, CDP_REQUIRED_PROTOCOL_VERSION);
-    attached = true;
-
+  return withCdpSession(tabId, async ({ api, target }) => {
     await Promise.all([
       command(api, target, "Page.enable"),
       command(api, target, "DOMSnapshot.enable"),
@@ -306,7 +362,5 @@ export async function captureHighFidelityWithCdp(
       ...(fallbackUrl === undefined ? {} : { fallbackUrl }),
       ...(fallbackTitle === undefined ? {} : { fallbackTitle }),
     });
-  } finally {
-    if (attached) await api.detach(target).catch(() => undefined);
-  }
+  });
 }

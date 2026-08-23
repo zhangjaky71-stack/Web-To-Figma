@@ -33,6 +33,13 @@ export interface CaptureSnapshotReceipt extends RawSnapshotSummary {
   containerCount?: number;
   containerQueryCount?: number;
   environmentDiagnosticCount?: number;
+  assetStorageKey?: string;
+  assetAdapter?: "standard" | "cdp";
+  assetCount?: number;
+  assetReferenceCount?: number;
+  assetDeduplicatedReferenceCount?: number;
+  assetUniqueByteCount?: number;
+  assetDiagnosticCount?: number;
 }
 
 export interface CaptureJobState {
@@ -93,12 +100,10 @@ function isCaptureSnapshotReceipt(value: unknown): value is CaptureSnapshotRecei
     typeof record.capturedAt === "string" &&
     !Number.isNaN(Date.parse(record.capturedAt)) &&
     (record.referenceScreenshotKey === undefined ||
-      (typeof record.referenceScreenshotKey === "string" &&
-        record.referenceScreenshotKey.length > 0)) &&
+      (typeof record.referenceScreenshotKey === "string" && record.referenceScreenshotKey.length > 0)) &&
     (record.fallbackFromCdp === undefined || typeof record.fallbackFromCdp === "boolean") &&
     (record.cssCascadeStorageKey === undefined ||
-      (typeof record.cssCascadeStorageKey === "string" &&
-        record.cssCascadeStorageKey.length > 0)) &&
+      (typeof record.cssCascadeStorageKey === "string" && record.cssCascadeStorageKey.length > 0)) &&
     (record.cssCascadeAdapter === undefined ||
       record.cssCascadeAdapter === "standard" ||
       record.cssCascadeAdapter === "cdp") &&
@@ -106,8 +111,7 @@ function isCaptureSnapshotReceipt(value: unknown): value is CaptureSnapshotRecei
     isOptionalNonNegativeInteger(record.cssTokenCount) &&
     isOptionalNonNegativeInteger(record.cssCascadeDiagnosticCount) &&
     (record.environmentStorageKey === undefined ||
-      (typeof record.environmentStorageKey === "string" &&
-        record.environmentStorageKey.length > 0)) &&
+      (typeof record.environmentStorageKey === "string" && record.environmentStorageKey.length > 0)) &&
     (record.environmentAdapter === undefined ||
       record.environmentAdapter === "standard" ||
       record.environmentAdapter === "cdp") &&
@@ -115,7 +119,15 @@ function isCaptureSnapshotReceipt(value: unknown): value is CaptureSnapshotRecei
     isOptionalNonNegativeInteger(record.activeMediaRuleCount) &&
     isOptionalNonNegativeInteger(record.containerCount) &&
     isOptionalNonNegativeInteger(record.containerQueryCount) &&
-    isOptionalNonNegativeInteger(record.environmentDiagnosticCount)
+    isOptionalNonNegativeInteger(record.environmentDiagnosticCount) &&
+    (record.assetStorageKey === undefined ||
+      (typeof record.assetStorageKey === "string" && record.assetStorageKey.length > 0)) &&
+    (record.assetAdapter === undefined || record.assetAdapter === "standard" || record.assetAdapter === "cdp") &&
+    isOptionalNonNegativeInteger(record.assetCount) &&
+    isOptionalNonNegativeInteger(record.assetReferenceCount) &&
+    isOptionalNonNegativeInteger(record.assetDeduplicatedReferenceCount) &&
+    isOptionalNonNegativeInteger(record.assetUniqueByteCount) &&
+    isOptionalNonNegativeInteger(record.assetDiagnosticCount)
   );
 }
 

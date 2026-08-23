@@ -30,7 +30,7 @@
 | 17 | Base Layout Analyzer | DONE | Exact-head read-only CI #422 PASS | PR #21 merged as `0b103261` |
 | 18 | Table Layout Engine | DONE | Exact-head read-only CI #449 PASS | PR #22 merged as `7cd56101` |
 | 19 | Render Tree Optimizer | DONE | Exact-head read-only CI #477 PASS | PR #23 merged as `030f433a` |
-| 20 | Compositing & Fallback Boundary | IN PROGRESS | Implementation starting from merged NODE-19 | `feat/node-20-compositing-fallback-boundary` |
+| 20 | Compositing & Fallback Boundary | IN PROGRESS | Bootstrap #2 full `pnpm check` PASS; exact-head read-only CI pending | PR #24 |
 | 21 | WTF Packager | TODO | - | - |
 | 22 | Figma Plugin Shell & File Intake | TODO | - | - |
 | 23 | Secure Parser & Migration | TODO | - | - |
@@ -106,6 +106,31 @@ The goal is the smallest **safe** fallback subtree, not the smallest DOM node. A
 - NODE-21 owns `.wtf` packaging;
 - NODE-24 owns Figma capability mapping;
 - NODE-28 owns final hybrid native/raster materialization.
+
+## NODE-20 Validation
+
+Controlled Bootstrap #2, run `32637598197`, passed the complete repository `pnpm check` and pushed the validated integration as:
+
+```text
+b5a25bcd46b6819be7d5faa57437eaf5cb3dd964
+```
+
+The validated candidate includes:
+
+```text
+NODE-20 permanent foundation guardrail
+21-workspace dependency graph with frozen lockfile refreshed
+Compositing Engine unit coverage for local canvas fallback, blend/backdrop promotion, filter-mask-opacity group promotion, isolation stop boundaries and deterministic merge behavior
+Browser compositing runtime/store sidecar tests
+Standard and CDP compositing receipt integration
+safe fallback boundaries translated into NODE-14 node-fallback Pixel Ground Truth requests
+Standard and High Fidelity Browser packaged-output validation
+full lint, typecheck, tests, build and format checks
+```
+
+All temporary NODE-20 bootstrap/finalization files were removed from the candidate tree before validation and commit. The permanent PR changed-file set contains only runtime, package, tests, documentation, lockfile and guardrail files.
+
+GitHub marks the bot-pushed CI #500 as `action_required`, so this documentation-only evidence commit triggers the final exact-head read-only frozen-lockfile CI. No implementation files will change after that CI passes.
 
 ## Blockers
 

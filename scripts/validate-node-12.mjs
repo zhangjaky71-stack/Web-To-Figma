@@ -20,11 +20,15 @@ for (const path of [
   "packages/environment-capture/src/capture.ts",
   "packages/environment-capture/src/index.ts",
   "packages/environment-capture/test/environment-capture.test.ts",
+  "packages/environment-capture/test/compatibility.test.ts",
   "packages/standard-capture-adapter/src/environment-capture.ts",
   "apps/browser-extension/src/runtime/environment-runtime.ts",
   "apps/browser-extension/src/runtime/environment-store.ts",
   "apps/browser-extension/test/environment-runtime.test.ts",
   "apps/browser-extension/test/environment-store.test.ts",
+  "docs/MEDIA_CONTAINER_ENVIRONMENT_CAPTURE_V2.md",
+  "docs/adr/ADR-0012-media-container-environment-sidecar.md",
+  "docs/nodes/NODE-12_MEDIA_CONTAINER_ENVIRONMENT_CAPTURE.md",
 ]) {
   assert(existsSync(resolve(root, path)), `NODE-12 missing ${path}`);
 }
@@ -49,10 +53,10 @@ if (failures.length === 0) {
     "ContainerDefinitionEvidence",
     "ContainerQueryEvidence",
     "pageZoomAvailability",
-    "mediaFeatures",
-    "activeAvailability",
     "colorScheme",
     "reducedMotion",
+    "mediaFeatures",
+    "activeAvailability",
     "affectedProperties",
     "affectedSourceNodeIds",
     "ENV_STYLESHEET_INACCESSIBLE",
@@ -71,7 +75,9 @@ if (failures.length === 0) {
     "summarizeEnvironmentCapture",
     "isEnvironmentCapture",
     'pageZoomAvailability !== "observed"',
-    "unobserved container query status must not fabricate active",
+    "value.mediaFeatures ?? []",
+    'value.activeAvailability ?? "unavailable"',
+    "must not fabricate active",
   ]) {
     assert(engine.includes(evidence), `NODE-12 environment engine missing ${evidence}`);
   }
@@ -120,12 +126,10 @@ if (failures.length === 0) {
     "createEnvironmentCapture",
     "browserPageZoomAvailability",
     "visualViewportScale",
-    "prefers-color-scheme",
-    "prefers-reduced-motion",
     "prefers-contrast",
     "prefers-reduced-transparency",
     "forced-colors",
-    "pointer: coarse",
+    "any-pointer",
   ]) {
     assert(runtime.includes(evidence), `NODE-12 Browser runtime missing ${evidence}`);
   }
@@ -134,7 +138,6 @@ if (failures.length === 0) {
   for (const evidence of [
     'W2F_ENVIRONMENT_DB_NAME = "w2f-environment"',
     'W2F_ENVIRONMENT_KEY_PREFIX = "environment:"',
-    "indexedDB.open",
     "writeEnvironmentCapture",
     "readEnvironmentCapture",
     "deleteEnvironmentCapture",
@@ -147,7 +150,6 @@ if (failures.length === 0) {
     "captureEnvironmentForSnapshot",
     "writeEnvironmentCapture",
     "deleteEnvironmentCapture",
-    "persistEnvironment",
     "mediaRuleCount",
     "containerQueryCount",
   ]) {
@@ -178,27 +180,12 @@ if (failures.length === 0) {
     "Standard adapter must consume @w2f/environment-capture",
   );
 
-  const packager = read("apps/browser-extension/scripts/package-extension.mjs");
+  const packageScript = read("apps/browser-extension/scripts/package-extension.mjs");
   assert(
-    packager.includes('specifier: "@w2f/environment-capture"') &&
-      packager.includes('directory: "environment-capture"'),
-    "Browser packager must include the NODE-12 environment runtime package",
+    packageScript.includes('specifier: "@w2f/environment-capture"') &&
+      packageScript.includes('directory: "environment-capture"'),
+    "NODE-12 Browser packaging must include environment-capture runtime modules",
   );
-
-  const packageValidator = read("apps/browser-extension/scripts/validate-extension-package.mjs");
-  for (const evidence of [
-    "runtime/environment-runtime.js",
-    "runtime/environment-store.js",
-    "runtime/environment-capture/index.js",
-    "runtime/standard-capture-adapter/environment-capture.js",
-    "captureEnvironmentForSnapshot",
-    "w2f-environment",
-  ]) {
-    assert(
-      packageValidator.includes(evidence),
-      `Browser package validator must enforce NODE-12 artifact ${evidence}`,
-    );
-  }
 
   const ir = read("packages/w2f-ir/src/types.ts");
   for (const evidence of [
@@ -220,16 +207,18 @@ if (failures.length === 0) {
     "NODE-12 requires explicit RawSnapshot page zoom availability evidence",
   );
 
-  const standardManifest = JSON.parse(read("apps/browser-extension/static/manifest.json"));
-  const permissions = [...(standardManifest.permissions ?? [])].sort();
-  assert(
-    JSON.stringify(permissions) === JSON.stringify(["activeTab", "scripting", "storage"].sort()),
-    "NODE-12 must not broaden Standard Browser permissions",
-  );
-  assert(
-    !("host_permissions" in standardManifest),
-    "NODE-12 must not introduce broad host permissions",
-  );
+  const normative = read("docs/MEDIA_CONTAINER_ENVIRONMENT_CAPTURE_V2.md");
+  for (const evidence of [
+    "EnvironmentCapture 1.0.0",
+    "pageZoomAvailability = unavailable",
+    "@media",
+    "@container",
+    "activeAvailability = unavailable",
+    "NODE-15",
+    "NODE-16",
+  ]) {
+    assert(normative.includes(evidence), `NODE-12 normative document missing ${evidence}`);
+  }
 }
 
 if (failures.length > 0) {

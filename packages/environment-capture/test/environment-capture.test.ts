@@ -126,15 +126,15 @@ describe("NODE-12 environment capture", () => {
   });
 
   it("does not fabricate a portable pageZoom when Standard evidence is unavailable", () => {
-    const environment = baseEnvironment();
-    const { pageZoom: _pageZoom, ...withoutZoom } = environment;
+    const withoutZoom = {
+      ...baseEnvironment(),
+      pageZoom: undefined,
+      pageZoomAvailability: "unavailable" as const,
+    };
     const capture = createEnvironmentCapture({
       adapter: "standard",
       snapshotId: "snapshot:standard",
-      environment: {
-        ...withoutZoom,
-        pageZoomAvailability: "unavailable",
-      },
+      environment: withoutZoom,
     });
     expect(toWtfCaptureEnvironment(capture)).toBeNull();
   });
@@ -157,8 +157,7 @@ describe("NODE-12 environment capture", () => {
       }),
     ).toThrow(/duplicate media rule id/);
 
-    const environment = baseEnvironment();
-    const { pageZoom: _pageZoom, ...withoutZoom } = environment;
+    const withoutZoom = { ...baseEnvironment(), pageZoom: undefined };
     expect(() =>
       createEnvironmentCapture({
         adapter: "standard",

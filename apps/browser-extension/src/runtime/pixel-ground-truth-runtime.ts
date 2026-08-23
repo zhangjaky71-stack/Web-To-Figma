@@ -72,7 +72,9 @@ async function blobBytes(blob: Blob): Promise<number[]> {
 
 async function openScreenshotBitmap(dataUrl: string): Promise<ImageBitmap> {
   const bytes = decodePngDataUrl(dataUrl);
-  return createImageBitmap(new Blob([bytes], { type: "image/png" }));
+  const buffer = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(buffer).set(bytes);
+  return createImageBitmap(new Blob([buffer], { type: "image/png" }));
 }
 
 async function cropBitmapToPlans(

@@ -8,6 +8,7 @@ import {
   type CdpScreenshotResponse,
 } from "@w2f/cdp-capture-adapter";
 import type { RawCaptureTarget } from "@w2f/capture-core";
+import type { RasterCapturedTileInput, RasterTilePlan } from "@w2f/pixel-ground-truth";
 
 export const CDP_REQUIRED_PROTOCOL_VERSION = "1.3" as const;
 
@@ -104,6 +105,13 @@ function readDevicePixelRatio(value: Record<string, unknown>): number {
   return typeof observed === "number" && Number.isFinite(observed) && observed > 0 ? observed : 1;
 }
 
+function decodeBase64Bytes(value: string): number[] {
+  const binary = atob(value);
+  const bytes = new Array<number>(binary.length);
+  for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+  return bytes;
+}
+
 function resourceKey(url: string): string {
   try {
     const parsed = new URL(url);
@@ -126,11 +134,9 @@ function collectResources(
 }
 
 function decodeCdpContent(response: CdpResourceContentResponse): number[] {
-  if (!response.base64Encoded) return [...new TextEncoder().encode(response.content)];
-  const binary = atob(response.content);
-  const bytes = new Array<number>(binary.length);
-  for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
-  return bytes;
+  return response.base64Encoded
+    ? decodeBase64Bytes(response.content)
+    : [...new TextEncoder().encode(response.content)];
 }
 
 export async function fetchHighFidelityResourceContents(
@@ -177,6 +183,56 @@ export async function fetchHighFidelityResourceContents(
       }
     }
     return results;
+  } finally {
+    if (attached) await api.detach(target).catch(() => undefined);
+  }
+}
+
+export async function captureHighFidelityRasterTiles(
+  tabId: number,
+  plans: RasterTilePlan[],
+  dpr: number,
+): Promise<RasterCapturedTileInput[]> {
+  const capability = getCdpRuntimeCapability();
+  if (!capability.available) throw new Error(capability.reason);
+  if (!Number.isFinite(dpr) || dpr <= 0) throw new TypeError("raster dpr must be positive");
+  if (plans.length === 0) return [];
+
+  const api = debuggerApi();
+  const target: ChromeDebuggee = { tabId };
+  let attached = false;
+  try {
+    await api.attach(target, CDP_REQUIRED_PROTOCOL_VERSION);
+    attached = true;
+    await command(api, target, "Page.enable");
+    const tiles: RasterCapturedTileInput[] = [];
+    for (const plan of plans) {
+      const screenshot = await command<CdpScreenshotResponse>(
+        api,
+        target,
+        "Page.captureScreenshot",
+        {
+          format: "png",
+          fromSurface: true,
+          captureBeyondViewport: true,
+          optimizeForSpeed: true,
+          clip: {
+            x: plan.bounds.x,
+            y: plan.bounds.y,
+            width: plan.bounds.width,
+            height: plan.bounds.height,
+            scale: dpr,
+          },
+        },
+      );
+      tiles.push({
+        ...plan,
+        bounds: { ...plan.bounds },
+        bytes: decodeBase64Bytes(screenshot.data),
+        mediaType: "image/png",
+      });
+    }
+    return tiles;
   } finally {
     if (attached) await api.detach(target).catch(() => undefined);
   }

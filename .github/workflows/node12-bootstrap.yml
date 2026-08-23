@@ -65,13 +65,16 @@ jobs:
             apps/browser-extension/test/environment-store.test.ts \
             scripts/validate-foundation.mjs \
             scripts/validate-node-12.mjs \
+            docs/MEDIA_CONTAINER_ENVIRONMENT_CAPTURE_V2.md \
+            docs/adr/ADR-0012-media-container-environment-sidecar.md \
+            docs/nodes/NODE-12_MEDIA_CONTAINER_ENVIRONMENT_CAPTURE.md \
             pnpm-lock.yaml
 
       - name: Commit generated lockfile and formatting
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add pnpm-lock.yaml packages/environment-capture packages/standard-capture-adapter apps/browser-extension scripts/validate-foundation.mjs scripts/validate-node-12.mjs
+          git add pnpm-lock.yaml packages/environment-capture packages/standard-capture-adapter apps/browser-extension scripts/validate-foundation.mjs scripts/validate-node-12.mjs docs/MEDIA_CONTAINER_ENVIRONMENT_CAPTURE_V2.md docs/adr/ADR-0012-media-container-environment-sidecar.md docs/nodes/NODE-12_MEDIA_CONTAINER_ENVIRONMENT_CAPTURE.md
           if git diff --cached --quiet; then
             echo "No generated changes"
           else

@@ -23,7 +23,8 @@ function openDatabase(): Promise<IDBDatabase> {
         database.createObjectStore(W2F_RENDER_TREE_STORE_NAME);
       }
     };
-    request.onerror = () => reject(request.error ?? new Error("failed to open render tree database"));
+    request.onerror = () =>
+      reject(request.error ?? new Error("failed to open render tree database"));
     request.onsuccess = () => resolve(request.result);
   });
 }

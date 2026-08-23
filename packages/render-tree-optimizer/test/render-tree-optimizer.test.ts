@@ -6,10 +6,20 @@ import type { TableLayoutResult } from "@w2f/table-layout-engine";
 import type { WtfLayoutModel } from "@w2f/w2f-ir";
 import { optimizeRenderTree, summarizeRenderTreeOptimization } from "../src/index.js";
 
-function layoutModel(mode: WtfLayoutModel["mode"] = "flow", overrides: Partial<WtfLayoutModel> = {}): WtfLayoutModel {
+function layoutModel(
+  mode: WtfLayoutModel["mode"] = "flow",
+  overrides: Partial<WtfLayoutModel> = {},
+): WtfLayoutModel {
   return {
     mode,
-    display: mode === "flex" ? "flex" : mode === "grid" ? "grid" : mode === "contents" ? "contents" : "block",
+    display:
+      mode === "flex"
+        ? "flex"
+        : mode === "grid"
+          ? "grid"
+          : mode === "contents"
+            ? "contents"
+            : "block",
     position: "static",
     sizing: {
       width: { mode: "unknown", confidence: 0.5, reasons: ["fixture"] },
@@ -94,7 +104,11 @@ function snapshot(nodes: RawNode[], rootCaptureNodeId = "root"): RawSnapshot {
   };
 }
 
-function propertyTrace(property: string, computedValue: string, authoredValue?: string): CssCascadePropertyTrace {
+function propertyTrace(
+  property: string,
+  computedValue: string,
+  authoredValue?: string,
+): CssCascadePropertyTrace {
   return {
     property,
     computedValue,
@@ -146,11 +160,44 @@ describe("Render Tree Optimizer", () => {
   it("folds only a provably meaningless single-child wrapper and preserves source mappings", async () => {
     const result = await optimizeRenderTree({
       snapshot: snapshot([
-        rawNode("root", "document", undefined, ["wrapper"], { x: 0, y: 0, width: 1200, height: 900 }),
-        rawNode("wrapper", "element", "div", ["hero"], { x: 0, y: 0, width: 1200, height: 400 }, { sourceParentId: "root" }),
-        rawNode("hero", "element", "section", ["title", "body"], { x: 0, y: 0, width: 1200, height: 400 }, { sourceParentId: "wrapper", attributes: { id: "hero" } }),
-        rawNode("title", "element", "h1", [], { x: 80, y: 80, width: 500, height: 60 }, { sourceParentId: "hero", text: "Hello" }),
-        rawNode("body", "element", "p", [], { x: 80, y: 160, width: 500, height: 80 }, { sourceParentId: "hero", text: "World" }),
+        rawNode("root", "document", undefined, ["wrapper"], {
+          x: 0,
+          y: 0,
+          width: 1200,
+          height: 900,
+        }),
+        rawNode(
+          "wrapper",
+          "element",
+          "div",
+          ["hero"],
+          { x: 0, y: 0, width: 1200, height: 400 },
+          { sourceParentId: "root" },
+        ),
+        rawNode(
+          "hero",
+          "element",
+          "section",
+          ["title", "body"],
+          { x: 0, y: 0, width: 1200, height: 400 },
+          { sourceParentId: "wrapper", attributes: { id: "hero" } },
+        ),
+        rawNode(
+          "title",
+          "element",
+          "h1",
+          [],
+          { x: 80, y: 80, width: 500, height: 60 },
+          { sourceParentId: "hero", text: "Hello" },
+        ),
+        rawNode(
+          "body",
+          "element",
+          "p",
+          [],
+          { x: 80, y: 160, width: 500, height: 80 },
+          { sourceParentId: "hero", text: "World" },
+        ),
       ]),
       cascade: cascade(),
       layout: layout([
@@ -169,17 +216,47 @@ describe("Render Tree Optimizer", () => {
     const hero = result.tree.nodes.find((node) => node.id === heroRenderId);
     expect(hero?.sourceNodeIds).toEqual(["wrapper", "hero"]);
     expect(hero?.kind).toBe("section");
-    expect(result.tree.sections.some((section) => section.renderNodeId === heroRenderId)).toBe(true);
-    expect(result.tree.nodes.find((node) => node.id === result.tree.rootId)?.childIds).toEqual([heroRenderId]);
+    expect(result.tree.sections.some((section) => section.renderNodeId === heroRenderId)).toBe(
+      true,
+    );
+    expect(result.tree.nodes.find((node) => node.id === result.tree.rootId)?.childIds).toEqual([
+      heroRenderId,
+    ]);
   });
 
   it("prefers composed parent relationships over source parents", async () => {
     const result = await optimizeRenderTree({
       snapshot: snapshot([
-        rawNode("root", "document", undefined, ["host", "light"], { x: 0, y: 0, width: 500, height: 500 }),
-        rawNode("host", "element", "section", ["slot"], { x: 0, y: 0, width: 500, height: 300 }, { sourceParentId: "root" }),
-        rawNode("slot", "slot", "slot", [], { x: 0, y: 0, width: 500, height: 300 }, { sourceParentId: "host" }),
-        rawNode("light", "element", "button", [], { x: 10, y: 10, width: 100, height: 40 }, { sourceParentId: "root", composedParentId: "host" }),
+        rawNode("root", "document", undefined, ["host", "light"], {
+          x: 0,
+          y: 0,
+          width: 500,
+          height: 500,
+        }),
+        rawNode(
+          "host",
+          "element",
+          "section",
+          ["slot"],
+          { x: 0, y: 0, width: 500, height: 300 },
+          { sourceParentId: "root" },
+        ),
+        rawNode(
+          "slot",
+          "slot",
+          "slot",
+          [],
+          { x: 0, y: 0, width: 500, height: 300 },
+          { sourceParentId: "host" },
+        ),
+        rawNode(
+          "light",
+          "element",
+          "button",
+          [],
+          { x: 10, y: 10, width: 100, height: 40 },
+          { sourceParentId: "root", composedParentId: "host" },
+        ),
       ]),
       cascade: cascade(),
       layout: layout([
@@ -198,15 +275,76 @@ describe("Render Tree Optimizer", () => {
   it("fails closed and preserves wrappers with paint, clipping, positioning or flex responsibility", async () => {
     const result = await optimizeRenderTree({
       snapshot: snapshot([
-        rawNode("root", "document", undefined, ["paint", "clip", "positioned", "flex"], { x: 0, y: 0, width: 1000, height: 800 }),
-        rawNode("paint", "element", "div", ["paint-child"], { x: 0, y: 0, width: 200, height: 100 }, { sourceParentId: "root" }),
-        rawNode("paint-child", "element", "span", [], { x: 0, y: 0, width: 200, height: 100 }, { sourceParentId: "paint" }),
-        rawNode("clip", "element", "div", ["clip-child"], { x: 0, y: 120, width: 200, height: 100 }, { sourceParentId: "root" }),
-        rawNode("clip-child", "element", "span", [], { x: 0, y: 120, width: 200, height: 100 }, { sourceParentId: "clip" }),
-        rawNode("positioned", "element", "div", ["position-child"], { x: 0, y: 240, width: 200, height: 100 }, { sourceParentId: "root" }),
-        rawNode("position-child", "element", "span", [], { x: 0, y: 240, width: 200, height: 100 }, { sourceParentId: "positioned" }),
-        rawNode("flex", "element", "div", ["flex-child"], { x: 0, y: 360, width: 200, height: 100 }, { sourceParentId: "root" }),
-        rawNode("flex-child", "element", "span", [], { x: 0, y: 360, width: 200, height: 100 }, { sourceParentId: "flex" }),
+        rawNode("root", "document", undefined, ["paint", "clip", "positioned", "flex"], {
+          x: 0,
+          y: 0,
+          width: 1000,
+          height: 800,
+        }),
+        rawNode(
+          "paint",
+          "element",
+          "div",
+          ["paint-child"],
+          { x: 0, y: 0, width: 200, height: 100 },
+          { sourceParentId: "root" },
+        ),
+        rawNode(
+          "paint-child",
+          "element",
+          "span",
+          [],
+          { x: 0, y: 0, width: 200, height: 100 },
+          { sourceParentId: "paint" },
+        ),
+        rawNode(
+          "clip",
+          "element",
+          "div",
+          ["clip-child"],
+          { x: 0, y: 120, width: 200, height: 100 },
+          { sourceParentId: "root" },
+        ),
+        rawNode(
+          "clip-child",
+          "element",
+          "span",
+          [],
+          { x: 0, y: 120, width: 200, height: 100 },
+          { sourceParentId: "clip" },
+        ),
+        rawNode(
+          "positioned",
+          "element",
+          "div",
+          ["position-child"],
+          { x: 0, y: 240, width: 200, height: 100 },
+          { sourceParentId: "root" },
+        ),
+        rawNode(
+          "position-child",
+          "element",
+          "span",
+          [],
+          { x: 0, y: 240, width: 200, height: 100 },
+          { sourceParentId: "positioned" },
+        ),
+        rawNode(
+          "flex",
+          "element",
+          "div",
+          ["flex-child"],
+          { x: 0, y: 360, width: 200, height: 100 },
+          { sourceParentId: "root" },
+        ),
+        rawNode(
+          "flex-child",
+          "element",
+          "span",
+          [],
+          { x: 0, y: 360, width: 200, height: 100 },
+          { sourceParentId: "flex" },
+        ),
       ]),
       cascade: cascade({ paint: [["background-color", "rgb(0, 0, 0)", "#000"]] }),
       layout: layout([
@@ -217,26 +355,74 @@ describe("Render Tree Optimizer", () => {
         ["clip-child", layoutModel("flow")],
         ["positioned", layoutModel("flow", { position: "relative" })],
         ["position-child", layoutModel("flow")],
-        ["flex", layoutModel("flex", { flexContainer: { direction: "row", wrap: "nowrap", justifyContent: "flex-start", alignItems: "stretch" } })],
+        [
+          "flex",
+          layoutModel("flex", {
+            flexContainer: {
+              direction: "row",
+              wrap: "nowrap",
+              justifyContent: "flex-start",
+              alignItems: "stretch",
+            },
+          }),
+        ],
         ["flex-child", layoutModel("flow")],
       ]),
       tables: noTables(),
     });
 
     for (const sourceId of ["paint", "clip", "positioned", "flex"]) {
-      expect(result.sourceToRenderNodeId[sourceId]).not.toBe(result.sourceToRenderNodeId[`${sourceId === "positioned" ? "position" : sourceId}-child`]);
+      expect(result.sourceToRenderNodeId[sourceId]).not.toBe(
+        result.sourceToRenderNodeId[`${sourceId === "positioned" ? "position" : sourceId}-child`],
+      );
     }
-    expect(result.diagnostics.filter((diagnostic) => diagnostic.code === "RENDER_TREE_WRAPPER_PRESERVED").length).toBeGreaterThanOrEqual(4);
+    expect(
+      result.diagnostics.filter((diagnostic) => diagnostic.code === "RENDER_TREE_WRAPPER_PRESERVED")
+        .length,
+    ).toBeGreaterThanOrEqual(4);
   });
 
   it("groups repeated structural fingerprints without depending on text content", async () => {
     const result = await optimizeRenderTree({
       snapshot: snapshot([
-        rawNode("root", "document", undefined, ["card-a", "card-b"], { x: 0, y: 0, width: 800, height: 600 }),
-        rawNode("card-a", "element", "div", ["text-a"], { x: 20, y: 20, width: 300, height: 160 }, { sourceParentId: "root", role: "group" }),
-        rawNode("text-a", "text", undefined, [], { x: 40, y: 40, width: 200, height: 40 }, { sourceParentId: "card-a", text: "Alpha" }),
-        rawNode("card-b", "element", "div", ["text-b"], { x: 20, y: 220, width: 300, height: 160 }, { sourceParentId: "root", role: "group" }),
-        rawNode("text-b", "text", undefined, [], { x: 40, y: 240, width: 200, height: 40 }, { sourceParentId: "card-b", text: "Beta" }),
+        rawNode("root", "document", undefined, ["card-a", "card-b"], {
+          x: 0,
+          y: 0,
+          width: 800,
+          height: 600,
+        }),
+        rawNode(
+          "card-a",
+          "element",
+          "div",
+          ["text-a"],
+          { x: 20, y: 20, width: 300, height: 160 },
+          { sourceParentId: "root", role: "group" },
+        ),
+        rawNode(
+          "text-a",
+          "text",
+          undefined,
+          [],
+          { x: 40, y: 40, width: 200, height: 40 },
+          { sourceParentId: "card-a", text: "Alpha" },
+        ),
+        rawNode(
+          "card-b",
+          "element",
+          "div",
+          ["text-b"],
+          { x: 20, y: 220, width: 300, height: 160 },
+          { sourceParentId: "root", role: "group" },
+        ),
+        rawNode(
+          "text-b",
+          "text",
+          undefined,
+          [],
+          { x: 40, y: 240, width: 200, height: 40 },
+          { sourceParentId: "card-b", text: "Beta" },
+        ),
       ]),
       cascade: cascade(),
       layout: layout([
@@ -252,7 +438,9 @@ describe("Render Tree Optimizer", () => {
     const b = result.tree.nodes.find((node) => node.id === result.sourceToRenderNodeId["card-b"]);
     expect(a?.componentCandidate?.groupId).toBeTruthy();
     expect(a?.componentCandidate?.groupId).toBe(b?.componentCandidate?.groupId);
-    expect(a?.componentCandidate?.fingerprint.combinedHash).toBe(b?.componentCandidate?.fingerprint.combinedHash);
+    expect(a?.componentCandidate?.fingerprint.combinedHash).toBe(
+      b?.componentCandidate?.fingerprint.combinedHash,
+    );
     expect(a?.revisionHashes?.contentHash).not.toBe(b?.revisionHashes?.contentHash);
     expect(summarizeRenderTreeOptimization(result)).toMatchObject({
       sourceNodeCount: 5,
@@ -266,10 +454,20 @@ describe("Render Tree Optimizer", () => {
     const input = {
       snapshot: snapshot([
         rawNode("root", "document", undefined, ["main"], { x: 0, y: 0, width: 800, height: 600 }),
-        rawNode("main", "element", "main", [], { x: 0, y: 0, width: 800, height: 600 }, { sourceParentId: "root" }),
+        rawNode(
+          "main",
+          "element",
+          "main",
+          [],
+          { x: 0, y: 0, width: 800, height: 600 },
+          { sourceParentId: "root" },
+        ),
       ]),
       cascade: cascade(),
-      layout: layout([["root", layoutModel("flow")], ["main", layoutModel("flow")]]),
+      layout: layout([
+        ["root", layoutModel("flow")],
+        ["main", layoutModel("flow")],
+      ]),
       tables: noTables(),
     };
     const first = await optimizeRenderTree(input);

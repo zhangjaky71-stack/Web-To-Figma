@@ -137,7 +137,11 @@ function hasIndependentPaintOrStacking(
 ): boolean {
   if (node.visibility && Math.abs(node.visibility.opacity - 1) > 1e-6) return true;
   for (const property of authoredProperties(css)) {
-    if (PAINT_OR_BOUNDARY_PREFIXES.some((prefix) => property === prefix || property.startsWith(`${prefix}-`))) {
+    if (
+      PAINT_OR_BOUNDARY_PREFIXES.some(
+        (prefix) => property === prefix || property.startsWith(`${prefix}-`),
+      )
+    ) {
       return true;
     }
   }
@@ -171,8 +175,13 @@ function rectEqual(left: Rect | undefined, right: Rect | undefined, epsilon = 0.
   );
 }
 
-function hasNonZeroEdges(edges: { top: number; right: number; bottom: number; left: number } | undefined): boolean {
-  return Boolean(edges && [edges.top, edges.right, edges.bottom, edges.left].some((value) => Math.abs(value) > 1e-6));
+function hasNonZeroEdges(
+  edges: { top: number; right: number; bottom: number; left: number } | undefined,
+): boolean {
+  return Boolean(
+    edges &&
+    [edges.top, edges.right, edges.bottom, edges.left].some((value) => Math.abs(value) > 1e-6),
+  );
 }
 
 function hasBorder(box: BaseLayoutNodeAnalysis["boxModel"] | undefined): boolean {
@@ -187,9 +196,9 @@ function hasSemanticBoundary(node: RawNode): boolean {
   const attributes = node.source.attributes ?? {};
   return Boolean(
     attributes["aria-label"]?.trim() ||
-      attributes["aria-labelledby"]?.trim() ||
-      attributes["aria-describedby"]?.trim() ||
-      attributes["contenteditable"] === "true",
+    attributes["aria-labelledby"]?.trim() ||
+    attributes["aria-describedby"]?.trim() ||
+    attributes["contenteditable"] === "true",
   );
 }
 
@@ -206,7 +215,10 @@ function hasLayoutResponsibility(layout: WtfLayoutModel | undefined): boolean {
   if (layout.position !== "static") return true;
   if (layout.flexItem || layout.gridItem || layout.absoluteConstraints) return true;
   if (hasNonZeroEdges(layout.padding)) return true;
-  if (layout.effectiveGap && (Math.abs(layout.effectiveGap.row) > 1e-6 || Math.abs(layout.effectiveGap.column) > 1e-6)) {
+  if (
+    layout.effectiveGap &&
+    (Math.abs(layout.effectiveGap.row) > 1e-6 || Math.abs(layout.effectiveGap.column) > 1e-6)
+  ) {
     return true;
   }
   return hasClipBoundary(layout);
@@ -314,11 +326,13 @@ function geometryModel(
     bounds,
     ...(analysis?.boxModel ? { box: analysis.boxModel } : {}),
     ...(clipping ? { clipBounds: bounds } : {}),
-    ...(node.geometry?.scrollContainerId ? { scrollContainerId: node.geometry.scrollContainerId } : {}),
+    ...(node.geometry?.scrollContainerId
+      ? { scrollContainerId: node.geometry.scrollContainerId }
+      : {}),
     ...(typeof node.paintOrder === "number" ? { paintOrder: node.paintOrder } : {}),
     ...(zRaw === "auto"
       ? { zIndex: "auto" as const }
-      : Number.isFinite(zNumber)
+      : typeof zNumber === "number" && Number.isFinite(zNumber)
         ? { zIndex: zNumber }
         : {}),
   };
@@ -362,7 +376,10 @@ function textModel(node: RawNode): WtfTextModel | undefined {
   };
 }
 
-function preferredParentMap(snapshot: RawSnapshot, diagnostics: RenderTreeDiagnostic[]): Map<string, string> {
+function preferredParentMap(
+  snapshot: RawSnapshot,
+  diagnostics: RenderTreeDiagnostic[],
+): Map<string, string> {
   const byId = new Map(snapshot.nodes.map((node) => [node.captureNodeId, node]));
   const fallbackParent = new Map<string, string>();
   for (const parent of snapshot.nodes) {
@@ -466,7 +483,7 @@ async function stableAssignments(
   parentById: ReadonlyMap<string, string>,
   childrenById: ReadonlyMap<string, string[]>,
 ): Promise<Map<string, StableIdentityAssignment>> {
-  const document = await createDocumentIdentity({
+  const documentIdentity = await createDocumentIdentity({
     sourceType: sourceType(snapshot.url),
     sourceUrl: snapshot.url,
   });
@@ -476,7 +493,7 @@ async function stableAssignments(
   const inputs: StableIdentityNodeInput[] = snapshot.nodes.map((node) => {
     const attributes = node.source.attributes ?? {};
     const parentId = parentById.get(node.captureNodeId);
-    const siblings = parentId ? childrenById.get(parentId) ?? [] : [node.captureNodeId];
+    const siblings = parentId ? (childrenById.get(parentId) ?? []) : [node.captureNodeId];
     const siblingIndex = Math.max(0, siblings.indexOf(node.captureNodeId));
     const nodeTag = tag(node) || (node.kind === "text" ? "#text" : node.kind);
     const sameKind = siblings.filter((id) => {
@@ -489,7 +506,7 @@ async function stableAssignments(
     const classList = (attributes.class ?? "").split(/\s+/).filter(Boolean);
     return {
       captureNodeId: node.captureNodeId,
-      documentId: document.documentId,
+      documentId: documentIdentity.documentId,
       ...(origin ? { sourceOrigin: origin } : {}),
       ...(node.source.namespace ? { namespace: node.source.namespace } : {}),
       tagName: nodeTag,
@@ -544,15 +561,21 @@ function canFoldWrapper(
   if (node.kind === "document" || node.kind === "text" || node.kind === "comment") return false;
   if (isSafeDecorativeChain(node, child)) return true;
   const nodeTag = tag(node);
-  if (!(WRAPPER_TAGS.has(nodeTag) || node.kind === "slot" || node.kind === "shadow-root")) return false;
+  if (!(WRAPPER_TAGS.has(nodeTag) || node.kind === "slot" || node.kind === "shadow-root"))
+    return false;
   if (hasSemanticBoundary(node) || tableBoundaries.has(node.captureNodeId)) return false;
   if (scrollRoots.has(node.captureNodeId)) return false;
   if (hasIndependentPaintOrStacking(node, css)) return false;
   if (hasLayoutResponsibility(analysis?.layout)) return false;
   if (hasBorder(analysis?.boxModel)) return false;
-  if (parentAnalysis && ["flex", "grid", "table"].includes(parentAnalysis.layout.mode)) return false;
+  if (parentAnalysis && ["flex", "grid", "table"].includes(parentAnalysis.layout.mode))
+    return false;
   if (analysis?.layout.flexItem || analysis?.layout.gridItem) return false;
-  if (node.geometry?.bounds && child.geometry?.bounds && !rectEqual(node.geometry.bounds, child.geometry.bounds)) {
+  if (
+    node.geometry?.bounds &&
+    child.geometry?.bounds &&
+    !rectEqual(node.geometry.bounds, child.geometry.bounds)
+  ) {
     return false;
   }
   if (!node.geometry?.bounds || !child.geometry?.bounds) return false;
@@ -641,24 +664,51 @@ async function fingerprintFor(
     layoutHash,
     paintHash,
     combinedHash,
-    confidence: clampConfidence(node.geometry.bounds.width > 0 || node.geometry.bounds.height > 0 ? 0.95 : 0.78),
+    confidence: clampConfidence(
+      node.geometry.bounds.width > 0 || node.geometry.bounds.height > 0 ? 0.95 : 0.78,
+    ),
   };
+}
+
+function subtreeContentEvidence(
+  sourceNodeId: string,
+  childrenBySourceId: ReadonlyMap<string, string[]>,
+  sourceById: ReadonlyMap<string, RawNode>,
+  seen = new Set<string>(),
+): unknown {
+  if (seen.has(sourceNodeId)) return ["cycle"];
+  const sourceNode = sourceById.get(sourceNodeId);
+  if (!sourceNode) return ["missing"];
+  seen.add(sourceNodeId);
+  const children = (childrenBySourceId.get(sourceNodeId) ?? []).map((childId) =>
+    subtreeContentEvidence(childId, childrenBySourceId, sourceById, seen),
+  );
+  seen.delete(sourceNodeId);
+  return [
+    sourceNode.kind,
+    tag(sourceNode),
+    sourceNode.source.role ?? "",
+    sourceNode.textContent ?? sourceNode.text?.value ?? "",
+    sourceNode.source.attributes ?? {},
+    children,
+  ];
 }
 
 async function revisionHashesFor(
   node: WtfRenderNode,
   source: RawNode,
   fingerprint: StructuralFingerprint,
+  childrenBySourceId: ReadonlyMap<string, string[]>,
+  sourceById: ReadonlyMap<string, RawNode>,
 ): Promise<NodeRevisionHashes> {
   return {
     contentHash: await hashPayload([
       "w2f-render-content-v1",
-      source.textContent ?? source.text?.value ?? "",
-      source.source.attributes ?? {},
+      subtreeContentEvidence(source.captureNodeId, childrenBySourceId, sourceById),
     ]),
     geometryHash: await hashPayload(["w2f-render-geometry-v1", node.geometry]),
     layoutHash: fingerprint.layoutHash,
-    paintHash: fingerprint.paintHash,
+    ...(fingerprint.paintHash ? { paintHash: fingerprint.paintHash } : {}),
     hierarchyHash: await hashPayload(["w2f-render-hierarchy-v1", node.childIds]),
   };
 }
@@ -711,7 +761,8 @@ function buildSections(
   }
 
   const sectionIdByRender = new Map<string, string>();
-  for (const renderId of [...sectionRenderIds].sort()) sectionIdByRender.set(renderId, `section:${renderId}`);
+  for (const renderId of [...sectionRenderIds].sort())
+    sectionIdByRender.set(renderId, `section:${renderId}`);
 
   const result: WtfSectionOutlineItem[] = [];
   for (const renderId of sectionRenderIds) {
@@ -738,7 +789,8 @@ function buildSections(
     });
     if (parentSectionId) {
       const parentItem = result.find((item) => item.id === parentSectionId);
-      if (parentItem) parentItem.childSectionIds.push(sectionIdByRender.get(renderId) ?? `section:${renderId}`);
+      if (parentItem)
+        parentItem.childSectionIds.push(sectionIdByRender.get(renderId) ?? `section:${renderId}`);
     }
   }
   for (const section of result) section.childSectionIds.sort();
@@ -789,7 +841,8 @@ export async function optimizeRenderTree(
     } else if (WRAPPER_TAGS.has(tag(node)) || node.kind === "slot" || node.kind === "shadow-root") {
       diagnostics.push({
         code: "RENDER_TREE_WRAPPER_PRESERVED",
-        message: "Wrapper was preserved because at least one safe-removal condition was not proven.",
+        message:
+          "Wrapper was preserved because at least one safe-removal condition was not proven.",
         sourceNodeId: node.captureNodeId,
       });
     }
@@ -908,7 +961,8 @@ export async function optimizeRenderTree(
     if (!source.geometry?.bounds) {
       diagnostics.push({
         code: "RENDER_TREE_GEOMETRY_MISSING",
-        message: "Render node is preserved with zero geometry because Browser bounds are unavailable.",
+        message:
+          "Render node is preserved with zero geometry because Browser bounds are unavailable.",
         sourceNodeId: keptId,
       });
     }
@@ -979,7 +1033,7 @@ export async function optimizeRenderTree(
       continue;
     }
     const groupId = groupIdByFingerprint.get(fingerprint.combinedHash);
-    const revisionHashes = await revisionHashesFor(node, source, fingerprint);
+    const revisionHashes = await revisionHashesFor(node, source, fingerprint, childrenById, byId);
     finalNodes.push({
       ...node,
       ...(groupId ? { componentCandidate: { fingerprint, groupId } } : {}),
@@ -1011,14 +1065,12 @@ export async function optimizeRenderTree(
     nodes: finalNodes.sort((left, right) => {
       const leftSource = left.sourceNodeIds[0] ?? "";
       const rightSource = right.sourceNodeIds[0] ?? "";
-      return (order.get(leftSource) ?? 0) - (order.get(rightSource) ?? 0) || left.id.localeCompare(right.id);
+      return (
+        (order.get(leftSource) ?? 0) - (order.get(rightSource) ?? 0) ||
+        left.id.localeCompare(right.id)
+      );
     }),
-    sections: buildSections(
-      finalNodes,
-      primarySourceByRenderId,
-      childrenById,
-      byId,
-    ),
+    sections: buildSections(finalNodes, primarySourceByRenderId, childrenById, byId),
   };
 
   diagnostics.sort(
@@ -1033,8 +1085,9 @@ export async function optimizeRenderTree(
     tree,
     diagnostics,
     sourceToRenderNodeId: Object.fromEntries(
-      Object.entries(renderIdBySource).sort(([left], [right]) =>
-        (order.get(left) ?? 0) - (order.get(right) ?? 0) || left.localeCompare(right),
+      Object.entries(renderIdBySource).sort(
+        ([left], [right]) =>
+          (order.get(left) ?? 0) - (order.get(right) ?? 0) || left.localeCompare(right),
       ),
     ),
   };

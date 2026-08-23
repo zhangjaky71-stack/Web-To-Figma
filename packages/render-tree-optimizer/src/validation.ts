@@ -4,7 +4,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-export function isRenderTreeOptimizationResult(value: unknown): value is RenderTreeOptimizationResult {
+export function isRenderTreeOptimizationResult(
+  value: unknown,
+): value is RenderTreeOptimizationResult {
   if (
     !isRecord(value) ||
     value.version !== RENDER_TREE_OPTIMIZER_VERSION ||
@@ -41,10 +43,16 @@ export function isRenderTreeOptimizationResult(value: unknown): value is RenderT
   if (!nodeIds.has(value.tree.rootId)) return false;
   for (const node of value.tree.nodes) {
     if (!isRecord(node)) return false;
-    if (node.parentId !== undefined && (typeof node.parentId !== "string" || !nodeIds.has(node.parentId))) {
+    if (
+      node.parentId !== undefined &&
+      (typeof node.parentId !== "string" || !nodeIds.has(node.parentId))
+    ) {
       return false;
     }
-    if (!Array.isArray(node.childIds) || !node.childIds.every((id) => typeof id === "string" && nodeIds.has(id))) {
+    if (
+      !Array.isArray(node.childIds) ||
+      !node.childIds.every((id) => typeof id === "string" && nodeIds.has(id))
+    ) {
       return false;
     }
   }

@@ -1,10 +1,7 @@
 import type { RawSnapshot } from "@w2f/capture-core";
 import type { CssCascadeCapture } from "@w2f/css-cascade";
 import type { BaseLayoutAnalysis } from "@w2f/layout-analyzer";
-import {
-  optimizeRenderTree,
-  type RenderTreeOptimizationResult,
-} from "@w2f/render-tree-optimizer";
+import { optimizeRenderTree, type RenderTreeOptimizationResult } from "@w2f/render-tree-optimizer";
 import type { TableLayoutResult } from "@w2f/table-layout-engine";
 import { readCssCascadeCapture } from "./css-cascade-store.js";
 import { readBaseLayoutAnalysis } from "./layout-analysis-store.js";

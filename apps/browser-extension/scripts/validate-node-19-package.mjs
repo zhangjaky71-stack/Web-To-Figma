@@ -86,7 +86,10 @@ for (const evidence of [
   "renderNodeCount",
   "foldedSourceNodeCount",
 ]) {
-  assert(serviceWorker.includes(evidence), `packaged service worker missing render-tree integration ${evidence}`);
+  assert(
+    serviceWorker.includes(evidence),
+    `packaged service worker missing render-tree integration ${evidence}`,
+  );
 }
 
 if (failures.length > 0) {

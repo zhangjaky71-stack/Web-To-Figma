@@ -50,6 +50,9 @@ importers:
       '@w2f/pixel-ground-truth':
         specifier: workspace:*
         version: link:../../packages/pixel-ground-truth
+      '@w2f/render-tree-optimizer':
+        specifier: workspace:*
+        version: link:../../packages/render-tree-optimizer
       '@w2f/responsive-capture':
         specifier: workspace:*
         version: link:../../packages/responsive-capture
@@ -193,6 +196,37 @@ importers:
 
   packages/pixel-ground-truth:
     dependencies:
+      '@w2f/w2f-schema':
+        specifier: workspace:*
+        version: link:../w2f-schema
+    devDependencies:
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: 4.1.11
+        version: 4.1.11(vite@8.2.2)
+
+  packages/render-tree-optimizer:
+    dependencies:
+      '@w2f/capture-core':
+        specifier: workspace:*
+        version: link:../capture-core
+      '@w2f/css-cascade':
+        specifier: workspace:*
+        version: link:../css-cascade
+      '@w2f/layout-analyzer':
+        specifier: workspace:*
+        version: link:../layout-analyzer
+      '@w2f/stable-identity':
+        specifier: workspace:*
+        version: link:../stable-identity
+      '@w2f/table-layout-engine':
+        specifier: workspace:*
+        version: link:../table-layout-engine
+      '@w2f/w2f-ir':
+        specifier: workspace:*
+        version: link:../w2f-ir
       '@w2f/w2f-schema':
         specifier: workspace:*
         version: link:../w2f-schema

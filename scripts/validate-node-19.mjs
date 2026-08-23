@@ -163,7 +163,10 @@ if (failures.length === 0) {
     "renderTreeStorageKey",
     "renderNodeCount",
   ]) {
-    assert(serviceWorker.includes(evidence), `Service worker render-tree orchestration missing ${evidence}`);
+    assert(
+      serviceWorker.includes(evidence),
+      `Service worker render-tree orchestration missing ${evidence}`,
+    );
   }
 
   const normative = readText("docs/RENDER_TREE_OPTIMIZER_V2.md");

@@ -189,6 +189,7 @@ describe("NODE-13 asset discovery", () => {
 describe("NODE-13 asset acquisition", () => {
   it("decodes data URLs and hashes bytes with SHA-256", async () => {
     expect(new TextDecoder().decode(decodeDataUrl("data:text/plain;base64,YWJj").bytes)).toBe("abc");
+    expect(new TextDecoder().decode(decodeDataUrl("data:text/plain,a+b").bytes)).toBe("a+b");
     expect(await sha256Hex(new TextEncoder().encode("abc"))).toBe(
       "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
     );

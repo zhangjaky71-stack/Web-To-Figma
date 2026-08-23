@@ -3,6 +3,7 @@ import type { WtfTokenGraph, WtfTokenKind } from "@w2f/w2f-schema";
 
 export const CSS_CASCADE_ENGINE_VERSION = "1.0.0" as const;
 
+export type CssCascadeEngineVersion = typeof CSS_CASCADE_ENGINE_VERSION;
 export type CssDeclarationStatus = "winner" | "overridden" | "inactive-condition";
 
 export interface CssSpecificity {
@@ -43,6 +44,11 @@ export interface CssNodeCascadeEvidence {
   sourceNodeId: string;
   traces: CssCascadePropertyTrace[];
   customProperties: Record<string, string>;
+}
+
+export interface CssCascadePayload {
+  version: CssCascadeEngineVersion;
+  nodes: CssNodeCascadeEvidence[];
 }
 
 export interface CssTokenDefinitionEvidence {

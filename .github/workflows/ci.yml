@@ -53,3 +53,77 @@ jobs:
 
       - name: Format check
         run: pnpm format:check
+
+  node23-bootstrap:
+    if: github.event_name == 'pull_request' && github.head_ref == 'feat/node-23-secure-parser-migration'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout NODE-23 head
+        uses: actions/checkout@v6
+        with:
+          ref: feat/node-23-secure-parser-migration
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.22.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Close and validate NODE-23
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm -f NODE23_BOOTSTRAP_FAILURE.log
+          set +e
+          {
+            pnpm install --no-frozen-lockfile
+            node scripts/node-23-finalize.mjs
+            pnpm install --no-frozen-lockfile
+            pnpm exec prettier --write \
+              packages/wtf-parser \
+              packages/w2f-schema/package.json \
+              packages/w2f-schema/src/container-paths.ts \
+              packages/w2f-schema/src/public.ts \
+              apps/figma-plugin/package.json \
+              apps/figma-plugin/src/main.ts \
+              apps/figma-plugin/src/protocol.ts \
+              apps/figma-plugin/src/ui.ts \
+              apps/figma-plugin/scripts/validate-plugin-package.mjs \
+              scripts/validate-node-22.mjs \
+              scripts/validate-node-23.mjs \
+              scripts/validate-foundation.mjs \
+              docs/SECURE_PARSER_MIGRATION_V2.md \
+              docs/adr/ADR-0023-hostile-wtf-parser-boundary.md \
+              docs/nodes/NODE-23_SECURE_PARSER_MIGRATION.md \
+              docs/IMPLEMENTATION_STATUS.md
+            git checkout origin/main -- .github/workflows/ci.yml
+            git rm scripts/node-23-finalize.mjs
+            pnpm check
+          } > /tmp/node23-bootstrap.log 2>&1
+          status=$?
+          set -e
+
+          if [ "$status" -ne 0 ]; then
+            git reset --hard HEAD
+            tail -n 900 /tmp/node23-bootstrap.log > NODE23_BOOTSTRAP_FAILURE.log
+            git add -f NODE23_BOOTSTRAP_FAILURE.log
+            git commit -m "ci(node-23): record bootstrap failure"
+            git push origin HEAD:feat/node-23-secure-parser-migration
+            echo "NODE-23 bootstrap failed; diagnostic report committed."
+            exit "$status"
+          fi
+
+          git add -A
+          git commit -m "feat(node-23): complete secure parser integration"
+          git push origin HEAD:feat/node-23-secure-parser-migration

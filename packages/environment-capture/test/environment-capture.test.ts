@@ -10,10 +10,12 @@ import {
 } from "../src/index.js";
 
 function baseEnvironment(
-  pageZoom: number | undefined = 1.25,
-  pageZoomAvailability: EnvironmentEvidenceAvailability =
-    pageZoom === undefined ? "unavailable" : "observed",
+  pageZoom?: number,
+  pageZoomAvailability?: EnvironmentEvidenceAvailability,
 ) {
+  const resolvedPageZoom = arguments.length === 0 ? 1.25 : pageZoom;
+  const resolvedPageZoomAvailability =
+    pageZoomAvailability ?? (resolvedPageZoom === undefined ? "unavailable" : "observed");
   return {
     browserName: "Chrome",
     browserVersion: "140.0.0.0",
@@ -25,8 +27,8 @@ function baseEnvironment(
     viewportWidth: 1440,
     viewportHeight: 900,
     dpr: 2,
-    ...(pageZoom === undefined ? {} : { pageZoom }),
-    pageZoomAvailability,
+    ...(resolvedPageZoom === undefined ? {} : { pageZoom: resolvedPageZoom }),
+    pageZoomAvailability: resolvedPageZoomAvailability,
     visualViewportScale: 1,
     cssZoomAvailability: "unavailable" as const,
   };

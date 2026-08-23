@@ -48,10 +48,15 @@ declare namespace chrome {
       id?: number;
       url?: string;
       title?: string;
+      windowId?: number;
     }
 
     function query(queryInfo: { active?: boolean; currentWindow?: boolean }): Promise<Tab[]>;
     function sendMessage(tabId: number, message: unknown): Promise<unknown>;
+    function captureVisibleTab(
+      windowId?: number,
+      options?: { format?: "png" | "jpeg"; quality?: number },
+    ): Promise<string>;
   }
 
   namespace scripting {

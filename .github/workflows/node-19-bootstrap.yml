@@ -36,7 +36,7 @@ jobs:
       - name: Apply NODE-19 integration closure
         run: node scripts/node-19-finalize.mjs
 
-      - name: Fix strict Render Tree core typing
+      - name: Fix strict Render Tree core typing and revision content
         run: |
           node --input-type=module <<'EOF'
           import { readFileSync, writeFileSync } from "node:fs";
@@ -55,14 +55,34 @@ jobs:
             '    paintHash: fingerprint.paintHash,\n    hierarchyHash:',
             '    ...(fingerprint.paintHash ? { paintHash: fingerprint.paintHash } : {}),\n    hierarchyHash:',
           );
+          if (!source.includes("function subtreeContentEvidence(")) {
+            const anchor = "async function revisionHashesFor(\n";
+            if (!source.includes(anchor)) throw new Error("NODE-19 revision helper anchor missing");
+            const helper = `function subtreeContentEvidence(\n  sourceNodeId: string,\n  childrenBySourceId: ReadonlyMap<string, string[]>,\n  sourceById: ReadonlyMap<string, RawNode>,\n  seen = new Set<string>(),\n): unknown {\n  if (seen.has(sourceNodeId)) return [\"cycle\"];\n  const sourceNode = sourceById.get(sourceNodeId);\n  if (!sourceNode) return [\"missing\"];\n  seen.add(sourceNodeId);\n  const children = (childrenBySourceId.get(sourceNodeId) ?? []).map((childId) =>\n    subtreeContentEvidence(childId, childrenBySourceId, sourceById, seen),\n  );\n  seen.delete(sourceNodeId);\n  return [\n    sourceNode.kind,\n    tag(sourceNode),\n    sourceNode.source.role ?? \"\",\n    sourceNode.textContent ?? sourceNode.text?.value ?? \"\",\n    sourceNode.source.attributes ?? {},\n    children,\n  ];\n}\n\n`;
+            source = source.replace(anchor, `${helper}${anchor}`);
+          }
+          source = source.replace(
+            '  fingerprint: StructuralFingerprint,\n): Promise<NodeRevisionHashes> {',
+            '  fingerprint: StructuralFingerprint,\n  childrenBySourceId: ReadonlyMap<string, string[]>,\n  sourceById: ReadonlyMap<string, RawNode>,\n): Promise<NodeRevisionHashes> {',
+          );
+          source = source.replace(
+            '    contentHash: await hashPayload([\n      "w2f-render-content-v1",\n      source.textContent ?? source.text?.value ?? "",\n      source.source.attributes ?? {},\n    ]),',
+            '    contentHash: await hashPayload([\n      "w2f-render-content-v1",\n      subtreeContentEvidence(source.captureNodeId, childrenBySourceId, sourceById),\n    ]),',
+          );
+          source = source.replace(
+            '    const revisionHashes = await revisionHashesFor(node, source, fingerprint);',
+            '    const revisionHashes = await revisionHashesFor(\n      node,\n      source,\n      fingerprint,\n      childrenById,\n      byId,\n    );',
+          );
+          for (const required of [
+            'typeof zNumber === "number" && Number.isFinite(zNumber)',
+            '...(fingerprint.paintHash ? { paintHash: fingerprint.paintHash } : {})',
+            'function subtreeContentEvidence(',
+            'subtreeContentEvidence(source.captureNodeId, childrenBySourceId, sourceById)',
+          ]) {
+            if (!source.includes(required)) throw new Error(`NODE-19 core closure missing ${required}`);
+          }
           if (source.includes("document.documentId")) {
             throw new Error("NODE-19 document global-name collision remains");
-          }
-          if (!source.includes('typeof zNumber === "number" && Number.isFinite(zNumber)')) {
-            throw new Error("NODE-19 zIndex strict typing patch missing");
-          }
-          if (!source.includes('...(fingerprint.paintHash ? { paintHash: fingerprint.paintHash } : {})')) {
-            throw new Error("NODE-19 paintHash strict typing patch missing");
           }
           writeFileSync(path, source);
           EOF

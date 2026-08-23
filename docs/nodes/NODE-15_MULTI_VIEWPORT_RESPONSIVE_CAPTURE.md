@@ -2,7 +2,7 @@
 
 ## Status
 
-**IMPLEMENTED — formal controlled bootstrap / exact-head Exit Gate pending**
+**IMPLEMENTED — controlled bootstrap PASS; exact-head read-only Exit Gate pending**
 
 ## Entry baseline
 
@@ -211,6 +211,27 @@ Browser tests cover:
 - nested CDP single-attach behavior;
 - device metrics restoration on success and failure.
 
+## Controlled bootstrap evidence
+
+NODE-15 Bootstrap #9, run `32627415523`, completed successfully. Its final repository-shape validation ran complete `pnpm check` after removing the temporary bootstrap workflow and passed:
+
+- NODE-08 through NODE-15 foundation validation;
+- canonical lockfile refresh;
+- all package lint tasks;
+- all typecheck tasks;
+- all tests, including Browser Extension 15 test files / 50 tests;
+- Standard Browser build and package validators;
+- High Fidelity Browser build and package validators;
+- canonical format check.
+
+The bootstrap pushed finalization commit:
+
+```text
+6d8b1c1809d2467ef8ae08f117e1fd68d212beb5
+```
+
+The final tree at that commit contains only permanent `ci.yml` and `diagnostic.yml` workflows. GitHub marked the bot-triggered CI #349 as `action_required` without running jobs, so a normal evidence-only commit is used to trigger the authoritative exact-head read-only CI.
+
 ## Definition of Done
 
 - [x] `@w2f/responsive-capture` package
@@ -245,13 +266,13 @@ Browser tests cover:
 - [x] Browser stable/runtime/store/CDP tests
 - [x] normative Responsive Capture V2 document
 - [x] ADR-0015
-- [ ] NODE-15 foundation guardrail wired
-- [ ] authoritative workspace lockfile refreshed
-- [ ] canonical formatting PASS
-- [ ] complete `pnpm check` PASS
-- [ ] Standard package validation PASS
-- [ ] High Fidelity package validation PASS
-- [ ] temporary bootstrap absent from final tree
+- [x] NODE-15 foundation guardrail wired
+- [x] authoritative workspace lockfile refreshed
+- [x] canonical formatting PASS
+- [x] complete `pnpm check` PASS
+- [x] Standard package validation PASS
+- [x] High Fidelity package validation PASS
+- [x] temporary bootstrap absent from final tree
 - [ ] exact-head read-only frozen-lockfile CI PASS
 - [ ] PR ready
 - [ ] PR squash merged

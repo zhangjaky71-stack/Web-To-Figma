@@ -99,7 +99,7 @@ export interface W2fFigmaShellInfo {
   uiDropImplemented: true;
   canvasDropImplemented: true;
   partialImportContractImplemented: true;
-  secureParserImplemented: false;
+  secureParserImplemented: true;
   rendererImplemented: false;
   defaultImportProfile: "balanced";
   defaultTokenPolicy: "literal";

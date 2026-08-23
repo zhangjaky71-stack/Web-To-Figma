@@ -1,4 +1,10 @@
 import {
+  parseWtfPackage,
+  WtfParserError,
+  type WtfParsedPackage,
+  type WtfParsedPreview,
+} from "@w2f/wtf-parser";
+import {
   createDefaultImportSelection,
   createFileIntakeDescriptor,
   createInitialIntakeState,
@@ -46,6 +52,7 @@ const parserBoundary = element<HTMLDivElement>("parser-boundary");
 
 let state: W2fIntakeState = createInitialIntakeState();
 let currentBytes: Uint8Array | null = null;
+let currentParsed: WtfParsedPackage | null = null;
 
 function postToMain(payload: W2fUiToMainPayload): void {
   parent.postMessage({ pluginMessage: figmaMessage(payload) }, "*");
@@ -76,6 +83,7 @@ function setProgress(next: W2fIntakeState["progress"]): void {
 }
 
 function setError(code: string, message: string): void {
+  currentParsed = null;
   state = {
     ...state,
     error: { code, message },
@@ -83,11 +91,11 @@ function setError(code: string, message: string): void {
       stage: "failed",
       completed: 0,
       total: 1,
-      label: "File intake failed",
+      label: "Secure validation failed",
       detail: message,
     },
   };
-  progressLabel.textContent = "File intake failed";
+  progressLabel.textContent = "Secure validation failed";
   progressDetail.textContent = `${code}: ${message}`;
   progressBar.value = 0;
   importButton.disabled = true;
@@ -167,8 +175,89 @@ function updateSelectionFromControls(): void {
   postToMain({ type: "W2F_IMPORT_SELECTION", selection: state.selection });
 }
 
-function acceptBytes(descriptor: W2fFileIntakeDescriptor, bytes: Uint8Array): void {
-  currentBytes = Uint8Array.from(bytes);
+function protocolPreview(intakeId: string, preview: WtfParsedPreview): W2fParserPreview {
+  return {
+    intakeId,
+    ...(preview.sourceUrl ? { sourceUrl: preview.sourceUrl } : {}),
+    ...(preview.title ? { title: preview.title } : {}),
+    renderNodeCount: preview.renderNodeCount,
+    assetCount: preview.assetCount,
+    referenceCount: preview.referenceCount,
+    sectionOutline: preview.sectionOutline.map((section) => ({
+      id: section.id,
+      name: section.name,
+      depth: section.depth,
+      ...(section.parentId ? { parentId: section.parentId } : {}),
+      renderNodeIds: [...section.renderNodeIds],
+      sourceStableIds: [...section.sourceStableIds],
+      defaultSelected: section.defaultSelected,
+    })),
+    revision: { ...preview.revision },
+    stableSourceMappingCount: preview.stableSourceMappingCount,
+    tokenUsageCount: preview.tokenUsageCount,
+    tokenPolicy: "literal",
+  };
+}
+
+function applyParserPreview(preview: W2fParserPreview): void {
+  if (!state.descriptor || preview.intakeId !== state.descriptor.intakeId) return;
+  state = {
+    ...state,
+    preview,
+    selection: selectionForPreview(state.selection, preview),
+    error: null,
+  };
+  parserBoundary.hidden = true;
+  setProgress({
+    stage: "preview-ready",
+    completed: 3,
+    total: 3,
+    label: "Secure validation complete",
+    detail: `${preview.renderNodeCount.toLocaleString()} render nodes · ${preview.sectionOutline.length} sections`,
+  });
+  renderSections(preview);
+  importButton.disabled = false;
+}
+
+async function runSecureParser(
+  descriptor: W2fFileIntakeDescriptor,
+  bytes: Uint8Array,
+): Promise<void> {
+  try {
+    setProgress({
+      stage: "validating",
+      completed: 1,
+      total: 3,
+      label: "Validating archive",
+      detail:
+        "ZIP structure, paths, limits, manifest, checksums, IR and assets are validated locally.",
+    });
+    const parsed = await parseWtfPackage(bytes);
+    currentParsed = parsed;
+    setProgress({
+      stage: "migrating",
+      completed: 2,
+      total: 3,
+      label: parsed.migration.migrated ? "Applying compatible V2 migration" : "Schema is current",
+      detail:
+        parsed.migration.steps.length > 0
+          ? parsed.migration.steps.join(" · ")
+          : "No schema migration was required.",
+    });
+    applyParserPreview(protocolPreview(descriptor.intakeId, parsed.preview));
+  } catch (error) {
+    if (error instanceof WtfParserError) {
+      const issue = error.issues[0];
+      setError(issue?.code ?? "WTF_PARSER_FAILED", issue?.message ?? error.message);
+      return;
+    }
+    setError("WTF_PARSER_FAILED", error instanceof Error ? error.message : String(error));
+  }
+}
+
+async function acceptBytes(descriptor: W2fFileIntakeDescriptor, bytes: Uint8Array): Promise<void> {
+  currentBytes = bytes;
+  currentParsed = null;
   state = {
     ...state,
     descriptor,
@@ -185,9 +274,10 @@ function acceptBytes(descriptor: W2fFileIntakeDescriptor, bytes: Uint8Array): vo
     completed: 1,
     total: 1,
     label: "Ready for secure validation",
-    detail: "Archive contents remain unopened until NODE-23 Secure Parser validates them.",
+    detail: "NODE-23 will validate archive structure and integrity before any renderer handoff.",
   });
   postToMain({ type: "W2F_INTAKE_METADATA", descriptor });
+  await runSecureParser(descriptor, bytes);
 }
 
 async function readUiFile(file: File, source: "choose" | "ui-drop"): Promise<void> {
@@ -209,30 +299,10 @@ async function readUiFile(file: File, source: "choose" | "ui-drop"): Promise<voi
       mimeType: file.type,
       byteLength: bytes.byteLength,
     });
-    acceptBytes(descriptor, bytes);
+    await acceptBytes(descriptor, bytes);
   } catch (error) {
     setError("W2F_E_INTAKE_UI_FILE", error instanceof Error ? error.message : String(error));
   }
-}
-
-function applyParserPreview(preview: W2fParserPreview): void {
-  if (!state.descriptor || preview.intakeId !== state.descriptor.intakeId) return;
-  state = {
-    ...state,
-    preview,
-    selection: selectionForPreview(state.selection, preview),
-    error: null,
-  };
-  parserBoundary.hidden = true;
-  setProgress({
-    stage: "preview-ready",
-    completed: 1,
-    total: 1,
-    label: "Ready to import",
-    detail: `${preview.renderNodeCount.toLocaleString()} render nodes · ${preview.sectionOutline.length} sections`,
-  });
-  renderSections(preview);
-  importButton.disabled = false;
 }
 
 chooseButton.addEventListener("click", () => fileInput.click());
@@ -263,15 +333,16 @@ for (const input of document.querySelectorAll<HTMLInputElement>(
 }
 
 importButton.addEventListener("click", () => {
-  if (!state.preview || !currentBytes) return;
+  if (!state.preview || !currentBytes || !currentParsed) return;
   postToMain({ type: "W2F_IMPORT_SELECTION", selection: state.selection });
   setError(
     "W2F_E_RENDERER_NOT_IMPLEMENTED",
-    "Secure parsing begins in NODE-23 and rendering begins in NODE-24/25; NODE-22 intentionally does not render untrusted bytes.",
+    "The .wtf package is securely validated. Capability planning begins in NODE-24 and Figma rendering begins in NODE-25.",
   );
 });
 cancelButton.addEventListener("click", () => {
   currentBytes = null;
+  currentParsed = null;
   postToMain({ type: "W2F_CANCEL_IMPORT" });
 });
 closeButton.addEventListener("click", () => postToMain({ type: "W2F_CLOSE_PLUGIN" }));
@@ -284,13 +355,15 @@ window.addEventListener("message", (event: MessageEvent) => {
     case "W2F_SHELL_INFO":
       return;
     case "W2F_FILE_BYTES":
-      acceptBytes(payload.descriptor, payload.bytes);
+      void acceptBytes(payload.descriptor, payload.bytes);
       return;
     case "W2F_PARSER_PREVIEW":
       applyParserPreview(payload.preview);
       return;
     case "W2F_PROGRESS":
-      setProgress(payload.progress);
+      if (payload.progress.stage !== "awaiting-secure-parser" || !currentParsed) {
+        setProgress(payload.progress);
+      }
       return;
     case "W2F_ERROR":
       setError(payload.code, payload.message);
@@ -303,6 +376,5 @@ renderFile(null);
 renderSections(null);
 postToMain({ type: "W2F_UI_READY" });
 
-void currentBytes;
 void (null as unknown as W2fImportProfile);
 void (null as unknown as W2fImportScope);

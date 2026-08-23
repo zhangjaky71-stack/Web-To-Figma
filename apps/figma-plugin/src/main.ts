@@ -18,7 +18,7 @@ const SHELL_INFO: W2fFigmaShellInfo = {
   uiDropImplemented: true,
   canvasDropImplemented: true,
   partialImportContractImplemented: true,
-  secureParserImplemented: false,
+  secureParserImplemented: true,
   rendererImplemented: false,
   defaultImportProfile: "balanced",
   defaultTokenPolicy: "literal",
@@ -58,16 +58,6 @@ async function handleCanvasDrop(file: DropFile, point: { x: number; y: number })
       canvasPoint: point,
     });
     postToUi({ type: "W2F_FILE_BYTES", descriptor, bytes: Uint8Array.from(bytes) });
-    postToUi({
-      type: "W2F_PROGRESS",
-      progress: {
-        stage: "awaiting-secure-parser",
-        completed: 1,
-        total: 1,
-        label: "File bytes ready for secure validation",
-        detail: "NODE-23 owns archive parsing and integrity validation.",
-      },
-    });
   } catch (error) {
     postError("W2F_E_INTAKE_CANVAS_DROP", error);
   }

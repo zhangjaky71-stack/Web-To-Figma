@@ -12,6 +12,7 @@ export type AssetResourceSourceType =
   | "css-mask"
   | "css-border"
   | "css-content"
+  | "css-image"
   | "svg-inline"
   | "svg-external"
   | "data-url"
@@ -27,6 +28,40 @@ export interface AssetResourceProvenance {
   frameOrigin?: string;
   stylesheetRef?: string;
   cssProperty?: string;
+}
+
+export interface AssetDomEvidence {
+  sourceNodeId: string;
+  frameId: string;
+  frameOrigin?: string;
+  tagName: string;
+  authoredSrc?: string;
+  currentSrc?: string;
+  srcset?: string;
+  inlineSvg?: string;
+  intrinsicWidth?: number;
+  intrinsicHeight?: number;
+  displayWidth?: number;
+  displayHeight?: number;
+}
+
+export interface AssetResourceCandidate {
+  acquisitionId: string;
+  locator?: string;
+  inlineText?: string;
+  mediaTypeHint?: string;
+  currentSrc?: string;
+  authoredSrc?: string;
+  intrinsicWidth?: number;
+  intrinsicHeight?: number;
+  displayWidth?: number;
+  displayHeight?: number;
+  provenance: AssetResourceProvenance;
+}
+
+export interface AssetDiscoveryResult {
+  candidates: AssetResourceCandidate[];
+  diagnostics: AssetCaptureDiagnostic[];
 }
 
 export interface AssetAcquiredResource {
@@ -60,7 +95,11 @@ export interface AssetCaptureDiagnostic {
     | "ASSET_UNSUPPORTED_MEDIA_TYPE"
     | "ASSET_HASH_FAILED"
     | "ASSET_SOURCE_NODE_UNRESOLVED"
-    | "ASSET_SELECTOR_UNSUPPORTED";
+    | "ASSET_SELECTOR_UNSUPPORTED"
+    | "ASSET_REFERENCE_INVALID"
+    | "ASSET_REFERENCE_UNSUPPORTED"
+    | "ASSET_CSS_URL_INVALID"
+    | "ASSET_INLINE_SVG_INVALID";
   message: string;
   acquisitionId?: string;
   sourceNodeId?: string;
@@ -97,3 +136,15 @@ export interface BuildAssetCaptureInput {
   snapshotId: string;
   acquisition: AssetAcquisitionResult;
 }
+
+export interface AssetAcquisitionPolicy {
+  maxAssets: number;
+  maxAssetBytes: number;
+  maxTotalBytes: number;
+}
+
+export const DEFAULT_ASSET_ACQUISITION_POLICY: AssetAcquisitionPolicy = {
+  maxAssets: 10_000,
+  maxAssetBytes: 64 * 1024 * 1024,
+  maxTotalBytes: 512 * 1024 * 1024,
+};

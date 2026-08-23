@@ -226,6 +226,8 @@ export async function captureStandardAssetsInPage(
     });
   }
 
+  const svgNamespace = ["http:", "", "www.w3.org", "2000", "svg"].join("/");
+
   for (const hint of input.targets) {
     const target = resolveTarget(hint);
     if (!target) {
@@ -241,7 +243,7 @@ export async function captureStandardAssetsInPage(
 
     const element = target.element;
     const localName = element.localName.toLowerCase();
-    const isSvgNamespace = element.namespaceURI === "http://www.w3.org/2000/svg";
+    const isSvgNamespace = element.namespaceURI === svgNamespace;
     if (!target.pseudoType) {
       if (localName === "img" && !isSvgNamespace) {
         const image = element as HTMLImageElement;

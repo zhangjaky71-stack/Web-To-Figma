@@ -14,6 +14,8 @@ const requiredFiles = [
   "runtime/cdp-runtime.js",
   "runtime/css-cascade-runtime.js",
   "runtime/css-cascade-store.js",
+  "runtime/environment-runtime.js",
+  "runtime/environment-store.js",
   "runtime/source-providers/index.js",
   "runtime/source-providers/http-page-provider.js",
   "runtime/source-providers/file-tab-provider.js",
@@ -30,9 +32,13 @@ const requiredFiles = [
   "runtime/css-cascade/capture.js",
   "runtime/css-cascade/length.js",
   "runtime/css-cascade/tokens.js",
+  "runtime/environment-capture/index.js",
+  "runtime/environment-capture/types.js",
+  "runtime/environment-capture/capture.js",
   "runtime/standard-capture-adapter/index.js",
   "runtime/standard-capture-adapter/capture.js",
   "runtime/standard-capture-adapter/cascade-capture.js",
+  "runtime/standard-capture-adapter/environment-capture.js",
   "runtime/standard-capture-adapter/privacy.js",
   "runtime/standard-capture-adapter/types.js",
   "runtime/cdp-capture-adapter/index.js",
@@ -136,6 +142,8 @@ for (const importPath of [
   "./cdp-runtime.js",
   "./css-cascade-runtime.js",
   "./css-cascade-store.js",
+  "./environment-runtime.js",
+  "./environment-store.js",
 ]) {
   assert(serviceWorker.includes(`from "${importPath}"`), `service worker missing ${importPath}`);
 }
@@ -149,6 +157,12 @@ assert(
   serviceWorker.includes("persistCssCascade") &&
     serviceWorker.includes("deleteAllCaptureArtifacts"),
   "service worker must persist and clean up NODE-11 CSS sidecars",
+);
+assert(
+  serviceWorker.includes("persistEnvironment") &&
+    serviceWorker.includes("writeEnvironmentCapture") &&
+    serviceWorker.includes("deleteEnvironmentCapture"),
+  "service worker must persist and clean up NODE-12 environment sidecars",
 );
 
 const cdpRuntime = await readFile(`${outputRoot}/runtime/cdp-runtime.js`, "utf8");
@@ -230,6 +244,45 @@ assert(
   "NODE-11 CSS sidecar store/key contract drifted",
 );
 
+const environmentRuntime = await readFile(`${outputRoot}/runtime/environment-runtime.js`, "utf8");
+for (const evidence of [
+  "captureEnvironmentForSnapshot",
+  "captureEnvironmentMediaFeaturesInPage",
+  "prefers-color-scheme",
+  "prefers-reduced-motion",
+  "prefers-contrast",
+  "forced-colors",
+]) {
+  assert(environmentRuntime.includes(evidence), `NODE-12 environment runtime missing ${evidence}`);
+}
+assert(
+  environmentRuntime.includes('from "./environment-capture/index.js"'),
+  "NODE-12 environment runtime must use packaged relative environment-capture modules",
+);
+
+const environmentStore = await readFile(`${outputRoot}/runtime/environment-store.js`, "utf8");
+assert(
+  environmentStore.includes("indexedDB.open") &&
+    environmentStore.includes("w2f-environment") &&
+    environmentStore.includes("environment:"),
+  "NODE-12 environment sidecar store/key contract drifted",
+);
+
+const environmentCore = await readFile(
+  `${outputRoot}/runtime/environment-capture/capture.js`,
+  "utf8",
+);
+assert(
+  !environmentCore.includes("@w2f/"),
+  "packaged environment-capture core must not contain unresolved workspace imports",
+);
+assert(
+  environmentCore.includes("createEnvironmentCapture") &&
+    environmentCore.includes("toWtfMediaRuleTraces") &&
+    environmentCore.includes("toWtfContainerQueryInfo"),
+  "packaged environment-capture core must preserve NODE-12 normalization/IR bridges",
+);
+
 const captureCore = await readFile(`${outputRoot}/runtime/capture-core/validation.js`, "utf8");
 assert(
   !captureCore.includes("@w2f/w2f-schema"),
@@ -289,6 +342,30 @@ assert(
   !standardCascade.includes("sessionStorage"),
   "Standard authored CSS must not read sessionStorage",
 );
+
+const standardEnvironment = await readFile(
+  `${outputRoot}/runtime/standard-capture-adapter/environment-capture.js`,
+  "utf8",
+);
+for (const evidence of [
+  "CSSMediaRule",
+  "CSSContainerRule",
+  "matchMedia",
+  "container-name",
+  "container-type",
+  "ENV_PAGE_ZOOM_UNAVAILABLE",
+]) {
+  assert(
+    standardEnvironment.includes(evidence),
+    `Standard environment runtime missing ${evidence}`,
+  );
+}
+for (const forbidden of ["document.cookie", "localStorage", "sessionStorage"]) {
+  assert(
+    !standardEnvironment.includes(forbidden),
+    `Standard environment runtime must not read ${forbidden}`,
+  );
+}
 
 const contentScript = await readFile(`${outputRoot}/runtime/content-script.js`, "utf8");
 assert(

@@ -219,14 +219,18 @@ function applyParserPreview(preview: W2fParserPreview): void {
   importButton.disabled = false;
 }
 
-async function runSecureParser(descriptor: W2fFileIntakeDescriptor, bytes: Uint8Array): Promise<void> {
+async function runSecureParser(
+  descriptor: W2fFileIntakeDescriptor,
+  bytes: Uint8Array,
+): Promise<void> {
   try {
     setProgress({
       stage: "validating",
       completed: 1,
       total: 3,
       label: "Validating archive",
-      detail: "ZIP structure, paths, limits, manifest, checksums, IR and assets are validated locally.",
+      detail:
+        "ZIP structure, paths, limits, manifest, checksums, IR and assets are validated locally.",
     });
     const parsed = await parseWtfPackage(bytes);
     currentParsed = parsed;

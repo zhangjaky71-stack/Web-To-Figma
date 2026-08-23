@@ -1,6 +1,7 @@
 import { WtfParserError } from "./types.js";
 
-const FORBIDDEN_ELEMENTS = /<\s*\/?\s*(?:script|foreignObject|iframe|object|embed|audio|video|style|link|meta|base)\b/i;
+const FORBIDDEN_ELEMENTS =
+  /<\s*\/?\s*(?:script|foreignObject|iframe|object|embed|audio|video|style|link|meta|base)\b/i;
 const EVENT_HANDLER = /\son[a-z0-9:_-]*\s*=/i;
 const URL_ATTRIBUTE = /\b(?:href|xlink:href|src)\s*=/gi;
 const QUOTED_URL_ATTRIBUTE = /\b(?:href|xlink:href|src)\s*=\s*(?:"([^"]*)"|'([^']*)')/gi;
@@ -38,7 +39,8 @@ export function sanitizeSvgText(input: string, path = "$.svg"): string {
   const normalized = input.replace(/^\uFEFF/, "").trim();
   if (!normalized.startsWith("<")) unsafe(path, "SVG payload must be XML text");
   if (!/^<\s*svg\b/i.test(normalized)) unsafe(path, "SVG payload must have an <svg> root element");
-  if (!/<\/\s*svg\s*>\s*$/i.test(normalized)) unsafe(path, "SVG payload must close the root <svg> element");
+  if (!/<\/\s*svg\s*>\s*$/i.test(normalized))
+    unsafe(path, "SVG payload must close the root <svg> element");
   if (/<!DOCTYPE\b/i.test(normalized) || /<!ENTITY\b/i.test(normalized)) {
     unsafe(path, "DOCTYPE and ENTITY declarations are forbidden in imported SVG");
   }
@@ -69,7 +71,9 @@ export function sanitizeSvgText(input: string, path = "$.svg"): string {
   let styleMatch: RegExpExecArray | null;
   while ((styleMatch = STYLE_ATTRIBUTE.exec(normalized)) !== null) {
     const value = styleMatch[1] ?? styleMatch[2] ?? "";
-    if (/@import|expression\s*\(|javascript\s*:|vbscript\s*:|data\s*:|https?\s*:|\/\//i.test(value)) {
+    if (
+      /@import|expression\s*\(|javascript\s*:|vbscript\s*:|data\s*:|https?\s*:|\/\//i.test(value)
+    ) {
       unsafe(path, "SVG style attribute contains an external or executable reference");
     }
     inspectUrlFunctions(value, path);

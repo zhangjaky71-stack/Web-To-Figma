@@ -125,7 +125,10 @@ function jsonPayload(path: string, role: string, json: unknown): WtfPackagePaylo
   return { path, role, json };
 }
 
-async function fixture(svg = safeSvg, capabilities: string[] = ["source-tree", "render-tree"]): Promise<Uint8Array> {
+async function fixture(
+  svg = safeSvg,
+  capabilities: string[] = ["source-tree", "render-tree"],
+): Promise<Uint8Array> {
   const svgData = new TextEncoder().encode(svg);
   const ir = bundle(svgData.byteLength);
   const payloads: WtfPackagePayload[] = [
@@ -177,7 +180,10 @@ async function repack(
   const archive = openSecureZip(bytes);
   const entries = [];
   for (const entry of archive.entries) {
-    entries.push({ path: entry.path, bytes: transform(entry.path, await archive.read(entry.path)) });
+    entries.push({
+      path: entry.path,
+      bytes: transform(entry.path, await archive.read(entry.path)),
+    });
   }
   entries.push(...extra);
   return encodeDeterministicZip(entries);

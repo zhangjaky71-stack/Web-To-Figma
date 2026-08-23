@@ -32,7 +32,8 @@ import {
 import { openSecureZip } from "./zip-reader.js";
 
 const JSON_MEDIA_TYPES = new Set(["application/json", "text/json"]);
-const EXECUTABLE_MEDIA = /(?:text\/html|application\/(?:javascript|x-javascript|ecmascript|zip|x-zip-compressed)|text\/(?:javascript|ecmascript))/i;
+const EXECUTABLE_MEDIA =
+  /(?:text\/html|application\/(?:javascript|x-javascript|ecmascript|zip|x-zip-compressed)|text\/(?:javascript|ecmascript))/i;
 const NESTED_ARCHIVE_SUFFIX = /\.(?:zip|wtf|rar|7z|tar|tgz|gz|bz2|xz)$/i;
 
 function fail(code: WtfParserIssue["code"], path: string, message: string): never {
@@ -44,7 +45,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function requiredEntry<T>(payloads: ReadonlyMap<string, unknown>, path: string): T {
-  if (!payloads.has(path)) fail("WTF_PARSER_REQUIRED_ENTRY", path, "required JSON payload is missing");
+  if (!payloads.has(path))
+    fail("WTF_PARSER_REQUIRED_ENTRY", path, "required JSON payload is missing");
   return payloads.get(path) as T;
 }
 
@@ -121,15 +123,28 @@ function assertKnownImageMagic(mediaType: string, bytes: Uint8Array, path: strin
               ? new TextDecoder().decode(bytes.subarray(4, 12)).includes("ftypavif") ||
                 new TextDecoder().decode(bytes.subarray(4, 12)).includes("ftypavis")
               : true;
-  if (!valid) fail("WTF_PARSER_ASSET_POLICY", path, `payload magic does not match declared media type ${mediaType}`);
+  if (!valid)
+    fail(
+      "WTF_PARSER_ASSET_POLICY",
+      path,
+      `payload magic does not match declared media type ${mediaType}`,
+    );
 }
 
 function assertPayloadMediaPolicy(descriptor: WtfFileDescriptor, bytes: Uint8Array): void {
   if (EXECUTABLE_MEDIA.test(descriptor.mediaType)) {
-    fail("WTF_PARSER_ASSET_POLICY", descriptor.path, `executable/container media type ${descriptor.mediaType} is forbidden`);
+    fail(
+      "WTF_PARSER_ASSET_POLICY",
+      descriptor.path,
+      `executable/container media type ${descriptor.mediaType} is forbidden`,
+    );
   }
   if (NESTED_ARCHIVE_SUFFIX.test(descriptor.path) || isZipMagic(bytes)) {
-    fail("WTF_PARSER_NESTED_ARCHIVE", descriptor.path, "nested archive payloads are not auto-expanded or accepted");
+    fail(
+      "WTF_PARSER_NESTED_ARCHIVE",
+      descriptor.path,
+      "nested archive payloads are not auto-expanded or accepted",
+    );
   }
   if (descriptor.mediaType.startsWith("image/") && descriptor.mediaType !== "image/svg+xml") {
     assertKnownImageMagic(descriptor.mediaType, bytes, descriptor.path);
@@ -145,17 +160,35 @@ function validateAssetIndex(
     if (!asset.embeddedPath) continue;
     const target = `$.assets.assets[${index}]`;
     const descriptor = descriptors.get(asset.embeddedPath);
-    if (!descriptor) fail("WTF_PARSER_ASSET_POLICY", `${target}.embeddedPath`, "embedded asset is absent from manifest inventory");
+    if (!descriptor)
+      fail(
+        "WTF_PARSER_ASSET_POLICY",
+        `${target}.embeddedPath`,
+        "embedded asset is absent from manifest inventory",
+      );
     if (descriptor.role !== "asset") {
-      fail("WTF_PARSER_ASSET_POLICY", `${target}.embeddedPath`, "embedded asset path must use manifest role=asset");
+      fail(
+        "WTF_PARSER_ASSET_POLICY",
+        `${target}.embeddedPath`,
+        "embedded asset path must use manifest role=asset",
+      );
     }
     if (descriptor.mediaType !== asset.mediaType) {
-      fail("WTF_PARSER_ASSET_POLICY", `${target}.mediaType`, "asset index media type disagrees with manifest descriptor");
+      fail(
+        "WTF_PARSER_ASSET_POLICY",
+        `${target}.mediaType`,
+        "asset index media type disagrees with manifest descriptor",
+      );
     }
     const bytes = binaryPayloads.get(asset.embeddedPath);
-    if (!bytes) fail("WTF_PARSER_ASSET_POLICY", `${target}.embeddedPath`, "embedded asset bytes are missing");
+    if (!bytes)
+      fail("WTF_PARSER_ASSET_POLICY", `${target}.embeddedPath`, "embedded asset bytes are missing");
     if (asset.byteLength !== undefined && asset.byteLength !== bytes.byteLength) {
-      fail("WTF_PARSER_ASSET_POLICY", `${target}.byteLength`, "asset index byteLength disagrees with payload bytes");
+      fail(
+        "WTF_PARSER_ASSET_POLICY",
+        `${target}.byteLength`,
+        "asset index byteLength disagrees with payload bytes",
+      );
     }
   }
 }
@@ -198,8 +231,10 @@ function createPreview(
   jsonPayloads: ReadonlyMap<string, unknown>,
 ): WtfParsedPreview {
   const metadata = jsonPayloads.get(WTF_DEFAULT_ENTRYPOINTS.sourceMetadata);
-  const sourceUrl = isRecord(metadata) && typeof metadata.url === "string" ? metadata.url : undefined;
-  const title = isRecord(metadata) && typeof metadata.title === "string" ? metadata.title : undefined;
+  const sourceUrl =
+    isRecord(metadata) && typeof metadata.url === "string" ? metadata.url : undefined;
+  const title =
+    isRecord(metadata) && typeof metadata.title === "string" ? metadata.title : undefined;
   const stableIds = new Set(ir.renderTree.nodes.flatMap((node) => node.sourceStableIds ?? []));
   return {
     ...(sourceUrl ? { sourceUrl } : {}),
@@ -236,16 +271,24 @@ function readerSupport(options: WtfParseOptions) {
   };
 }
 
-export async function parseWtfPackage(input: Uint8Array, options: WtfParseOptions = {}): Promise<WtfParsedPackage> {
+export async function parseWtfPackage(
+  input: Uint8Array,
+  options: WtfParseOptions = {},
+): Promise<WtfParsedPackage> {
   const archive = openSecureZip(
     input,
     options.allowDeflate === undefined ? {} : { allowDeflate: options.allowDeflate },
   );
   for (const reserved of [WTF_MANIFEST_PATH, WTF_CHECKSUMS_PATH]) {
     const entry = archive.entriesByPath.get(reserved);
-    if (!entry) fail("WTF_PARSER_REQUIRED_ENTRY", reserved, `archive is missing required ${reserved}`);
+    if (!entry)
+      fail("WTF_PARSER_REQUIRED_ENTRY", reserved, `archive is missing required ${reserved}`);
     if (entry.uncompressedSize > WTF_HARD_SECURITY_LIMITS.maxJsonBytes) {
-      fail("WTF_PARSER_ZIP_ENTRY_LIMIT", reserved, "reserved JSON entry exceeds the hard JSON limit");
+      fail(
+        "WTF_PARSER_ZIP_ENTRY_LIMIT",
+        reserved,
+        "reserved JSON entry exceeds the hard JSON limit",
+      );
     }
   }
 
@@ -322,17 +365,28 @@ export async function parseWtfPackage(input: Uint8Array, options: WtfParseOption
   for (const descriptor of manifest.files) {
     const bytes = await archive.read(descriptor.path);
     if (bytes.byteLength !== descriptor.sizeBytes) {
-      fail("WTF_PARSER_ZIP_SIZE_MISMATCH", descriptor.path, "payload size disagrees with manifest descriptor");
+      fail(
+        "WTF_PARSER_ZIP_SIZE_MISMATCH",
+        descriptor.path,
+        "payload size disagrees with manifest descriptor",
+      );
     }
     const actualHash = await sha256(bytes);
     const checksumHash = checksums.files[descriptor.path];
     if (actualHash !== descriptor.sha256 || actualHash !== checksumHash) {
-      fail("WTF_PARSER_CHECKSUM_MISMATCH", descriptor.path, "payload SHA-256 does not match manifest/checksums inventory");
+      fail(
+        "WTF_PARSER_CHECKSUM_MISMATCH",
+        descriptor.path,
+        "payload SHA-256 does not match manifest/checksums inventory",
+      );
     }
     assertPayloadMediaPolicy(descriptor, bytes);
 
     if (descriptor.path.endsWith(".json") || JSON_MEDIA_TYPES.has(descriptor.mediaType)) {
-      jsonPayloads.set(descriptor.path, decodeJson(bytes, descriptor.path, jsonLimit(descriptor.path, manifest)));
+      jsonPayloads.set(
+        descriptor.path,
+        decodeJson(bytes, descriptor.path, jsonLimit(descriptor.path, manifest)),
+      );
     } else {
       binaryPayloads.set(descriptor.path, bytes);
       if (descriptor.mediaType === "image/svg+xml") {

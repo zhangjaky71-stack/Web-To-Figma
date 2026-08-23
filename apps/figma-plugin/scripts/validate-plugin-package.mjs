@@ -47,7 +47,14 @@ if (failures.length === 0) {
   ]) {
     assert(main.includes(evidence), `packaged Figma main missing ${evidence}`);
   }
-  for (const forbidden of ["require(", 'from "@w2f/', "fetch(", "XMLHttpRequest", "WebSocket", "eval("]) {
+  for (const forbidden of [
+    "require(",
+    'from "@w2f/',
+    "fetch(",
+    "XMLHttpRequest",
+    "WebSocket",
+    "eval(",
+  ]) {
     assert(!main.includes(forbidden), `packaged Figma main must not contain ${forbidden}`);
   }
 
@@ -80,7 +87,10 @@ if (failures.length === 0) {
     "eval(",
     "new Function(",
   ]) {
-    assert(!ui.includes(forbidden), `packaged Figma UI must remain local-only/data-only; found ${forbidden}`);
+    assert(
+      !ui.includes(forbidden),
+      `packaged Figma UI must remain local-only/data-only; found ${forbidden}`,
+    );
   }
 }
 

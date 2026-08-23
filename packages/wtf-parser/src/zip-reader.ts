@@ -142,13 +142,18 @@ function validateCompression(
     fail("WTF_PARSER_ZIP_ENTRY_LIMIT", target, "entry exceeds the hard uncompressed entry limit");
   }
   if (uncompressedSize > 0) {
-    const ratio = compressedSize === 0 ? Number.POSITIVE_INFINITY : uncompressedSize / compressedSize;
+    const ratio =
+      compressedSize === 0 ? Number.POSITIVE_INFINITY : uncompressedSize / compressedSize;
     if (ratio > WTF_HARD_SECURITY_LIMITS.maxCompressionRatio) {
       fail("WTF_PARSER_ZIP_RATIO_LIMIT", target, "entry exceeds the hard compression-ratio limit");
     }
   }
   if (method === ZIP_METHOD_STORE && compressedSize !== uncompressedSize) {
-    fail("WTF_PARSER_ZIP_SIZE_MISMATCH", target, "stored ZIP entry must have equal compressed and uncompressed sizes");
+    fail(
+      "WTF_PARSER_ZIP_SIZE_MISMATCH",
+      target,
+      "stored ZIP entry must have equal compressed and uncompressed sizes",
+    );
   }
 }
 
@@ -158,7 +163,11 @@ function ownedBytes(bytes: Uint8Array): Uint8Array<ArrayBuffer> {
   return copy;
 }
 
-async function inflateRawBounded(input: Uint8Array, expectedSize: number, target: string): Promise<Uint8Array> {
+async function inflateRawBounded(
+  input: Uint8Array,
+  expectedSize: number,
+  target: string,
+): Promise<Uint8Array> {
   let stream: ReadableStream<Uint8Array>;
   try {
     stream = new Blob([ownedBytes(input)])
@@ -241,13 +250,25 @@ export function openSecureZip(
     centralSize === ZIP64_SENTINEL_32 ||
     centralOffset === ZIP64_SENTINEL_32
   ) {
-    fail("WTF_PARSER_ZIP64_UNSUPPORTED", "$.eocd", "ZIP64 is unnecessary for V2 hard limits and is rejected");
+    fail(
+      "WTF_PARSER_ZIP64_UNSUPPORTED",
+      "$.eocd",
+      "ZIP64 is unnecessary for V2 hard limits and is rejected",
+    );
   }
   if (totalEntries > WTF_HARD_SECURITY_LIMITS.maxEntries) {
-    fail("WTF_PARSER_ZIP_ENTRY_LIMIT", "$.eocd.totalEntries", "archive exceeds the hard entry-count limit");
+    fail(
+      "WTF_PARSER_ZIP_ENTRY_LIMIT",
+      "$.eocd.totalEntries",
+      "archive exceeds the hard entry-count limit",
+    );
   }
   if (centralOffset + centralSize > eocdOffset) {
-    fail("WTF_PARSER_ZIP_TRUNCATED", "$.centralDirectory", "central directory overlaps or exceeds EOCD");
+    fail(
+      "WTF_PARSER_ZIP_TRUNCATED",
+      "$.centralDirectory",
+      "central directory overlaps or exceeds EOCD",
+    );
   }
 
   const entries: WtfZipEntryMetadata[] = [];
@@ -261,7 +282,11 @@ export function openSecureZip(
     const target = `$.centralDirectory[${index}]`;
     ensureRange(bytes, centralCursor, 46, target);
     if (u32(bytes, centralCursor, target) !== ZIP_CENTRAL_DIRECTORY_HEADER) {
-      fail("WTF_PARSER_ZIP_SIGNATURE", target, "central-directory file-header signature is invalid");
+      fail(
+        "WTF_PARSER_ZIP_SIGNATURE",
+        target,
+        "central-directory file-header signature is invalid",
+      );
     }
     const flags = u16(bytes, centralCursor + 8, `${target}.flags`);
     const compressionMethod = u16(bytes, centralCursor + 10, `${target}.compressionMethod`);
@@ -293,21 +318,40 @@ export function openSecureZip(
       fail("WTF_PARSER_ZIP_DUPLICATE_PATH", `${target}.path`, `duplicate archive path ${path}`);
     }
     if (localOffsets.has(localHeaderOffset)) {
-      fail("WTF_PARSER_ZIP_DUPLICATE_PATH", `${target}.localHeaderOffset`, "multiple entries share one local header");
+      fail(
+        "WTF_PARSER_ZIP_DUPLICATE_PATH",
+        `${target}.localHeaderOffset`,
+        "multiple entries share one local header",
+      );
     }
     localOffsets.add(localHeaderOffset);
-    validateCompression(compressionMethod, flags, compressedSize, uncompressedSize, allowDeflate, target);
+    validateCompression(
+      compressionMethod,
+      flags,
+      compressedSize,
+      uncompressedSize,
+      allowDeflate,
+      target,
+    );
 
     ensureRange(bytes, localHeaderOffset, 30, `${target}.localHeader`);
     if (u32(bytes, localHeaderOffset, `${target}.localHeader`) !== ZIP_LOCAL_FILE_HEADER) {
-      fail("WTF_PARSER_ZIP_SIGNATURE", `${target}.localHeader`, "local file-header signature is invalid");
+      fail(
+        "WTF_PARSER_ZIP_SIGNATURE",
+        `${target}.localHeader`,
+        "local file-header signature is invalid",
+      );
     }
     const localFlags = u16(bytes, localHeaderOffset + 6, `${target}.localFlags`);
     const localMethod = u16(bytes, localHeaderOffset + 8, `${target}.localMethod`);
     const localNameLength = u16(bytes, localHeaderOffset + 26, `${target}.localNameLength`);
     const localExtraLength = u16(bytes, localHeaderOffset + 28, `${target}.localExtraLength`);
     if (localFlags !== flags || localMethod !== compressionMethod) {
-      fail("WTF_PARSER_ZIP_SIZE_MISMATCH", `${target}.localHeader`, "local and central ZIP metadata disagree");
+      fail(
+        "WTF_PARSER_ZIP_SIZE_MISMATCH",
+        `${target}.localHeader`,
+        "local and central ZIP metadata disagree",
+      );
     }
     const localNameStart = localHeaderOffset + 30;
     ensureRange(bytes, localNameStart, localNameLength + localExtraLength, `${target}.localHeader`);
@@ -317,25 +361,49 @@ export function openSecureZip(
       `${target}.localPath`,
     );
     if (localPath !== path) {
-      fail("WTF_PARSER_ZIP_PATH_INVALID", `${target}.localPath`, "local and central entry paths disagree");
+      fail(
+        "WTF_PARSER_ZIP_PATH_INVALID",
+        `${target}.localPath`,
+        "local and central entry paths disagree",
+      );
     }
     if ((flags & ZIP_FLAG_DATA_DESCRIPTOR) === 0) {
       const localCrc = u32(bytes, localHeaderOffset + 14, `${target}.localCrc32`);
       const localCompressed = u32(bytes, localHeaderOffset + 18, `${target}.localCompressedSize`);
-      const localUncompressed = u32(bytes, localHeaderOffset + 22, `${target}.localUncompressedSize`);
-      if (localCrc !== crc || localCompressed !== compressedSize || localUncompressed !== uncompressedSize) {
-        fail("WTF_PARSER_ZIP_SIZE_MISMATCH", `${target}.localHeader`, "local and central sizes/CRC disagree");
+      const localUncompressed = u32(
+        bytes,
+        localHeaderOffset + 22,
+        `${target}.localUncompressedSize`,
+      );
+      if (
+        localCrc !== crc ||
+        localCompressed !== compressedSize ||
+        localUncompressed !== uncompressedSize
+      ) {
+        fail(
+          "WTF_PARSER_ZIP_SIZE_MISMATCH",
+          `${target}.localHeader`,
+          "local and central sizes/CRC disagree",
+        );
       }
     }
     const dataOffset = localNameStart + localNameLength + localExtraLength;
     const dataEnd = dataOffset + compressedSize;
     if (dataEnd > centralOffset) {
-      fail("WTF_PARSER_ZIP_TRUNCATED", `${target}.data`, "entry data overlaps the central directory");
+      fail(
+        "WTF_PARSER_ZIP_TRUNCATED",
+        `${target}.data`,
+        "entry data overlaps the central directory",
+      );
     }
 
     totalUncompressed += uncompressedSize;
     if (totalUncompressed > WTF_HARD_SECURITY_LIMITS.maxArchiveBytes) {
-      fail("WTF_PARSER_ZIP_TOTAL_LIMIT", target, "total uncompressed archive size exceeds the hard limit");
+      fail(
+        "WTF_PARSER_ZIP_TOTAL_LIMIT",
+        target,
+        "total uncompressed archive size exceeds the hard limit",
+      );
     }
 
     const metadata: WtfZipEntryMetadata = {
@@ -355,7 +423,11 @@ export function openSecureZip(
   }
 
   if (centralCursor !== centralOffset + centralSize) {
-    fail("WTF_PARSER_ZIP_TRUNCATED", "$.centralDirectory", "central-directory size does not match parsed records");
+    fail(
+      "WTF_PARSER_ZIP_TRUNCATED",
+      "$.centralDirectory",
+      "central-directory size does not match parsed records",
+    );
   }
 
   ranges.sort((left, right) => left.start - right.start);
@@ -384,11 +456,19 @@ export function openSecureZip(
           ? compressed
           : await inflateRawBounded(compressed, entry.uncompressedSize, path);
       if (decoded.byteLength !== entry.uncompressedSize) {
-        fail("WTF_PARSER_ZIP_SIZE_MISMATCH", path, "decoded entry length does not match central directory");
+        fail(
+          "WTF_PARSER_ZIP_SIZE_MISMATCH",
+          path,
+          "decoded entry length does not match central directory",
+        );
       }
       const actualCrc = crc32(decoded);
       if (actualCrc !== entry.crc32) {
-        fail("WTF_PARSER_ZIP_CRC_MISMATCH", path, "decoded entry CRC32 does not match ZIP metadata");
+        fail(
+          "WTF_PARSER_ZIP_CRC_MISMATCH",
+          path,
+          "decoded entry CRC32 does not match ZIP metadata",
+        );
       }
       return decoded;
     },

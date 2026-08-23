@@ -2,7 +2,7 @@
 
 ## Status
 
-**IMPLEMENTED — controlled bootstrap PASS; exact-head read-only Exit Gate pending**
+**IMPLEMENTATION COMPLETE — exact-head read-only Exit Gate PASS; final PR closure pending**
 
 ## Entry baseline
 
@@ -230,7 +230,28 @@ The bootstrap pushed finalization commit:
 6d8b1c1809d2467ef8ae08f117e1fd68d212beb5
 ```
 
-The final tree at that commit contains only permanent `ci.yml` and `diagnostic.yml` workflows. GitHub marked the bot-triggered CI #349 as `action_required` without running jobs, so a normal evidence-only commit is used to trigger the authoritative exact-head read-only CI.
+The final tree at that commit contains only permanent `ci.yml` and `diagnostic.yml` workflows. GitHub marked the bot-triggered CI #349 as `action_required` without running jobs, so a normal evidence-only commit was used to trigger the authoritative exact-head read-only CI.
+
+## Exact-head read-only Exit Gate
+
+Standard read-only CI run `32627504377` (#350) completed successfully on head:
+
+```text
+adc3d1dfce62fca5167fd5b18ad9e98eae494228
+```
+
+The permanent CI verified:
+
+- NODE-08 through NODE-15 foundation validation;
+- `pnpm install --frozen-lockfile`;
+- all lint tasks;
+- all TypeScript typecheck tasks;
+- all tests;
+- Standard Browser build and all package validators;
+- High Fidelity Browser build and all package validators;
+- canonical Prettier format check.
+
+NODE-15 implementation Exit Gate is therefore PASS. The remaining actions are PR readiness and squash merge only.
 
 ## Definition of Done
 
@@ -273,7 +294,7 @@ The final tree at that commit contains only permanent `ci.yml` and `diagnostic.y
 - [x] Standard package validation PASS
 - [x] High Fidelity package validation PASS
 - [x] temporary bootstrap absent from final tree
-- [ ] exact-head read-only frozen-lockfile CI PASS
+- [x] exact-head read-only frozen-lockfile CI PASS
 - [ ] PR ready
 - [ ] PR squash merged
 

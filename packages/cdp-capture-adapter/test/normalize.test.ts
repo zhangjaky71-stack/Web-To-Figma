@@ -99,9 +99,9 @@ function fixture(): CdpCaptureEvidence {
 }
 
 describe("CDP capture adapter", () => {
-  it("keeps the adapter and computed-style contracts stable", () => {
+  it("keeps NODE-09 computed styles and adds NODE-10 text/inline/pseudo visual evidence", () => {
     expect(CDP_CAPTURE_ADAPTER_VERSION).toBe("1.0.0");
-    expect(CDP_COMPUTED_STYLE_PROPERTIES).toEqual([
+    const requiredProperties = [
       "display",
       "visibility",
       "content-visibility",
@@ -109,7 +109,32 @@ describe("CDP capture adapter", () => {
       "overflow-x",
       "overflow-y",
       "position",
-    ]);
+      "font-family",
+      "font-size",
+      "font-style",
+      "font-weight",
+      "font-stretch",
+      "font-variation-settings",
+      "font-feature-settings",
+      "line-height",
+      "letter-spacing",
+      "color",
+      "text-decoration-line",
+      "white-space",
+      "word-break",
+      "overflow-wrap",
+      "text-align",
+      "direction",
+      "writing-mode",
+      "vertical-align",
+      "content",
+      "appearance",
+      "accent-color",
+    ];
+    for (const property of requiredProperties) {
+      expect(CDP_COMPUTED_STYLE_PROPERTIES).toContain(property);
+    }
+    expect(new Set(CDP_COMPUTED_STYLE_PROPERTIES).size).toBe(CDP_COMPUTED_STYLE_PROPERTIES.length);
   });
 
   it("normalizes DOMSnapshot, paint order, layout metrics and page zoom", () => {

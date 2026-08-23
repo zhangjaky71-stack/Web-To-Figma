@@ -51,29 +51,29 @@ export function planRasterTiles(
   referenceId: string,
   bounds: Rect,
   dpr: number,
-  tileSizePx = DEFAULT_RASTER_TILE_SIZE_PX,
+  tileSizePx: number = DEFAULT_RASTER_TILE_SIZE_PX,
 ): RasterTilePlan[] {
   const id = nonEmpty(referenceId, "referenceId");
   const normalizedBounds = normalizeRect(bounds, "bounds");
   const normalizedDpr = positive(dpr, "dpr");
-  const normalizedTileSize = normalizedTileSize(tileSizePx);
+  const tileSize = normalizedTileSize(tileSizePx);
   const totalPixelWidth = Math.max(1, Math.ceil(normalizedBounds.width * normalizedDpr));
   const totalPixelHeight = Math.max(1, Math.ceil(normalizedBounds.height * normalizedDpr));
-  const columns = Math.ceil(totalPixelWidth / normalizedTileSize);
-  const rows = Math.ceil(totalPixelHeight / normalizedTileSize);
+  const columns = Math.ceil(totalPixelWidth / tileSize);
+  const rows = Math.ceil(totalPixelHeight / tileSize);
   const plans: RasterTilePlan[] = [];
 
   for (let row = 0; row < rows; row += 1) {
-    const pixelY = row * normalizedTileSize;
-    const pixelHeight = Math.min(normalizedTileSize, totalPixelHeight - pixelY);
+    const pixelY = row * tileSize;
+    const pixelHeight = Math.min(tileSize, totalPixelHeight - pixelY);
     const y = normalizedBounds.y + pixelY / normalizedDpr;
     const height =
       row === rows - 1
         ? normalizedBounds.y + normalizedBounds.height - y
         : pixelHeight / normalizedDpr;
     for (let column = 0; column < columns; column += 1) {
-      const pixelX = column * normalizedTileSize;
-      const pixelWidth = Math.min(normalizedTileSize, totalPixelWidth - pixelX);
+      const pixelX = column * tileSize;
+      const pixelWidth = Math.min(tileSize, totalPixelWidth - pixelX);
       const x = normalizedBounds.x + pixelX / normalizedDpr;
       const width =
         column === columns - 1

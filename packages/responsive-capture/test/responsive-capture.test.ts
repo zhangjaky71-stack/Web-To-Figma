@@ -52,10 +52,7 @@ describe("Responsive Capture", () => {
       },
       current,
     );
-    expect(planned.map((item) => item.id)).toEqual([
-      "viewport:1440x800@2",
-      "viewport:390x844@3",
-    ]);
+    expect(planned.map((item) => item.id)).toEqual(["viewport:1440x800@2", "viewport:390x844@3"]);
   });
 
   it("rejects unsafe viewport counts and dimensions", () => {

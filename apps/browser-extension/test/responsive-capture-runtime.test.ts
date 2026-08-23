@@ -57,7 +57,9 @@ function snapshot(suffix: string): RawSnapshot {
         geometry: { bounds: { x: 24, y: 20, width: 220, height: 40 } },
       },
     ],
-    frames: [{ context: { frameId: "root" }, rootCaptureNodeId: `doc:${suffix}`, accessible: true }],
+    frames: [
+      { context: { frameId: "root" }, rootCaptureNodeId: `doc:${suffix}`, accessible: true },
+    ],
     scrollContainers: [],
     diagnostics: [],
   };

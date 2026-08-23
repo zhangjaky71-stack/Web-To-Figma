@@ -23,7 +23,10 @@ describe("browser shell message protocol", () => {
     expect(
       isW2fShellRequest({
         type: "W2F_START_RESPONSIVE_JOB",
-        capture: { mode: "custom", viewports: [{ width: 390 }, { width: 1440, height: 900, dpr: 2 }] },
+        capture: {
+          mode: "custom",
+          viewports: [{ width: 390 }, { width: 1440, height: 900, dpr: 2 }],
+        },
       }),
     ).toBe(true);
     expect(

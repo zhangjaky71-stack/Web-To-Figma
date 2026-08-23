@@ -119,7 +119,8 @@ async function refreshShellInfo(): Promise<void> {
   responsiveCapability.textContent = synthetic
     ? "High Fidelity · synthetic viewports enabled"
     : "Standard · current viewport only";
-  if (!synthetic && (responsiveCommon.checked || responsiveCustom.checked)) responsiveCurrent.checked = true;
+  if (!synthetic && (responsiveCommon.checked || responsiveCustom.checked))
+    responsiveCurrent.checked = true;
   syncCustomInput();
 }
 

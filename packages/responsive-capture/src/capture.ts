@@ -65,9 +65,7 @@ function requestedViewport(
   });
 }
 
-function uniqueSortedSynthetic(
-  values: ResponsiveViewportContext[],
-): ResponsiveViewportPlan[] {
+function uniqueSortedSynthetic(values: ResponsiveViewportContext[]): ResponsiveViewportPlan[] {
   const dedup = new Map<string, ResponsiveViewportPlan>();
   for (const value of values) {
     const id = viewportId(value);
@@ -99,7 +97,9 @@ export function planResponsiveViewports(
 
   const planned = uniqueSortedSynthetic(requested);
   if (planned.length > RESPONSIVE_MAX_VIEWPORTS) {
-    throw new TypeError(`responsive capture supports at most ${RESPONSIVE_MAX_VIEWPORTS} viewports`);
+    throw new TypeError(
+      `responsive capture supports at most ${RESPONSIVE_MAX_VIEWPORTS} viewports`,
+    );
   }
   return planned;
 }
@@ -110,7 +110,10 @@ function nonEmpty(value: string, label: string): string {
   return normalized;
 }
 
-function normalizeRef(value: WtfResponsiveSnapshotRef, plan: ResponsiveViewportPlan): WtfResponsiveSnapshotRef {
+function normalizeRef(
+  value: WtfResponsiveSnapshotRef,
+  plan: ResponsiveViewportPlan,
+): WtfResponsiveSnapshotRef {
   const width = normalizeWidth(value.viewport.width);
   const height = normalizeHeight(value.viewport.height);
   const dpr = normalizeDpr(value.viewport.dpr);
@@ -202,7 +205,9 @@ export function responsiveArtifactId(jobId: string, viewportIdValue: string): st
   return `${normalizedJobId}:responsive:${encodeURIComponent(normalizedViewportId)}`;
 }
 
-export function toWtfResponsiveSnapshotRefs(capture: ResponsiveCapture): WtfResponsiveSnapshotRef[] {
+export function toWtfResponsiveSnapshotRefs(
+  capture: ResponsiveCapture,
+): WtfResponsiveSnapshotRef[] {
   return capture.snapshots.map((snapshot) => ({
     ...snapshot.ref,
     viewport: { ...snapshot.ref.viewport },

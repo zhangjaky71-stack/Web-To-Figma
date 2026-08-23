@@ -118,7 +118,10 @@ for (const evidence of [
 }
 
 const core = await readFile(`${outputRoot}/runtime/responsive-capture/capture.js`, "utf8");
-assert(!core.includes("@w2f/"), "packaged Responsive Capture core must not contain workspace imports");
+assert(
+  !core.includes("@w2f/"),
+  "packaged Responsive Capture core must not contain workspace imports",
+);
 for (const evidence of [
   "planResponsiveViewports",
   "buildResponsiveCapture",
@@ -141,7 +144,10 @@ for (const evidence of [
 }
 
 const stableIdentity = await readFile(`${outputRoot}/runtime/stable-identity/identity.js`, "utf8");
-assert(!stableIdentity.includes("@w2f/"), "packaged Stable Identity must not contain workspace imports");
+assert(
+  !stableIdentity.includes("@w2f/"),
+  "packaged Stable Identity must not contain workspace imports",
+);
 assert(
   stableIdentity.includes('from "../w2f-schema/index.js"'),
   "packaged Stable Identity must resolve W2F Schema relatively",
@@ -150,12 +156,18 @@ assert(
 const manifest = JSON.parse(await readFile(`${outputRoot}/manifest.json`, "utf8"));
 const permissions = manifest.permissions ?? [];
 if (profile === "high-fidelity") {
-  assert(permissions.includes("debugger"), "High Fidelity responsive capture requires debugger permission");
+  assert(
+    permissions.includes("debugger"),
+    "High Fidelity responsive capture requires debugger permission",
+  );
 } else {
-  assert(!permissions.includes("debugger"), "Standard responsive capture must not add debugger permission");
+  assert(
+    !permissions.includes("debugger"),
+    "Standard responsive capture must not add debugger permission",
+  );
 }
 
-for (const forbidden of ["document.cookie", "localStorage", "sessionStorage", "window.resizeTo"] ) {
+for (const forbidden of ["document.cookie", "localStorage", "sessionStorage", "window.resizeTo"]) {
   assert(!serviceWorker.includes(forbidden), `responsive orchestration must not use ${forbidden}`);
   assert(!responsiveRuntime.includes(forbidden), `responsive runtime must not use ${forbidden}`);
 }

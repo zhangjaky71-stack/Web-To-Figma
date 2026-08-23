@@ -1,8 +1,5 @@
 import type { RawSnapshotSummary } from "@w2f/capture-core";
-import type {
-  ResponsiveCaptureMode,
-  ResponsiveViewportPlan,
-} from "@w2f/responsive-capture";
+import type { ResponsiveCaptureMode, ResponsiveViewportPlan } from "@w2f/responsive-capture";
 import type { SourceDescriptor } from "@w2f/source-providers";
 import { isRegionSelectionResult, type RegionSelectionResult } from "./region-selection.js";
 
@@ -232,14 +229,7 @@ export function transitionCaptureJob(
   now: string | Date = new Date(),
   patch: Pick<
     CaptureJobState,
-    | "tabId"
-    | "source"
-    | "page"
-    | "region"
-    | "capture"
-    | "responsivePlan"
-    | "responsive"
-    | "error"
+    "tabId" | "source" | "page" | "region" | "capture" | "responsivePlan" | "responsive" | "error"
   > = {},
 ): CaptureJobState {
   if (isTerminalJobStatus(current.status)) {
@@ -280,7 +270,8 @@ export function isCaptureJobState(value: unknown): value is CaptureJobState {
     (record.region === undefined || isRegionSelectionResult(record.region)) &&
     (record.capture === undefined || isCaptureSnapshotReceipt(record.capture)) &&
     (record.responsivePlan === undefined ||
-      (Array.isArray(record.responsivePlan) && record.responsivePlan.every(isResponsiveViewportPlan))) &&
+      (Array.isArray(record.responsivePlan) &&
+        record.responsivePlan.every(isResponsiveViewportPlan))) &&
     (record.responsive === undefined || isResponsiveCaptureReceipt(record.responsive))
   );
 }

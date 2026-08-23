@@ -109,8 +109,16 @@ if (failures.length === 0) {
   ]) {
     assert(responsiveRuntime.includes(evidence), `NODE-15 Browser runtime missing ${evidence}`);
   }
-  for (const forbidden of ["document.cookie", "localStorage", "sessionStorage", "window.resizeTo"]) {
-    assert(!responsiveRuntime.includes(forbidden), `NODE-15 Browser runtime violates boundary ${forbidden}`);
+  for (const forbidden of [
+    "document.cookie",
+    "localStorage",
+    "sessionStorage",
+    "window.resizeTo",
+  ]) {
+    assert(
+      !responsiveRuntime.includes(forbidden),
+      `NODE-15 Browser runtime violates boundary ${forbidden}`,
+    );
   }
 
   const worker = read("apps/browser-extension/src/runtime/service-worker.ts");
@@ -201,7 +209,10 @@ if (failures.length === 0) {
   }
 
   const schema = read("packages/w2f-schema/src/index.ts");
-  assert(schema.includes("WtfResponsiveSnapshotRef"), "NODE-15 must reuse WtfResponsiveSnapshotRef");
+  assert(
+    schema.includes("WtfResponsiveSnapshotRef"),
+    "NODE-15 must reuse WtfResponsiveSnapshotRef",
+  );
   const raw = read("packages/capture-core/src/types.ts");
   assert(
     raw.includes('RAW_SNAPSHOT_VERSION = "1.0.0"'),

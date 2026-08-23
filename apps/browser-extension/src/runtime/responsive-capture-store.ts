@@ -20,7 +20,8 @@ function openDatabase(): Promise<IDBDatabase> {
         database.createObjectStore(W2F_RESPONSIVE_STORE_NAME);
       }
     };
-    request.onerror = () => reject(request.error ?? new Error("failed to open responsive database"));
+    request.onerror = () =>
+      reject(request.error ?? new Error("failed to open responsive database"));
     request.onsuccess = () => resolve(request.result);
   });
 }
@@ -35,7 +36,10 @@ function waitForTransaction(transaction: IDBTransaction): Promise<void> {
   });
 }
 
-export async function writeResponsiveCapture(jobId: string, capture: ResponsiveCapture): Promise<string> {
+export async function writeResponsiveCapture(
+  jobId: string,
+  capture: ResponsiveCapture,
+): Promise<string> {
   if (!isResponsiveCapture(capture)) throw new TypeError("invalid ResponsiveCapture");
   const key = responsiveCaptureStorageKey(jobId);
   const database = await openDatabase();
@@ -56,7 +60,8 @@ export async function readResponsiveCapture(jobId: string): Promise<ResponsiveCa
     const transaction = database.transaction(W2F_RESPONSIVE_STORE_NAME, "readonly");
     const request = transaction.objectStore(W2F_RESPONSIVE_STORE_NAME).get(key);
     const value = await new Promise<unknown>((resolve, reject) => {
-      request.onerror = () => reject(request.error ?? new Error("failed to read ResponsiveCapture"));
+      request.onerror = () =>
+        reject(request.error ?? new Error("failed to read ResponsiveCapture"));
       request.onsuccess = () => resolve(request.result);
     });
     await waitForTransaction(transaction);

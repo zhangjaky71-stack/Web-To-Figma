@@ -61,10 +61,7 @@ import {
   buildResponsiveStableNodeEvidence,
   probeCurrentViewport,
 } from "./responsive-capture-runtime.js";
-import {
-  deleteResponsiveCapture,
-  writeResponsiveCapture,
-} from "./responsive-capture-store.js";
+import { deleteResponsiveCapture, writeResponsiveCapture } from "./responsive-capture-store.js";
 import {
   deleteCaptureArtifacts,
   writeRawSnapshot,
@@ -430,7 +427,9 @@ async function wasJobCancelled(jobId: string): Promise<CaptureJobState | null> {
   return current?.jobId === jobId && current.status === "cancelled" ? current : null;
 }
 
-async function startShellJob(mode: Exclude<CaptureJobMode, "responsive">): Promise<CaptureJobState> {
+async function startShellJob(
+  mode: Exclude<CaptureJobMode, "responsive">,
+): Promise<CaptureJobState> {
   const jobId = crypto.randomUUID();
   let job = createCaptureJob(mode, jobId);
   await writeJobState(job);
@@ -601,11 +600,17 @@ async function startResponsiveJob(request: ResponsiveCaptureRequest): Promise<Ca
       );
     }
 
-    job = transitionCaptureJob(job, "running", "capturing-responsive-0-of-" + plans.length, new Date(), {
-      tabId,
-      source: descriptor,
-      responsivePlan: plans,
-    });
+    job = transitionCaptureJob(
+      job,
+      "running",
+      "capturing-responsive-0-of-" + plans.length,
+      new Date(),
+      {
+        tabId,
+        source: descriptor,
+        responsivePlan: plans,
+      },
+    );
     await writeJobState(job);
 
     const snapshots: ResponsiveSnapshotInput[] = [];

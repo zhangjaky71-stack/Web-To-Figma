@@ -135,7 +135,9 @@ async function withCdpSession<T>(
   }
 }
 
-function normalizedViewportOverride(value: HighFidelityViewportOverride): HighFidelityViewportOverride {
+function normalizedViewportOverride(
+  value: HighFidelityViewportOverride,
+): HighFidelityViewportOverride {
   const width = Math.round(value.width);
   const height = Math.round(value.height);
   const dpr = value.dpr;

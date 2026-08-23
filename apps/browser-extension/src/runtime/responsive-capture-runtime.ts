@@ -40,7 +40,14 @@ function dataAttributes(node: RawNode): Record<string, string> | undefined {
 function classList(node: RawNode): string[] | undefined {
   const value = node.source.attributes?.class;
   if (!value) return undefined;
-  const classes = [...new Set(value.split(/\s+/).map((item) => item.trim()).filter(Boolean))].sort();
+  const classes = [
+    ...new Set(
+      value
+        .split(/\s+/)
+        .map((item) => item.trim())
+        .filter(Boolean),
+    ),
+  ].sort();
   return classes.length > 0 ? classes : undefined;
 }
 

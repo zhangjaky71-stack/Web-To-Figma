@@ -1,67 +1,82 @@
 Scope: all 23 workspace projects
 ? Verifying lockfile against supply-chain policies (188 entries)...
-✓ Lockfile passes supply-chain policies (188 entries in 1.6s)
-/home/runner/work/Web-To-Figma/Web-To-Figma/apps/figma-plugin:
-[ERR_PNPM_WORKSPACE_PKG_NOT_FOUND] In apps/figma-plugin: "@w2f/w2f-parser@workspace:*" is in the dependencies but no package named "@w2f/w2f-parser" is present in the workspace
-
-This error happened while installing a direct dependency of /home/runner/work/Web-To-Figma/Web-To-Figma/apps/figma-plugin
-
-Packages found in the workspace: web-to-figma, @w2f/browser-extension, @w2f/figma-plugin, @w2f/asset-resolver, @w2f/capture-core, @w2f/cdp-capture-adapter, @w2f/compositing-engine, @w2f/css-cascade, @w2f/environment-capture, @w2f/layout-analyzer, @w2f/pixel-ground-truth, @w2f/render-tree-optimizer, @w2f/responsive-capture, @w2f/responsive-inference, @w2f/shared-utils, @w2f/source-providers, @w2f/stable-identity, @w2f/standard-capture-adapter, @w2f/table-layout-engine, @w2f/w2f-ir, @w2f/w2f-schema, @w2f/wtf-packager, @w2f/wtf-parser
+✓ Lockfile passes supply-chain policies (188 entries in 1.7s)
 Progress: resolved 1, reused 0, downloaded 0, added 0
+Progress: resolved 7, reused 0, downloaded 7, added 0
+Progress: resolved 8, reused 0, downloaded 7, added 0
+Progress: resolved 90, reused 0, downloaded 59, added 0
+Progress: resolved 136, reused 0, downloaded 105, added 0
+Progress: resolved 152, reused 0, downloaded 121, added 0
+Packages: +133
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Packages are hard linked from the content-addressable store to the virtual store.
+  Content-addressable store is at: /home/runner/setup-pnpm/node_modules/.bin/store/v11
+  Virtual store is at:             node_modules/.pnpm
+Progress: resolved 188, reused 0, downloaded 133, added 133, done
+.../esbuild@0.28.2/node_modules/esbuild postinstall$ node install.js
+.../esbuild@0.28.2/node_modules/esbuild postinstall: Done
+
+devDependencies:
++ eslint 10.8.1 (10.9.0 is available)
++ prettier 3.9.6
++ turbo 2.10.11
++ typescript 6.0.3 (7.0.2 is available)
++ typescript-eslint 8.67.0
++ vitest 4.1.11
+
+Done in 11.2s using pnpm v11.22.0
 NODE-23 integration finalizer applied successfully.
 Scope: all 23 workspace projects
-✓ Lockfile passes supply-chain policies (verified 729ms ago)
-/home/runner/work/Web-To-Figma/Web-To-Figma/apps/figma-plugin:
-[ERR_PNPM_WORKSPACE_PKG_NOT_FOUND] In apps/figma-plugin: "@w2f/w2f-parser@workspace:*" is in the dependencies but no package named "@w2f/w2f-parser" is present in the workspace
-
-This error happened while installing a direct dependency of /home/runner/work/Web-To-Figma/Web-To-Figma/apps/figma-plugin
-
-Packages found in the workspace: web-to-figma, @w2f/browser-extension, @w2f/figma-plugin, @w2f/asset-resolver, @w2f/capture-core, @w2f/cdp-capture-adapter, @w2f/compositing-engine, @w2f/css-cascade, @w2f/environment-capture, @w2f/layout-analyzer, @w2f/pixel-ground-truth, @w2f/render-tree-optimizer, @w2f/responsive-capture, @w2f/responsive-inference, @w2f/shared-utils, @w2f/source-providers, @w2f/stable-identity, @w2f/standard-capture-adapter, @w2f/table-layout-engine, @w2f/w2f-ir, @w2f/w2f-schema, @w2f/wtf-packager, @w2f/wtf-parser
-Progress: resolved 1, reused 0, downloaded 0, added 0
-Scope: all 23 workspace projects
-✓ Lockfile passes supply-chain policies (verified 1s ago)
-[ERR_PNPM_OUTDATED_LOCKFILE] Cannot install with "frozen-lockfile" because pnpm-lock.yaml is not up to date with <ROOT>/apps/figma-plugin/package.json
-
-Note that in CI environments this setting is true by default. If you still need to run install in such cases, use "pnpm install --no-frozen-lockfile"
-
-  Failure reason:
-  specifiers in the lockfile don't match specifiers in package.json:
-* 1 dependencies were added: @w2f/w2f-parser@workspace:*
-
-[ERROR] Command failed with exit code 1: /opt/hostedtoolcache/node/24.19.0/x64/bin/node /home/runner/setup-pnpm/node_modules/pnpm/bin/pnpm.mjs install
-
-pnpm: Command failed with exit code 1: /opt/hostedtoolcache/node/24.19.0/x64/bin/node /home/runner/setup-pnpm/node_modules/pnpm/bin/pnpm.mjs install
-    at getFinalError (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:89203:14)
-    at makeError (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:91510:21)
-    at getSyncResult (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:93354:10)
-    at spawnSubprocessSync (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:93314:14)
-    at execaCoreSync (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:93244:23)
-    at callBoundExeca (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:95772:23)
-    at boundExeca (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:95749:49)
-    at sync2 (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:95908:10)
-    at runPnpmCli (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:271523:5)
-    at runDepsStatusCheck (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:273323:7)
+Already up to date
+Done in 421ms using pnpm v11.22.0
+[90mpackages/wtf-parser/package.json[39m 27ms (unchanged)
+[90mpackages/wtf-parser/src/index.ts[39m 43ms (unchanged)
+[90mpackages/wtf-parser/src/migrations.ts[39m 30ms (unchanged)
+packages/wtf-parser/src/parser.ts 85ms
+packages/wtf-parser/src/svg-sanitize.ts 19ms
+[90mpackages/wtf-parser/src/types.ts[39m 16ms (unchanged)
+packages/wtf-parser/src/zip-reader.ts 45ms
+[90mpackages/wtf-parser/test/migrations.test.ts[39m 7ms (unchanged)
+packages/wtf-parser/test/parser.test.ts 26ms
+[90mpackages/wtf-parser/test/svg-sanitize.test.ts[39m 5ms (unchanged)
+[90mpackages/wtf-parser/test/zip-reader.test.ts[39m 10ms (unchanged)
+[90mpackages/wtf-parser/tsconfig.build.json[39m 2ms (unchanged)
+[90mpackages/wtf-parser/tsconfig.json[39m 1ms (unchanged)
+[90mpackages/w2f-schema/package.json[39m 1ms (unchanged)
+[90mpackages/w2f-schema/src/container-paths.ts[39m 1ms (unchanged)
+[90mpackages/w2f-schema/src/public.ts[39m 1ms (unchanged)
+[90mapps/figma-plugin/package.json[39m 1ms (unchanged)
+[90mapps/figma-plugin/src/main.ts[39m 12ms (unchanged)
+[90mapps/figma-plugin/src/protocol.ts[39m 20ms (unchanged)
+apps/figma-plugin/src/ui.ts 41ms
+apps/figma-plugin/scripts/validate-plugin-package.mjs 19ms
+[90mscripts/validate-node-22.mjs[39m 12ms (unchanged)
+scripts/validate-node-23.mjs 15ms
+[90mscripts/validate-foundation.mjs[39m 23ms (unchanged)
 rm 'scripts/node-23-finalize.mjs'
-Scope: all 23 workspace projects
-✓ Lockfile passes supply-chain policies (verified 2s ago)
-[ERR_PNPM_OUTDATED_LOCKFILE] Cannot install with "frozen-lockfile" because pnpm-lock.yaml is not up to date with <ROOT>/apps/figma-plugin/package.json
-
-Note that in CI environments this setting is true by default. If you still need to run install in such cases, use "pnpm install --no-frozen-lockfile"
-
-  Failure reason:
-  specifiers in the lockfile don't match specifiers in package.json:
-* 1 dependencies were added: @w2f/w2f-parser@workspace:*
-
-[ERROR] Command failed with exit code 1: /opt/hostedtoolcache/node/24.19.0/x64/bin/node /home/runner/setup-pnpm/node_modules/pnpm/bin/pnpm.mjs install
-
-pnpm: Command failed with exit code 1: /opt/hostedtoolcache/node/24.19.0/x64/bin/node /home/runner/setup-pnpm/node_modules/pnpm/bin/pnpm.mjs install
-    at getFinalError (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:89203:14)
-    at makeError (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:91510:21)
-    at getSyncResult (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:93354:10)
-    at spawnSubprocessSync (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:93314:14)
-    at execaCoreSync (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:93244:23)
-    at callBoundExeca (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:95772:23)
-    at boundExeca (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:95749:49)
-    at sync2 (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:95908:10)
-    at runPnpmCli (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:271523:5)
-    at runDepsStatusCheck (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:273323:7)
+$ pnpm validate:foundation && pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm format:check
+$ node scripts/validate-foundation.mjs
+NODE-08 foundation validation passed.
+NODE-09 foundation validation passed.
+NODE-10 foundation validation passed.
+NODE-11 foundation validation passed.
+NODE-12 foundation validation passed.
+NODE-13 foundation validation passed.
+NODE-14 foundation validation passed.
+NODE-15 foundation validation passed.
+NODE-16 foundation validation passed.
+NODE-17 foundation validation passed.
+NODE-18 foundation validation passed.
+NODE-19 foundation validation passed.
+NODE-20 foundation validation passed.
+NODE-21 foundation validation passed.
+NODE-22 foundation validation passed.
+NODE-23 foundation validation failed:
+- parser hostile fixture missing supportedCapabilities
+- Figma UI must consume the shared secure parser
+- Figma UI parser integration missing W2F_E_SECURE_PARSER
+- Figma packaged-output validator missing WTF_PARSER_MIGRATION_UNSUPPORTED
+- Figma packaged-output validator missing DecompressionStream
+Foundation validation passed.
+[ELIFECYCLE] Command failed with exit code 1.
+[ELIFECYCLE] Command failed with exit code 1.

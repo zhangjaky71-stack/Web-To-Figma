@@ -21,6 +21,14 @@ function isNonNegativeFiniteNumber(value: unknown): value is number {
   return isFiniteNumber(value) && value >= 0;
 }
 
+function isUnitInterval(value: unknown): value is number {
+  return isFiniteNumber(value) && value >= 0 && value <= 1;
+}
+
+function isSafeOffset(value: unknown, length: number): value is number {
+  return Number.isSafeInteger(value) && (value as number) >= 0 && (value as number) <= length;
+}
+
 function isRect(value: unknown): boolean {
   if (!isRecord(value)) return false;
   return (
@@ -134,10 +142,143 @@ function isRawCaptureTarget(value: unknown): boolean {
   );
 }
 
+function isRawFontEvidence(value: unknown): boolean {
+  if (!isRecord(value) || typeof value.family !== "string") return false;
+  if (value.style !== undefined && typeof value.style !== "string") return false;
+  if (
+    value.weight !== undefined &&
+    typeof value.weight !== "string" &&
+    !isNonNegativeFiniteNumber(value.weight)
+  ) {
+    return false;
+  }
+  for (const field of ["stretch", "variationSettings", "featureSettings"] as const) {
+    const candidate = value[field];
+    if (candidate !== undefined && typeof candidate !== "string") return false;
+  }
+  return true;
+}
+
+function isRawTextRun(value: unknown, text: string): boolean {
+  if (
+    !isRecord(value) ||
+    !isSafeOffset(value.start, text.length) ||
+    !isSafeOffset(value.end, text.length)
+  ) {
+    return false;
+  }
+  const start = value.start as number;
+  const end = value.end as number;
+  if (end < start || typeof value.text !== "string" || value.text !== text.slice(start, end))
+    return false;
+  if (!isRawFontEvidence(value.font) || !isNonNegativeFiniteNumber(value.fontSize)) return false;
+  if (
+    value.lineHeight !== undefined &&
+    typeof value.lineHeight !== "string" &&
+    !isNonNegativeFiniteNumber(value.lineHeight)
+  ) {
+    return false;
+  }
+  if (value.letterSpacing !== undefined && !isFiniteNumber(value.letterSpacing)) return false;
+  if (value.color !== undefined && typeof value.color !== "string") return false;
+  if (value.decoration !== undefined && typeof value.decoration !== "string") return false;
+  if (value.baselineShift !== undefined && !isFiniteNumber(value.baselineShift)) return false;
+  if (value.direction !== undefined && value.direction !== "ltr" && value.direction !== "rtl")
+    return false;
+  return true;
+}
+
+function isRawTextFragment(value: unknown, textLength: number): boolean {
+  if (
+    !isRecord(value) ||
+    !isSafeOffset(value.start, textLength) ||
+    !isSafeOffset(value.end, textLength) ||
+    (value.end as number) < (value.start as number) ||
+    !isRect(value.bounds) ||
+    !isFiniteNumber(value.baseline) ||
+    !["font-metrics", "line-box-estimate", "cdp-layout-estimate"].includes(
+      String(value.baselineSource),
+    ) ||
+    !isUnitInterval(value.baselineConfidence) ||
+    !Number.isSafeInteger(value.lineIndex) ||
+    (value.lineIndex as number) < 0
+  ) {
+    return false;
+  }
+  return true;
+}
+
+function isRawTextEvidence(value: unknown): boolean {
+  if (!isRecord(value) || typeof value.value !== "string") return false;
+  const text = value.value;
+  if (
+    !Array.isArray(value.runs) ||
+    !value.runs.every((run) => isRawTextRun(run, text)) ||
+    !Array.isArray(value.fragments) ||
+    !value.fragments.every((fragment) => isRawTextFragment(fragment, text.length))
+  ) {
+    return false;
+  }
+  for (const field of [
+    "whiteSpace",
+    "wordBreak",
+    "overflowWrap",
+    "textAlign",
+    "writingMode",
+  ] as const) {
+    const candidate = value[field];
+    if (candidate !== undefined && typeof candidate !== "string") return false;
+  }
+  return value.direction === undefined || value.direction === "ltr" || value.direction === "rtl";
+}
+
+function isRawInlineEvidence(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    typeof value.display === "string" &&
+    typeof value.writingMode === "string" &&
+    (value.verticalAlign === undefined || typeof value.verticalAlign === "string") &&
+    Array.isArray(value.fragmentBounds) &&
+    value.fragmentBounds.every(isRect)
+  );
+}
+
+function isRawPseudoEvidence(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    isNonEmptyString(value.type) &&
+    typeof value.content === "string" &&
+    ["none", "text", "complex"].includes(String(value.contentKind)) &&
+    (value.generatedText === undefined || typeof value.generatedText === "string")
+  );
+}
+
+function isRawFormVisualEvidence(value: unknown): boolean {
+  if (
+    !isRecord(value) ||
+    !["input", "textarea", "select", "button", "progress", "meter", "output"].includes(
+      String(value.controlKind),
+    ) ||
+    typeof value.disabled !== "boolean" ||
+    !["not-applicable", "omitted-sensitive"].includes(String(value.textValueCapture))
+  ) {
+    return false;
+  }
+  for (const field of ["inputType", "placeholder", "appearance", "accentColor"] as const) {
+    const candidate = value[field];
+    if (candidate !== undefined && typeof candidate !== "string") return false;
+  }
+  for (const field of ["readOnly", "required", "checked", "indeterminate", "multiple"] as const) {
+    const candidate = value[field];
+    if (candidate !== undefined && typeof candidate !== "boolean") return false;
+  }
+  return true;
+}
+
 function isRawNode(value: unknown): boolean {
   if (!isRecord(value) || !isNonEmptyString(value.captureNodeId)) return false;
   if (
-    !["document", "element", "text", "shadow-root", "iframe", "slot", "comment"].includes(
+    !["document", "element", "text", "pseudo", "shadow-root", "iframe", "slot", "comment"].includes(
       String(value.kind),
     )
   ) {
@@ -180,10 +321,33 @@ function isRawNode(value: unknown): boolean {
   }
 
   if (value.textContent !== undefined && typeof value.textContent !== "string") return false;
+  if (value.text !== undefined && !isRawTextEvidence(value.text)) return false;
+  if (
+    value.textContent !== undefined &&
+    isRecord(value.text) &&
+    typeof value.text.value === "string" &&
+    value.text.value !== value.textContent
+  ) {
+    return false;
+  }
+  if (value.inline !== undefined && !isRawInlineEvidence(value.inline)) return false;
+  if (value.pseudo !== undefined && !isRawPseudoEvidence(value.pseudo)) return false;
+  if (value.kind === "pseudo" && !isRawPseudoEvidence(value.pseudo)) return false;
+  if (value.formVisual !== undefined && !isRawFormVisualEvidence(value.formVisual)) return false;
   if (value.paintOrder !== undefined && !isNonNegativeFiniteNumber(value.paintOrder)) return false;
   if (
     value.source.backendNodeId !== undefined &&
     !isNonNegativeFiniteNumber(value.source.backendNodeId)
+  ) {
+    return false;
+  }
+  if (value.source.pseudoType !== undefined && !isNonEmptyString(value.source.pseudoType))
+    return false;
+  if (
+    value.source.pseudoType !== undefined &&
+    isRecord(value.pseudo) &&
+    typeof value.pseudo.type === "string" &&
+    value.pseudo.type !== value.source.pseudoType
   ) {
     return false;
   }

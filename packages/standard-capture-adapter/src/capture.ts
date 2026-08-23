@@ -123,6 +123,352 @@ export function captureStandardSnapshotInPage(input: StandardCaptureInput): Stan
     return [];
   }
 
+  function cssPixels(value: string): number | undefined {
+    if (!value || value === "normal") return undefined;
+    const parsed = Number.parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+
+  function textStyleForNode(node: Node): CSSStyleDeclaration | undefined {
+    const parent =
+      node.parentElement ??
+      (node.parentNode instanceof ShadowRoot
+        ? node.parentNode.host
+        : node.ownerDocument?.documentElement);
+    const view = node.ownerDocument?.defaultView;
+    return parent && view ? view.getComputedStyle(parent) : undefined;
+  }
+
+  function rawTextRun(
+    text: string,
+    style: CSSStyleDeclaration,
+  ): NonNullable<RawNode["text"]>["runs"][number] {
+    const fontSize = cssPixels(style.fontSize) ?? 0;
+    const lineHeight = cssPixels(style.lineHeight);
+    const letterSpacing = cssPixels(style.letterSpacing);
+    return {
+      start: 0,
+      end: text.length,
+      text,
+      font: {
+        family: style.fontFamily,
+        ...(style.fontStyle ? { style: style.fontStyle } : {}),
+        ...(style.fontWeight ? { weight: style.fontWeight } : {}),
+        ...(style.fontStretch ? { stretch: style.fontStretch } : {}),
+        ...(style.fontVariationSettings ? { variationSettings: style.fontVariationSettings } : {}),
+        ...(style.fontFeatureSettings ? { featureSettings: style.fontFeatureSettings } : {}),
+      },
+      fontSize,
+      ...(lineHeight === undefined ? { lineHeight: style.lineHeight || "normal" } : { lineHeight }),
+      ...(letterSpacing === undefined ? {} : { letterSpacing }),
+      ...(style.color ? { color: style.color } : {}),
+      ...(style.textDecorationLine ? { decoration: style.textDecorationLine } : {}),
+      direction: style.direction === "rtl" ? "rtl" : "ltr",
+    };
+  }
+
+  function baselineForRect(
+    rect: LocalRect,
+    style: CSSStyleDeclaration,
+    doc: Document,
+  ): Pick<
+    NonNullable<RawNode["text"]>["fragments"][number],
+    "baseline" | "baselineSource" | "baselineConfidence"
+  > {
+    const canvas = doc.createElement("canvas");
+    const context = canvas.getContext("2d");
+    if (context) {
+      context.font =
+        style.font ||
+        `${style.fontStyle || "normal"} ${style.fontWeight || "400"} ${style.fontSize || "16px"} ${style.fontFamily || "sans-serif"}`;
+      const metrics = context.measureText("Hg");
+      const ascent = metrics.actualBoundingBoxAscent;
+      const descent = metrics.actualBoundingBoxDescent;
+      if (Number.isFinite(ascent) && Number.isFinite(descent) && ascent + descent > 0) {
+        return {
+          baseline: rect.y + Math.max(0, (rect.height - (ascent + descent)) / 2) + ascent,
+          baselineSource: "font-metrics",
+          baselineConfidence: 0.9,
+        };
+      }
+    }
+    return {
+      baseline: rect.y + rect.height * 0.8,
+      baselineSource: "line-box-estimate",
+      baselineConfidence: 0.55,
+    };
+  }
+
+  function textFragments(
+    node: Text,
+    style: CSSStyleDeclaration,
+    offsetX: number,
+    offsetY: number,
+  ): NonNullable<RawNode["text"]>["fragments"] {
+    const text = node.textContent ?? "";
+    const doc = node.ownerDocument;
+    const range = doc.createRange();
+    const samples: Array<{ start: number; end: number; bounds: LocalRect }> = [];
+    const measurementEnd = Math.min(text.length, 4096);
+    for (let start = 0; start < measurementEnd;) {
+      const codePoint = text.codePointAt(start);
+      const end = start + (codePoint !== undefined && codePoint > 0xffff ? 2 : 1);
+      range.setStart(node, start);
+      range.setEnd(node, Math.min(end, measurementEnd));
+      for (const rect of [...range.getClientRects()]) {
+        if (rect.width === 0 && rect.height === 0) continue;
+        samples.push({
+          start,
+          end: Math.min(end, measurementEnd),
+          bounds: toDocumentRect(rect, offsetX, offsetY),
+        });
+      }
+      start = end;
+    }
+
+    const vertical =
+      style.writingMode.startsWith("vertical") || style.writingMode.startsWith("sideways");
+    const lines: Array<{ start: number; end: number; bounds: LocalRect }> = [];
+    for (const sample of samples) {
+      const last = lines.at(-1);
+      const sameLine =
+        last !== undefined &&
+        (vertical
+          ? Math.abs(sample.bounds.x - last.bounds.x) <=
+            Math.max(1, Math.min(sample.bounds.width, last.bounds.width) * 0.5)
+          : Math.abs(sample.bounds.y - last.bounds.y) <=
+            Math.max(1, Math.min(sample.bounds.height, last.bounds.height) * 0.5));
+      if (!last || !sameLine) {
+        lines.push({ ...sample });
+        continue;
+      }
+      const left = Math.min(last.bounds.x, sample.bounds.x);
+      const top = Math.min(last.bounds.y, sample.bounds.y);
+      const right = Math.max(
+        last.bounds.x + last.bounds.width,
+        sample.bounds.x + sample.bounds.width,
+      );
+      const bottom = Math.max(
+        last.bounds.y + last.bounds.height,
+        sample.bounds.y + sample.bounds.height,
+      );
+      last.start = Math.min(last.start, sample.start);
+      last.end = Math.max(last.end, sample.end);
+      last.bounds = { x: left, y: top, width: right - left, height: bottom - top };
+    }
+
+    return lines.map((line, lineIndex) => ({
+      start: line.start,
+      end: line.end,
+      bounds: line.bounds,
+      ...baselineForRect(line.bounds, style, doc),
+      lineIndex,
+    }));
+  }
+
+  function textEvidence(node: Text, offsetX: number, offsetY: number): RawNode["text"] {
+    const value = node.textContent ?? "";
+    const style = textStyleForNode(node);
+    if (!style) return undefined;
+    return {
+      value,
+      runs: [rawTextRun(value, style)],
+      fragments: textFragments(node, style, offsetX, offsetY),
+      whiteSpace: style.whiteSpace,
+      wordBreak: style.wordBreak,
+      overflowWrap: style.overflowWrap,
+      textAlign: style.textAlign,
+      direction: style.direction === "rtl" ? "rtl" : "ltr",
+      writingMode: style.writingMode,
+    };
+  }
+
+  function inlineEvidence(element: Element, rects: LocalRect[]): RawNode["inline"] {
+    const view = element.ownerDocument.defaultView;
+    if (!view) return undefined;
+    const style = view.getComputedStyle(element);
+    if (!(style.display.startsWith("inline") || style.display.startsWith("ruby"))) return undefined;
+    return {
+      display: style.display,
+      writingMode: style.writingMode,
+      ...(style.verticalAlign ? { verticalAlign: style.verticalAlign } : {}),
+      fragmentBounds: rects,
+    };
+  }
+
+  function formVisualEvidence(element: Element): RawNode["formVisual"] {
+    const tagName = element.tagName.toUpperCase();
+    if (
+      !["INPUT", "TEXTAREA", "SELECT", "BUTTON", "PROGRESS", "METER", "OUTPUT"].includes(tagName)
+    ) {
+      return undefined;
+    }
+    const view = element.ownerDocument.defaultView;
+    const style = view?.getComputedStyle(element);
+    const common = {
+      disabled: "disabled" in element ? Boolean((element as HTMLInputElement).disabled) : false,
+      ...(style?.appearance ? { appearance: style.appearance } : {}),
+      ...(style?.accentColor ? { accentColor: style.accentColor } : {}),
+    };
+    if (tagName === "INPUT") {
+      const input = element as HTMLInputElement;
+      const type = (input.getAttribute("type") || "text").toLowerCase();
+      const checkable = type === "checkbox" || type === "radio";
+      const textual = ![
+        "button",
+        "submit",
+        "reset",
+        "checkbox",
+        "radio",
+        "range",
+        "color",
+        "file",
+        "image",
+        "hidden",
+      ].includes(type);
+      return {
+        controlKind: "input",
+        inputType: type,
+        ...common,
+        readOnly: input.readOnly,
+        required: input.required,
+        ...(checkable ? { checked: input.checked, indeterminate: input.indeterminate } : {}),
+        ...(input.placeholder ? { placeholder: input.placeholder } : {}),
+        textValueCapture: textual ? "omitted-sensitive" : "not-applicable",
+      };
+    }
+    if (tagName === "TEXTAREA") {
+      const textarea = element as HTMLTextAreaElement;
+      return {
+        controlKind: "textarea",
+        ...common,
+        readOnly: textarea.readOnly,
+        required: textarea.required,
+        ...(textarea.placeholder ? { placeholder: textarea.placeholder } : {}),
+        textValueCapture: "omitted-sensitive",
+      };
+    }
+    if (tagName === "SELECT") {
+      const select = element as HTMLSelectElement;
+      return {
+        controlKind: "select",
+        ...common,
+        required: select.required,
+        multiple: select.multiple,
+        textValueCapture: "omitted-sensitive",
+      };
+    }
+    return {
+      controlKind: tagName.toLowerCase() as "button" | "progress" | "meter" | "output",
+      ...common,
+      textValueCapture: "not-applicable",
+    };
+  }
+
+  function pseudoContent(content: string): NonNullable<RawNode["pseudo"]> {
+    if (!content || content === "none" || content === "normal") {
+      return { type: "before", content, contentKind: "none" };
+    }
+    const first = content[0];
+    const last = content.at(-1);
+    const quoted =
+      (first === String.fromCharCode(34) || first === String.fromCharCode(39)) && last === first;
+    if (quoted) {
+      const raw = content.slice(1, -1);
+      let generatedText = "";
+      for (let index = 0; index < raw.length; index += 1) {
+        const character = raw[index]!;
+        if (character === "\\" && index + 1 < raw.length) {
+          const next = raw[index + 1]!;
+          if (next.toLowerCase() === "a") {
+            generatedText += "\n";
+            index += 1;
+            if (" \t\r\n\f".includes(raw[index + 1] ?? "")) index += 1;
+            continue;
+          }
+          generatedText += next;
+          index += 1;
+          continue;
+        }
+        generatedText += character;
+      }
+      return { type: "before", content, contentKind: "text", generatedText };
+    }
+    return { type: "before", content, contentKind: "complex" };
+  }
+  function capturePseudo(
+    element: Element,
+    host: RawNode,
+    hostId: string,
+    pseudoType: "before" | "after" | "marker",
+    context: LocalFrameContext,
+  ): void {
+    if (nodes.length >= maxNodes) {
+      reportBudget(context.frameId);
+      return;
+    }
+    const view = element.ownerDocument.defaultView;
+    if (!view) return;
+    let style: CSSStyleDeclaration;
+    try {
+      style = view.getComputedStyle(element, `::${pseudoType}`);
+    } catch {
+      return;
+    }
+    const hostDisplay = view.getComputedStyle(element).display;
+    const parsed = pseudoContent(style.content || "");
+    parsed.type = pseudoType;
+    if (pseudoType !== "marker" && parsed.contentKind === "none") return;
+    if (pseudoType === "marker" && hostDisplay !== "list-item" && parsed.contentKind === "none")
+      return;
+
+    const captureNodeId = createId(context.frameId);
+    const generatedText = parsed.generatedText;
+    const raw: RawNode = {
+      captureNodeId,
+      kind: "pseudo",
+      relationships: { sourceParentId: hostId, composedParentId: hostId },
+      childCaptureNodeIds: [],
+      frameContext: context,
+      source: {
+        pseudoType,
+        ...(host.source.sourceSelector
+          ? { sourceSelector: `${host.source.sourceSelector}::${pseudoType}` }
+          : {}),
+      },
+      visibility: {
+        display: style.display || "inline",
+        visibility: style.visibility || "visible",
+        contentVisibility: style.contentVisibility || "visible",
+        opacity: Number.parseFloat(style.opacity || "1"),
+        hiddenAttribute: false,
+        rendered:
+          style.display !== "none" &&
+          style.visibility !== "hidden" &&
+          style.visibility !== "collapse",
+      },
+      pseudo: parsed,
+      ...(generatedText === undefined
+        ? {}
+        : {
+            textContent: generatedText,
+            text: {
+              value: generatedText,
+              runs: [rawTextRun(generatedText, style)],
+              fragments: [],
+              whiteSpace: style.whiteSpace,
+              wordBreak: style.wordBreak,
+              overflowWrap: style.overflowWrap,
+              textAlign: style.textAlign,
+              direction: style.direction === "rtl" ? "rtl" : "ltr",
+              writingMode: style.writingMode,
+            },
+          }),
+    };
+    nodes.push(raw);
+    host.childCaptureNodeIds.push(captureNodeId);
+  }
+
   function boundsForNode(node: Node, offsetX: number, offsetY: number): LocalRect | undefined {
     if (node.nodeType === 9) {
       const doc = node as Document;
@@ -168,7 +514,9 @@ export function captureStandardSnapshotInPage(input: StandardCaptureInput): Stan
 
   function isMasked(bounds: LocalRect | undefined): boolean {
     if (!bounds || captureTarget.type !== "region") return false;
-    return captureTarget.exclusions.some((item) => intersects(item.bounds, bounds));
+    return captureTarget.exclusions.some(
+      (item) => item.kind === "redact" && intersects(item.bounds, bounds),
+    );
   }
 
   function sourceSelector(element: Element): string {
@@ -440,11 +788,13 @@ export function captureStandardSnapshotInPage(input: StandardCaptureInput): Stan
 
     if (node.nodeType === 3) {
       if (!node.textContent) return undefined;
-      const bounds = boundsForNode(node, offsetX, offsetY);
+      const textNode = node as Text;
+      const bounds = boundsForNode(textNode, offsetX, offsetY);
       if (isFullyExcluded(bounds)) return undefined;
       const captureNodeId = createId(context.frameId);
       const masked = isMasked(bounds);
-      const rects = clientRects(node, offsetX, offsetY);
+      const rects = clientRects(textNode, offsetX, offsetY);
+      const text = masked ? undefined : textEvidence(textNode, offsetX, offsetY);
       const raw: RawNode = {
         captureNodeId,
         kind: "text",
@@ -457,10 +807,20 @@ export function captureStandardSnapshotInPage(input: StandardCaptureInput): Stan
         frameContext: context,
         source: {},
         ...(bounds === undefined ? {} : { geometry: { bounds, clientRects: rects } }),
-        ...(masked ? {} : { textContent: node.textContent }),
+        ...(masked ? {} : { textContent: textNode.textContent }),
+        ...(text === undefined ? {} : { text }),
       };
       nodes.push(raw);
       nodeIds.set(node, captureNodeId);
+      if (!masked && textNode.textContent.length > 4096) {
+        diagnostics.push({
+          code: "STANDARD_TEXT_FRAGMENT_LIMIT",
+          message:
+            "Text fragment character measurement is capped at 4096 UTF-16 code units per text node; the full text run is still preserved.",
+          frameId: context.frameId,
+          sourceNodeId: captureNodeId,
+        });
+      }
       return captureNodeId;
     }
 
@@ -502,6 +862,9 @@ export function captureStandardSnapshotInPage(input: StandardCaptureInput): Stan
       ...(masked ? {} : { attributes: sanitizeAttributes(element) }),
     };
     const visibility = visibilityFor(element);
+    const elementRects = clientRects(element, offsetX, offsetY);
+    const inline = masked ? undefined : inlineEvidence(element, elementRects);
+    const formVisual = masked ? undefined : formVisualEvidence(element);
     const raw: RawNode = {
       captureNodeId,
       kind,
@@ -513,13 +876,18 @@ export function captureStandardSnapshotInPage(input: StandardCaptureInput): Stan
       childCaptureNodeIds: [],
       frameContext: context,
       source,
-      ...(bounds === undefined
-        ? {}
-        : { geometry: { bounds, clientRects: clientRects(element, offsetX, offsetY) } }),
+      ...(bounds === undefined ? {} : { geometry: { bounds, clientRects: elementRects } }),
       ...(visibility === undefined ? {} : { visibility }),
+      ...(inline === undefined ? {} : { inline }),
+      ...(formVisual === undefined ? {} : { formVisual }),
     };
     nodes.push(raw);
     nodeIds.set(node, captureNodeId);
+
+    if (!masked) {
+      capturePseudo(element, raw, captureNodeId, "marker", context);
+      capturePseudo(element, raw, captureNodeId, "before", context);
+    }
 
     const currentScrollContainerId = registerScrollContainer(
       element,
@@ -566,6 +934,8 @@ export function captureStandardSnapshotInPage(input: StandardCaptureInput): Stan
       captureIframeDocument(element as HTMLIFrameElement, captureNodeId, context, bounds);
     }
 
+    if (!masked) capturePseudo(element, raw, captureNodeId, "after", context);
+
     return captureNodeId;
   }
 
@@ -611,6 +981,12 @@ export function captureStandardSnapshotInPage(input: StandardCaptureInput): Stan
     for (const node of nodes) {
       const bounds = node.geometry?.bounds;
       if (bounds && intersects(bounds, captureTarget.bounds)) keep.add(node.captureNodeId);
+    }
+
+    for (const node of nodes) {
+      if (node.kind !== "pseudo") continue;
+      const parentId = node.relationships.sourceParentId;
+      if (parentId && keep.has(parentId)) keep.add(node.captureNodeId);
     }
 
     let changed = true;

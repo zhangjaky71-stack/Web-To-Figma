@@ -11,7 +11,19 @@ MIME: application/x-wtf
 
 `W2F` remains the product/project/internal namespace name. Only the exported portable file extension is `.wtf`.
 
-The active shared implementation contracts are:
+## Current implementation baseline
+
+The active architecture baseline is:
+
+1. `V2 Baseline`
+2. `V2.1 Architecture Addendum`
+3. NODE-00 product and acceptance contracts
+
+Together they define the implementation contract for NODE-00 through NODE-31.
+
+Architecture is frozen for implementation. Do not introduce V3 or expand the architecture again unless an implementation blocker or a material Chrome/Figma platform change requires it.
+
+## Active shared implementation contracts
 
 ```text
 docs/WTF_FILE_SPEC_V2.md
@@ -25,19 +37,22 @@ packages/stable-identity
 
 docs/BROWSER_EXTENSION_SHELL_V2.md
 apps/browser-extension
+
+docs/SOURCE_PROVIDERS_OFFLINE_V2.md
+packages/source-providers
+
+docs/CAPTURE_SEMANTICS.md
+packages/capture-core
+packages/standard-capture-adapter
+
+docs/CDP_HIGH_FIDELITY_ADAPTER_V2.md
+packages/cdp-capture-adapter
+
+docs/TEXT_INLINE_PSEUDO_CAPTURE_V2.md
+packages/capture-core
+packages/standard-capture-adapter
+packages/cdp-capture-adapter
 ```
-
-## Current implementation baseline
-
-The active architecture baseline is:
-
-1. `V2 Baseline`
-2. `V2.1 Architecture Addendum`
-3. NODE-00 product and acceptance contracts
-
-Together they define the implementation contract for NODE-00 through NODE-31.
-
-Architecture is frozen for implementation. Do not introduce V3 or expand the architecture again unless an implementation blocker or a material Chrome/Figma platform change requires it.
 
 ## Current documents
 
@@ -55,6 +70,10 @@ Architecture is frozen for implementation. Do not introduce V3 or expand the arc
 - `docs/WTF_IR_V2.md` — normative Semantic IR V2 specification.
 - `docs/STABLE_IDENTITY_SOURCE_MAPPING_V2.md` — stable cross-capture identity and source-mapping contract.
 - `docs/BROWSER_EXTENSION_SHELL_V2.md` — production Browser Extension MV3 shell, lifecycle and permission contract.
+- `docs/SOURCE_PROVIDERS_OFFLINE_V2.md` — HTTP/file/local-folder source-provider and offline-access boundary.
+- `docs/CAPTURE_SEMANTICS.md` — shared RawSnapshot/Standard capture/region semantics.
+- `docs/CDP_HIGH_FIDELITY_ADAPTER_V2.md` — High Fidelity CDP adapter, permission and fallback contract.
+- `docs/TEXT_INLINE_PSEUDO_CAPTURE_V2.md` — NODE-10 text-run, fragment, baseline, inline, pseudo and safe form visual evidence contract.
 - `docs/IMPLEMENTATION_STATUS.md` — canonical current implementation status.
 - `docs/nodes/` — per-NODE implementation/DoD records.
 - `docs/adr/` — accepted architecture and engineering decisions.
@@ -97,10 +116,22 @@ NODE-02 — W2F File Spec V2
 NODE-03 — W2F IR V2
 NODE-04 — Stable Identity & Source Mapping
 NODE-05 — Browser Extension Shell
+NODE-06 — Source Providers & Offline
+NODE-07 — Region Selector & Redaction
+NODE-08 — Standard DOM Capture
+NODE-09 — CDP High Fidelity Adapter
 ```
 
-Next implementation node:
+Current implementation node:
 
 ```text
-NODE-06 — Source Providers & Offline
+NODE-10 — Text / Inline / Pseudo Capture
+```
+
+NODE-10 implementation and behavior fixtures are complete. Its formal standard read-only documentation/status Exit Gate and PR #14 merge remain before the roadmap advances.
+
+Next implementation node after NODE-10 merge:
+
+```text
+NODE-11 — CSS Cascade & Authored Semantics
 ```

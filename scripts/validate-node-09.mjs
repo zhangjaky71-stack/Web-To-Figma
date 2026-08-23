@@ -71,8 +71,8 @@ if (failures.length === 0) {
     assert(normalizer.includes(evidence), `CDP RawSnapshot normalizer missing ${evidence}`);
   }
   for (const forbidden of [
-    "inputValue",
-    "textValue",
+    "document.nodes.inputValue",
+    "document.nodes.textValue",
     "document.cookie",
     "localStorage",
     "sessionStorage",

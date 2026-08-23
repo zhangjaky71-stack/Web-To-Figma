@@ -2,11 +2,11 @@
 
 ## Status
 
-**IN PROGRESS — implementation, behavior fixtures and controlled final-shape `pnpm check` passed; final standard read-only frozen-lockfile docs/status Exit Gate pending**
+**DONE / PASS — implementation, behavior fixtures and formal standard read-only frozen-lockfile documentation/status Exit Gate passed; PR #14 ready to squash merge**
 
 ## Goal
 
-Extend the shared adapter-neutral capture evidence model so Standard and CDP captures preserve the browser evidence needed for text, inline fragmentation, pseudo generated content and safe form-control visual reconstruction without starting NODE-11 authored CSS cascade work.
+Extend the shared adapter-neutral capture evidence model so Standard and CDP captures preserve browser evidence for text, inline fragmentation, pseudo generated content and safe form-control visual reconstruction without pulling NODE-11 authored CSS cascade work forward.
 
 ## Delivered
 
@@ -29,23 +29,9 @@ and adds optional node evidence for:
 
 No second Standard/CDP text model was created.
 
-### Text run contract
+### Text run and fragment contract
 
-Text runs preserve:
-
-- text offsets and exact text slice;
-- font family/style/weight/stretch;
-- font variation/feature settings;
-- font size;
-- line height;
-- letter spacing;
-- color;
-- text decoration;
-- direction.
-
-The shared validator rejects inconsistent offsets or run text.
-
-### Text fragment contract
+Text runs preserve text offsets/slices, font family/style/weight/stretch, variation/feature settings, font size, line height, letter spacing, color, decoration and direction.
 
 Fragments preserve:
 
@@ -64,22 +50,19 @@ line-box-estimate
 cdp-layout-estimate
 ```
 
-Confidence is constrained to `[0, 1]`.
+Confidence is constrained to `[0, 1]`. The shared validator rejects inconsistent offsets, mismatched run text and malformed fragment evidence.
 
 ### Standard text capture
 
-Standard capture uses browser-native DOM `Range.getClientRects()` evidence to derive line fragments.
+Standard capture uses browser-native DOM `Range.getClientRects()` evidence.
 
-The implementation:
+It:
 
-- samples code points;
-- preserves UTF-16 text offsets;
+- samples code points while preserving UTF-16 offsets;
 - ignores zero-size rects;
-- supports horizontal and vertical/sideways writing-mode grouping;
+- groups horizontal and vertical/sideways writing fragments;
 - preserves browser JS numeric precision;
-- caps fragment measurement at the first 4096 UTF-16 code units per text node.
-
-### Standard baseline evidence
+- caps detailed fragment measurement at the first 4096 UTF-16 code units per text node.
 
 Standard capture first uses canvas `measureText("Hg")` font metrics:
 
@@ -95,17 +78,17 @@ baselineSource: line-box-estimate
 baselineConfidence: 0.55
 ```
 
-The fallback remains explicitly labeled as an estimate.
+The fallback is explicitly labeled as an estimate.
 
 ### CDP text capture
 
-The CDP computed-style request was extended with the NODE-10 text/inline/pseudo/form visual property set while preserving the NODE-09 visibility properties.
+The CDP computed-style request was extended with NODE-10 text/inline/pseudo/form visual properties while preserving NODE-09 visibility/layout properties.
 
 CDP normalization:
 
 - preserves repeated DOMSnapshot layout entries for a node;
 - derives fragment geometry from client rects/bounds;
-- aligns `layout.text` evidence to the captured text value where possible;
+- aligns `layout.text` evidence to captured text where possible;
 - records inline fragment bounds;
 - records baseline estimates as:
 
@@ -118,12 +101,7 @@ baselineConfidence: 0.7
 
 Standard and CDP both emit shared `RawInlineEvidence` for computed display values beginning with `inline` or `ruby`.
 
-Evidence includes:
-
-- display;
-- writing mode;
-- optional vertical align;
-- all observed fragment bounds.
+Evidence includes display, writing mode, optional vertical align and all observed fragment bounds.
 
 ### Pseudo capture
 
@@ -135,35 +113,21 @@ Standard capture probes:
 ::marker
 ```
 
-Pseudo nodes retain explicit source/composed host relationships.
-
-Quoted generated content is decoded as text; non-empty content that cannot be safely represented as plain text is retained as `complex` instead of guessed.
+Pseudo nodes retain explicit host relationships. Quoted generated content is decoded as text; non-empty content that cannot be safely represented as plain text remains `complex` rather than being guessed.
 
 CDP normalization consumes DOMSnapshot pseudo-type evidence plus computed `content` and rendered layout text.
 
 ### Form visual privacy boundary
 
-NODE-10 captures visual/control state such as:
-
-- disabled;
-- read-only;
-- required;
-- checked;
-- indeterminate where Standard APIs expose it;
-- multiple;
-- placeholder;
-- appearance;
-- accent color.
+NODE-10 captures visual/control state such as disabled, read-only, required, checked, Standard `indeterminate`, multiple, placeholder, appearance and accent color.
 
 It does not capture live input/textarea textual values.
 
-The shared contract records:
+The shared contract records intentional omission with:
 
 ```text
 textValueCapture: omitted-sensitive
 ```
-
-when textual value evidence is intentionally excluded.
 
 CDP `inputValue` / `textValue` runtime fields remain outside the evidence contract. `INPUT`/`TEXTAREA` source `value` attributes are filtered. Cookie/local/session storage boundaries remain unchanged.
 
@@ -174,7 +138,7 @@ NODE-10 preserves the established rules:
 - fully covered `exclude` nodes are removed;
 - `redact` masks intersecting protected evidence;
 - structural ancestor closure is retained;
-- `exclude` and `redact` are not conflated.
+- `exclude` and `redact` remain distinct.
 
 ### Dependency-free NODE-10 validator
 
@@ -184,45 +148,43 @@ Added:
 scripts/validate-node-10.mjs
 ```
 
-It freezes the durable NODE-10 contract and privacy boundary while avoiding false positives on ordinary local variable names such as `textValue`.
-
-Historical NODE-09 privacy validation was narrowed to prohibited CDP evidence-field access rather than banning unrelated identifier text.
+It freezes the durable NODE-10 evidence/privacy contract. Historical NODE-09 privacy checks were narrowed to actual prohibited CDP evidence-field access instead of matching unrelated local identifiers such as `textValue`.
 
 ### Behavior fixture coverage
 
-The CDP normalizer fixture now exercises actual NODE-10 output, including:
+The CDP normalizer fixture exercises actual NODE-10 output:
 
-- one text run for `hello`;
+- one `hello` text run;
 - two rendered fragments with `[0,2]` and `[2,5]` ranges;
 - `cdp-layout-estimate` baseline provenance/confidence;
 - inline fragment evidence;
-- `::before` pseudo generated text;
+- `::before` generated text;
 - checkbox checked state;
 - filtering of a sensitive `value` attribute;
 - absence of CDP `inputValue` / `textValue` runtime evidence fields.
 
-This avoids relying only on source-string validators for NODE-10 behavior.
+This prevents NODE-10 from relying only on source-string validators.
 
 ## Controlled implementation findings
 
 Real GitHub Runner validation exposed and resolved:
 
-- the original bootstrap YAML being malformed by nested JavaScript template-string escaping;
-- template-payload escaping of backticks and `${...}`;
-- Standard pseudo-content CSS newline decoding;
-- `exactOptionalPropertyTypes` non-null pseudo evidence typing;
-- a missing dependency-free NODE-10 foundation validator;
-- historical NODE-09 privacy assertions that were too broad and matched ordinary local `textValue` identifiers;
-- a historical CDP computed-style test that pinned the NODE-09 seven-property list instead of requiring backward-compatible inclusion;
+- malformed bootstrap YAML from nested JavaScript template-string escaping;
+- payload escaping of backticks and `${...}`;
+- Standard pseudo CSS newline decoding;
+- `exactOptionalPropertyTypes` non-null pseudo typing;
+- missing dependency-free NODE-10 foundation validation;
+- over-broad historical NODE-09 privacy assertions;
+- a historical test that pinned exactly seven NODE-09 computed-style properties;
 - the same over-broad privacy assertion in Browser package validation;
 - a behavior-fixture variable-name typo;
 - canonical Prettier formatting of the final behavior fixture.
 
-All temporary write-enabled bootstrap/recovery workflows were removed before the standard Exit Gate phase.
+All temporary bootstrap/recovery write-enabled workflows were removed.
 
-A one-time formatting workflow was later used only to obtain pinned Prettier 3.9.6 output. It removed itself from the final working tree before running the complete repository check and its resulting commit contains no write-enabled workflow.
+A later one-time formatting workflow was used only to obtain pinned Prettier 3.9.6 output. It removed itself from the final working tree before running the complete repository check, and the resulting branch contains no write-enabled workflow.
 
-## Validation history
+## Formal Exit Gates
 
 Controlled final-shape full repository validation:
 
@@ -230,33 +192,39 @@ Controlled final-shape full repository validation:
 32615130105
 ```
 
-The workflow removed its own temporary file from the working tree before running:
+Before `pnpm check`, the one-time format workflow removed itself from the working tree. The complete check passed.
 
-```text
-pnpm check
-```
-
-and passed:
-
-- NODE-08/NODE-09/NODE-10/global foundation validation;
-- Node.js 24 / pnpm 11.22.0;
-- frozen-lockfile installation;
-- ESLint;
-- TypeScript 6.0.3 strict typecheck;
-- complete Vitest suite;
-- Standard Browser package build/validation;
-- High Fidelity Browser package build/validation;
-- pinned Prettier 3.9.6 format check.
-
-The resulting implementation/behavior head before normative documentation was:
+Resulting implementation/behavior head before normative docs:
 
 ```text
 bc81da6ed366180cd7345e38f8cd95a8c0acd629
 ```
 
-GitHub did not start a normal job for that bot-authored push and marked the empty run `action_required`; it is not counted as a formal Exit Gate.
+The bot-authored push did not receive a normal GitHub Actions job, so it is not counted as the formal Exit Gate.
 
-The final formal standard read-only frozen-lockfile docs/status Exit Gate remains pending and must validate the complete NODE-10 documentation/status head.
+Formal standard read-only frozen-lockfile documentation/status Exit Gate:
+
+```text
+32615395336
+```
+
+Validated head:
+
+```text
+3a3a89b005b6e919074614bb52ea0393cff8e186
+```
+
+Every formal gate passed:
+
+- dependency-free NODE-08/NODE-09/NODE-10/global foundation validation;
+- Node.js 24 / pnpm 11.22.0;
+- `pnpm install --frozen-lockfile`;
+- ESLint across all workspaces;
+- TypeScript 6.0.3 strict typecheck;
+- complete Vitest suite including NODE-10 CDP behavior fixture;
+- Standard Browser package build/validation;
+- High Fidelity Browser package build/validation;
+- pinned Prettier 3.9.6 format check.
 
 ## Definition of Done
 
@@ -288,8 +256,8 @@ The final formal standard read-only frozen-lockfile docs/status Exit Gate remain
 - [x] pinned canonical formatting obtained and temporary format workflow removed
 - [x] normative implementation document added
 - [x] ADR added
-- [ ] final standard read-only frozen-lockfile docs/status CI passed
-- [ ] PR #14 ready for review
+- [x] formal standard read-only frozen-lockfile docs/status CI passed
+- [x] PR #14 ready for review
 - [ ] PR #14 squash merged
 
 ## Normative documents

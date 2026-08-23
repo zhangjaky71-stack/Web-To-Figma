@@ -152,10 +152,18 @@ function validateCompression(
   }
 }
 
+function ownedBytes(bytes: Uint8Array): Uint8Array<ArrayBuffer> {
+  const copy = new Uint8Array(bytes.byteLength);
+  copy.set(bytes);
+  return copy;
+}
+
 async function inflateRawBounded(input: Uint8Array, expectedSize: number, target: string): Promise<Uint8Array> {
   let stream: ReadableStream<Uint8Array>;
   try {
-    stream = new Blob([input]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+    stream = new Blob([ownedBytes(input)])
+      .stream()
+      .pipeThrough(new DecompressionStream("deflate-raw"));
   } catch (error) {
     fail(
       "WTF_PARSER_ZIP_METHOD_UNSUPPORTED",

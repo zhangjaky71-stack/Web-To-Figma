@@ -76,11 +76,17 @@ function decodeJson(bytes: Uint8Array, path: string, maxBytes: number): unknown 
   }
 }
 
+function ownedBytes(bytes: Uint8Array): Uint8Array<ArrayBuffer> {
+  const copy = new Uint8Array(bytes.byteLength);
+  copy.set(bytes);
+  return copy;
+}
+
 async function sha256(bytes: Uint8Array): Promise<string> {
   if (!globalThis.crypto?.subtle) {
     fail("WTF_PARSER_CHECKSUM_MISMATCH", "$", "Web Crypto SHA-256 is unavailable in this runtime");
   }
-  const digest = await globalThis.crypto.subtle.digest("SHA-256", bytes);
+  const digest = await globalThis.crypto.subtle.digest("SHA-256", ownedBytes(bytes));
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
@@ -194,9 +200,7 @@ function createPreview(
   const metadata = jsonPayloads.get(WTF_DEFAULT_ENTRYPOINTS.sourceMetadata);
   const sourceUrl = isRecord(metadata) && typeof metadata.url === "string" ? metadata.url : undefined;
   const title = isRecord(metadata) && typeof metadata.title === "string" ? metadata.title : undefined;
-  const stableIds = new Set(
-    ir.renderTree.nodes.flatMap((node) => node.sourceStableIds ?? []),
-  );
+  const stableIds = new Set(ir.renderTree.nodes.flatMap((node) => node.sourceStableIds ?? []));
   return {
     ...(sourceUrl ? { sourceUrl } : {}),
     ...(title ? { title } : {}),
@@ -233,7 +237,10 @@ function readerSupport(options: WtfParseOptions) {
 }
 
 export async function parseWtfPackage(input: Uint8Array, options: WtfParseOptions = {}): Promise<WtfParsedPackage> {
-  const archive = openSecureZip(input, { allowDeflate: options.allowDeflate });
+  const archive = openSecureZip(
+    input,
+    options.allowDeflate === undefined ? {} : { allowDeflate: options.allowDeflate },
+  );
   for (const reserved of [WTF_MANIFEST_PATH, WTF_CHECKSUMS_PATH]) {
     const entry = archive.entriesByPath.get(reserved);
     if (!entry) fail("WTF_PARSER_REQUIRED_ENTRY", reserved, `archive is missing required ${reserved}`);

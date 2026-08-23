@@ -67,6 +67,12 @@ export interface CaptureSnapshotReceipt extends RawSnapshotSummary {
   componentCandidateCount?: number;
   componentCandidateGroupCount?: number;
   renderTreeDiagnosticCount?: number;
+  compositingStorageKey?: string;
+  fallbackBoundaryCount?: number;
+  fallbackMemberNodeCount?: number;
+  fallbackTriggerNodeCount?: number;
+  promotedFallbackBoundaryCount?: number;
+  compositingDiagnosticCount?: number;
 }
 
 export interface ResponsiveCaptureReceipt {
@@ -212,7 +218,15 @@ function isCaptureSnapshotReceipt(value: unknown): value is CaptureSnapshotRecei
     isOptionalNonNegativeInteger(record.renderSectionCount) &&
     isOptionalNonNegativeInteger(record.componentCandidateCount) &&
     isOptionalNonNegativeInteger(record.componentCandidateGroupCount) &&
-    isOptionalNonNegativeInteger(record.renderTreeDiagnosticCount)
+    isOptionalNonNegativeInteger(record.renderTreeDiagnosticCount) &&
+    (record.compositingStorageKey === undefined ||
+      (typeof record.compositingStorageKey === "string" &&
+        record.compositingStorageKey.length > 0)) &&
+    isOptionalNonNegativeInteger(record.fallbackBoundaryCount) &&
+    isOptionalNonNegativeInteger(record.fallbackMemberNodeCount) &&
+    isOptionalNonNegativeInteger(record.fallbackTriggerNodeCount) &&
+    isOptionalNonNegativeInteger(record.promotedFallbackBoundaryCount) &&
+    isOptionalNonNegativeInteger(record.compositingDiagnosticCount)
   );
 }
 

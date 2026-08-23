@@ -1,5 +1,9 @@
 import { summarizeAssetCapture } from "@w2f/asset-resolver";
 import {
+  summarizeCompositingAnalysis,
+  type CompositingAnalysisResult,
+} from "@w2f/compositing-engine";
+import {
   isRawSnapshot,
   summarizeRawSnapshot,
   type RawCaptureTarget,
@@ -26,6 +30,12 @@ import {
   type StandardCaptureResult,
 } from "@w2f/standard-capture-adapter";
 import { captureAssetsForSnapshot } from "./asset-runtime.js";
+import { analyzePersistedCompositing } from "./compositing-runtime.js";
+import {
+  deleteCompositingAnalysis,
+  readCompositingAnalysis,
+  writeCompositingAnalysis,
+} from "./compositing-store.js";
 import { deleteAssetCapture, readAssetCapture, writeAssetCapture } from "./asset-store.js";
 import {
   captureHighFidelityWithCdp,
@@ -135,6 +145,7 @@ async function deleteAllCaptureArtifacts(jobId: string): Promise<void> {
     deleteBaseLayoutAnalysis(jobId),
     deleteTableLayoutResult(jobId),
     deleteRenderTreeOptimization(jobId),
+    deleteCompositingAnalysis(jobId),
   ]);
 }
 
@@ -281,6 +292,32 @@ async function persistRenderTreeOptimization(
   };
 }
 
+async function persistCompositingAnalysis(
+  jobId: string,
+): Promise<
+  Pick<
+    CaptureSnapshotReceipt,
+    | "compositingStorageKey"
+    | "fallbackBoundaryCount"
+    | "fallbackMemberNodeCount"
+    | "fallbackTriggerNodeCount"
+    | "promotedFallbackBoundaryCount"
+    | "compositingDiagnosticCount"
+  >
+> {
+  const result = await analyzePersistedCompositing(jobId);
+  const compositingStorageKey = await writeCompositingAnalysis(jobId, result);
+  const summary = summarizeCompositingAnalysis(result);
+  return {
+    compositingStorageKey,
+    fallbackBoundaryCount: summary.fallbackBoundaryCount,
+    fallbackMemberNodeCount: summary.fallbackMemberNodeCount,
+    fallbackTriggerNodeCount: summary.fallbackTriggerNodeCount,
+    promotedFallbackBoundaryCount: summary.promotedBoundaryCount,
+    compositingDiagnosticCount: summary.diagnosticCount,
+  };
+}
+
 async function persistEnvironment(
   tabId: number,
   jobId: string,
@@ -341,6 +378,45 @@ async function persistAssets(
   };
 }
 
+function sameBounds(
+  left: { x: number; y: number; width: number; height: number },
+  right: { x: number; y: number; width: number; height: number },
+): boolean {
+  const epsilon = 1e-6;
+  return (
+    Math.abs(left.x - right.x) <= epsilon &&
+    Math.abs(left.y - right.y) <= epsilon &&
+    Math.abs(left.width - right.width) <= epsilon &&
+    Math.abs(left.height - right.height) <= epsilon
+  );
+}
+
+function fallbackBoundaryRasterRequests(
+  snapshot: RawSnapshot,
+  compositing: CompositingAnalysisResult,
+): Array<{ sourceNodeId: string; reason: string }> {
+  const rawById = new Map(snapshot.nodes.map((node) => [node.captureNodeId, node]));
+  const renderById = new Map(compositing.tree.nodes.map((node) => [node.id, node]));
+  return compositing.boundaries.flatMap((boundary) => {
+    const renderNode = renderById.get(boundary.rootRenderNodeId);
+    if (!renderNode) return [];
+    const geometryMatched = renderNode.sourceNodeIds.find((sourceNodeId) => {
+      const bounds = rawById.get(sourceNodeId)?.geometry?.bounds;
+      return bounds ? sameBounds(bounds, boundary.bounds) : false;
+    });
+    const sourceNodeId =
+      geometryMatched ??
+      [...renderNode.sourceNodeIds].reverse().find((candidate) => rawById.has(candidate));
+    if (!sourceNodeId) return [];
+    return [
+      {
+        sourceNodeId,
+        reason: "compositing-boundary:" + boundary.id + ";" + boundary.reasons.join(";"),
+      },
+    ];
+  });
+}
+
 async function persistPixelGroundTruth(
   tabId: number,
   jobId: string,
@@ -358,16 +434,20 @@ async function persistPixelGroundTruth(
   >
 > {
   const assetCapture = await readAssetCapture(jobId);
-  const fallbackRequests = (assetCapture?.diagnostics ?? []).flatMap((diagnostic) =>
-    diagnostic.sourceNodeId && ASSET_RASTER_FALLBACK_CODES.has(diagnostic.code)
-      ? [
-          {
-            sourceNodeId: diagnostic.sourceNodeId,
-            reason: `asset:${diagnostic.code}`,
-          },
-        ]
-      : [],
-  );
+  const compositing = await readCompositingAnalysis(jobId);
+  const fallbackRequests = [
+    ...(assetCapture?.diagnostics ?? []).flatMap((diagnostic) =>
+      diagnostic.sourceNodeId && ASSET_RASTER_FALLBACK_CODES.has(diagnostic.code)
+        ? [
+            {
+              sourceNodeId: diagnostic.sourceNodeId,
+              reason: `asset:${diagnostic.code}`,
+            },
+          ]
+        : [],
+    ),
+    ...(compositing ? fallbackBoundaryRasterRequests(snapshot, compositing) : []),
+  ];
   const capture = await capturePixelGroundTruthForSnapshot(tabId, snapshot, fallbackRequests);
   const pixelGroundTruthStorageKey = await writePixelGroundTruth(jobId, capture);
   const summary = summarizePixelGroundTruth(capture);
@@ -420,6 +500,7 @@ async function captureStandardDom(
     const layoutReceipt = await persistBaseLayoutAnalysis(jobId);
     const tableReceipt = await persistTableLayout(jobId);
     const renderTreeReceipt = await persistRenderTreeOptimization(jobId);
+    const compositingReceipt = await persistCompositingAnalysis(jobId);
     const environmentReceipt = await persistEnvironment(tabId, jobId, snapshot);
     const assetReceipt = await persistAssets(tabId, jobId, snapshot);
     const pixelGroundTruthReceipt = await persistPixelGroundTruth(tabId, jobId, snapshot);
@@ -433,6 +514,7 @@ async function captureStandardDom(
         ...layoutReceipt,
         ...tableReceipt,
         ...renderTreeReceipt,
+        ...compositingReceipt,
         ...environmentReceipt,
         ...assetReceipt,
         ...pixelGroundTruthReceipt,
@@ -467,6 +549,7 @@ async function captureCdpDom(
     const layoutReceipt = await persistBaseLayoutAnalysis(jobId);
     const tableReceipt = await persistTableLayout(jobId);
     const renderTreeReceipt = await persistRenderTreeOptimization(jobId);
+    const compositingReceipt = await persistCompositingAnalysis(jobId);
     const environmentReceipt = await persistEnvironment(tabId, jobId, result.snapshot);
     const assetReceipt = await persistAssets(tabId, jobId, result.snapshot);
     const pixelGroundTruthReceipt = await persistPixelGroundTruth(tabId, jobId, result.snapshot);
@@ -481,6 +564,7 @@ async function captureCdpDom(
         ...layoutReceipt,
         ...tableReceipt,
         ...renderTreeReceipt,
+        ...compositingReceipt,
         ...environmentReceipt,
         ...assetReceipt,
         ...pixelGroundTruthReceipt,

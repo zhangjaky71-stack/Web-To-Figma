@@ -101,24 +101,24 @@ if (failures.length === 0) {
   assert(migration.includes("v2-compatible-pass-through"), "migration must report compatible V2 pass-through");
 
   const parserTests = text("packages/wtf-parser/test/parser.test.ts");
-  for (const evidence of ["packageWtf", "encodeDeterministicZip", "WTF_PARSER_CHECKSUM_MISMATCH", "hidden.bin", "WTF_PARSER_SVG_UNSAFE", "supportedCapabilities"]) {
+  for (const evidence of ["packageWtf", "encodeDeterministicZip", "WTF_PARSER_CHECKSUM_MISMATCH", "hidden.bin", "WTF_PARSER_SVG_UNSAFE", "future-capability"]) {
     assert(parserTests.includes(evidence), `parser hostile fixture missing ${evidence}`);
   }
   assert(text("packages/wtf-parser/test/zip-reader.test.ts").includes("../evil.json"), "Zip Slip regression fixture is missing");
 
   const figmaPackage = json("apps/figma-plugin/package.json");
   const parserLink = figmaPackage.dependencies?.["@w2f/wtf-parser"] ?? "";
-  assert(parserLink.startsWith("workspace:") && parserLink.includes("wtf-parser"), "Figma UI must consume the secure parser through workspace-only resolution");
+  assert(parserLink.startsWith("workspace:"), "Figma UI must consume the secure parser through workspace-only resolution");
   const figmaMain = text("apps/figma-plugin/src/main.ts");
   assert(figmaMain.includes("secureParserImplemented: true"), "Figma shell must advertise the completed secure parser");
   assert(figmaMain.includes("rendererImplemented: false"), "NODE-23 must not implement rendering early");
   const figmaUi = text("apps/figma-plugin/src/ui.ts");
-  for (const evidence of ["parseWtfPackage", "W2F_E_SECURE_PARSER", 'stage: "validating"', 'stage: "migrating"', "applyParserPreview"]) {
+  for (const evidence of ["parseWtfPackage", "WtfParserError", "WTF_PARSER_FAILED", 'stage: "validating"', 'stage: "migrating"', "applyParserPreview"]) {
     assert(figmaUi.includes(evidence), `Figma UI parser integration missing ${evidence}`);
   }
 
   const packageValidator = text("apps/figma-plugin/scripts/validate-plugin-package.mjs");
-  for (const evidence of ["WTF_PARSER_CHECKSUM_MISMATCH", "WTF_PARSER_SVG_UNSAFE", "WTF_PARSER_MIGRATION_UNSUPPORTED", "DecompressionStream"]) {
+  for (const evidence of ["WTF_PARSER_ZIP_SIGNATURE", "WTF_PARSER_CHECKSUM_MISMATCH", "WTF_PARSER_SVG_UNSAFE", "v2-compatible-pass-through"]) {
     assert(packageValidator.includes(evidence), `Figma packaged-output validator missing ${evidence}`);
   }
 

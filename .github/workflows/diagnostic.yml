@@ -1,90 +1,18 @@
-name: NODE-21 Registered Bootstrap
+name: Diagnostic (manual)
 
 on:
-  push:
-    branches:
-      - feat/node-21-wtf-packager
-    paths:
-      - .github/workflows/diagnostic.yml
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   runner:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 5
     steps:
-      - name: Checkout NODE-21 branch
-        uses: actions/checkout@v6
-        with:
-          ref: feat/node-21-wtf-packager
-          fetch-depth: 0
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 11.22.0
-          run_install: false
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          package-manager-cache: false
-
-      - name: Close and validate NODE-21
-        shell: bash
+      - name: Runner sanity
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          rm -f NODE21_BOOTSTRAP_FAILURE.log
-          set +e
-          {
-            pnpm install --no-frozen-lockfile
-            node scripts/node-21-guardrail-fix.mjs
-            node scripts/node-21-finalize.mjs
-            pnpm install --no-frozen-lockfile
-            pnpm exec prettier --write \
-              packages/wtf-packager \
-              apps/browser-extension/package.json \
-              apps/browser-extension/scripts/package-extension.mjs \
-              apps/browser-extension/scripts/validate-node-21-package.mjs \
-              apps/browser-extension/src/chrome.d.ts \
-              apps/browser-extension/src/runtime/wtf-package-builder.ts \
-              apps/browser-extension/src/runtime/wtf-package-store.ts \
-              apps/browser-extension/src/runtime/wtf-export-contract.ts \
-              apps/browser-extension/src/runtime/wtf-export-runtime.ts \
-              apps/browser-extension/src/runtime/protocol.ts \
-              apps/browser-extension/src/runtime/service-worker.ts \
-              apps/browser-extension/src/runtime/popup.ts \
-              apps/browser-extension/static/manifest.json \
-              apps/browser-extension/static/manifest.high-fidelity.json \
-              apps/browser-extension/static/popup.html \
-              apps/browser-extension/test/wtf-package-store.test.ts \
-              scripts/validate-foundation.mjs \
-              scripts/validate-node-21.mjs \
-              docs/WTF_PACKAGER_V2.md \
-              docs/adr/ADR-0021-deterministic-wtf-writer.md \
-              docs/nodes/NODE-21_WTF_PACKAGER.md \
-              docs/IMPLEMENTATION_STATUS.md
-            git checkout origin/main -- .github/workflows/diagnostic.yml
-            git rm .github/workflows/node-21-bootstrap.yml scripts/node-21-finalize.mjs scripts/node-21-guardrail-fix.mjs
-            pnpm check
-          } > /tmp/node21-bootstrap.log 2>&1
-          status=$?
-          set -e
-
-          if [ "$status" -ne 0 ]; then
-            git reset --hard HEAD
-            tail -n 600 /tmp/node21-bootstrap.log > NODE21_BOOTSTRAP_FAILURE.log
-            git add NODE21_BOOTSTRAP_FAILURE.log
-            git commit -m "ci(node-21): record bootstrap failure"
-            git push origin HEAD:feat/node-21-wtf-packager
-            echo "NODE-21 bootstrap failed; diagnostic report committed."
-            exit "$status"
-          fi
-
-          git add -A
-          git commit -m "feat(node-21): complete WTF Packager integration"
-          git push origin HEAD:feat/node-21-wtf-packager
+          echo "runner-ok"
+          node --version
+          npm --version

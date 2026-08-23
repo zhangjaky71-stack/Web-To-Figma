@@ -54,7 +54,9 @@ function sourceType(url: string): "http" | "file" | "unknown" {
 }
 
 function captureTarget(target: RawCaptureTarget): CaptureTarget {
-  return target.type === "region" ? { type: "region", bounds: { ...target.bounds } } : { type: "document" };
+  return target.type === "region"
+    ? { type: "region", bounds: { ...target.bounds } }
+    : { type: "document" };
 }
 
 function sourceGraph(
@@ -166,18 +168,34 @@ function diagnostic(
 function diagnosticsPayload(evidence: WtfPackageEvidence): WtfDiagnosticsPayload {
   const diagnostics: WtfDiagnostic[] = [];
   let index = 0;
-  const add = (domain: WtfDiagnostic["domain"], code: string, message: string, sourceNodeId?: string) => {
+  const add = (
+    domain: WtfDiagnostic["domain"],
+    code: string,
+    message: string,
+    sourceNodeId?: string,
+  ) => {
     diagnostics.push(diagnostic(domain, code, message, index, sourceNodeId));
     index += 1;
   };
-  for (const item of evidence.snapshot.diagnostics) add("CAPTURE", item.code, item.message, item.sourceNodeId);
-  for (const item of evidence.css.diagnostics) add("CSS", item.code, item.message, item.sourceNodeId);
+  for (const item of evidence.snapshot.diagnostics)
+    add("CAPTURE", item.code, item.message, item.sourceNodeId);
+  for (const item of evidence.css.diagnostics)
+    add("CSS", item.code, item.message, item.sourceNodeId);
   for (const item of evidence.environment.diagnostics)
     add("CAPTURE", item.code, item.message, item.sourceNodeId);
-  for (const item of evidence.assets.diagnostics) add("ASSET", item.code, item.message, item.sourceNodeId);
-  for (const item of evidence.pixel.diagnostics) add("RENDER", item.code, item.message, item.sourceNodeId);
-  for (const item of evidence.compositing.diagnostics)
-    add("COMPOSITING", item.code, item.message, item.renderNodeId ? evidence.compositing.tree.nodes.find((node) => node.id === item.renderNodeId)?.sourceNodeIds[0] : undefined);
+  for (const item of evidence.assets.diagnostics)
+    add("ASSET", item.code, item.message, item.sourceNodeId);
+  for (const item of evidence.pixel.diagnostics)
+    add("RENDER", item.code, item.message, item.sourceNodeId);
+  for (const item of evidence.compositing.diagnostics) {
+    const renderNodeId = item.renderNodeIds?.[0];
+    const sourceNodeId =
+      item.sourceNodeIds?.[0] ??
+      (renderNodeId
+        ? evidence.compositing.tree.nodes.find((node) => node.id === renderNodeId)?.sourceNodeIds[0]
+        : undefined);
+    add("COMPOSITING", item.code, item.message, sourceNodeId);
+  }
   for (const item of evidence.responsive?.diagnostics ?? [])
     add("RESPONSIVE", item.code, item.message);
   return { diagnostics };
@@ -247,8 +265,8 @@ function featureEvidence(evidence: WtfPackageEvidence): {
     capabilities.add("stable-identity");
   }
   if (renderNodes.some((node) => node.componentCandidate)) {
-    optional.add("structural-fingerprint");
-    capabilities.add("structural-fingerprint");
+    optional.add("structural-fingerprints");
+    capabilities.add("structural-fingerprints");
   }
   if (evidence.pixel.references.length > 0) {
     optional.add("pixel-ground-truth");
@@ -259,8 +277,7 @@ function featureEvidence(evidence: WtfPackageEvidence): {
     capabilities.add("raster-tiles");
   }
   if ((evidence.responsive?.payload.snapshots.length ?? 0) > 0) {
-    optional.add("responsive-rules");
-    optional.add("multi-viewport");
+    optional.add("responsive-snapshots");
     capabilities.add("responsive-snapshots");
   }
   if (evidence.compositing.boundaries.length > 0) optional.add("compositing-groups");
@@ -274,7 +291,9 @@ function featureEvidence(evidence: WtfPackageEvidence): {
   };
 }
 
-export async function buildWtfPackageInput(evidence: WtfPackageEvidence): Promise<WtfPackagerInput> {
+export async function buildWtfPackageInput(
+  evidence: WtfPackageEvidence,
+): Promise<WtfPackagerInput> {
   const documentIdentity = await createDocumentIdentity({
     sourceType: sourceType(evidence.snapshot.url),
     sourceUrl: evidence.snapshot.url,
@@ -284,7 +303,10 @@ export async function buildWtfPackageInput(evidence: WtfPackageEvidence): Promis
     capturedAt: evidence.snapshot.capturedAt,
     captureNonce: evidence.jobId,
   });
-  const revisionIdentity = await createRevisionIdentity({ document: documentIdentity, capture: captureIdentity });
+  const revisionIdentity = await createRevisionIdentity({
+    document: documentIdentity,
+    capture: captureIdentity,
+  });
   const revision: WtfRevision = {
     documentId: documentIdentity.documentId,
     captureId: captureIdentity.captureId,
@@ -318,7 +340,9 @@ export async function buildWtfPackageInput(evidence: WtfPackageEvidence): Promis
       captureNodeId: node.captureNodeId,
       relationships: node.relationships,
       frameContext: node.frameContext,
-      ...(node.geometry?.scrollContainerId ? { scrollContainerId: node.geometry.scrollContainerId } : {}),
+      ...(node.geometry?.scrollContainerId
+        ? { scrollContainerId: node.geometry.scrollContainerId }
+        : {}),
     })),
     scrollContainers: evidence.snapshot.scrollContainers,
   };
@@ -328,11 +352,16 @@ export async function buildWtfPackageInput(evidence: WtfPackageEvidence): Promis
       node.revisionHashes ? [{ renderNodeId: node.id, hashes: node.revisionHashes }] : [],
     ),
   };
-  const referenceTilesPath = evidence.pixel.references.length > 0 ? "references/index.json" : undefined;
+  const referenceTilesPath =
+    evidence.pixel.references.length > 0 ? "references/index.json" : undefined;
   const payloads: WtfPackagePayload[] = [
     { path: WTF_DEFAULT_ENTRYPOINTS.document, role: "document", json: document },
     { path: WTF_DEFAULT_ENTRYPOINTS.sourceGraph, role: "source-graph", json: source },
-    { path: WTF_DEFAULT_ENTRYPOINTS.renderTree, role: "render-tree", json: evidence.compositing.tree },
+    {
+      path: WTF_DEFAULT_ENTRYPOINTS.renderTree,
+      role: "render-tree",
+      json: evidence.compositing.tree,
+    },
     { path: WTF_DEFAULT_ENTRYPOINTS.styles, role: "styles", json: styles },
     { path: WTF_DEFAULT_ENTRYPOINTS.assets, role: "assets-index", json: portable.index },
     { path: WTF_DEFAULT_ENTRYPOINTS.responsive, role: "responsive", json: responsive },

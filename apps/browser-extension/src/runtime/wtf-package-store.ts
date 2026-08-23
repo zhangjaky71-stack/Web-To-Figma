@@ -1,4 +1,8 @@
-import { summarizeWtfPackage, type WtfPackageResult, type WtfPackageSummary } from "@w2f/wtf-packager";
+import {
+  summarizeWtfPackage,
+  type WtfPackageResult,
+  type WtfPackageSummary,
+} from "@w2f/wtf-packager";
 import { WTF_MIME_TYPE } from "@w2f/w2f-schema";
 
 export const W2F_WTF_PACKAGE_DB_NAME = "w2f-wtf-packages" as const;
@@ -53,7 +57,8 @@ function openDatabase(): Promise<IDBDatabase> {
         database.createObjectStore(W2F_WTF_PACKAGE_STORE_NAME);
       }
     };
-    request.onerror = () => reject(request.error ?? new Error("failed to open WTF package database"));
+    request.onerror = () =>
+      reject(request.error ?? new Error("failed to open WTF package database"));
     request.onsuccess = () => resolve(request.result);
   });
 }
@@ -61,8 +66,10 @@ function openDatabase(): Promise<IDBDatabase> {
 function waitForTransaction(transaction: IDBTransaction): Promise<void> {
   return new Promise((resolve, reject) => {
     transaction.oncomplete = () => resolve();
-    transaction.onerror = () => reject(transaction.error ?? new Error("WTF package transaction failed"));
-    transaction.onabort = () => reject(transaction.error ?? new Error("WTF package transaction aborted"));
+    transaction.onerror = () =>
+      reject(transaction.error ?? new Error("WTF package transaction failed"));
+    transaction.onabort = () =>
+      reject(transaction.error ?? new Error("WTF package transaction aborted"));
   });
 }
 

@@ -96,6 +96,8 @@ import {
   writeReferenceScreenshot,
 } from "./snapshot-store.js";
 import { resolveActiveTabSource } from "./source-runtime.js";
+import { persistWtfExport } from "./wtf-export-runtime.js";
+import { deleteWtfPackage } from "./wtf-package-store.js";
 
 const ASSET_RASTER_FALLBACK_CODES = new Set([
   "ASSET_FETCH_FAILED",
@@ -146,6 +148,7 @@ async function deleteAllCaptureArtifacts(jobId: string): Promise<void> {
     deleteTableLayoutResult(jobId),
     deleteRenderTreeOptimization(jobId),
     deleteCompositingAnalysis(jobId),
+    deleteWtfPackage(jobId),
   ]);
 }
 
@@ -156,6 +159,7 @@ async function deleteResponsiveArtifacts(
   await Promise.allSettled([
     deleteResponsiveCapture(jobId),
     deleteResponsiveInference(jobId),
+    deleteWtfPackage(jobId),
     ...plans.map((plan) => deleteAllCaptureArtifacts(responsiveArtifactId(jobId, plan.id))),
   ]);
 }
@@ -939,6 +943,16 @@ async function handleShellRequest(request: W2fShellRequest): Promise<W2fShellRes
       return shellSuccess(request.type, await startResponsiveJob(request.capture));
     case "W2F_CANCEL_JOB":
       return shellSuccess(request.type, await cancelShellJob(request.jobId));
+    case "W2F_EXPORT_WTF": {
+      const current = await readJobState();
+      if (!current || current.jobId !== request.jobId) {
+        throw new Error("capture job is no longer available for export");
+      }
+      if (current.status !== "completed") {
+        throw new Error("only completed capture jobs can be exported");
+      }
+      return shellSuccess(request.type, await persistWtfExport(request.jobId));
+    }
   }
 }
 

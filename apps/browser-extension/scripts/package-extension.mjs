@@ -79,6 +79,16 @@ const runtimePackages = [
     dist: fileURLToPath(new URL("../../../packages/compositing-engine/dist/", import.meta.url)),
   },
   {
+    specifier: "@w2f/w2f-ir",
+    directory: "w2f-ir",
+    dist: fileURLToPath(new URL("../../../packages/w2f-ir/dist/", import.meta.url)),
+  },
+  {
+    specifier: "@w2f/wtf-packager",
+    directory: "wtf-packager",
+    dist: fileURLToPath(new URL("../../../packages/wtf-packager/dist/", import.meta.url)),
+  },
+  {
     specifier: "@w2f/standard-capture-adapter",
     directory: "standard-capture-adapter",
     dist: fileURLToPath(
@@ -144,6 +154,15 @@ for (const relativeFile of runtimeFiles) {
         (rewrittenSpecifiers.get(runtimePackage.specifier) ?? 0) + 1,
       );
     }
+  }
+  for (const schemaSubpath of ["frame-context", "scale-context"]) {
+    const target = `w2f-schema/${schemaSubpath}.js`;
+    const relative = posix.relative(posix.dirname(relativeFile), target);
+    const replacement = relative.startsWith(".") ? relative : `./${relative}`;
+    rewritten = rewritten.replaceAll(
+      `from "@w2f/w2f-schema/${schemaSubpath}"`,
+      `from "${replacement}"`,
+    );
   }
   if (rewritten !== source) await writeFile(runtimePath, rewritten, "utf8");
 }

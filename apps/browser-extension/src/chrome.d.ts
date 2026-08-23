@@ -59,6 +59,17 @@ declare namespace chrome {
     ): Promise<string>;
   }
 
+  namespace downloads {
+    interface DownloadOptions {
+      url: string;
+      filename?: string;
+      conflictAction?: "uniquify" | "overwrite" | "prompt";
+      saveAs?: boolean;
+    }
+
+    function download(options: DownloadOptions): Promise<number>;
+  }
+
   namespace scripting {
     interface InjectionResult<T> {
       frameId: number;

@@ -1,6 +1,5 @@
 import {
   WTF_ASSET_CODEC_VERSION,
-  WTF_CHECKSUMS_PATH as _unused,
   WTF_CONTAINER_KIND,
   WTF_DEFAULT_ENTRYPOINTS,
   WTF_FORMAT_VERSION,
@@ -107,7 +106,8 @@ async function preparePayloads(
   payloads: readonly WtfPackagePayload[],
   limits: WtfSecurityLimits,
 ): Promise<{ descriptors: WtfFileDescriptor[]; entries: WtfPackagedEntry[] }> {
-  if (payloads.length + 2 > limits.maxEntries) throw new RangeError("package exceeds entry-count limit");
+  if (payloads.length + 2 > limits.maxEntries)
+    throw new RangeError("package exceeds entry-count limit");
   const seen = new Set<string>();
   const entries: WtfPackagedEntry[] = [];
   const descriptors: WtfFileDescriptor[] = [];
@@ -120,7 +120,8 @@ async function preparePayloads(
       throw new RangeError(`payload exceeds configured entry limit: ${payload.path}`);
     }
     const digest = await sha256(bytes);
-    const mediaType = "json" in payload ? payload.mediaType ?? "application/json" : payload.mediaType;
+    const mediaType =
+      "json" in payload ? (payload.mediaType ?? "application/json") : payload.mediaType;
     descriptors.push({
       path: payload.path,
       role: payload.role,
@@ -159,9 +160,9 @@ export async function packageWtf(input: WtfPackagerInput): Promise<WtfPackageRes
   const prepared = await preparePayloads(input.payloads, limits);
   const capabilities = [...new Set(input.compatibility.capabilities)].sort();
   const requiredFeatures = [...new Set(input.features.required)].sort();
-  const optionalFeatures = [...new Set(input.features.optional)].filter(
-    (feature) => !requiredFeatures.includes(feature),
-  ).sort();
+  const optionalFeatures = [...new Set(input.features.optional)]
+    .filter((feature) => !requiredFeatures.includes(feature))
+    .sort();
   const manifest: WtfManifest = {
     kind: WTF_CONTAINER_KIND,
     compatibility: {
@@ -223,8 +224,11 @@ export async function packageWtf(input: WtfPackagerInput): Promise<WtfPackageRes
     );
   }
 
-  const bytes = encodeDeterministicZip(allEntries.map((entry) => ({ path: entry.path, bytes: entry.bytes })));
-  if (bytes.byteLength > limits.maxArchiveBytes) throw new RangeError("generated archive exceeds limit");
+  const bytes = encodeDeterministicZip(
+    allEntries.map((entry) => ({ path: entry.path, bytes: entry.bytes })),
+  );
+  if (bytes.byteLength > limits.maxArchiveBytes)
+    throw new RangeError("generated archive exceeds limit");
   const archiveSha256 = await sha256(bytes);
   return {
     version: WTF_PACKAGER_VERSION,
@@ -249,8 +253,8 @@ export function summarizeWtfPackage(result: WtfPackageResult): WtfPackageSummary
     jsonPayloadCount: result.files.filter((file) => file.mediaType === "application/json").length,
     binaryPayloadCount: result.files.filter((file) => file.mediaType !== "application/json").length,
     assetPayloadCount: result.files.filter((file) => file.role === "asset").length,
-    referencePayloadCount: result.files.filter((file) =>
-      file.role === "reference-tile" || file.role === "reference-tiles-index",
+    referencePayloadCount: result.files.filter(
+      (file) => file.role === "reference-tile" || file.role === "reference-tiles-index",
     ).length,
     fallbackPayloadCount: result.files.filter((file) => file.role === "fallback").length,
     archiveSha256: result.sha256,

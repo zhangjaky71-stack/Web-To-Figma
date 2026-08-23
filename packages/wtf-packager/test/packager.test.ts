@@ -107,8 +107,12 @@ describe("WTF Packager", () => {
     expect(entries.has("manifest.json")).toBe(true);
     expect(entries.has("checksums.json")).toBe(true);
     expect(entries.has("assets/abc.png")).toBe(true);
-    expect(JSON.parse(new TextDecoder().decode(entries.get("manifest.json")))).toEqual(first.manifest);
-    expect(JSON.parse(new TextDecoder().decode(entries.get("checksums.json")))).toEqual(first.checksums);
+    expect(JSON.parse(new TextDecoder().decode(entries.get("manifest.json")))).toEqual(
+      first.manifest,
+    );
+    expect(JSON.parse(new TextDecoder().decode(entries.get("checksums.json")))).toEqual(
+      first.checksums,
+    );
     expect(summarizeWtfPackage(first)).toMatchObject({
       payloadCount: input.payloads.length,
       archiveEntryCount: input.payloads.length + 2,
@@ -134,7 +138,9 @@ describe("WTF Packager", () => {
     );
     const duplicate = requiredPayloads();
     duplicate.push({ ...duplicate[0]! });
-    await expect(packageWtf(fixture({ payloads: duplicate }))).rejects.toThrow("duplicate payload path");
+    await expect(packageWtf(fixture({ payloads: duplicate }))).rejects.toThrow(
+      "duplicate payload path",
+    );
     await expect(
       packageWtf(
         fixture({
@@ -144,7 +150,9 @@ describe("WTF Packager", () => {
     ).rejects.toThrow("reserved container entry");
     await expect(
       packageWtf(
-        fixture({ payloads: [...requiredPayloads(), { path: "../evil", role: "extension", json: {} }] }),
+        fixture({
+          payloads: [...requiredPayloads(), { path: "../evil", role: "extension", json: {} }],
+        }),
       ),
     ).rejects.toThrow("invalid portable payload path");
   });

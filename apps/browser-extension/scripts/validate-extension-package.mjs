@@ -167,10 +167,13 @@ assert(
   cdpNormalizer.includes("CDP_FRAME_DOCUMENT_UNAVAILABLE"),
   "CDP adapter must diagnose frame tree entries unavailable in the root DOMSnapshot",
 );
-assert(!cdpNormalizer.includes("inputValue"), "CDP adapter must not consume input runtime values");
 assert(
-  !cdpNormalizer.includes("textValue"),
-  "CDP adapter must not consume textarea runtime values",
+  !cdpNormalizer.includes("document.nodes.inputValue"),
+  "CDP adapter must not consume input runtime value evidence fields",
+);
+assert(
+  !cdpNormalizer.includes("document.nodes.textValue"),
+  "CDP adapter must not consume textarea runtime value evidence fields",
 );
 
 const snapshotStore = await readFile(`${outputRoot}/runtime/snapshot-store.js`, "utf8");

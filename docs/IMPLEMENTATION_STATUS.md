@@ -25,8 +25,8 @@
 | 12 | Media / Container / Environment Capture | DONE | Exact-head read-only CI #310 PASS | PR #16 merged as `b9cdca4d` |
 | 13 | Asset Resolver | DONE | Exact-head read-only CI #328 PASS | PR #17 merged as `07978a58` |
 | 14 | Pixel Ground Truth & Raster Engine | DONE | Exact-head read-only CI #337 PASS | PR #18 merged as `6bb5fe53` |
-| 15 | Multi-Viewport Responsive Capture | IN PROGRESS | Implementation starting from merged NODE-14 | `feat/node-15-multi-viewport-responsive-capture` |
-| 16 | Responsive Inference Engine | TODO | - | - |
+| 15 | Multi-Viewport Responsive Capture | DONE | Exact-head read-only CI #350 PASS | PR #19 merged as `68cfbeac` |
+| 16 | Responsive Inference Engine | IN PROGRESS | Core inference implementation starting | `feat/node-16-responsive-inference-engine` |
 | 17 | Base Layout Analyzer | TODO | - | - |
 | 18 | Table Layout Engine | TODO | - | - |
 | 19 | Render Tree Optimizer | TODO | - | - |
@@ -45,70 +45,75 @@
 
 ## Current Node
 
-`NODE-15 — Multi-Viewport Responsive Capture`
+`NODE-16 — Responsive Inference Engine`
 
 Entry baseline:
 
 ```text
-6bb5fe537d9dfbcf4cbb32b5223979ea15f019b8
+68cfbeacff1d4dacc958fe0b6bb8a8d797a7efe7
 ```
 
 Working branch:
 
 ```text
-feat/node-15-multi-viewport-responsive-capture
+feat/node-16-responsive-inference-engine
 ```
 
-## NODE-14 Closure
+## NODE-15 Closure
 
-NODE-14 PR #18 passed exact-head read-only CI #337 (`32624954690`) on final candidate `78fa1f0a2d2c717d480d50a2338e99c7253cdf66` and was squash merged into `main` as:
+NODE-15 PR #19 passed exact-head read-only CI #350 (`32627504377`) on final candidate:
 
 ```text
-6bb5fe537d9dfbcf4cbb32b5223979ea15f019b8
+adc3d1dfce62fca5167fd5b18ad9e98eae494228
 ```
 
-The merged tree contains no temporary NODE-14 write-enabled bootstrap workflow.
-
-## NODE-15 Frozen Scope
-
-NODE-15 implements only:
+and was squash merged into `main` as:
 
 ```text
-responsive snapshot mode
-multiple viewport capture
-snapshot orchestration
-stable node matching inputs
+68cfbeacff1d4dacc958fe0b6bb8a8d797a7efe7
 ```
 
-The frozen common candidates are:
+The merged tree contains no temporary NODE-15 write-enabled bootstrap workflow.
+
+## NODE-16 Frozen Scope
+
+NODE-16 consumes NODE-15 multi-viewport evidence and infers responsive behavior without performing base render-tree layout analysis.
+
+Inputs include:
 
 ```text
-1440
-1280
-1024
-768
-390
+ResponsiveCapture snapshots
+Stable Identity evidence
+RawSnapshot geometry/relationships
+CSS Cascade authored/computed evidence
+Environment media/container query evidence
 ```
 
-The reduced default preset is:
+Frozen W2F IR V2 already provides:
 
 ```text
-1440 / 768 / 390
+WtfResponsiveSnapshotRef
+WtfResponsiveRule
+WtfResponsiveRange
+WtfMediaRuleTrace
+WtfContainerQueryInfo
+WtfResponsivePayload
+WtfSizingMode = fill | hug | fixed | intrinsic | content | unknown
 ```
 
-NODE-15 captures evidence. NODE-16 owns cross-snapshot matching/inference, breakpoint detection, FILL/HUG/FIXED, visibility/layout transitions and rule confidence.
+NODE-16 therefore remains additive and does not version-bump W2F Schema/IR.
 
-## Implementation Direction
+## Inference Principles
 
-- additive `ResponsiveCapture 1.0.0` sidecar;
-- reuse frozen `WtfResponsiveSnapshotRef` rather than version-bump W2F Schema/IR;
-- deterministic viewport plan and child-artifact identities;
-- High Fidelity synthetic multi-viewport orchestration with mandatory device-metrics cleanup/restore;
-- Standard profile remains current-viewport capable and does not mutate the browser window to fabricate responsive evidence;
-- each responsive snapshot preserves RawSnapshot/CSS/Environment/Assets/Pixel Ground Truth references;
-- stable identity assignments/signals are preserved as NODE-16 matching inputs without performing cross-snapshot inference;
-- bounded viewport count/dimensions and fail-visible diagnostics;
-- cancellation/failure cleanup covers every child snapshot artifact.
+- stable-node identity is the primary cross-snapshot join key;
+- rules require at least two comparable viewport snapshots unless directly supported by authored media/container evidence;
+- breakpoint boundaries are inferred only between observed viewport widths or from explicit authored query evidence;
+- visibility changes are fail-visible and evidence-backed;
+- FILL/HUG/FIXED decisions use authored CSS first, geometry trends second, and return `unknown` when confidence is insufficient;
+- repeated equal values are coalesced into deterministic responsive ranges;
+- every emitted rule carries confidence, reasons and source references;
+- conflicting authored/computed/geometry evidence lowers confidence and emits diagnostics instead of fabricating certainty;
+- NODE-17 owns base layout-tree semantics; NODE-27 owns Figma responsive rendering.
 
 ## Blockers
 
@@ -116,8 +121,8 @@ No product/architecture blocker is known.
 
 ## Next
 
-After NODE-15 formal Exit Gate and squash merge:
+After NODE-16 formal Exit Gate and squash merge:
 
 ```text
-NODE-16 — Responsive Inference Engine
+NODE-17 — Base Layout Analyzer
 ```

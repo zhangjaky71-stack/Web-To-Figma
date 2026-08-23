@@ -44,6 +44,16 @@ jobs:
             return source.replace(before, after);
           }
 
+          const analyzerPath = "packages/layout-analyzer/src/analyzer.ts";
+          let analyzer = readFileSync(analyzerPath, "utf8");
+          analyzer = replaceOnce(
+            analyzer,
+            '  if (/^[a-z-]+(?:\\([^)]*\\))?$/i.test(normalized)) {\n    return { semantic: { type: "keyword", value: normalized }, authoredValue: raw };\n  }',
+            '  if (/^[a-z-]+$/i.test(normalized)) {\n    return { semantic: { type: "keyword", value: normalized }, authoredValue: raw };\n  }',
+            "CSS function length semantics",
+          );
+          writeFileSync(analyzerPath, analyzer);
+
           const jobPath = "apps/browser-extension/src/runtime/job-state.ts";
           let job = readFileSync(jobPath, "utf8");
           job = replaceOnce(

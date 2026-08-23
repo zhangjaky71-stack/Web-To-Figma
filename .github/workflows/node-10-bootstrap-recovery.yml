@@ -59,32 +59,34 @@ jobs:
             .split("\n")
             .map((line) => (line.startsWith("          ") ? line.slice(10) : line));
 
-          const templateStarts = [
-            "const standardHelpers = `",
-            "const newTextBlock = `",
-            "const cdpHelpers = `",
-            "const newCdpLoop = `",
+          const templates = [
+            { name: "standardHelpers", marker: "const standardHelpers = `", closes: (trimmed) => trimmed === "`;" },
+            { name: "newTextBlock", marker: "const newTextBlock = `", closes: (trimmed) => trimmed.endsWith("}`;") },
+            { name: "cdpHelpers", marker: "const cdpHelpers = `", closes: (trimmed) => trimmed === "`;" },
+            { name: "newCdpLoop", marker: "const newCdpLoop = `", closes: (trimmed) => trimmed.endsWith("});`;") },
           ];
 
           const fixed = [];
-          let inGeneratedTemplate = false;
+          let activeTemplate = null;
           for (let index = 0; index < payload.length; index += 1) {
             let line = payload[index];
-            const templateStart = templateStarts.find((marker) => line.includes(marker));
-            if (templateStart) {
-              line = line.replace(templateStart, templateStart.replace("= `", "= String.raw`"));
+            if (!activeTemplate) {
+              const candidate = templates.find((template) => line.includes(template.marker));
+              if (candidate) {
+                line = line.replace(candidate.marker, candidate.marker.replace("= `", "= String.raw`"));
+                fixed.push(line);
+                activeTemplate = candidate;
+                continue;
+              }
+            }
+
+            if (activeTemplate && activeTemplate.closes(line.trim())) {
               fixed.push(line);
-              inGeneratedTemplate = true;
+              activeTemplate = null;
               continue;
             }
 
-            if (inGeneratedTemplate && line.trim() === "`;") {
-              fixed.push(line);
-              inGeneratedTemplate = false;
-              continue;
-            }
-
-            if (inGeneratedTemplate) {
+            if (activeTemplate) {
               if (line.includes(".replace(") && line.includes("A") && line.includes("gi")) {
                 const indent = line.slice(0, Math.max(0, line.indexOf(".replace")));
                 fixed.push(`${indent}.replace(/\\\\A\\s?/gi, "\\n");`);
@@ -96,7 +98,7 @@ jobs:
             fixed.push(line);
           }
 
-          if (inGeneratedTemplate) throw new Error("NODE-10 generated template recovery did not close");
+          if (activeTemplate) throw new Error(`NODE-10 generated template recovery did not close: ${activeTemplate.name}`);
           writeFileSync("/tmp/node-10-bootstrap.mjs", fixed.join("\n") + "\n", "utf8");
           RECOVER
           node /tmp/node-10-bootstrap.mjs

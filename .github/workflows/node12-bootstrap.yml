@@ -3,13 +3,15 @@ name: NODE-12 Bootstrap
 on:
   push:
     branches: [feat/node-12-media-container-environment-capture]
+  pull_request:
+    branches: [main]
 
 permissions:
   contents: write
 
 jobs:
   bootstrap:
-    if: github.actor != 'github-actions[bot]'
+    if: github.actor != 'github-actions[bot]' && (github.event_name != 'pull_request' || github.head_ref == 'feat/node-12-media-container-environment-capture')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -33,6 +35,18 @@ jobs:
       - name: Refresh workspace lockfile
         run: pnpm install --lockfile-only --no-frozen-lockfile
 
+      - name: Wire NODE-12 guardrail
+        run: |
+          node --input-type=module <<'EOF'
+          import { readFileSync, writeFileSync } from "node:fs";
+          const path = "scripts/validate-foundation.mjs";
+          let source = readFileSync(path, "utf8");
+          const anchor = 'import "./validate-node-11.mjs";';
+          const addition = 'import "./validate-node-12.mjs";';
+          if (!source.includes(addition)) source = source.replace(anchor, `${anchor}\n${addition}`);
+          writeFileSync(path, source);
+          EOF
+
       - name: Format NODE-12 changes
         run: |
           pnpm exec prettier --write \
@@ -42,19 +56,22 @@ jobs:
             packages/standard-capture-adapter/src/types.ts \
             packages/standard-capture-adapter/src/environment-capture.ts \
             apps/browser-extension/package.json \
+            apps/browser-extension/scripts/package-extension.mjs \
             apps/browser-extension/src/runtime/environment-runtime.ts \
             apps/browser-extension/src/runtime/environment-store.ts \
             apps/browser-extension/src/runtime/job-state.ts \
             apps/browser-extension/src/runtime/service-worker.ts \
             apps/browser-extension/test/environment-runtime.test.ts \
             apps/browser-extension/test/environment-store.test.ts \
+            scripts/validate-foundation.mjs \
+            scripts/validate-node-12.mjs \
             pnpm-lock.yaml
 
       - name: Commit generated lockfile and formatting
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add pnpm-lock.yaml packages/environment-capture packages/standard-capture-adapter apps/browser-extension
+          git add pnpm-lock.yaml packages/environment-capture packages/standard-capture-adapter apps/browser-extension scripts/validate-foundation.mjs scripts/validate-node-12.mjs
           if git diff --cached --quiet; then
             echo "No generated changes"
           else

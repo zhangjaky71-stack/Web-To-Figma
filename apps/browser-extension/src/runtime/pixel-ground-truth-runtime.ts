@@ -177,11 +177,31 @@ async function captureHighFidelityReferences(
   return references;
 }
 
+function requireCompleteReference(
+  capture: PixelGroundTruthCapture,
+  kind: "viewport" | "full-page",
+  id: string,
+  bounds: Rect,
+  dpr: number,
+): void {
+  const expectedCount = boundedPlan(id, bounds, dpr).length;
+  const reference = capture.references.find((item) => item.id === id && item.kind === kind);
+  const hasMissingDiagnostic = capture.diagnostics.some(
+    (diagnostic) => diagnostic.code === "RASTER_TILE_MISSING" && diagnostic.referenceId === id,
+  );
+  if (!reference || reference.tiles.length !== expectedCount || hasMissingDiagnostic) {
+    throw new Error(
+      `PixelGroundTruth ${kind} reference ${id} is incomplete: ${reference?.tiles.length ?? 0}/${expectedCount} tiles`,
+    );
+  }
+}
+
 export async function capturePixelGroundTruthForSnapshot(
   tabId: number,
   snapshot: RawSnapshot,
 ): Promise<PixelGroundTruthCapture> {
   const dpr = snapshot.environment.scale.context.devicePixelRatio;
+  const viewportBounds = viewportReferenceBounds(snapshot);
   const references =
     snapshot.adapter === "cdp"
       ? await captureHighFidelityReferences(tabId, snapshot, dpr)
@@ -197,15 +217,15 @@ export async function capturePixelGroundTruthForSnapshot(
     sha256RasterBytes,
   );
   if (!isPixelGroundTruth(capture)) throw new Error("PixelGroundTruth sidecar validation failed");
-  if (!capture.references.some((reference) => reference.kind === "viewport" && reference.tiles.length)) {
-    throw new Error("PixelGroundTruth requires a non-empty viewport reference");
-  }
-  if (
-    snapshot.adapter === "cdp" &&
-    snapshot.captureTarget.type === "document" &&
-    !capture.references.some((reference) => reference.kind === "full-page" && reference.tiles.length)
-  ) {
-    throw new Error("High Fidelity document capture requires a non-empty full-page reference");
+  requireCompleteReference(capture, "viewport", "viewport:current", viewportBounds, dpr);
+  if (snapshot.adapter === "cdp" && snapshot.captureTarget.type === "document") {
+    requireCompleteReference(
+      capture,
+      "full-page",
+      "full-page:current",
+      fullPageReferenceBounds(snapshot),
+      dpr,
+    );
   }
   return capture;
 }

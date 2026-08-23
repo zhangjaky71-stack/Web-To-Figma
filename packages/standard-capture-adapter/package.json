@@ -17,7 +17,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@w2f/capture-core": "workspace:*"
+    "@w2f/capture-core": "workspace:*",
+    "@w2f/css-cascade": "workspace:*"
   },
   "devDependencies": {
     "typescript": "6.0.3",

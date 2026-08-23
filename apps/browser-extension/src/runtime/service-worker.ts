@@ -6,13 +6,14 @@ import {
   type RawSnapshot,
 } from "@w2f/capture-core";
 import { summarizeEnvironmentCapture } from "@w2f/environment-capture";
+import { summarizePixelGroundTruth } from "@w2f/pixel-ground-truth";
 import {
   captureStandardSnapshotInPage,
   type StandardCaptureInput,
   type StandardCaptureResult,
 } from "@w2f/standard-capture-adapter";
 import { captureAssetsForSnapshot } from "./asset-runtime.js";
-import { deleteAssetCapture, writeAssetCapture } from "./asset-store.js";
+import { deleteAssetCapture, readAssetCapture, writeAssetCapture } from "./asset-store.js";
 import { captureHighFidelityWithCdp, getCdpRuntimeCapability } from "./cdp-runtime.js";
 import { captureCssCascadeForSnapshot } from "./css-cascade-runtime.js";
 import { deleteCssCascadeCapture, writeCssCascadeCapture } from "./css-cascade-store.js";
@@ -27,6 +28,8 @@ import {
   type CaptureSnapshotReceipt,
   type PageProbe,
 } from "./job-state.js";
+import { capturePixelGroundTruthForSnapshot } from "./pixel-ground-truth-runtime.js";
+import { deletePixelGroundTruth, writePixelGroundTruth } from "./pixel-ground-truth-store.js";
 import {
   W2F_EXTENSION_SHELL_VERSION,
   W2F_JOB_STORAGE_KEY,
@@ -45,6 +48,18 @@ import {
   writeReferenceScreenshot,
 } from "./snapshot-store.js";
 import { resolveActiveTabSource } from "./source-runtime.js";
+
+const ASSET_RASTER_FALLBACK_CODES = new Set([
+  "ASSET_FETCH_FAILED",
+  "ASSET_EMPTY_RESOURCE",
+  "ASSET_TOO_LARGE",
+  "ASSET_TOTAL_BUDGET_EXCEEDED",
+  "ASSET_COUNT_BUDGET_EXCEEDED",
+  "ASSET_UNSUPPORTED_MEDIA_TYPE",
+  "ASSET_HASH_FAILED",
+  "ASSET_REFERENCE_INVALID",
+  "ASSET_REFERENCE_UNSUPPORTED",
+]);
 
 function shellInfo(): W2fShellInfo {
   const cdp = getCdpRuntimeCapability();
@@ -76,6 +91,7 @@ async function deleteAllCaptureArtifacts(jobId: string): Promise<void> {
     deleteCssCascadeCapture(jobId),
     deleteEnvironmentCapture(jobId),
     deleteAssetCapture(jobId),
+    deletePixelGroundTruth(jobId),
   ]);
 }
 
@@ -191,6 +207,47 @@ async function persistAssets(
   };
 }
 
+async function persistPixelGroundTruth(
+  tabId: number,
+  jobId: string,
+  snapshot: RawSnapshot,
+): Promise<
+  Pick<
+    CaptureSnapshotReceipt,
+    | "pixelGroundTruthStorageKey"
+    | "pixelGroundTruthAdapter"
+    | "rasterReferenceCount"
+    | "rasterTileReferenceCount"
+    | "rasterUniqueTileCount"
+    | "rasterUniqueByteCount"
+    | "rasterDiagnosticCount"
+  >
+> {
+  const assetCapture = await readAssetCapture(jobId);
+  const fallbackRequests = (assetCapture?.diagnostics ?? []).flatMap((diagnostic) =>
+    diagnostic.sourceNodeId && ASSET_RASTER_FALLBACK_CODES.has(diagnostic.code)
+      ? [
+          {
+            sourceNodeId: diagnostic.sourceNodeId,
+            reason: `asset:${diagnostic.code}`,
+          },
+        ]
+      : [],
+  );
+  const capture = await capturePixelGroundTruthForSnapshot(tabId, snapshot, fallbackRequests);
+  const pixelGroundTruthStorageKey = await writePixelGroundTruth(jobId, capture);
+  const summary = summarizePixelGroundTruth(capture);
+  return {
+    pixelGroundTruthStorageKey,
+    pixelGroundTruthAdapter: capture.adapter,
+    rasterReferenceCount: summary.referenceCount,
+    rasterTileReferenceCount: summary.tileReferenceCount,
+    rasterUniqueTileCount: summary.uniqueTileCount,
+    rasterUniqueByteCount: summary.uniqueByteCount,
+    rasterDiagnosticCount: summary.diagnosticCount,
+  };
+}
+
 async function captureStandardDom(
   tabId: number,
   jobId: string,
@@ -228,6 +285,7 @@ async function captureStandardDom(
     const cascadeReceipt = await persistCssCascade(tabId, jobId, snapshot);
     const environmentReceipt = await persistEnvironment(tabId, jobId, snapshot);
     const assetReceipt = await persistAssets(tabId, jobId, snapshot);
+    const pixelGroundTruthReceipt = await persistPixelGroundTruth(tabId, jobId, snapshot);
     return {
       snapshot,
       receipt: {
@@ -237,6 +295,7 @@ async function captureStandardDom(
         ...cascadeReceipt,
         ...environmentReceipt,
         ...assetReceipt,
+        ...pixelGroundTruthReceipt,
         ...(fallbackReason ? { fallbackFromCdp: true } : {}),
       },
     };
@@ -264,6 +323,7 @@ async function captureCdpDom(
     const cascadeReceipt = await persistCssCascade(tabId, jobId, result.snapshot);
     const environmentReceipt = await persistEnvironment(tabId, jobId, result.snapshot);
     const assetReceipt = await persistAssets(tabId, jobId, result.snapshot);
+    const pixelGroundTruthReceipt = await persistPixelGroundTruth(tabId, jobId, result.snapshot);
     return {
       snapshot: result.snapshot,
       receipt: {
@@ -274,6 +334,7 @@ async function captureCdpDom(
         ...cascadeReceipt,
         ...environmentReceipt,
         ...assetReceipt,
+        ...pixelGroundTruthReceipt,
       },
     };
   } catch (error) {

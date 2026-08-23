@@ -34,6 +34,11 @@ const runtimePackages = [
     dist: fileURLToPath(new URL("../../../packages/asset-resolver/dist/", import.meta.url)),
   },
   {
+    specifier: "@w2f/pixel-ground-truth",
+    directory: "pixel-ground-truth",
+    dist: fileURLToPath(new URL("../../../packages/pixel-ground-truth/dist/", import.meta.url)),
+  },
+  {
     specifier: "@w2f/standard-capture-adapter",
     directory: "standard-capture-adapter",
     dist: fileURLToPath(

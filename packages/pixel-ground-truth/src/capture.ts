@@ -172,6 +172,7 @@ async function normalizeReference(
 
   const expected = planRasterTiles(id, bounds, dpr, tileSizePx);
   const seen = new Set<string>();
+  const accepted = new Set<string>();
   const descriptors: WtfReferenceTileDescriptor[] = [];
 
   for (const tile of reference.tiles) {
@@ -241,6 +242,7 @@ async function normalizeReference(
       budget.bytes += tile.bytes.length;
     }
     budget.count += 1;
+    accepted.add(tile.id);
     descriptors.push({
       id: tile.id,
       path,
@@ -248,6 +250,17 @@ async function normalizeReference(
       bounds: { ...tile.bounds },
       dpr,
       sha256,
+    });
+  }
+
+  for (const plan of expected) {
+    if (accepted.has(plan.id)) continue;
+    diagnostics.push({
+      code: "RASTER_TILE_MISSING",
+      message: "Raster reference is missing a required tile from the deterministic plan.",
+      referenceId: id,
+      tileId: plan.id,
+      ...(reference.sourceNodeId ? { sourceNodeId: reference.sourceNodeId } : {}),
     });
   }
 

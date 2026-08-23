@@ -19,10 +19,16 @@ for (const path of ["manifest.json", "dist/code.js", "dist/ui.html"]) {
 if (failures.length === 0) {
   const manifest = JSON.parse(text("manifest.json"));
   assert(manifest.api === "1.0.0", "Figma manifest API contract drifted");
-  assert(JSON.stringify(manifest.editorType) === JSON.stringify(["figma"]), "plugin must target Figma design mode");
+  assert(
+    JSON.stringify(manifest.editorType) === JSON.stringify(["figma"]),
+    "plugin must target Figma design mode",
+  );
   assert(manifest.main === "dist/code.js", "Figma main bundle path drifted");
   assert(manifest.ui === "dist/ui.html", "Figma UI bundle path drifted");
-  assert(manifest.documentAccess === "dynamic-page", "new Figma plugin must use dynamic-page access");
+  assert(
+    manifest.documentAccess === "dynamic-page",
+    "new Figma plugin must use dynamic-page access",
+  );
   assert(
     JSON.stringify(manifest.networkAccess?.allowedDomains) === JSON.stringify(["none"]),
     "NODE-22 must remain local-first with no network domains",
@@ -41,7 +47,7 @@ if (failures.length === 0) {
   ]) {
     assert(main.includes(evidence), `packaged Figma main missing ${evidence}`);
   }
-  for (const forbidden of ["require(", "from \"@w2f/", "fetch(", "XMLHttpRequest", "WebSocket"] ) {
+  for (const forbidden of ["require(", 'from "@w2f/', "fetch(", "XMLHttpRequest", "WebSocket"]) {
     assert(!main.includes(forbidden), `packaged Figma main must not contain ${forbidden}`);
   }
 
@@ -60,13 +66,15 @@ if (failures.length === 0) {
   ]) {
     assert(ui.includes(evidence), `packaged Figma UI missing ${evidence}`);
   }
-  for (const forbidden of ["https://", "http://", "fetch(", "XMLHttpRequest", "WebSocket"] ) {
+  for (const forbidden of ["https://", "http://", "fetch(", "XMLHttpRequest", "WebSocket"]) {
     assert(!ui.includes(forbidden), `packaged Figma UI must remain local-only; found ${forbidden}`);
   }
 }
 
 if (failures.length > 0) {
-  console.error(`Figma plugin package validation failed:\n${failures.map((item) => `- ${item}`).join("\n")}`);
+  console.error(
+    `Figma plugin package validation failed:\n${failures.map((item) => `- ${item}`).join("\n")}`,
+  );
   process.exitCode = 1;
 } else {
   console.log("Figma plugin package validation passed.");

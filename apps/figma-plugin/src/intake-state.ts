@@ -7,7 +7,7 @@ import {
   type W2fParserPreview,
 } from "./protocol.js";
 
-export const W2F_MAX_INTAKE_BYTES = 1024 * 1024 * 1024 as const;
+export const W2F_MAX_INTAKE_BYTES = 1024 * 1024 * 1024;
 
 export interface W2fIntakeState {
   descriptor: W2fFileIntakeDescriptor | null;
@@ -83,7 +83,10 @@ export function createFileIntakeDescriptor(input: {
   };
 }
 
-const ALLOWED_PROGRESS_TRANSITIONS: Record<W2fImportProgressStage, readonly W2fImportProgressStage[]> = {
+const ALLOWED_PROGRESS_TRANSITIONS: Record<
+  W2fImportProgressStage,
+  readonly W2fImportProgressStage[]
+> = {
   idle: ["reading", "cancelled", "failed"],
   reading: ["awaiting-secure-parser", "validating", "cancelled", "failed"],
   "awaiting-secure-parser": ["validating", "cancelled", "failed"],
@@ -101,7 +104,10 @@ export function transitionProgress(
   current: W2fImportProgress,
   next: W2fImportProgress,
 ): W2fImportProgress {
-  if (current.stage !== next.stage && !ALLOWED_PROGRESS_TRANSITIONS[current.stage].includes(next.stage)) {
+  if (
+    current.stage !== next.stage &&
+    !ALLOWED_PROGRESS_TRANSITIONS[current.stage].includes(next.stage)
+  ) {
     throw new Error(`W2F_E_IMPORT_STATE: invalid transition ${current.stage} -> ${next.stage}`);
   }
   if (
@@ -121,7 +127,9 @@ export function selectionForPreview(
   preview: W2fParserPreview,
 ): W2fImportSelection {
   const validIds = new Set(preview.sectionOutline.map((section) => section.id));
-  const defaults = preview.sectionOutline.filter((section) => section.defaultSelected).map((section) => section.id);
+  const defaults = preview.sectionOutline
+    .filter((section) => section.defaultSelected)
+    .map((section) => section.id);
   const selected = current.selectedSectionIds.filter((id) => validIds.has(id));
   return {
     ...current,

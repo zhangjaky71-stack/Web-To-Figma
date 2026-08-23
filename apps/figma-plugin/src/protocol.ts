@@ -176,7 +176,11 @@ export function isW2fImportSelection(value: unknown): value is W2fImportSelectio
 }
 
 export function isW2fUiToMainMessage(value: unknown): value is W2fFigmaMessage<W2fUiToMainPayload> {
-  if (!isRecord(value) || value.protocol !== W2F_FIGMA_PROTOCOL || value.version !== W2F_FIGMA_PROTOCOL_VERSION) {
+  if (
+    !isRecord(value) ||
+    value.protocol !== W2F_FIGMA_PROTOCOL ||
+    value.version !== W2F_FIGMA_PROTOCOL_VERSION
+  ) {
     return false;
   }
   if (!isRecord(value.payload) || typeof value.payload.type !== "string") return false;

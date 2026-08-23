@@ -38,6 +38,10 @@ const template = await readFile(`${appRoot}/static/ui.html`, "utf8");
 const marker = "<!-- W2F_UI_SCRIPT -->";
 if (!template.includes(marker)) throw new Error("Figma UI template is missing the script marker");
 const safeScript = uiScript.replaceAll("</script>", "<\\/script>");
-await writeFile(`${distRoot}/ui.html`, template.replace(marker, `<script>${safeScript}</script>`), "utf8");
+await writeFile(
+  `${distRoot}/ui.html`,
+  template.replace(marker, `<script>${safeScript}</script>`),
+  "utf8",
+);
 
 console.log("W2F Figma plugin package built.");

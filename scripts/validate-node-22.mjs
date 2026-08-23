@@ -29,21 +29,35 @@ const requiredFiles = [
   "docs/adr/ADR-0022-figma-file-intake-boundary.md",
   "docs/nodes/NODE-22_FIGMA_PLUGIN_SHELL_FILE_INTAKE.md",
 ];
-for (const file of requiredFiles) assert(existsSync(resolve(root, file)), `NODE-22 missing ${file}`);
+for (const file of requiredFiles)
+  assert(existsSync(resolve(root, file)), `NODE-22 missing ${file}`);
 
 if (failures.length === 0) {
   const packageJson = json("apps/figma-plugin/package.json");
-  assert(packageJson.devDependencies?.["@figma/plugin-typings"] === "1.134.0", "Figma typings must remain pinned");
+  assert(
+    packageJson.devDependencies?.["@figma/plugin-typings"] === "1.134.0",
+    "Figma typings must remain pinned",
+  );
   assert(packageJson.devDependencies?.esbuild === "0.28.2", "Figma bundler must remain pinned");
   assert(
-    packageJson.scripts?.build === "node scripts/build-plugin.mjs && node scripts/validate-plugin-package.mjs",
+    packageJson.scripts?.build ===
+      "node scripts/build-plugin.mjs && node scripts/validate-plugin-package.mjs",
     "Figma plugin build must bundle and validate the loadable package",
   );
 
   const manifest = json("apps/figma-plugin/manifest.json");
-  assert(manifest.main === "dist/code.js" && manifest.ui === "dist/ui.html", "Figma main/UI paths drifted");
-  assert(manifest.documentAccess === "dynamic-page", "Figma plugin must use dynamic-page document access");
-  assert(JSON.stringify(manifest.editorType) === JSON.stringify(["figma"]), "NODE-22 must target Figma design mode");
+  assert(
+    manifest.main === "dist/code.js" && manifest.ui === "dist/ui.html",
+    "Figma main/UI paths drifted",
+  );
+  assert(
+    manifest.documentAccess === "dynamic-page",
+    "Figma plugin must use dynamic-page document access",
+  );
+  assert(
+    JSON.stringify(manifest.editorType) === JSON.stringify(["figma"]),
+    "NODE-22 must target Figma design mode",
+  );
   assert(
     JSON.stringify(manifest.networkAccess?.allowedDomains) === JSON.stringify(["none"]),
     "NODE-22 must not add network access",
@@ -79,8 +93,18 @@ if (failures.length === 0) {
   ]) {
     assert(intake.includes(evidence), `Figma intake state missing ${evidence}`);
   }
-  for (const forbidden of ["unzip", "inflate", "JSZip", "fflate", "validateWtfManifest", "validateChecksums"]) {
-    assert(!intake.includes(forbidden), `NODE-22 intake must not implement NODE-23 parser behavior: ${forbidden}`);
+  for (const forbidden of [
+    "unzip",
+    "inflate",
+    "JSZip",
+    "fflate",
+    "validateWtfManifest",
+    "validateChecksums",
+  ]) {
+    assert(
+      !intake.includes(forbidden),
+      `NODE-22 intake must not implement NODE-23 parser behavior: ${forbidden}`,
+    );
   }
 
   const main = text("apps/figma-plugin/src/main.ts");
@@ -111,7 +135,13 @@ if (failures.length === 0) {
     if (evidence === 'source: "canvas-drop"') continue;
     assert(ui.includes(evidence), `Figma UI shell missing ${evidence}`);
   }
-  for (const forbidden of ["fetch(", "XMLHttpRequest", "WebSocket", "localStorage", "sessionStorage"]) {
+  for (const forbidden of [
+    "fetch(",
+    "XMLHttpRequest",
+    "WebSocket",
+    "localStorage",
+    "sessionStorage",
+  ]) {
     assert(!ui.includes(forbidden), `Figma UI must remain local-first; found ${forbidden}`);
   }
 
@@ -147,7 +177,9 @@ if (failures.length === 0) {
 }
 
 if (failures.length > 0) {
-  console.error(`NODE-22 foundation validation failed:\n${failures.map((item) => `- ${item}`).join("\n")}`);
+  console.error(
+    `NODE-22 foundation validation failed:\n${failures.map((item) => `- ${item}`).join("\n")}`,
+  );
   process.exitCode = 1;
 } else {
   console.log("NODE-22 foundation validation passed.");

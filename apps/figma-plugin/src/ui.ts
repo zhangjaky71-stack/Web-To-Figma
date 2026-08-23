@@ -2,6 +2,7 @@ import {
   createDefaultImportSelection,
   createFileIntakeDescriptor,
   createInitialIntakeState,
+  assertWtfIntakeCandidate,
   normalizeSelectedSections,
   selectionForPreview,
   transitionProgress,
@@ -53,8 +54,14 @@ function postToMain(payload: W2fUiToMainPayload): void {
 function isMainMessage(value: unknown): value is { payload: W2fMainToUiPayload } {
   if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
   const record = value as Record<string, unknown>;
-  if (record.protocol !== W2F_FIGMA_PROTOCOL || record.version !== W2F_FIGMA_PROTOCOL_VERSION) return false;
-  if (typeof record.payload !== "object" || record.payload === null || Array.isArray(record.payload)) return false;
+  if (record.protocol !== W2F_FIGMA_PROTOCOL || record.version !== W2F_FIGMA_PROTOCOL_VERSION)
+    return false;
+  if (
+    typeof record.payload !== "object" ||
+    record.payload === null ||
+    Array.isArray(record.payload)
+  )
+    return false;
   return typeof (record.payload as Record<string, unknown>).type === "string";
 }
 
@@ -72,7 +79,13 @@ function setError(code: string, message: string): void {
   state = {
     ...state,
     error: { code, message },
-    progress: { stage: "failed", completed: 0, total: 1, label: "File intake failed", detail: message },
+    progress: {
+      stage: "failed",
+      completed: 0,
+      total: 1,
+      label: "File intake failed",
+      detail: message,
+    },
   };
   progressLabel.textContent = "File intake failed";
   progressDetail.textContent = `${code}: ${message}`;
@@ -112,9 +125,9 @@ function renderSections(preview: W2fParserPreview | null): void {
     input.disabled = state.selection.scope !== "selected-sections";
     input.addEventListener("change", () => {
       if (!state.preview) return;
-      const current = [...sections.querySelectorAll<HTMLInputElement>('input[type="checkbox"]:checked')].map(
-        (item) => item.value,
-      );
+      const current = [
+        ...sections.querySelectorAll<HTMLInputElement>('input[type="checkbox"]:checked'),
+      ].map((item) => item.value);
       state = {
         ...state,
         selection: {
@@ -179,7 +192,11 @@ function acceptBytes(descriptor: W2fFileIntakeDescriptor, bytes: Uint8Array): vo
 
 async function readUiFile(file: File, source: "choose" | "ui-drop"): Promise<void> {
   try {
-    state = { ...state, progress: { stage: "reading", completed: 0, total: 1, label: `Reading ${file.name}` } };
+    assertWtfIntakeCandidate(file.name, file.size);
+    state = {
+      ...state,
+      progress: { stage: "reading", completed: 0, total: 1, label: `Reading ${file.name}` },
+    };
     progressLabel.textContent = state.progress.label;
     progressDetail.textContent = "Local file bytes stay inside the plugin runtime.";
     progressBar.max = 1;
@@ -239,7 +256,9 @@ dropZone.addEventListener("drop", (event) => {
   if (file) void readUiFile(file, "ui-drop");
 });
 
-for (const input of document.querySelectorAll<HTMLInputElement>('input[name="profile"], input[name="scope"]')) {
+for (const input of document.querySelectorAll<HTMLInputElement>(
+  'input[name="profile"], input[name="scope"]',
+)) {
   input.addEventListener("change", updateSelectionFromControls);
 }
 

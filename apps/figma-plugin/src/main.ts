@@ -110,7 +110,9 @@ figma.ui.onmessage = (message: unknown) => {
 };
 
 figma.on("drop", (event) => {
-  const file = event.files.find((candidate) => candidate.name.trim().toLowerCase().endsWith(".wtf"));
+  const file = event.files.find((candidate) =>
+    candidate.name.trim().toLowerCase().endsWith(".wtf"),
+  );
   if (!file) return true;
   void handleCanvasDrop(file, { x: event.absoluteX, y: event.absoluteY });
   return false;

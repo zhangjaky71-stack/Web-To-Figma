@@ -102,6 +102,59 @@ jobs:
           RECOVER
           node /tmp/node-10-bootstrap.mjs
 
+      - name: Repair strict Standard pseudo parser
+        shell: bash
+        run: |
+          node --input-type=module <<'REPAIR'
+          import { readFileSync, writeFileSync } from "node:fs";
+
+          const path = "packages/standard-capture-adapter/src/capture.ts";
+          const source = readFileSync(path, "utf8");
+          const startMarker = "  function pseudoContent(";
+          const endMarker = "  function capturePseudo(";
+          const start = source.indexOf(startMarker);
+          const end = source.indexOf(endMarker, start);
+          if (start < 0 || end < 0) throw new Error("Standard pseudo parser markers not found");
+
+          const replacement = [
+            '  function pseudoContent(content: string): NonNullable<RawNode["pseudo"]> {',
+            '    if (!content || content === "none" || content === "normal") {',
+            '      return { type: "before", content, contentKind: "none" };',
+            '    }',
+            '    const first = content[0];',
+            '    const last = content.at(-1);',
+            '    const quoted =',
+            '      (first === String.fromCharCode(34) || first === String.fromCharCode(39)) &&',
+            '      last === first;',
+            '    if (quoted) {',
+            '      const raw = content.slice(1, -1);',
+            '      let generatedText = "";',
+            '      for (let index = 0; index < raw.length; index += 1) {',
+            '        const character = raw[index]!;',
+            '        if (character === "\\\\" && index + 1 < raw.length) {',
+            '          const next = raw[index + 1]!;',
+            '          if (next.toLowerCase() === "a") {',
+            '            generatedText += "\\n";',
+            '            index += 1;',
+            '            if (" \\t\\r\\n\\f".includes(raw[index + 1] ?? "")) index += 1;',
+            '            continue;',
+            '          }',
+            '          generatedText += next;',
+            '          index += 1;',
+            '          continue;',
+            '        }',
+            '        generatedText += character;',
+            '      }',
+            '      return { type: "before", content, contentKind: "text", generatedText };',
+            '    }',
+            '    return { type: "before", content, contentKind: "complex" };',
+            '  }',
+            '',
+          ].join("\n");
+
+          writeFileSync(path, source.slice(0, start) + replacement + source.slice(end), "utf8");
+          REPAIR
+
       - name: Apply canonical formatting
         run: pnpm exec prettier --write packages/capture-core packages/standard-capture-adapter packages/cdp-capture-adapter scripts
 
@@ -116,7 +169,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add packages/capture-core packages/standard-capture-adapter packages/cdp-capture-adapter scripts/validate-foundation.mjs scripts/validate-node-10.mjs
+          git add packages/capture-core packages/standard-capture-adapter packages/cdp-capture-adapter scripts/validate-foundation.mjs scripts/validate-node-09.mjs scripts/validate-node-10.mjs
           if git diff --cached --quiet; then
             echo "No bootstrap changes to commit"
             exit 0

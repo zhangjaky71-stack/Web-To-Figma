@@ -1,17 +1,20 @@
 Scope: all 22 workspace projects
 ? Verifying lockfile against supply-chain policies (160 entries)...
-✓ Lockfile passes supply-chain policies (160 entries in 1.4s)
+✓ Lockfile passes supply-chain policies (160 entries in 1.5s)
 Progress: resolved 1, reused 0, downloaded 0, added 0
 Progress: resolved 7, reused 0, downloaded 7, added 0
-Progress: resolved 71, reused 0, downloaded 56, added 0
-Progress: resolved 133, reused 0, downloaded 102, added 0
-Progress: resolved 152, reused 0, downloaded 122, added 0
+Progress: resolved 8, reused 0, downloaded 7, added 0
+Progress: resolved 90, reused 0, downloaded 59, added 0
+Progress: resolved 136, reused 0, downloaded 105, added 0
+Progress: resolved 170, reused 0, downloaded 125, added 0
 Packages: +133
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Packages are hard linked from the content-addressable store to the virtual store.
   Content-addressable store is at: /home/runner/setup-pnpm/node_modules/.bin/store/v11
   Virtual store is at:             node_modules/.pnpm
 Progress: resolved 188, reused 0, downloaded 133, added 133, done
+.../esbuild@0.28.2/node_modules/esbuild postinstall$ node install.js
+.../esbuild@0.28.2/node_modules/esbuild postinstall: Done
 
 devDependencies:
 + eslint 10.8.1 (10.9.0 is available)
@@ -21,58 +24,305 @@ devDependencies:
 + typescript-eslint 8.67.0
 + vitest 4.1.11
 
-[ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: esbuild@0.28.2
-
-Run "pnpm approve-builds" to pick which dependencies should be allowed to run scripts.
+Done in 11s using pnpm v11.22.0
 NODE-22 integration finalizer applied successfully.
 Scope: all 22 workspace projects
-✓ Lockfile passes supply-chain policies (verified 485ms ago)
-Lockfile is up to date, resolution step is skipped
 Already up to date
-
-[ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: esbuild@0.28.2
-
-Run "pnpm approve-builds" to pick which dependencies should be allowed to run scripts.
-Scope: all 22 workspace projects
-✓ Lockfile passes supply-chain policies (verified 1s ago)
-Lockfile is up to date, resolution step is skipped
-Already up to date
-
-[ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: esbuild@0.28.2
-
-Run "pnpm approve-builds" to pick which dependencies should be allowed to run scripts.
-[ERROR] Command failed with exit code 1: /opt/hostedtoolcache/node/24.19.0/x64/bin/node /home/runner/setup-pnpm/node_modules/pnpm/bin/pnpm.mjs install
-
-pnpm: Command failed with exit code 1: /opt/hostedtoolcache/node/24.19.0/x64/bin/node /home/runner/setup-pnpm/node_modules/pnpm/bin/pnpm.mjs install
-    at getFinalError (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:89203:14)
-    at makeError (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:91510:21)
-    at getSyncResult (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:93354:10)
-    at spawnSubprocessSync (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:93314:14)
-    at execaCoreSync (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:93244:23)
-    at callBoundExeca (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:95772:23)
-    at boundExeca (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:95749:49)
-    at sync2 (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:95908:10)
-    at runPnpmCli (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:271523:5)
-    at runDepsStatusCheck (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:273323:7)
+Done in 422ms using pnpm v11.22.0
+[90mapps/figma-plugin/package.json[39m 27ms (unchanged)
+[90mapps/figma-plugin/manifest.json[39m 7ms (unchanged)
+[90mapps/figma-plugin/tsconfig.json[39m 2ms (unchanged)
+[90mapps/figma-plugin/src/index.ts[39m 49ms (unchanged)
+apps/figma-plugin/src/intake-state.ts 57ms
+apps/figma-plugin/src/main.ts 23ms
+apps/figma-plugin/src/protocol.ts 28ms
+apps/figma-plugin/src/ui.ts 38ms
+[90mapps/figma-plugin/test/index.test.ts[39m 3ms (unchanged)
+[90mapps/figma-plugin/test/intake-state.test.ts[39m 12ms (unchanged)
+[90mapps/figma-plugin/test/protocol.test.ts[39m 4ms (unchanged)
+apps/figma-plugin/static/ui.html 116ms
+apps/figma-plugin/scripts/build-plugin.mjs 13ms
+apps/figma-plugin/scripts/validate-plugin-package.mjs 12ms
+[90mapps/figma-plugin/README.md[39m 34ms (unchanged)
+scripts/validate-foundation.mjs 31ms
+scripts/validate-node-22.mjs 10ms
 rm 'scripts/node-22-finalize.mjs'
-Scope: all 22 workspace projects
-✓ Lockfile passes supply-chain policies (verified 2s ago)
-Lockfile is up to date, resolution step is skipped
-Already up to date
+$ pnpm validate:foundation && pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm format:check
+$ node scripts/validate-foundation.mjs
+NODE-08 foundation validation passed.
+NODE-09 foundation validation passed.
+NODE-10 foundation validation passed.
+NODE-11 foundation validation passed.
+NODE-12 foundation validation passed.
+NODE-13 foundation validation passed.
+NODE-14 foundation validation passed.
+NODE-15 foundation validation passed.
+NODE-16 foundation validation passed.
+NODE-17 foundation validation passed.
+NODE-18 foundation validation passed.
+NODE-19 foundation validation passed.
+NODE-20 foundation validation passed.
+NODE-21 foundation validation passed.
+NODE-22 foundation validation passed.
+Foundation validation passed.
+$ turbo run lint
 
-[ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: esbuild@0.28.2
+Attention:
+Turborepo now collects completely anonymous telemetry regarding usage.
+This information is used to shape the Turborepo roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://turborepo.dev/docs/telemetry
 
-Run "pnpm approve-builds" to pick which dependencies should be allowed to run scripts.
-[ERROR] Command failed with exit code 1: /opt/hostedtoolcache/node/24.19.0/x64/bin/node /home/runner/setup-pnpm/node_modules/pnpm/bin/pnpm.mjs install
 
-pnpm: Command failed with exit code 1: /opt/hostedtoolcache/node/24.19.0/x64/bin/node /home/runner/setup-pnpm/node_modules/pnpm/bin/pnpm.mjs install
-    at getFinalError (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:89203:14)
-    at makeError (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:91510:21)
-    at getSyncResult (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:93354:10)
-    at spawnSubprocessSync (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:93314:14)
-    at execaCoreSync (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:93244:23)
-    at callBoundExeca (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:95772:23)
-    at boundExeca (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:95749:49)
-    at sync2 (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:95908:10)
-    at runPnpmCli (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:271523:5)
-    at runDepsStatusCheck (file:///home/runner/setup-pnpm/node_modules/.pnpm/pnpm@11.22.0/node_modules/pnpm/dist/pnpm.mjs:273323:7)
+   • Packages in scope: @w2f/asset-resolver, @w2f/browser-extension, @w2f/capture-core, @w2f/cdp-capture-adapter, @w2f/compositing-engine, @w2f/css-cascade, @w2f/environment-capture, @w2f/figma-plugin, @w2f/layout-analyzer, @w2f/pixel-ground-truth, @w2f/render-tree-optimizer, @w2f/responsive-capture, @w2f/responsive-inference, @w2f/shared-utils, @w2f/source-providers, @w2f/stable-identity, @w2f/standard-capture-adapter, @w2f/table-layout-engine, @w2f/w2f-ir, @w2f/w2f-schema, @w2f/wtf-packager
+   • Running lint in 21 packages
+   • Remote caching disabled
+
+::group::@w2f/pixel-ground-truth:lint
+cache miss, executing 5d4139484f976e5b
+$ eslint src test --max-warnings=0
+::endgroup::
+::group::@w2f/shared-utils:lint
+cache miss, executing d3da983ad86fa942
+$ eslint src test --max-warnings=0
+::endgroup::
+::group::@w2f/environment-capture:lint
+cache miss, executing f52a7a27cb4c1b37
+$ eslint src test --max-warnings=0
+::endgroup::
+::group::@w2f/capture-core:lint
+cache miss, executing 3d95a9c08bb44260
+$ eslint src test --max-warnings=0
+::endgroup::
+::group::@w2f/wtf-packager:lint
+cache miss, executing 327f03420efea5ed
+$ eslint src test --max-warnings=0
+::endgroup::
+::group::@w2f/compositing-engine:lint
+cache miss, executing 782bb7571e894456
+$ eslint src test --max-warnings=0
+::endgroup::
+::group::@w2f/table-layout-engine:lint
+cache miss, executing 6fb8209352d3554b
+$ eslint src test --max-warnings=0
+::endgroup::
+::group::@w2f/responsive-inference:lint
+cache miss, executing 91c9712dc83eef1f
+$ eslint src test --max-warnings=0
+::endgroup::
+::group::@w2f/stable-identity:lint
+cache miss, executing 034f0078d90b75a1
+$ eslint src test --max-warnings=0
+::endgroup::
+::group::@w2f/render-tree-optimizer:lint
+cache miss, executing 32caf066f378c13a
+$ eslint src test --max-warnings=0
+::endgroup::
+::group::@w2f/css-cascade:lint
+cache miss, executing c108cdc85f93c148
+$ eslint src test --max-warnings=0
+::endgroup::
+::group::@w2f/layout-analyzer:lint
+cache miss, executing 6aa31f912c5e65ce
+$ eslint src test --max-warnings=0
+::endgroup::
+::group::@w2f/browser-extension:lint
+cache miss, executing 760f3f4bb5de1df9
+$ eslint src test scripts --max-warnings=0
+::endgroup::
+::group::@w2f/asset-resolver:lint
+cache miss, executing 5b0b3f3aa3397b57
+$ eslint src test --max-warnings=0
+::endgroup::
+::group::@w2f/source-providers:lint
+cache miss, executing 70f4d38e20c41404
+$ eslint src test --max-warnings=0
+::endgroup::
+::group::@w2f/responsive-capture:lint
+cache miss, executing bc25721dd1d4d627
+$ eslint src test --max-warnings=0
+::endgroup::
+::group::@w2f/w2f-ir:lint
+cache miss, executing 02d0618f45ee1c98
+$ eslint src test --max-warnings=0
+::endgroup::
+::group::@w2f/figma-plugin:lint
+cache miss, executing 3f8ecacb7a7f2344
+$ eslint src test scripts --max-warnings=0
+::endgroup::
+::group::@w2f/standard-capture-adapter:lint
+cache miss, executing 6aa7c4450fb82eac
+$ eslint src test --max-warnings=0
+::endgroup::
+::group::@w2f/w2f-schema:lint
+cache miss, executing e6e2c2f2bc3e4546
+$ eslint src test --max-warnings=0
+::endgroup::
+::group::@w2f/cdp-capture-adapter:lint
+cache miss, executing 7a60afa464f6d428
+$ eslint src test --max-warnings=0
+::endgroup::
+
+ Tasks:    21 successful, 21 total
+Cached:    0 cached, 21 total
+  Time:    15.595s 
+
+$ turbo run typecheck
+
+   • Packages in scope: @w2f/asset-resolver, @w2f/browser-extension, @w2f/capture-core, @w2f/cdp-capture-adapter, @w2f/compositing-engine, @w2f/css-cascade, @w2f/environment-capture, @w2f/figma-plugin, @w2f/layout-analyzer, @w2f/pixel-ground-truth, @w2f/render-tree-optimizer, @w2f/responsive-capture, @w2f/responsive-inference, @w2f/shared-utils, @w2f/source-providers, @w2f/stable-identity, @w2f/standard-capture-adapter, @w2f/table-layout-engine, @w2f/w2f-ir, @w2f/w2f-schema, @w2f/wtf-packager
+   • Running typecheck in 21 packages
+   • Remote caching disabled
+
+::group::@w2f/shared-utils:typecheck
+cache miss, executing 47f135e994b2b505
+$ tsc -p tsconfig.json --noEmit
+::endgroup::
+::group::@w2f/w2f-schema:build
+cache miss, executing 5017a4674538a0b7
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/source-providers:build
+cache miss, executing 05a6b49ad6ede1f5
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/source-providers:typecheck
+cache miss, executing ed0ca5fd4e1625e1
+$ tsc -p tsconfig.json --noEmit
+::endgroup::
+::group::@w2f/w2f-schema:typecheck
+cache miss, executing e8df75735e31a30c
+$ tsc -p tsconfig.json --noEmit
+::endgroup::
+::group::@w2f/wtf-packager:build
+cache miss, executing 1b72349c15b968da
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/responsive-capture:build
+cache miss, executing 253059c77c95aee0
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/capture-core:build
+cache miss, executing 45ad6affe6891ed2
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/pixel-ground-truth:build
+cache miss, executing e25595ec8e50ff55
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/w2f-ir:build
+cache miss, executing 3980aaf88372acf8
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/pixel-ground-truth:typecheck
+cache miss, executing 1998a54ca146a7c6
+$ tsc -p tsconfig.json --noEmit
+::endgroup::
+::group::@w2f/wtf-packager:typecheck
+cache miss, executing d2a55eb1c98d58c2
+$ tsc -p tsconfig.json --noEmit
+::endgroup::
+::group::@w2f/responsive-capture:typecheck
+cache miss, executing 73656bb69b76bf0e
+$ tsc -p tsconfig.json --noEmit
+::endgroup::
+::group::@w2f/w2f-ir:typecheck
+cache miss, executing 0438ee8139ce6de0
+$ tsc -p tsconfig.json --noEmit
+::endgroup::
+::group::@w2f/capture-core:typecheck
+cache miss, executing 122c390511385e3d
+$ tsc -p tsconfig.json --noEmit
+::endgroup::
+::group::@w2f/css-cascade:build
+cache miss, executing bfb1828212276383
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/environment-capture:build
+cache miss, executing 53ca33e32f20466d
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/cdp-capture-adapter:build
+cache miss, executing e12658fcf463fc2f
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/compositing-engine:build
+cache miss, executing 1e8b1f99262c4ad4
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/layout-analyzer:build
+cache miss, executing d8d933bacf0effb5
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/responsive-inference:build
+cache miss, executing c6a8313b6546f7c0
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/stable-identity:build
+cache miss, executing 0a0805903f86aaa6
+$ tsc -p tsconfig.build.json
+::endgroup::
+::group::@w2f/stable-identity:typecheck
+cache miss, executing 4c46a28ac726be0f
+$ tsc -p tsconfig.json --noEmit
+::endgroup::
+::group::@w2f/css-cascade:typecheck
+cache miss, executing 0adfa8327bb2b133
+$ tsc -p tsconfig.json --noEmit
+::endgroup::
+[;31m@w2f/figma-plugin:typecheck[;0m
+cache miss, executing 0311ef94bdb9264d
+$ tsc -p tsconfig.json --noEmit
+src/intake-state.ts(10,37): error TS1355: A 'const' assertion can only be applied to references to enum members, or string, number, boolean, array, or object literals.
+[ELIFECYCLE] Command failed with exit code 2.
+::group::@w2f/table-layout-engine:typecheck
+cache miss, executing c0a4b075e4dae6ed
+::endgroup::
+::group::@w2f/responsive-inference:typecheck
+cache miss, executing 5ba1d9707c7a5afc
+$ tsc -p tsconfig.json --noEmit
+[ELIFECYCLE] Command failed.
+::endgroup::
+::group::@w2f/environment-capture:typecheck
+cache miss, executing 58e0fd52fb6d9e0a
+$ tsc -p tsconfig.json --noEmit
+[ELIFECYCLE] Command failed.
+::endgroup::
+::group::@w2f/asset-resolver:typecheck
+cache miss, executing 972457bf743617aa
+::endgroup::
+::group::@w2f/cdp-capture-adapter:typecheck
+cache miss, executing 20ca558e67d03cb3
+$ tsc -p tsconfig.json --noEmit
+[ELIFECYCLE] Command failed.
+::endgroup::
+::group::@w2f/layout-analyzer:typecheck
+cache miss, executing 85d725ea30d64ba1
+$ tsc -p tsconfig.json --noEmit
+[ELIFECYCLE] Command failed.
+::endgroup::
+::group::@w2f/table-layout-engine:build
+cache miss, executing 126c2e79fe1509de
+$ tsc -p tsconfig.build.json
+[ELIFECYCLE] Command failed.
+::endgroup::
+::group::@w2f/asset-resolver:build
+cache miss, executing d00461a88319d78c
+$ tsc -p tsconfig.build.json
+[ELIFECYCLE] Command failed.
+::endgroup::
+::group::@w2f/compositing-engine:typecheck
+cache miss, executing 0857327783af6faf
+$ tsc -p tsconfig.json --noEmit
+[ELIFECYCLE] Command failed.
+::endgroup::
+::error::command (/home/runner/work/Web-To-Figma/Web-To-Figma/apps/figma-plugin) /home/runner/setup-pnpm/node_modules/.bin/pnpm run typecheck exited (2)
+@w2f/figma-plugin#typecheck:  ERROR  command (/home/runner/work/Web-To-Figma/Web-To-Figma/apps/figma-plugin) /home/runner/setup-pnpm/node_modules/.bin/pnpm run typecheck exited (2)
+
+ Tasks:    24 successful, 34 total
+Cached:    0 cached, 34 total
+  Time:    18.802s 
+Failed:    @w2f/figma-plugin#typecheck
+
+ ERROR  run failed: command  exited (2)
+[ELIFECYCLE] Command failed with exit code 2.
+[ELIFECYCLE] Command failed with exit code 2.

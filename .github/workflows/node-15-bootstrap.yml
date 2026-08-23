@@ -66,6 +66,7 @@ jobs:
             apps/browser-extension/test/responsive-capture-store.test.ts \
             apps/browser-extension/test/responsive-cdp-runtime.test.ts \
             scripts/validate-foundation.mjs \
+            scripts/validate-node-09.mjs \
             scripts/validate-node-15.mjs \
             docs/RESPONSIVE_CAPTURE_V2.md \
             docs/adr/ADR-0015-responsive-multi-viewport-orchestration.md \

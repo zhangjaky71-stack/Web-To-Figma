@@ -4,6 +4,13 @@ export type EnvironmentCaptureVersion = typeof ENVIRONMENT_CAPTURE_VERSION;
 export type EnvironmentCaptureAdapter = "standard" | "cdp";
 export type EnvironmentEvidenceAvailability = "observed" | "unavailable" | "not-applicable";
 
+export interface EnvironmentMediaFeatureEvidence {
+  id: string;
+  query: string;
+  matches: boolean;
+  availability: EnvironmentEvidenceAvailability;
+}
+
 export interface RuntimeEnvironmentEvidence {
   browserName: string;
   browserVersion: string;
@@ -12,6 +19,7 @@ export interface RuntimeEnvironmentEvidence {
   direction: "ltr" | "rtl";
   colorScheme: "light" | "dark";
   reducedMotion: boolean;
+  mediaFeatures: EnvironmentMediaFeatureEvidence[];
   viewportWidth: number;
   viewportHeight: number;
   dpr: number;
@@ -37,12 +45,18 @@ export interface ContainerDefinitionEvidence {
   sourceNodeId: string;
   containerName?: string;
   containerType?: string;
+  writingMode?: string;
+  inlineSize?: number;
+  blockSize?: number;
 }
 
 export interface ContainerQueryEvidence {
   id: string;
   containerName?: string;
   condition: string;
+  active?: boolean;
+  activeAvailability: EnvironmentEvidenceAvailability;
+  containerSourceNodeId?: string;
   affectedProperties: string[];
   affectedSourceNodeIds: string[];
   stylesheetRef?: string;
@@ -55,7 +69,8 @@ export interface EnvironmentCaptureDiagnostic {
     | "ENV_SELECTOR_UNSUPPORTED"
     | "ENV_SOURCE_NODE_UNRESOLVED"
     | "ENV_CAPTURE_BUDGET_EXCEEDED"
-    | "ENV_PAGE_ZOOM_UNAVAILABLE";
+    | "ENV_PAGE_ZOOM_UNAVAILABLE"
+    | "ENV_CONTAINER_QUERY_STATUS_UNAVAILABLE";
   message: string;
   sourceNodeId?: string;
   stylesheetRef?: string;
@@ -89,5 +104,7 @@ export interface EnvironmentCaptureSummary {
   activeMediaRuleCount: number;
   containerCount: number;
   containerQueryCount: number;
+  observedContainerQueryCount: number;
+  activeContainerQueryCount: number;
   diagnosticCount: number;
 }

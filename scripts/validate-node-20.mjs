@@ -158,20 +158,25 @@ if (failures.length === 0) {
     "compositing-boundary:",
     "fallbackBoundaryRasterRequests",
   ]) {
-    assert(worker.includes(evidence), `Service worker compositing orchestration missing ${evidence}`);
+    assert(
+      worker.includes(evidence),
+      `Service worker compositing orchestration missing ${evidence}`,
+    );
   }
   assert(
     (worker.match(/\.\.\.compositingReceipt/g) ?? []).length === 2,
     "Standard and CDP receipts must both expose NODE-20 compositing metrics",
   );
   assert(
-    worker.indexOf("persistCompositingAnalysis(jobId)") < worker.indexOf("persistPixelGroundTruth(tabId, jobId, snapshot)"),
+    worker.indexOf("persistCompositingAnalysis(jobId)") <
+      worker.indexOf("persistPixelGroundTruth(tabId, jobId, snapshot)"),
     "NODE-20 compositing sidecar must exist before Pixel Ground Truth consumes fallback boundaries",
   );
 
   const pixelRuntime = readText("apps/browser-extension/src/runtime/pixel-ground-truth-runtime.ts");
   assert(
-    pixelRuntime.includes("RasterFallbackRequest") && pixelRuntime.includes('return "node-fallback"'),
+    pixelRuntime.includes("RasterFallbackRequest") &&
+      pixelRuntime.includes('return "node-fallback"'),
     "NODE-14 Pixel Ground Truth must retain node-fallback request support",
   );
 

@@ -46,7 +46,11 @@ function effectsFor(node: WtfRenderNode): CompositingEffect[] {
 
 function dependenciesFor(effects: readonly CompositingEffect[]): CompositingDependency[] {
   const dependencies = new Set<CompositingDependency>();
-  if (effects.some((effect) => ["canvas", "video-frame", "existing-raster", "unsupported"].includes(effect))) {
+  if (
+    effects.some((effect) =>
+      ["canvas", "video-frame", "existing-raster", "unsupported"].includes(effect),
+    )
+  ) {
     dependencies.add("self");
   }
   if (effects.includes("mix-blend-mode")) dependencies.add("sibling-backdrop");
@@ -213,7 +217,11 @@ function candidateForTrigger(
   const reasons = new Set<string>();
   const allEffects = new Set<CompositingEffect>(seeds);
 
-  if (seeds.some((effect) => ["canvas", "video-frame", "existing-raster", "unsupported"].includes(effect))) {
+  if (
+    seeds.some((effect) =>
+      ["canvas", "video-frame", "existing-raster", "unsupported"].includes(effect),
+    )
+  ) {
     reasons.add("local visual requires or already declares raster fallback");
   }
   if (effects.includes("mix-blend-mode")) {
@@ -252,7 +260,9 @@ function candidateForTrigger(
       promoted = true;
       changed = true;
       allEffects.add(owner.effect);
-      reasons.add(`${owner.effect} requires the affected subtree to be flattened as one compositing group`);
+      reasons.add(
+        `${owner.effect} requires the affected subtree to be flattened as one compositing group`,
+      );
       confidence = Math.max(confidence, 0.96);
     }
   }
@@ -281,9 +291,11 @@ function mergeCandidates(
   const roots = uniqueSorted(candidates.map((candidate) => candidate.rootId));
   const outerRootFor = (rootId: string): string => {
     const ancestors = roots.filter((candidateRoot) => isAncestor(candidateRoot, rootId, parents));
-    return ancestors.sort(
-      (a, b) => depthOf(a, parents) - depthOf(b, parents) || a.localeCompare(b),
-    )[0] ?? rootId;
+    return (
+      ancestors.sort(
+        (a, b) => depthOf(a, parents) - depthOf(b, parents) || a.localeCompare(b),
+      )[0] ?? rootId
+    );
   };
   const merged = new Map<string, BoundaryCandidate>();
   for (const candidate of candidates) {
@@ -306,7 +318,8 @@ function mergeCandidates(
     merged.set(rootId, target);
   }
   return [...merged.values()].sort(
-    (a, b) => depthOf(a.rootId, parents) - depthOf(b.rootId, parents) || a.rootId.localeCompare(b.rootId),
+    (a, b) =>
+      depthOf(a.rootId, parents) - depthOf(b.rootId, parents) || a.rootId.localeCompare(b.rootId),
   );
 }
 
@@ -331,13 +344,19 @@ function boundaryFromCandidate(
 }
 
 function updateTree(tree: WtfRenderTree, boundaries: readonly FallbackBoundary[]): WtfRenderTree {
-  const byBoundaryRoot = new Map(boundaries.map((boundary) => [boundary.rootRenderNodeId, boundary]));
+  const byBoundaryRoot = new Map(
+    boundaries.map((boundary) => [boundary.rootRenderNodeId, boundary]),
+  );
   return {
     rootId: tree.rootId,
-    sections: tree.sections.map((section) => ({ ...section, childSectionIds: [...section.childSectionIds] })),
+    sections: tree.sections.map((section) => ({
+      ...section,
+      childSectionIds: [...section.childSectionIds],
+    })),
     nodes: tree.nodes.map((node) => {
       const boundary = byBoundaryRoot.get(node.id);
-      if (!boundary) return { ...node, childIds: [...node.childIds], sourceNodeIds: [...node.sourceNodeIds] };
+      if (!boundary)
+        return { ...node, childIds: [...node.childIds], sourceNodeIds: [...node.sourceNodeIds] };
       return {
         ...node,
         childIds: [...node.childIds],
@@ -361,12 +380,11 @@ function updateTree(tree: WtfRenderTree, boundaries: readonly FallbackBoundary[]
   };
 }
 
-export function analyzeCompositing(
-  input: CompositingAnalysisInput,
-): CompositingAnalysisResult {
+export function analyzeCompositing(input: CompositingAnalysisInput): CompositingAnalysisResult {
   const tree = input.tree;
   const byId = new Map(tree.nodes.map((node) => [node.id, node]));
-  if (!byId.has(tree.rootId)) throw new TypeError("Compositing Engine requires a valid Render Tree root");
+  if (!byId.has(tree.rootId))
+    throw new TypeError("Compositing Engine requires a valid Render Tree root");
   const parents = parentMap(tree);
   const diagnostics: CompositingDiagnostic[] = [];
   const candidates = tree.nodes.flatMap((node) => {
@@ -389,7 +407,8 @@ export function analyzeCompositing(
   if (merged.length < candidates.length) {
     diagnostics.push({
       code: "COMPOSITING_BOUNDARY_MERGED",
-      message: "Nested or overlapping fallback candidates were merged under their outer safe boundary.",
+      message:
+        "Nested or overlapping fallback candidates were merged under their outer safe boundary.",
       renderNodeIds: boundaries.map((boundary) => boundary.rootRenderNodeId),
     });
   }

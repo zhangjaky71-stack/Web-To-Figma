@@ -97,7 +97,9 @@ describe("Compositing Engine", () => {
       tree: tree([
         node("root", undefined, ["filter"]),
         node("filter", "root", ["mask"], { paint: { filter: "blur(2px)" } }),
-        node("mask", "filter", ["opacity"], { paint: { maskImage: "linear-gradient(black, transparent)" } }),
+        node("mask", "filter", ["opacity"], {
+          paint: { maskImage: "linear-gradient(black, transparent)" },
+        }),
         node("opacity", "mask", ["canvas", "label"], { paint: { opacity: 0.5 } }),
         node("canvas", "opacity", [], { kind: "canvas" }),
         node("label", "opacity", [], { kind: "text" }),
@@ -138,7 +140,9 @@ describe("Compositing Engine", () => {
     expect(result.boundaries).toHaveLength(1);
     expect(result.boundaries[0]?.rootRenderNodeId).toBe("hero");
     expect(result.boundaries[0]?.triggerRenderNodeIds).toEqual(["blend", "canvas"]);
-    expect(result.diagnostics.some((item) => item.code === "COMPOSITING_BOUNDARY_MERGED")).toBe(true);
+    expect(result.diagnostics.some((item) => item.code === "COMPOSITING_BOUNDARY_MERGED")).toBe(
+      true,
+    );
   });
 
   it("does not rasterize filter or opacity groups without a fallback dependency seed", () => {

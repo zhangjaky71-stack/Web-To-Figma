@@ -41,16 +41,33 @@ for (const evidence of [
 ]) {
   assert(engine.includes(evidence), `packaged compositing engine missing ${evidence}`);
 }
-for (const forbidden of ["window.", "document.", "chrome.", "indexedDB", "fetch(", "Math.random", "Date.now"] ) {
+for (const forbidden of [
+  "window.",
+  "document.",
+  "chrome.",
+  "indexedDB",
+  "fetch(",
+  "Math.random",
+  "Date.now",
+]) {
   assert(!engine.includes(forbidden), `compositing core must not use ${forbidden}`);
 }
 
 const runtime = text("runtime/compositing-runtime.js");
-assert(runtime.includes("readRenderTreeOptimization"), "compositing runtime must consume persisted Render Tree");
+assert(
+  runtime.includes("readRenderTreeOptimization"),
+  "compositing runtime must consume persisted Render Tree",
+);
 assert(runtime.includes("analyzePersistedCompositing"), "compositing runtime entrypoint missing");
 
 const store = text("runtime/compositing-store.js");
-for (const evidence of ["w2f-compositing", "compositing:", "writeCompositingAnalysis", "readCompositingAnalysis", "deleteCompositingAnalysis"]) {
+for (const evidence of [
+  "w2f-compositing",
+  "compositing:",
+  "writeCompositingAnalysis",
+  "readCompositingAnalysis",
+  "deleteCompositingAnalysis",
+]) {
   assert(store.includes(evidence), `packaged compositing store missing ${evidence}`);
 }
 
@@ -68,7 +85,9 @@ for (const evidence of [
 }
 
 if (failures.length > 0) {
-  console.error(`NODE-20 package validation failed (${profile}):\n${failures.map((item) => `- ${item}`).join("\n")}`);
+  console.error(
+    `NODE-20 package validation failed (${profile}):\n${failures.map((item) => `- ${item}`).join("\n")}`,
+  );
   process.exitCode = 1;
 } else {
   console.log(`NODE-20 package validation passed (${profile}).`);

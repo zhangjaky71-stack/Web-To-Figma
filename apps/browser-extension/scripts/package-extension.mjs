@@ -74,6 +74,11 @@ const runtimePackages = [
     dist: fileURLToPath(new URL("../../../packages/render-tree-optimizer/dist/", import.meta.url)),
   },
   {
+    specifier: "@w2f/compositing-engine",
+    directory: "compositing-engine",
+    dist: fileURLToPath(new URL("../../../packages/compositing-engine/dist/", import.meta.url)),
+  },
+  {
     specifier: "@w2f/standard-capture-adapter",
     directory: "standard-capture-adapter",
     dist: fileURLToPath(

@@ -43,7 +43,8 @@ export async function writeCompositingAnalysis(
   jobId: string,
   result: CompositingAnalysisResult,
 ): Promise<string> {
-  if (!isCompositingAnalysisResult(result)) throw new TypeError("invalid CompositingAnalysisResult");
+  if (!isCompositingAnalysisResult(result))
+    throw new TypeError("invalid CompositingAnalysisResult");
   const key = compositingStorageKey(jobId);
   const database = await openDatabase();
   try {

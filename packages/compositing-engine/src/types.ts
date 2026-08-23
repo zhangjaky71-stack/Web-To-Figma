@@ -17,11 +17,7 @@ export type CompositingEffect =
   | "unsupported";
 
 export type CompositingDependency =
-  | "self"
-  | "sibling-backdrop"
-  | "ancestor-backdrop"
-  | "flattened-subtree"
-  | "isolation-boundary";
+  "self" | "sibling-backdrop" | "ancestor-backdrop" | "flattened-subtree" | "isolation-boundary";
 
 export type CompositingDiagnosticCode =
   | "COMPOSITING_TREE_INVALID"

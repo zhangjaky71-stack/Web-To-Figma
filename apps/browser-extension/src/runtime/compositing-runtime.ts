@@ -1,7 +1,4 @@
-import {
-  analyzeCompositing,
-  type CompositingAnalysisResult,
-} from "@w2f/compositing-engine";
+import { analyzeCompositing, type CompositingAnalysisResult } from "@w2f/compositing-engine";
 import type { WtfRenderTree } from "@w2f/w2f-ir";
 import { readRenderTreeOptimization } from "./render-tree-store.js";
 

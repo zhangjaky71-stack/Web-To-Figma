@@ -6,10 +6,18 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 export function isCompositingAnalysisResult(value: unknown): value is CompositingAnalysisResult {
   if (!isRecord(value) || value.version !== COMPOSITING_ANALYSIS_VERSION) return false;
-  if (!isRecord(value.tree) || !Array.isArray(value.tree.nodes) || !Array.isArray(value.tree.sections)) {
+  if (
+    !isRecord(value.tree) ||
+    !Array.isArray(value.tree.nodes) ||
+    !Array.isArray(value.tree.sections)
+  ) {
     return false;
   }
-  if (!Array.isArray(value.boundaries) || !Array.isArray(value.decisions) || !Array.isArray(value.diagnostics)) {
+  if (
+    !Array.isArray(value.boundaries) ||
+    !Array.isArray(value.decisions) ||
+    !Array.isArray(value.diagnostics)
+  ) {
     return false;
   }
   return value.boundaries.every((boundary) => {

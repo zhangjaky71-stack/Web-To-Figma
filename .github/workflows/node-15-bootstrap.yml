@@ -62,6 +62,8 @@ jobs:
             apps/browser-extension/src/runtime/service-worker.ts \
             apps/browser-extension/static/popup.html \
             apps/browser-extension/static/shell.css \
+            apps/browser-extension/test/index.test.ts \
+            apps/browser-extension/test/protocol.test.ts \
             apps/browser-extension/test/responsive-capture-runtime.test.ts \
             apps/browser-extension/test/responsive-capture-store.test.ts \
             apps/browser-extension/test/responsive-cdp-runtime.test.ts \

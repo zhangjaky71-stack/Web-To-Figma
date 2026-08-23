@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>W2F Import</title>
+    <style>
+      :root {
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--figma-color-text, #1f1f1f);
+        background: var(--figma-color-bg, #ffffff);
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; padding: 16px; font-size: 12px; }
+      button, input { font: inherit; }
+      .shell { display: grid; gap: 14px; }
+      .header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+      .title { font-size: 16px; font-weight: 650; letter-spacing: -0.02em; }
+      .subtitle { margin-top: 2px; color: var(--figma-color-text-secondary, #666); }
+      .ghost { border: 0; background: transparent; color: var(--figma-color-text-secondary, #666); padding: 6px; cursor: pointer; }
+      .drop-zone { border: 1px dashed var(--figma-color-border, #b8b8b8); border-radius: 10px; padding: 22px 14px; text-align: center; background: var(--figma-color-bg-secondary, #f7f7f7); transition: 120ms ease; }
+      .drop-zone[data-dragging="true"] { border-style: solid; transform: translateY(-1px); }
+      .drop-title { font-weight: 600; margin-bottom: 5px; }
+      .muted { color: var(--figma-color-text-secondary, #6b6b6b); }
+      .primary { border: 0; border-radius: 7px; padding: 8px 12px; background: var(--figma-color-bg-brand, #0d99ff); color: var(--figma-color-text-onbrand, white); cursor: pointer; }
+      .primary:disabled { opacity: .45; cursor: default; }
+      .secondary { border: 1px solid var(--figma-color-border, #d0d0d0); border-radius: 7px; padding: 8px 12px; background: var(--figma-color-bg, #fff); color: inherit; cursor: pointer; }
+      .file-card, .panel { border: 1px solid var(--figma-color-border, #e3e3e3); border-radius: 9px; padding: 12px; }
+      .file-name { font-weight: 600; overflow-wrap: anywhere; }
+      .file-meta { margin-top: 4px; color: var(--figma-color-text-secondary, #6b6b6b); }
+      .progress-head { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 7px; }
+      progress { width: 100%; height: 6px; accent-color: var(--figma-color-bg-brand, #0d99ff); }
+      .progress-detail { min-height: 30px; margin-top: 7px; color: var(--figma-color-text-secondary, #6b6b6b); line-height: 1.45; }
+      fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: 7px; }
+      legend { font-weight: 600; padding: 0 0 7px; }
+      label.option { display: flex; gap: 8px; align-items: flex-start; }
+      .option-copy strong { display: block; font-weight: 550; }
+      .option-copy span { display: block; color: var(--figma-color-text-secondary, #707070); margin-top: 1px; line-height: 1.35; }
+      .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      .section-outline { display: grid; gap: 2px; max-height: 150px; overflow: auto; margin-top: 8px; }
+      .section-item { min-height: 28px; display: flex; align-items: center; gap: 8px; border-radius: 5px; }
+      .sections-empty, .boundary { color: var(--figma-color-text-secondary, #707070); line-height: 1.45; }
+      .boundary { border-left: 2px solid var(--figma-color-border-strong, #a8a8a8); padding-left: 9px; }
+      .footer { display: flex; justify-content: space-between; gap: 8px; }
+      .footer-right { display: flex; gap: 8px; }
+      input[type="file"] { display: none; }
+      @media (max-width: 390px) { .grid { grid-template-columns: 1fr; } }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="header">
+        <div>
+          <div class="title">W2F Import</div>
+          <div class="subtitle">Local .wtf → editable Figma</div>
+        </div>
+        <button id="close-button" class="ghost" type="button" aria-label="Close">Close</button>
+      </header>
+
+      <section id="drop-zone" class="drop-zone" aria-label="Drop a W2F file">
+        <div class="drop-title">Drop a .wtf file here</div>
+        <div class="muted">or keep this panel open and drop .wtf directly on the Figma canvas</div>
+        <div style="margin-top: 12px">
+          <button id="choose-file" class="secondary" type="button">Choose .wtf</button>
+          <input id="wtf-file" type="file" accept=".wtf,application/x-wtf" />
+        </div>
+      </section>
+
+      <section class="file-card">
+        <div id="file-name" class="file-name">No file selected</div>
+        <div id="file-meta" class="file-meta">.wtf · local only</div>
+      </section>
+
+      <section class="panel">
+        <div class="progress-head">
+          <strong id="progress-label">Choose or drop a .wtf file</strong>
+          <button id="cancel-button" class="ghost" type="button" disabled>Cancel</button>
+        </div>
+        <progress id="progress-bar" max="1" value="0"></progress>
+        <div id="progress-detail" class="progress-detail"></div>
+        <div id="parser-boundary" class="boundary" hidden>
+          Secure archive parsing, schema/version checks, checksums, ZIP limits and migration are the NODE-23 boundary.
+        </div>
+      </section>
+
+      <section class="grid">
+        <fieldset id="profile-group" class="panel">
+          <legend>Render profile</legend>
+          <label class="option">
+            <input type="radio" name="profile" value="balanced" checked />
+            <span class="option-copy"><strong>Balanced</strong><span>Default fidelity/editability balance.</span></span>
+          </label>
+          <label class="option">
+            <input type="radio" name="profile" value="high-fidelity" />
+            <span class="option-copy"><strong>High Fidelity</strong><span>Prefer visual preservation and safe fallback.</span></span>
+          </label>
+          <label class="option">
+            <input type="radio" name="profile" value="design-friendly" />
+            <span class="option-copy"><strong>Design Friendly</strong><span>Prefer cleaner, more editable structure.</span></span>
+          </label>
+        </fieldset>
+
+        <fieldset id="scope-group" class="panel">
+          <legend>Import scope</legend>
+          <label class="option">
+            <input type="radio" name="scope" value="whole-page" checked />
+            <span class="option-copy"><strong>Whole Page</strong><span>Import the complete render tree.</span></span>
+          </label>
+          <label class="option">
+            <input type="radio" name="scope" value="selected-sections" />
+            <span class="option-copy"><strong>Selected Sections</strong><span>Use the captured section outline.</span></span>
+          </label>
+        </fieldset>
+      </section>
+
+      <section class="panel">
+        <strong>Section outline</strong>
+        <div id="sections-empty" class="sections-empty" style="margin-top: 7px">
+          Sections appear only after the untrusted archive has passed the secure parser.
+        </div>
+        <div id="section-outline" class="section-outline"></div>
+      </section>
+
+      <footer class="footer">
+        <div class="muted">Token policy: Literal Import</div>
+        <div class="footer-right">
+          <button class="secondary" type="button" disabled title="Preview is populated by NODE-23">Preview</button>
+          <button id="import-button" class="primary" type="button" disabled>Import</button>
+        </div>
+      </footer>
+    </main>
+    <!-- W2F_UI_SCRIPT -->
+  </body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "name": "W2F — Web to Figma",
+  "id": "1530000000000000022",
+  "api": "1.0.0",
+  "editorType": ["figma"],
+  "main": "dist/code.js",
+  "ui": "dist/ui.html",
+  "documentAccess": "dynamic-page",
+  "networkAccess": {
+    "allowedDomains": ["none"]
+  }
+}

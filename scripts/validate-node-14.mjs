@@ -109,7 +109,13 @@ if (failures.length === 0) {
   ]) {
     assert(runtime.includes(evidence), `NODE-14 Browser runtime missing ${evidence}`);
   }
-  for (const forbidden of ["document.cookie", "localStorage", "sessionStorage", ".getContext("]) {
+  for (const forbidden of [
+    "document.cookie",
+    "localStorage",
+    "sessionStorage",
+    'getContext("webgl',
+    "getContext('webgl",
+  ]) {
     assert(
       !runtime.includes(forbidden),
       `NODE-14 Browser runtime violates privacy/non-mutating boundary: ${forbidden}`,

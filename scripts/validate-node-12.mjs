@@ -44,16 +44,20 @@ if (failures.length === 0) {
   for (const evidence of [
     'ENVIRONMENT_CAPTURE_VERSION = "1.0.0"',
     "RuntimeEnvironmentEvidence",
+    "EnvironmentMediaFeatureEvidence",
     "MediaRuleEvidence",
     "ContainerDefinitionEvidence",
     "ContainerQueryEvidence",
     "pageZoomAvailability",
+    "mediaFeatures",
+    "activeAvailability",
     "colorScheme",
     "reducedMotion",
     "affectedProperties",
     "affectedSourceNodeIds",
     "ENV_STYLESHEET_INACCESSIBLE",
     "ENV_PAGE_ZOOM_UNAVAILABLE",
+    "ENV_CONTAINER_QUERY_STATUS_UNAVAILABLE",
   ]) {
     assert(types.includes(evidence), `NODE-12 environment contract missing ${evidence}`);
   }
@@ -67,6 +71,7 @@ if (failures.length === 0) {
     "summarizeEnvironmentCapture",
     "isEnvironmentCapture",
     'pageZoomAvailability !== "observed"',
+    "unobserved container query status must not fabricate active",
   ]) {
     assert(engine.includes(evidence), `NODE-12 environment engine missing ${evidence}`);
   }
@@ -111,9 +116,16 @@ if (failures.length === 0) {
     "buildStandardEnvironmentInput",
     "environmentSnapshotId",
     "captureStandardEnvironmentInPage",
+    "captureEnvironmentMediaFeaturesInPage",
     "createEnvironmentCapture",
     "browserPageZoomAvailability",
     "visualViewportScale",
+    "prefers-color-scheme",
+    "prefers-reduced-motion",
+    "prefers-contrast",
+    "prefers-reduced-transparency",
+    "forced-colors",
+    "pointer: coarse",
   ]) {
     assert(runtime.includes(evidence), `NODE-12 Browser runtime missing ${evidence}`);
   }
@@ -122,6 +134,7 @@ if (failures.length === 0) {
   for (const evidence of [
     'W2F_ENVIRONMENT_DB_NAME = "w2f-environment"',
     'W2F_ENVIRONMENT_KEY_PREFIX = "environment:"',
+    "indexedDB.open",
     "writeEnvironmentCapture",
     "readEnvironmentCapture",
     "deleteEnvironmentCapture",
@@ -134,6 +147,7 @@ if (failures.length === 0) {
     "captureEnvironmentForSnapshot",
     "writeEnvironmentCapture",
     "deleteEnvironmentCapture",
+    "persistEnvironment",
     "mediaRuleCount",
     "containerQueryCount",
   ]) {
@@ -164,6 +178,28 @@ if (failures.length === 0) {
     "Standard adapter must consume @w2f/environment-capture",
   );
 
+  const packager = read("apps/browser-extension/scripts/package-extension.mjs");
+  assert(
+    packager.includes('specifier: "@w2f/environment-capture"') &&
+      packager.includes('directory: "environment-capture"'),
+    "Browser packager must include the NODE-12 environment runtime package",
+  );
+
+  const packageValidator = read("apps/browser-extension/scripts/validate-extension-package.mjs");
+  for (const evidence of [
+    "runtime/environment-runtime.js",
+    "runtime/environment-store.js",
+    "runtime/environment-capture/index.js",
+    "runtime/standard-capture-adapter/environment-capture.js",
+    "captureEnvironmentForSnapshot",
+    "w2f-environment",
+  ]) {
+    assert(
+      packageValidator.includes(evidence),
+      `Browser package validator must enforce NODE-12 artifact ${evidence}`,
+    );
+  }
+
   const ir = read("packages/w2f-ir/src/types.ts");
   for (const evidence of [
     "WtfCaptureEnvironment",
@@ -182,6 +218,17 @@ if (failures.length === 0) {
   assert(
     raw.includes("browserPageZoomAvailability"),
     "NODE-12 requires explicit RawSnapshot page zoom availability evidence",
+  );
+
+  const standardManifest = JSON.parse(read("apps/browser-extension/static/manifest.json"));
+  const permissions = [...(standardManifest.permissions ?? [])].sort();
+  assert(
+    JSON.stringify(permissions) === JSON.stringify(["activeTab", "scripting", "storage"].sort()),
+    "NODE-12 must not broaden Standard Browser permissions",
+  );
+  assert(
+    !("host_permissions" in standardManifest),
+    "NODE-12 must not introduce broad host permissions",
   );
 }
 

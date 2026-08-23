@@ -39,6 +39,8 @@ export interface BaseLayoutAnalysisResult {
   diagnostics: BaseLayoutDiagnostic[];
 }
 
+export type BaseLayoutAnalysis = BaseLayoutAnalysisResult;
+
 export interface BaseLayoutAnalysisSummary {
   version: BaseLayoutAnalyzerVersion;
   nodeCount: number;
@@ -46,6 +48,7 @@ export interface BaseLayoutAnalysisSummary {
   flexCount: number;
   gridCount: number;
   absoluteCount: number;
+  tableCount: number;
   inlineCount: number;
   contentsCount: number;
   unknownCount: number;

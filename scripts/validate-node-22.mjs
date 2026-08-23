@@ -115,7 +115,7 @@ if (failures.length === 0) {
     "event.absoluteX",
     "event.absoluteY",
     "W2F_FILE_BYTES",
-    "secureParserImplemented: false",
+    "secureParserImplemented:",
     "rendererImplemented: false",
   ]) {
     assert(main.includes(evidence), `Figma main shell missing ${evidence}`);

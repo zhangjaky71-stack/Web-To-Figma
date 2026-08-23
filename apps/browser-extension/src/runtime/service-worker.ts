@@ -10,6 +10,8 @@ import {
   type StandardCaptureResult,
 } from "@w2f/standard-capture-adapter";
 import { captureHighFidelityWithCdp, getCdpRuntimeCapability } from "./cdp-runtime.js";
+import { captureCssCascadeForSnapshot } from "./css-cascade-runtime.js";
+import { deleteCssCascadeCapture, writeCssCascadeCapture } from "./css-cascade-store.js";
 import {
   createCaptureJob,
   isCaptureJobState,
@@ -62,6 +64,10 @@ async function writeJobState(job: CaptureJobState): Promise<void> {
   await chrome.storage.local.set({ [W2F_JOB_STORAGE_KEY]: job });
 }
 
+async function deleteAllCaptureArtifacts(jobId: string): Promise<void> {
+  await Promise.allSettled([deleteCaptureArtifacts(jobId), deleteCssCascadeCapture(jobId)]);
+}
+
 function regionCaptureTarget(region: RegionSelectionResult): RawCaptureTarget {
   return {
     type: "region",
@@ -86,6 +92,29 @@ function pageProbeFromSnapshot(snapshot: RawSnapshot): PageProbe {
     viewportWidth: snapshot.environment.viewportWidth,
     viewportHeight: snapshot.environment.viewportHeight,
     devicePixelRatio: snapshot.environment.scale.context.devicePixelRatio,
+  };
+}
+
+async function persistCssCascade(
+  tabId: number,
+  jobId: string,
+  snapshot: RawSnapshot,
+): Promise<Pick<
+  CaptureSnapshotReceipt,
+  | "cssCascadeStorageKey"
+  | "cssCascadeAdapter"
+  | "cssStyleCount"
+  | "cssTokenCount"
+  | "cssCascadeDiagnosticCount"
+>> {
+  const cascade = await captureCssCascadeForSnapshot(tabId, snapshot);
+  const cssCascadeStorageKey = await writeCssCascadeCapture(jobId, cascade);
+  return {
+    cssCascadeStorageKey,
+    cssCascadeAdapter: cascade.adapter,
+    cssStyleCount: cascade.styles.length,
+    cssTokenCount: cascade.tokens.tokens.length,
+    cssCascadeDiagnosticCount: cascade.diagnostics.length,
   };
 }
 
@@ -120,16 +149,23 @@ async function captureStandardDom(
   if (!isRawSnapshot(snapshot))
     throw new Error("Standard fallback diagnostics invalidated RawSnapshot");
 
-  const storageKey = await writeRawSnapshot(jobId, snapshot);
-  return {
-    snapshot,
-    receipt: {
-      ...summarizeRawSnapshot(snapshot),
-      storageKey,
-      capturedAt: snapshot.capturedAt,
-      ...(fallbackReason ? { fallbackFromCdp: true } : {}),
-    },
-  };
+  try {
+    const storageKey = await writeRawSnapshot(jobId, snapshot);
+    const cascadeReceipt = await persistCssCascade(tabId, jobId, snapshot);
+    return {
+      snapshot,
+      receipt: {
+        ...summarizeRawSnapshot(snapshot),
+        storageKey,
+        capturedAt: snapshot.capturedAt,
+        ...cascadeReceipt,
+        ...(fallbackReason ? { fallbackFromCdp: true } : {}),
+      },
+    };
+  } catch (error) {
+    await deleteAllCaptureArtifacts(jobId);
+    throw error;
+  }
 }
 
 async function captureCdpDom(
@@ -147,6 +183,7 @@ async function captureCdpDom(
   try {
     const storageKey = await writeRawSnapshot(jobId, result.snapshot);
     const referenceScreenshotKey = await writeReferenceScreenshot(jobId, result.screenshot);
+    const cascadeReceipt = await persistCssCascade(tabId, jobId, result.snapshot);
     return {
       snapshot: result.snapshot,
       receipt: {
@@ -154,10 +191,11 @@ async function captureCdpDom(
         storageKey,
         referenceScreenshotKey,
         capturedAt: result.snapshot.capturedAt,
+        ...cascadeReceipt,
       },
     };
   } catch (error) {
-    await deleteCaptureArtifacts(jobId).catch(() => undefined);
+    await deleteAllCaptureArtifacts(jobId);
     throw error;
   }
 }
@@ -175,7 +213,7 @@ async function capturePreferredDom(
   try {
     return await captureCdpDom(tabId, jobId, captureTarget, fallbackUrl, fallbackTitle);
   } catch (error) {
-    await deleteCaptureArtifacts(jobId).catch(() => undefined);
+    await deleteAllCaptureArtifacts(jobId);
     const reason = error instanceof Error ? error.message : String(error);
     return captureStandardDom(tabId, jobId, captureTarget, reason);
   }
@@ -274,7 +312,7 @@ async function startShellJob(mode: CaptureJobMode): Promise<CaptureJobState> {
 
     const cancelled = await wasJobCancelled(jobId);
     if (cancelled) {
-      await deleteCaptureArtifacts(jobId).catch(() => undefined);
+      await deleteAllCaptureArtifacts(jobId);
       return cancelled;
     }
 
@@ -294,7 +332,7 @@ async function startShellJob(mode: CaptureJobMode): Promise<CaptureJobState> {
     await writeJobState(job);
     return job;
   } catch (error) {
-    await deleteCaptureArtifacts(jobId).catch(() => undefined);
+    await deleteAllCaptureArtifacts(jobId);
     const current = await readJobState();
     if (current?.jobId === jobId && current.status === "cancelled") return current;
     job = transitionCaptureJob(job, "failed", "capture-failed", new Date(), {
@@ -325,7 +363,7 @@ async function cancelShellJob(jobId: string): Promise<CaptureJobState | null> {
 
   const cancelled = transitionCaptureJob(current, "cancelled", "cancelled-by-user");
   await writeJobState(cancelled);
-  await deleteCaptureArtifacts(jobId).catch(() => undefined);
+  await deleteAllCaptureArtifacts(jobId);
   return cancelled;
 }
 

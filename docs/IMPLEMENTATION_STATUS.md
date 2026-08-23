@@ -29,7 +29,7 @@
 | 16 | Responsive Inference Engine | DONE | Exact-head read-only CI #375 PASS | PR #20 merged as `7cfb91fe` |
 | 17 | Base Layout Analyzer | DONE | Exact-head read-only CI #422 PASS | PR #21 merged as `0b103261` |
 | 18 | Table Layout Engine | DONE | Exact-head read-only CI #449 PASS | PR #22 merged as `7cd56101` |
-| 19 | Render Tree Optimizer | IN PROGRESS | Implementation starting from merged NODE-18 | `feat/node-19-render-tree-optimizer` |
+| 19 | Render Tree Optimizer | IN PROGRESS | Bootstrap #5 full `pnpm check` PASS; exact-head read-only CI pending | PR #23 |
 | 20 | Compositing & Fallback Boundary | TODO | - | - |
 | 21 | WTF Packager | TODO | - | - |
 | 22 | Figma Plugin Shell & File Intake | TODO | - | - |
@@ -101,10 +101,38 @@ NODE-19 therefore remains additive and does not version-bump W2F Schema/IR.
 - every RenderNode retains all contributing `sourceNodeIds` and stable source IDs;
 - semantic boundaries (`header`, `nav`, `main`, `section`, `article`, `aside`, `footer`) are preserved and form the deterministic section outline;
 - stacking, clip, scroll, positioning, flex/grid and table boundaries are never optimized away merely to reduce depth;
-- decorative nodes may only be combined when equivalence is provable and source mappings remain recoverable;
 - anonymous depth is limited through safe wrapper folding, not arbitrary hierarchy truncation;
-- existing StructuralFingerprint evidence is preserved and equal fingerprints form deterministic repeated-structure candidate groups;
+- StructuralFingerprint deliberately excludes copy so repeated structures remain groupable across content differences;
+- revision `contentHash` recursively includes captured descendant content/attributes so real copy/content changes remain observable;
 - NODE-20 owns compositing/fallback promotion; NODE-19 does not rasterize or override later capability policy.
+
+## NODE-19 Validation
+
+Controlled Bootstrap #5, run `32636578608`, passed the complete repository `pnpm check` and successfully pushed the validated integration as:
+
+```text
+a446313352d6e872731a79e02938b9c47a03bf66
+```
+
+The validated candidate includes:
+
+```text
+NODE-19 permanent foundation guardrail
+19/19 workspace package lint
+35/35 dependency-aware TypeScript/build tasks in the typecheck phase
+Render Tree core fixtures for safe wrapper folding, composed-parent precedence and fail-closed boundaries
+StructuralFingerprint repeated-component grouping independent from copy
+subtree-aware revision content hashes
+deterministic repeated optimization
+Browser render-tree runtime/store tests
+Standard and CDP receipt integration
+Standard and High Fidelity Browser package validation
+full build and format checks
+```
+
+All temporary NODE-19 bootstrap/finalization files were removed from the candidate tree before validation and commit. The final changed-file set contains only permanent runtime, package, test, documentation, lockfile and guardrail changes.
+
+This documentation-only evidence commit triggers the final exact-head read-only frozen-lockfile CI. No implementation files will change after that CI passes.
 
 ## Blockers
 

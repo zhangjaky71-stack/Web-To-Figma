@@ -5,8 +5,8 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./src/index.ts",
-      "default": "./dist/index.js"
+      "types": "./src/public.ts",
+      "default": "./dist/public.js"
     },
     "./container-paths": {
       "types": "./src/container-paths.ts",
@@ -21,7 +21,7 @@
       "default": "./dist/scale-context.js"
     }
   },
-  "types": "./src/index.ts",
+  "types": "./src/public.ts",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "lint": "eslint src test --max-warnings=0",

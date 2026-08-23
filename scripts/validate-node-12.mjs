@@ -203,8 +203,13 @@ if (failures.length === 0) {
     "NODE-12 must not version-bump RawSnapshot",
   );
   assert(
-    raw.includes("browserPageZoomAvailability"),
-    "NODE-12 requires explicit RawSnapshot page zoom availability evidence",
+    raw.includes("ScaleContextEvidence"),
+    "RawSnapshot environment must continue to reference the shared ScaleContextEvidence contract",
+  );
+  const scaleContext = read("packages/w2f-schema/src/scale-context.ts");
+  assert(
+    scaleContext.includes("browserPageZoomAvailability"),
+    "NODE-12 requires explicit page zoom availability in the shared scale-context contract",
   );
 
   const normative = read("docs/MEDIA_CONTAINER_ENVIRONMENT_CAPTURE_V2.md");

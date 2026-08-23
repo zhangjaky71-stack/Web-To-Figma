@@ -2,7 +2,7 @@
 
 ## Status
 
-**IMPLEMENTED IN PROGRESS — Browser/package integration and formal Exit Gate pending**
+**IMPLEMENTED — formal read-only frozen-lockfile Exit Gate pending**
 
 ## Entry baseline
 
@@ -20,7 +20,31 @@ feat/node-13-asset-resolver
 
 ## Goal
 
-Resolve browser-rendered image/SVG resources into deterministic, content-addressed, portable evidence while preserving browser-selected sources, full Resource Provenance, explicit missing-resource diagnostics and the frozen W2F IR V2 boundary.
+Resolve browser-rendered image/SVG resources into deterministic, content-addressed portable evidence while preserving browser-selected sources, Resource Provenance, explicit missing-resource diagnostics, least-privilege Browser permissions and the frozen W2F IR V2 boundary.
+
+## Frozen scope
+
+NODE-13 implements:
+
+```text
+images
+currentSrc
+CSS image
+SVG
+data
+blob
+hash
+dedup
+```
+
+The V2 missing-asset chain is respected as:
+
+```text
+native fetch
+→ alternate provider
+→ NODE-14 screenshot fallback
+→ later placeholder + diagnostic
+```
 
 ## Delivered
 
@@ -39,18 +63,23 @@ Sidecar version:
 AssetCapture 1.0.0
 ```
 
-The core package owns:
+The package owns:
 
-- resource byte normalization;
-- image/SVG MIME identification;
-- SHA-256 identity validation;
+- asset contracts and provenance;
+- RawSnapshot/NODE-11 evidence discovery helpers;
+- CSS `url(...)` extraction;
+- shared URL resolution through Source Providers;
+- data URL decoding;
+- bounded generic acquisition;
+- MIME/content identification;
+- SHA-256 content identity validation;
 - deterministic embedded-path selection;
 - byte-level de-duplication;
-- many-to-one provenance preservation;
+- many-reference provenance preservation;
 - W2F IR asset-record projection;
-- summary and structural sidecar validation.
+- capture summary and structural validation.
 
-The core remains browser-platform neutral. DOM, fetch, Web Crypto and IndexedDB remain in adapter/runtime layers.
+DOM traversal/network/IndexedDB/CDP remain Browser adapter/runtime responsibilities.
 
 ### Supported browser resource evidence
 
@@ -59,60 +88,74 @@ Standard page-side acquisition covers:
 - `<img>`;
 - `<picture>` selected source through `currentSrc`;
 - CSS `background-image` URLs;
-- CSS mask URLs;
-- CSS border-image URLs;
-- generated `content` URLs;
+- CSS `mask-image` / `-webkit-mask-image` URLs;
+- CSS `border-image-source` URLs;
+- generated `content` URL images;
 - inline SVG;
 - external SVG;
 - `<input type=image>`;
-- video posters;
+- video poster images;
 - `data:` URLs;
 - `blob:` URLs.
 
 ### Responsive image evidence
 
-For image elements NODE-13 preserves:
+For image elements NODE-13 preserves browser-selected `currentSrc`, authored `src`, intrinsic/natural dimensions where observable and rendered bounds.
+
+The browser remains authoritative for `srcset` / `<picture>` selection; W2F does not recreate that algorithm.
+
+### Portable discovery layer
+
+Added:
 
 ```text
-currentSrc
-authoredSrc
-natural/intrinsic size
-rendered bounds
+packages/asset-resolver/src/discovery.ts
 ```
 
-The browser remains the authority for `srcset` / `<picture>` selection.
+It can combine RawSnapshot, NODE-11 cascade evidence and optional live DOM evidence to discover asset candidates while retaining stylesheet/source provenance.
+
+The CSS URL scanner handles multiple/quoted/unquoted URL references and data URL parentheses without relying on a fragile single regular expression.
+
+### Generic bounded acquisition
+
+Added:
+
+```text
+packages/asset-resolver/src/acquisition.ts
+```
+
+It provides:
+
+- data URL decoding;
+- inline SVG byte conversion;
+- locator fetch de-duplication;
+- per-asset/count/total byte budgets;
+- generic fetcher adapter boundary;
+- SHA-256 Web Crypto helper.
 
 ### Frame and Shadow DOM behavior
 
-Asset acquisition reuses RawSnapshot frame/source-selector hints and supports accessible same-origin iframe and open Shadow DOM targets.
+Standard page acquisition reuses RawSnapshot frame/source-selector hints and supports accessible same-origin iframe/open Shadow DOM targets.
 
-Element classification uses local-name/namespace evidence rather than top-window DOM `instanceof` checks, preventing same-origin iframe realm mismatches.
+Element classification avoids top-window realm-sensitive image/SVG `instanceof` checks so same-origin iframe elements remain discoverable.
 
 ### CSS image evidence
 
-Computed CSS image references are extracted from:
+Observed image URL resources are extracted from computed CSS. NODE-11 authored cascade evidence stays a separate sidecar but can enrich portable discovery provenance.
 
-```text
-background-image
-mask-image
--webkit-mask-image
-border-image-source
-content
-```
-
-NODE-11 authored cascade evidence remains separate and is not duplicated inside AssetCapture.
+Gradients/cross-fade remain paint semantics rather than binary assets and are intentionally not rasterized by NODE-13.
 
 ### Content addressing
 
-The Browser runtime computes SHA-256 with Web Crypto.
+Browser runtime computes SHA-256 with Web Crypto.
 
-Canonical asset identity:
+Canonical identity:
 
 ```text
 asset:<sha256>
 ```
 
-Reserved portable package path:
+Reserved future package path:
 
 ```text
 assets/<sha256>.<extension>
@@ -120,9 +163,9 @@ assets/<sha256>.<extension>
 
 Identical bytes from different URLs/properties/source nodes resolve to one unique asset while retaining all reference/provenance evidence.
 
-### MIME identification
+### MIME/content identification
 
-Current byte/content identification supports:
+Current recognition covers:
 
 - PNG;
 - JPEG;
@@ -133,28 +176,38 @@ Current byte/content identification supports:
 - BMP;
 - SVG.
 
-Image Content-Type and SVG URL suffix are fallback hints where appropriate.
+Byte/content evidence is preferred over URL suffix. Unsupported media remains an explicit diagnostic.
+
+### Native fetch provider
+
+Standard acquisition fetches resource bytes in the page context. This preserves page-session, file/data/blob semantics without broad extension host permissions.
+
+Native fetch failures remain explicit rather than being treated as acquired assets.
+
+### High Fidelity alternate provider
+
+High Fidelity now implements the V2 alternate-provider stage for native-fetch failures through existing Chrome debugger permission:
+
+```text
+Page.getResourceTree
+→ loaded URL/frame match
+→ Page.getResourceContent
+→ recovered bytes
+```
+
+This is limited to resources Chromium already loaded for the captured page. It is not an arbitrary cross-origin crawler and introduces no broad host permission.
+
+Recovered acquisition references remove their original `ASSET_FETCH_FAILED` diagnostics. Unrecoverable resources remain explicit for NODE-14 pixel fallback.
+
+Debugger attach/detach is `try/finally` guarded.
 
 ### Resource Provenance
 
-The sidecar preserves:
-
-```text
-sourceType
-sourceNodeId
-sourceUrl
-originalUrl
-frameId
-frameOrigin
-stylesheetRef
-cssProperty
-```
-
-The frozen `WtfAssetRecord.provenance` remains a compact projection; the sidecar retains the full many-reference evidence set.
+Asset evidence preserves source type/node/URL/original URL/frame/origin/stylesheet/property information where available. Content deduplication never discards logical references.
 
 ### Explicit failure semantics
 
-NODE-13 records failures instead of inventing resources:
+NODE-13 records failures instead of inventing resources, including:
 
 ```text
 ASSET_FETCH_FAILED
@@ -166,9 +219,13 @@ ASSET_UNSUPPORTED_MEDIA_TYPE
 ASSET_HASH_FAILED
 ASSET_SOURCE_NODE_UNRESOLVED
 ASSET_SELECTOR_UNSUPPORTED
+ASSET_REFERENCE_INVALID
+ASSET_REFERENCE_UNSUPPORTED
+ASSET_CSS_URL_INVALID
+ASSET_INLINE_SVG_INVALID
 ```
 
-A resource that rendered successfully but cannot be read as bytes because of CORS/origin policy remains an explicit missing-byte case for later raster fallback planning.
+Missing asset bytes do not fail the overall capture.
 
 ### Acquisition budgets
 
@@ -177,10 +234,10 @@ Browser defaults:
 ```text
 2,000 references
 20 MiB per resource
-100 MiB total acquired bytes per snapshot
+100 MiB total per snapshot
 ```
 
-The implementation also applies hard caps above the configurable defaults.
+Budget exhaustion is fail-visible.
 
 ### Browser runtime and persistence
 
@@ -191,7 +248,7 @@ apps/browser-extension/src/runtime/asset-runtime.ts
 apps/browser-extension/src/runtime/asset-store.ts
 ```
 
-IndexedDB contract:
+IndexedDB:
 
 ```text
 Database: w2f-assets
@@ -199,7 +256,7 @@ Store: captures
 Key: assets:<jobId>
 ```
 
-The capture receipt exposes:
+Capture receipt fields:
 
 ```text
 assetStorageKey
@@ -211,40 +268,39 @@ assetUniqueByteCount
 assetDiagnosticCount
 ```
 
-Standard and High Fidelity paths both resolve/persist assets from their associated RawSnapshot.
+Standard and High Fidelity capture paths persist assets from their associated RawSnapshot.
 
 Cancellation/failure cleanup removes AssetCapture together with RawSnapshot/reference screenshot, CSS Cascade and Environment sidecars.
 
 ### Browser packaging
 
-`@w2f/asset-resolver` is included in Browser runtime packaging and workspace imports are rewritten to packaged relative modules.
+`@w2f/asset-resolver` is a Browser runtime package and workspace imports are rewritten to packaged relative modules.
 
-Added dedicated NODE-13 packaged-output validation:
+Standard and High Fidelity builds both run:
 
 ```text
-apps/browser-extension/scripts/validate-node-13-package.mjs
+validate-extension-package.mjs
+validate-node-13-package.mjs
 ```
 
-It validates:
-
-- packaged asset runtime/store files;
-- packaged Asset Resolver modules;
-- packaged Standard asset acquisition;
-- service-worker asset lifecycle;
-- SHA-256/runtime evidence;
-- IndexedDB contract;
-- unresolved workspace import absence;
-- privacy boundaries.
+The NODE-13 validator verifies asset runtime/store, resolver/discovery/acquisition modules, Standard acquisition, service-worker lifecycle, CDP alternate provider, no unresolved workspace imports and privacy boundaries.
 
 ### Tests
 
-Shared Asset Resolver tests cover:
+Asset Resolver tests cover:
 
-- byte-based MIME sniffing;
+- MIME/content identification;
 - SVG classification;
-- deterministic asset ids/paths;
-- byte-level de-duplication;
+- deterministic IDs/paths;
+- SHA-256 content de-duplication;
 - provenance preservation;
+- `currentSrc` vs authored source discovery;
+- CSS URL discovery/provenance;
+- inline SVG discovery;
+- data URL decoding;
+- known SHA-256 fixture;
+- one-fetch/many-reference behavior;
+- acquisition budgets;
 - unsupported media diagnostics.
 
 Browser tests cover:
@@ -257,19 +313,13 @@ Browser tests cover:
 
 ### Guardrail
 
-Added:
-
-```text
-scripts/validate-node-13.mjs
-```
-
-The dependency-free guardrail freezes the platform-neutral core boundary, Standard acquisition evidence, browser lifecycle, packaging, W2F IR reuse, privacy/frame-realm constraints and normative docs.
+`validate-node-13.mjs` freezes the AssetCapture contract, portable core/adapters, Standard acquisition, High Fidelity alternate provider, Browser lifecycle/packaging, W2F IR reuse, privacy/permission boundary and normative docs.
 
 ## Security / privacy
 
-NODE-13 does not read cookies, localStorage, sessionStorage or arbitrary form values.
+NODE-13 does not persist cookies, authorization/request headers, localStorage, sessionStorage, passwords or arbitrary form values.
 
-Captured SVG bytes remain untrusted input. Secure parsing/sanitization belongs to NODE-23, not acquisition.
+Captured SVG remains untrusted passive evidence. NODE-23 owns secure archive parsing/SVG sanitization before Figma rendering.
 
 NODE-13 introduces no broad host permission and no static content script.
 
@@ -283,21 +333,26 @@ NODE-13 introduces no broad host permission and no static content script.
 - [x] CSS image URL acquisition
 - [x] inline/external SVG evidence
 - [x] data/blob acquisition
+- [x] portable RawSnapshot/Cascade discovery
+- [x] shared URL resolution
 - [x] SHA-256 identity
 - [x] deterministic embedded path
 - [x] byte-level de-duplication
-- [x] full many-reference Resource Provenance
+- [x] many-reference Resource Provenance
 - [x] explicit missing/unsupported diagnostics
 - [x] acquisition budgets
 - [x] same-origin iframe/open Shadow DOM targeting
 - [x] frame-realm-safe element classification
+- [x] Standard native page fetch
+- [x] High Fidelity CDP alternate provider
+- [x] CDP resource-tree/content recovery
 - [x] Browser Asset IndexedDB sidecar
 - [x] capture receipt integration
 - [x] cancellation/failure cleanup
 - [x] Browser runtime package integration
 - [x] shared behavior tests
 - [x] Browser runtime/store tests
-- [x] dependency-free NODE-13 guardrail
+- [x] NODE-13 package validator
 - [x] normative implementation document
 - [x] ADR-0013
 - [ ] NODE-13 guardrail wired into foundation validation
@@ -318,7 +373,7 @@ NODE-13 introduces no broad host permission and no static content script.
 
 ## Explicit non-goals
 
-NODE-13 does not implement canvas/video-frame capture, full raster ground truth, compositing/fallback boundary solving, final `.wtf` writing, untrusted package parsing or Figma rendering.
+NODE-13 does not implement canvas/WebGL/video-frame capture, pixel ground truth, screenshot fallback capture, compositing/fallback-boundary solving, final `.wtf` archive writing, untrusted package parsing, Figma asset rendering, fonts or responsive inference.
 
 ## Next
 

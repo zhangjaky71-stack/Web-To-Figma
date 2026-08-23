@@ -1,0 +1,130 @@
+name: NODE-12 Environment Bootstrap
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: node-12-environment-bootstrap
+  cancel-in-progress: true
+
+jobs:
+  bootstrap:
+    if: github.head_ref == 'feat/node-12-media-container-environment-capture' && github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v6
+        with:
+          ref: feat/node-12-media-container-environment-capture
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.22.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Patch Browser package validator for NODE-12
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = 'apps/browser-extension/scripts/validate-extension-package.mjs';
+          let source = fs.readFileSync(path, 'utf8');
+
+          function replaceOnce(before, after, label) {
+            if (!source.includes(before)) throw new Error(`missing patch anchor: ${label}`);
+            source = source.replace(before, after);
+          }
+
+          replaceOnce(
+            '  "runtime/css-cascade-store.js",\n  "runtime/source-providers/index.js",',
+            '  "runtime/css-cascade-store.js",\n  "runtime/environment-runtime.js",\n  "runtime/environment-store.js",\n  "runtime/source-providers/index.js",',
+            'environment Browser runtime files',
+          );
+          replaceOnce(
+            '  "runtime/css-cascade/tokens.js",\n  "runtime/standard-capture-adapter/index.js",',
+            '  "runtime/css-cascade/tokens.js",\n  "runtime/environment-capture/index.js",\n  "runtime/environment-capture/types.js",\n  "runtime/environment-capture/capture.js",\n  "runtime/standard-capture-adapter/index.js",',
+            'environment package files',
+          );
+          replaceOnce(
+            '  "runtime/standard-capture-adapter/cascade-capture.js",\n  "runtime/standard-capture-adapter/privacy.js",',
+            '  "runtime/standard-capture-adapter/cascade-capture.js",\n  "runtime/standard-capture-adapter/environment-capture.js",\n  "runtime/standard-capture-adapter/privacy.js",',
+            'standard environment runtime file',
+          );
+          replaceOnce(
+            '  "./css-cascade-store.js",\n]) {',
+            '  "./css-cascade-store.js",\n  "./environment-runtime.js",\n  "./environment-store.js",\n]) {',
+            'service worker import paths',
+          );
+          replaceOnce(
+            'assert(\n  serviceWorker.includes("persistCssCascade") &&\n    serviceWorker.includes("deleteAllCaptureArtifacts"),\n  "service worker must persist and clean up NODE-11 CSS sidecars",\n);',
+            'assert(\n  serviceWorker.includes("persistCssCascade") &&\n    serviceWorker.includes("deleteAllCaptureArtifacts"),\n  "service worker must persist and clean up NODE-11 CSS sidecars",\n);\nassert(\n  serviceWorker.includes("persistEnvironment") &&\n    serviceWorker.includes("writeEnvironmentCapture") &&\n    serviceWorker.includes("deleteEnvironmentCapture"),\n  "service worker must persist and clean up NODE-12 environment sidecars",\n);',
+            'service worker environment lifecycle',
+          );
+          replaceOnce(
+            'const captureCore = await readFile(`${outputRoot}/runtime/capture-core/validation.js`, "utf8");',
+            'const environmentRuntime = await readFile(`${outputRoot}/runtime/environment-runtime.js`, "utf8");\nfor (const evidence of [\n  "captureEnvironmentForSnapshot",\n  "captureEnvironmentMediaFeaturesInPage",\n  "prefers-color-scheme",\n  "prefers-reduced-motion",\n  "prefers-contrast",\n  "forced-colors",\n]) {\n  assert(environmentRuntime.includes(evidence), `NODE-12 environment runtime missing ${evidence}`);\n}\nassert(\n  environmentRuntime.includes(\'from "./environment-capture/index.js"\'),\n  "NODE-12 environment runtime must use packaged relative environment-capture modules",\n);\n\nconst environmentStore = await readFile(`${outputRoot}/runtime/environment-store.js`, "utf8");\nassert(\n  environmentStore.includes("indexedDB.open") &&\n    environmentStore.includes("w2f-environment") &&\n    environmentStore.includes("environment:"),\n  "NODE-12 environment sidecar store/key contract drifted",\n);\n\nconst environmentCore = await readFile(\n  `${outputRoot}/runtime/environment-capture/capture.js`,\n  "utf8",\n);\nassert(\n  !environmentCore.includes("@w2f/"),\n  "packaged environment-capture core must not contain unresolved workspace imports",\n);\nassert(\n  environmentCore.includes("createEnvironmentCapture") &&\n    environmentCore.includes("toWtfMediaRuleTraces") &&\n    environmentCore.includes("toWtfContainerQueryInfo"),\n  "packaged environment-capture core must preserve NODE-12 normalization/IR bridges",\n);\n\nconst captureCore = await readFile(`${outputRoot}/runtime/capture-core/validation.js`, "utf8");',
+            'environment runtime/store/core validation',
+          );
+          replaceOnce(
+            'const contentScript = await readFile(`${outputRoot}/runtime/content-script.js`, "utf8");',
+            'const standardEnvironment = await readFile(\n  `${outputRoot}/runtime/standard-capture-adapter/environment-capture.js`,\n  "utf8",\n);\nfor (const evidence of [\n  "CSSMediaRule",\n  "CSSContainerRule",\n  "matchMedia",\n  "container-name",\n  "container-type",\n  "ENV_PAGE_ZOOM_UNAVAILABLE",\n]) {\n  assert(standardEnvironment.includes(evidence), `Standard environment runtime missing ${evidence}`);\n}\nfor (const forbidden of ["document.cookie", "localStorage", "sessionStorage"]) {\n  assert(\n    !standardEnvironment.includes(forbidden),\n    `Standard environment runtime must not read ${forbidden}`,\n  );\n}\n\nconst contentScript = await readFile(`${outputRoot}/runtime/content-script.js`, "utf8");',
+            'standard environment validation',
+          );
+
+          fs.writeFileSync(path, source);
+          NODE
+
+      - name: Refresh workspace lockfile
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Apply canonical formatting
+        run: >-
+          pnpm exec prettier --write
+          packages/environment-capture
+          packages/standard-capture-adapter/package.json
+          packages/standard-capture-adapter/src/types.ts
+          packages/standard-capture-adapter/src/environment-capture.ts
+          packages/standard-capture-adapter/src/index.ts
+          apps/browser-extension/package.json
+          apps/browser-extension/src/runtime/environment-runtime.ts
+          apps/browser-extension/src/runtime/environment-store.ts
+          apps/browser-extension/src/runtime/job-state.ts
+          apps/browser-extension/src/runtime/service-worker.ts
+          apps/browser-extension/test/environment-runtime.test.ts
+          apps/browser-extension/test/environment-store.test.ts
+          apps/browser-extension/scripts/package-extension.mjs
+          apps/browser-extension/scripts/validate-extension-package.mjs
+          scripts/validate-node-12.mjs
+          scripts/validate-foundation.mjs
+
+      - name: Remove temporary workflow from final tree
+        run: git rm .github/workflows/node-12-bootstrap.yml
+
+      - name: Validate final repository shape
+        run: pnpm check
+
+      - name: Commit validated NODE-12 environment integration
+        shell: bash
+        run: |
+          if git diff --quiet && git diff --cached --quiet; then
+            echo "No bootstrap changes to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "build(node-12): validate environment integration"
+          git push origin HEAD:feat/node-12-media-container-environment-capture

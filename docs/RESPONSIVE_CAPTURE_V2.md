@@ -137,11 +137,11 @@ NODE-15 therefore introduces a nested session boundary:
 
 ```text
 responsive viewport session
-  ├ setDeviceMetricsOverride
+  ├ Emulation.setDeviceMetricsOverride
   ├ DOMSnapshot capture
   ├ resource recovery
   ├ Pixel Ground Truth tile capture
-  └ clearDeviceMetricsOverride
+  └ Emulation.clearDeviceMetricsOverride
 ```
 
 Nested CDP operations reuse the outer session.
@@ -153,9 +153,9 @@ The outer owner alone detaches.
 Every synthetic viewport is wrapped by `try/finally`:
 
 ```text
-setDeviceMetricsOverride
+Emulation.setDeviceMetricsOverride
 → capture
-→ finally clearDeviceMetricsOverride
+→ finally Emulation.clearDeviceMetricsOverride
 → detach
 ```
 
@@ -313,6 +313,14 @@ It does not add:
 - browser-window resize permissions.
 
 High Fidelity reuses only the already explicit debugger permission.
+
+## Downstream ownership
+
+NODE-16 consumes `ResponsiveCapture` plus the child RawSnapshot/CSS/Environment/Asset/Pixel sidecars to perform cross-snapshot matching and responsive inference.
+
+NODE-21 packages the `ResponsiveCapture` evidence, `WtfResponsiveSnapshotRef` records and referenced child artifacts into the final `.wtf` archive without re-capturing the source page.
+
+NODE-27 consumes the packaged responsive evidence and inferred NODE-16 rules to render responsive Figma layout behavior.
 
 ## Explicit non-goals
 

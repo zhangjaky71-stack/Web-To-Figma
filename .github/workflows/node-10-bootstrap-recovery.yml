@@ -110,47 +110,51 @@ jobs:
 
           const path = "packages/standard-capture-adapter/src/capture.ts";
           const source = readFileSync(path, "utf8");
-          const startMarker = "  function pseudoContent(";
-          const endMarker = "  function capturePseudo(";
-          const start = source.indexOf(startMarker);
-          const end = source.indexOf(endMarker, start);
-          if (start < 0 || end < 0) throw new Error("Standard pseudo parser markers not found");
+          const functionStart = source.indexOf("function pseudoContent(");
+          const captureStart = source.indexOf("function capturePseudo(", functionStart);
+          if (functionStart < 0 || captureStart < 0) {
+            throw new Error("Standard pseudo parser markers not found");
+          }
 
-          const replacement = [
-            '  function pseudoContent(content: string): NonNullable<RawNode["pseudo"]> {',
-            '    if (!content || content === "none" || content === "normal") {',
-            '      return { type: "before", content, contentKind: "none" };',
-            '    }',
-            '    const first = content[0];',
-            '    const last = content.at(-1);',
-            '    const quoted =',
-            '      (first === String.fromCharCode(34) || first === String.fromCharCode(39)) &&',
-            '      last === first;',
-            '    if (quoted) {',
-            '      const raw = content.slice(1, -1);',
-            '      let generatedText = "";',
-            '      for (let index = 0; index < raw.length; index += 1) {',
-            '        const character = raw[index]!;',
-            '        if (character === "\\\\" && index + 1 < raw.length) {',
-            '          const next = raw[index + 1]!;',
-            '          if (next.toLowerCase() === "a") {',
-            '            generatedText += "\\n";',
-            '            index += 1;',
-            '            if (" \\t\\r\\n\\f".includes(raw[index + 1] ?? "")) index += 1;',
-            '            continue;',
-            '          }',
-            '          generatedText += next;',
+          const start = source.lastIndexOf("\n", functionStart) + 1;
+          const end = source.lastIndexOf("\n", captureStart) + 1;
+          const indent = source.slice(start, functionStart);
+          const body = [
+            'function pseudoContent(content: string): NonNullable<RawNode["pseudo"]> {',
+            '  if (!content || content === "none" || content === "normal") {',
+            '    return { type: "before", content, contentKind: "none" };',
+            '  }',
+            '  const first = content[0];',
+            '  const last = content.at(-1);',
+            '  const quoted =',
+            '    (first === String.fromCharCode(34) || first === String.fromCharCode(39)) &&',
+            '    last === first;',
+            '  if (quoted) {',
+            '    const raw = content.slice(1, -1);',
+            '    let generatedText = "";',
+            '    for (let index = 0; index < raw.length; index += 1) {',
+            '      const character = raw[index]!;',
+            '      if (character === "\\\\" && index + 1 < raw.length) {',
+            '        const next = raw[index + 1]!;',
+            '        if (next.toLowerCase() === "a") {',
+            '          generatedText += "\\n";',
             '          index += 1;',
+            '          if (" \\t\\r\\n\\f".includes(raw[index + 1] ?? "")) index += 1;',
             '          continue;',
             '        }',
-            '        generatedText += character;',
+            '        generatedText += next;',
+            '        index += 1;',
+            '        continue;',
             '      }',
-            '      return { type: "before", content, contentKind: "text", generatedText };',
+            '      generatedText += character;',
             '    }',
-            '    return { type: "before", content, contentKind: "complex" };',
+            '    return { type: "before", content, contentKind: "text", generatedText };',
             '  }',
+            '  return { type: "before", content, contentKind: "complex" };',
+            '}',
             '',
-          ].join("\n");
+          ];
+          const replacement = body.map((line) => (line ? indent + line : "")).join("\n");
 
           writeFileSync(path, source.slice(0, start) + replacement + source.slice(end), "utf8");
           REPAIR

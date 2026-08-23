@@ -4,7 +4,8 @@
     "outDir": "dist",
     "rootDir": ".",
     "declaration": false,
-    "declarationMap": false
+    "declarationMap": false,
+    "types": ["@figma/plugin-typings"]
   },
   "include": ["src/**/*.ts", "test/**/*.ts"]
 }

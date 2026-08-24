@@ -40,6 +40,7 @@ type CornerNode = SceneNode & {
   bottomRightRadius: number;
   bottomLeftRadius: number;
 };
+type ResizableNode = SceneNode & { resize(width: number, height: number): void };
 
 const DEFAULT_FONT: FontName = { family: "Inter", style: "Regular" };
 
@@ -166,6 +167,10 @@ function copyPluginData(from: SceneNode, to: SceneNode): void {
   }
 }
 
+function hasResize(node: SceneNode): node is ResizableNode {
+  return "resize" in node && typeof (node as { resize?: unknown }).resize === "function";
+}
+
 function replaceAtSameIndex(oldNode: SceneNode, replacement: SceneNode): SceneNode {
   const parent = oldNode.parent;
   if (parent && "children" in parent && "insertChild" in parent) {
@@ -176,7 +181,9 @@ function replaceAtSameIndex(oldNode: SceneNode, replacement: SceneNode): SceneNo
   replacement.name = oldNode.name;
   replacement.x = oldNode.x;
   replacement.y = oldNode.y;
-  replacement.resize(Math.max(0.01, oldNode.width), Math.max(0.01, oldNode.height));
+  if (hasResize(replacement)) {
+    replacement.resize(Math.max(0.01, oldNode.width), Math.max(0.01, oldNode.height));
+  }
   copyPluginData(oldNode, replacement);
   oldNode.remove();
   return replacement;
@@ -198,14 +205,17 @@ async function paintForFill(
   ) {
     return gradientPaint(fill);
   }
-  const bytes = bundle.assetPayloadsById[fill.assetId];
-  if (!bytes) return null;
-  const image = figma.createImage(bytes);
-  return {
-    type: "IMAGE",
-    imageHash: image.hash,
-    scaleMode: scaleMode(fill.fit),
-  };
+  if (fill.type === "image") {
+    const bytes = bundle.assetPayloadsById[fill.assetId];
+    if (!bytes) return null;
+    const image = figma.createImage(bytes);
+    return {
+      type: "IMAGE",
+      imageHash: image.hash,
+      scaleMode: scaleMode(fill.fit),
+    };
+  }
+  return null;
 }
 
 function firstBorder(paint: WtfPaintModel) {
@@ -253,15 +263,19 @@ async function applyPaintModel(
   }
 
   if (hasEffects(node)) {
-    node.effects = (paint.shadows ?? []).map((shadow): ShadowEffect => ({
-      type: shadow.inset ? "INNER_SHADOW" : "DROP_SHADOW",
-      color: rgba(shadow.color),
-      offset: { x: shadow.offsetX, y: shadow.offsetY },
-      radius: Math.max(0, shadow.blur),
-      spread: shadow.spread,
-      visible: true,
-      blendMode: "NORMAL",
-    }));
+    node.effects = (paint.shadows ?? []).map((shadow): Effect => {
+      const base = {
+        color: rgba(shadow.color),
+        offset: { x: shadow.offsetX, y: shadow.offsetY },
+        radius: Math.max(0, shadow.blur),
+        spread: shadow.spread,
+        visible: true,
+        blendMode: "NORMAL" as const,
+      };
+      return shadow.inset
+        ? { type: "INNER_SHADOW", ...base }
+        : { type: "DROP_SHADOW", ...base };
+    });
   }
 
   if (hasOpacity(node)) {

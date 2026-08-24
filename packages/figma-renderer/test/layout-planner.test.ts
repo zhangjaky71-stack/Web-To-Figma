@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { WtfRenderNode } from "@w2f/w2f-ir";
-import { createAutoLayoutPlan } from "../src/layout/planner.js";
+import { createAutoLayoutPlan, createGridLayoutPlan } from "../src/layout/planner.js";
 
 function node(id: string, overrides: Partial<WtfRenderNode> = {}): WtfRenderNode {
   return {
@@ -52,6 +52,34 @@ function flexContainer(overrides: Partial<WtfRenderNode["layout"]> = {}): WtfRen
   };
 }
 
+function gridContainer(overrides: Partial<WtfRenderNode["layout"]> = {}): WtfRenderNode {
+  const base = node("grid");
+  return {
+    ...base,
+    childIds: ["a", "b"],
+    layout: {
+      ...base.layout,
+      mode: "grid",
+      display: "grid",
+      effectiveGap: { row: 12, column: 16 },
+      gridContainer: {
+        columns: [
+          { authored: "120px", resolvedPx: 120 },
+          { authored: "2fr" },
+        ],
+        rows: [
+          { authored: "80px", resolvedPx: 80 },
+          { authored: "1fr" },
+        ],
+        rowGap: 12,
+        columnGap: 16,
+        autoFlow: "row",
+      },
+      ...overrides,
+    },
+  };
+}
+
 describe("NODE-27 auto-layout planner", () => {
   it("maps a native horizontal flex container without losing gap or padding", () => {
     const plan = createAutoLayoutPlan({
@@ -69,7 +97,7 @@ describe("NODE-27 auto-layout planner", () => {
     });
   });
 
-  it("maps column wrap and keeps row/column gaps on the correct Figma axes", () => {
+  it("keeps unsupported vertical wrapping on source geometry instead of writing invalid Figma layoutWrap", () => {
     const container = flexContainer({
       flexContainer: {
         direction: "column",
@@ -83,12 +111,10 @@ describe("NODE-27 auto-layout planner", () => {
     const plan = createAutoLayoutPlan({ container, children: [node("a"), node("b")] });
     expect(plan?.container).toMatchObject({
       mode: "VERTICAL",
-      wrap: "WRAP",
-      itemSpacing: 10,
-      counterAxisSpacing: 18,
-      counterAlignStretch: true,
+      wrap: "NO_WRAP",
+      nativeCompatible: false,
     });
-    expect(plan?.children.every((child) => child.horizontalSizing === "FILL")).toBe(true);
+    expect(plan?.container.reasons.join(" ")).toMatch(/vertical flex wrapping/);
   });
 
   it("maps flex-grow to fill on the primary axis and preserves explicit min/max sizes", () => {
@@ -152,5 +178,94 @@ describe("NODE-27 auto-layout planner", () => {
 
   it("returns null for non-flex containers", () => {
     expect(createAutoLayoutPlan({ container: node("plain"), children: [] })).toBeNull();
+  });
+});
+
+describe("NODE-27 native Grid planner", () => {
+  it("maps fixed/fr tracks, gaps and row auto-flow without inventing extra semantics", () => {
+    const plan = createGridLayoutPlan({
+      container: gridContainer(),
+      children: [node("a"), node("b")],
+    });
+    expect(plan?.container).toMatchObject({
+      rowGap: 12,
+      columnGap: 16,
+      itemsPositioning: "ROW_AUTO_FLOW",
+      nativeCompatible: true,
+      columns: [
+        { type: "FIXED", value: 120, authored: "120px" },
+        { type: "FLEX", value: 2, authored: "2fr" },
+      ],
+      rows: [
+        { type: "FIXED", value: 80, authored: "80px" },
+        { type: "FLEX", value: 1, authored: "1fr" },
+      ],
+    });
+  });
+
+  it("maps numeric CSS grid lines and spans to zero-based Figma placement", () => {
+    const a = node("a", {
+      layout: {
+        ...node("a").layout,
+        gridItem: { rowStart: 1, rowEnd: 3, columnStart: 2, columnEnd: "span 1" },
+      },
+    });
+    const plan = createGridLayoutPlan({
+      container: gridContainer(),
+      children: [a, node("b")],
+    });
+    expect(plan?.container.itemsPositioning).toBe("MANUAL");
+    expect(plan?.children[0]).toEqual({
+      renderNodeId: "a",
+      rowIndex: 0,
+      columnIndex: 1,
+      rowSpan: 2,
+      columnSpan: 1,
+    });
+    expect(plan?.container.nativeCompatible).toBe(true);
+  });
+
+  it("supports minmax(0, Nfr) as a native flexible track", () => {
+    const plan = createGridLayoutPlan({
+      container: gridContainer({
+        gridContainer: {
+          columns: [{ authored: "minmax(0, 3fr)" }],
+          rows: [{ authored: "1fr" }],
+          autoFlow: "row",
+        },
+      }),
+      children: [],
+    });
+    expect(plan?.container.columns[0]).toEqual({
+      type: "FLEX",
+      value: 3,
+      authored: "minmax(0, 3fr)",
+    });
+    expect(plan?.container.nativeCompatible).toBe(true);
+  });
+
+  it("marks intrinsic/named/column-flow Grid semantics non-native instead of approximating them", () => {
+    const child = node("a", {
+      layout: {
+        ...node("a").layout,
+        gridItem: { rowStart: "header", columnStart: 1 },
+      },
+    });
+    const plan = createGridLayoutPlan({
+      container: gridContainer({
+        gridContainer: {
+          columns: [{ authored: "max-content", resolvedPx: 180 }],
+          rows: [{ authored: "auto", resolvedPx: 40 }],
+          autoFlow: "column",
+        },
+      }),
+      children: [child],
+    });
+    expect(plan?.container.nativeCompatible).toBe(false);
+    expect(plan?.container.reasons.join(" ")).toMatch(/track|grid-auto-flow|grid line|partial/);
+  });
+
+  it("returns null for non-grid containers", () => {
+    expect(createGridLayoutPlan({ container: node("plain"), children: [] })).toBeNull();
   });
 });

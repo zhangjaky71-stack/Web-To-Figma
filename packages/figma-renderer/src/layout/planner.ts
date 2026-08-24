@@ -1,4 +1,10 @@
-import type { WtfCssLength, WtfRenderNode, WtfSizingDecision } from "@w2f/w2f-ir";
+import type {
+  WtfCssLength,
+  WtfGridItemModel,
+  WtfGridTrack,
+  WtfRenderNode,
+  WtfSizingDecision,
+} from "@w2f/w2f-ir";
 import type {
   W2fAutoLayoutChildPlan,
   W2fAutoLayoutContainerPlan,
@@ -7,6 +13,10 @@ import type {
   W2fFigmaCounterAlign,
   W2fFigmaPrimaryAlign,
   W2fFigmaSizingMode,
+  W2fGridChildPlan,
+  W2fGridLayoutPlan,
+  W2fGridLayoutPlannerInput,
+  W2fGridTrackPlan,
 } from "./types.js";
 
 function finiteNonNegative(value: number | undefined, fallback = 0): number {
@@ -84,7 +94,8 @@ function childSizing(
   parentStretch: boolean,
 ): W2fAutoLayoutChildPlan {
   const item = child.layout.flexItem;
-  const absolutePositioned = child.layout.position === "absolute" || child.layout.position === "fixed";
+  const absolutePositioned =
+    child.layout.position === "absolute" || child.layout.position === "fixed";
   let horizontalSizing = sizingMode(child.layout.sizing.width, true);
   let verticalSizing = sizingMode(child.layout.sizing.height, true);
   const grow = finiteNonNegative(item?.grow) > 0 ? 1 : 0;
@@ -115,10 +126,10 @@ function childSizing(
     counterAxisStretch,
     absolutePositioned,
     order: typeof item?.order === "number" && Number.isFinite(item.order) ? item.order : 0,
-    ...(minWidth === undefined ? {} : { minWidth }),
-    ...(maxWidth === undefined ? {} : { maxWidth }),
-    ...(minHeight === undefined ? {} : { minHeight }),
-    ...(maxHeight === undefined ? {} : { maxHeight }),
+    ...(minWidth !== undefined ? { minWidth } : {}),
+    ...(maxWidth !== undefined ? { maxWidth } : {}),
+    ...(minHeight !== undefined ? { minHeight } : {}),
+    ...(maxHeight !== undefined ? { maxHeight } : {}),
   };
 }
 
@@ -133,6 +144,9 @@ export function createAutoLayoutPlan(input: W2fAutoLayoutPlannerInput): W2fAutoL
   if (flex.wrap === "wrap-reverse") {
     reasons.push("flex-wrap:wrap-reverse has no exact Figma equivalent");
   }
+  if (!horizontal && flex.wrap !== "nowrap") {
+    reasons.push("vertical flex wrapping has no exact Figma Auto Layout equivalent");
+  }
 
   const counter = counterAlign(flex.alignItems, horizontal, reasons);
   const padding = container.layout.padding ?? { top: 0, right: 0, bottom: 0, left: 0 };
@@ -144,13 +158,13 @@ export function createAutoLayoutPlan(input: W2fAutoLayoutPlannerInput): W2fAutoL
   const containerPlan: W2fAutoLayoutContainerPlan = {
     renderNodeId: container.id,
     mode: horizontal ? "HORIZONTAL" : "VERTICAL",
-    wrap: flex.wrap === "nowrap" ? "NO_WRAP" : "WRAP",
+    wrap: horizontal && flex.wrap !== "nowrap" ? "WRAP" : "NO_WRAP",
     reverseChildren,
     primaryAlign: primaryAlign(flex.justifyContent, reasons),
     counterAlign: counter.value,
     counterAlignStretch: counter.stretch,
     itemSpacing,
-    ...(flex.wrap !== "nowrap" ? { counterAxisSpacing } : {}),
+    ...(horizontal && flex.wrap !== "nowrap" ? { counterAxisSpacing } : {}),
     padding: {
       top: finiteNonNegative(padding.top),
       right: finiteNonNegative(padding.right),
@@ -169,4 +183,146 @@ export function createAutoLayoutPlan(input: W2fAutoLayoutPlannerInput): W2fAutoL
     .sort((left, right) => left.order - right.order);
 
   return { container: containerPlan, children };
+}
+
+function gridTrack(
+  track: WtfGridTrack,
+  axis: "row" | "column",
+  index: number,
+  reasons: string[],
+): W2fGridTrackPlan {
+  const authored = track.authored.trim();
+  const normalized = authored.toLowerCase();
+  const fr = normalized.match(/^([0-9]*\.?[0-9]+)?fr$/);
+  if (fr) {
+    const parsed = fr[1] ? Number.parseFloat(fr[1]) : 1;
+    return {
+      type: "FLEX",
+      value: Number.isFinite(parsed) && parsed > 0 ? parsed : 1,
+      authored,
+    };
+  }
+
+  const minmaxFr = normalized.match(
+    /^minmax\(\s*0(?:px)?\s*,\s*([0-9]*\.?[0-9]+)?fr\s*\)$/,
+  );
+  if (minmaxFr) {
+    const parsed = minmaxFr[1] ? Number.parseFloat(minmaxFr[1]) : 1;
+    return {
+      type: "FLEX",
+      value: Number.isFinite(parsed) && parsed > 0 ? parsed : 1,
+      authored,
+    };
+  }
+
+  const exactPixels = normalized.match(/^([0-9]*\.?[0-9]+)px$/);
+  if (exactPixels) {
+    return {
+      type: "FIXED",
+      value: Math.max(0, Number.parseFloat(exactPixels[1] ?? "0")),
+      authored,
+    };
+  }
+
+  reasons.push(`${axis} track ${index + 1} (${authored || "<empty>"}) has no exact Figma Grid track equivalent`);
+  return {
+    type: "FIXED",
+    value: finiteNonNegative(track.resolvedPx),
+    authored,
+  };
+}
+
+function positiveGridLine(
+  value: number | string | undefined,
+  label: string,
+  reasons: string[],
+): number | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value === "number" && Number.isInteger(value) && value > 0) return value - 1;
+  if (typeof value === "string") {
+    const normalized = value.trim();
+    if (/^[1-9]\d*$/.test(normalized)) return Number.parseInt(normalized, 10) - 1;
+  }
+  reasons.push(`${label}:${String(value)} cannot be represented as a positive numeric Figma grid line`);
+  return undefined;
+}
+
+function gridSpan(
+  start: number | string | undefined,
+  end: number | string | undefined,
+  label: string,
+  reasons: string[],
+): number {
+  if (end === undefined) return 1;
+  if (typeof end === "string") {
+    const span = end.trim().match(/^span\s+([1-9]\d*)$/i);
+    if (span) return Number.parseInt(span[1] ?? "1", 10);
+  }
+  const startIndex = positiveGridLine(start, `${label}Start`, reasons);
+  const endIndex = positiveGridLine(end, `${label}End`, reasons);
+  if (startIndex !== undefined && endIndex !== undefined && endIndex > startIndex) {
+    return endIndex - startIndex;
+  }
+  reasons.push(`${label} end:${String(end)} has no exact Figma span equivalent`);
+  return 1;
+}
+
+function gridChild(item: WtfGridItemModel | undefined, childId: string, reasons: string[]): W2fGridChildPlan {
+  if (!item) {
+    return { renderNodeId: childId, rowSpan: 1, columnSpan: 1 };
+  }
+  const rowIndex = positiveGridLine(item.rowStart, `${childId}.rowStart`, reasons);
+  const columnIndex = positiveGridLine(item.columnStart, `${childId}.columnStart`, reasons);
+  const rowSpan = gridSpan(item.rowStart, item.rowEnd, `${childId}.row`, reasons);
+  const columnSpan = gridSpan(item.columnStart, item.columnEnd, `${childId}.column`, reasons);
+  const hasExplicitRow = item.rowStart !== undefined || item.rowEnd !== undefined;
+  const hasExplicitColumn = item.columnStart !== undefined || item.columnEnd !== undefined;
+  if ((hasExplicitRow || hasExplicitColumn) && (rowIndex === undefined || columnIndex === undefined)) {
+    reasons.push(`${childId} has partial explicit grid placement that Figma cannot position exactly`);
+  }
+  return {
+    renderNodeId: childId,
+    ...(rowIndex !== undefined ? { rowIndex } : {}),
+    ...(columnIndex !== undefined ? { columnIndex } : {}),
+    rowSpan,
+    columnSpan,
+  };
+}
+
+export function createGridLayoutPlan(input: W2fGridLayoutPlannerInput): W2fGridLayoutPlan | null {
+  const { container } = input;
+  if (container.layout.mode !== "grid" || !container.layout.gridContainer) return null;
+
+  const grid = container.layout.gridContainer;
+  const reasons: string[] = [];
+  if (grid.columns.length === 0 || grid.rows.length === 0) {
+    reasons.push("implicit-only CSS Grid tracks do not have enough evidence for exact native Figma Grid");
+  }
+
+  const autoFlow = (grid.autoFlow ?? "row").trim().toLowerCase();
+  const itemsPositioning = autoFlow === "row" ? "ROW_AUTO_FLOW" : "MANUAL";
+  if (!["row", ""].includes(autoFlow)) {
+    reasons.push(`grid-auto-flow:${grid.autoFlow} has no exact Figma Grid equivalent`);
+  }
+
+  const columns = grid.columns.map((track, index) => gridTrack(track, "column", index, reasons));
+  const rows = grid.rows.map((track, index) => gridTrack(track, "row", index, reasons));
+  const children = input.children.map((child) => gridChild(child.layout.gridItem, child.id, reasons));
+  const hasExplicitPlacement = children.some(
+    (child) => child.rowIndex !== undefined || child.columnIndex !== undefined || child.rowSpan > 1 || child.columnSpan > 1,
+  );
+
+  return {
+    container: {
+      renderNodeId: container.id,
+      rows,
+      columns,
+      rowGap: finiteNonNegative(grid.rowGap ?? container.layout.effectiveGap?.row),
+      columnGap: finiteNonNegative(grid.columnGap ?? container.layout.effectiveGap?.column),
+      itemsPositioning: hasExplicitPlacement ? "MANUAL" : itemsPositioning,
+      nativeCompatible: reasons.length === 0,
+      reasons,
+    },
+    children,
+  };
 }

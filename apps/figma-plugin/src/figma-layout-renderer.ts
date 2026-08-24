@@ -1,9 +1,19 @@
-import { createAutoLayoutPlan, type W2fAutoLayoutChildPlan } from "@w2f/figma-renderer";
+import {
+  createAutoLayoutPlan,
+  createGridLayoutPlan,
+  type W2fAutoLayoutChildPlan,
+  type W2fGridChildPlan,
+  type W2fGridTrackPlan,
+} from "@w2f/figma-renderer";
 import type { WtfRenderNode, WtfRenderTree } from "@w2f/w2f-ir";
 
 export interface W2fFigmaLayoutStats {
   autoLayoutFrameCount: number;
   skippedIncompatibleFlexCount: number;
+  gridFrameCount: number;
+  skippedIncompatibleGridCount: number;
+  gridPlacementCount: number;
+  gridPlacementFallbackCount: number;
   fillAxisCount: number;
   hugAxisCount: number;
   absoluteChildCount: number;
@@ -19,6 +29,12 @@ type LayoutChildNode = SceneNode & {
   maxHeight: number | null;
 };
 
+type GridChildNode = SceneNode & {
+  gridRowSpan: number;
+  gridColumnSpan: number;
+  setGridChildPosition(rowIndex: number, columnIndex: number): void;
+};
+
 function isFrame(node: SceneNode | undefined): node is FrameNode {
   return node?.type === "FRAME";
 }
@@ -32,6 +48,15 @@ function supportsLayoutChild(node: SceneNode): node is LayoutChildNode {
     "maxWidth" in node &&
     "minHeight" in node &&
     "maxHeight" in node
+  );
+}
+
+function supportsGridChild(node: SceneNode): node is GridChildNode {
+  return (
+    "gridRowSpan" in node &&
+    "gridColumnSpan" in node &&
+    "setGridChildPosition" in node &&
+    typeof (node as { setGridChildPosition?: unknown }).setGridChildPosition === "function"
   );
 }
 
@@ -94,18 +119,36 @@ function applyAbsoluteConstraints(node: LayoutChildNode, renderNode: WtfRenderNo
       ? "STRETCH"
       : constraints.right
         ? "MAX"
-        : constraints.left
-          ? "MIN"
-          : "MIN";
+        : "MIN";
   const vertical: Constraints["vertical"] =
     constraints.top && constraints.bottom
       ? "STRETCH"
       : constraints.bottom
         ? "MAX"
-        : constraints.top
-          ? "MIN"
-          : "MIN";
+        : "MIN";
   node.constraints = { horizontal, vertical };
+}
+
+function applyGridTrack(target: GridTrackSize, plan: W2fGridTrackPlan): void {
+  target.type = plan.type;
+  target.value = Math.max(plan.type === "FLEX" ? 0.0001 : 0, plan.value);
+}
+
+function applyGridChild(
+  child: SceneNode,
+  childPlan: W2fGridChildPlan,
+  stats: W2fFigmaLayoutStats,
+): void {
+  if (!supportsGridChild(child)) return;
+  child.gridRowSpan = Math.max(1, childPlan.rowSpan);
+  child.gridColumnSpan = Math.max(1, childPlan.columnSpan);
+  if (childPlan.rowIndex === undefined || childPlan.columnIndex === undefined) return;
+  try {
+    child.setGridChildPosition(childPlan.rowIndex, childPlan.columnIndex);
+    stats.gridPlacementCount += 1;
+  } catch {
+    stats.gridPlacementFallbackCount += 1;
+  }
 }
 
 export function applyFigmaLayouts(
@@ -116,66 +159,103 @@ export function applyFigmaLayouts(
   const stats: W2fFigmaLayoutStats = {
     autoLayoutFrameCount: 0,
     skippedIncompatibleFlexCount: 0,
+    gridFrameCount: 0,
+    skippedIncompatibleGridCount: 0,
+    gridPlacementCount: 0,
+    gridPlacementFallbackCount: 0,
     fillAxisCount: 0,
     hugAxisCount: 0,
     absoluteChildCount: 0,
   };
 
-  const prepared: Array<{
-    renderNode: WtfRenderNode;
+  const preparedFlex: Array<{
     frame: FrameNode;
     plan: NonNullable<ReturnType<typeof createAutoLayoutPlan>>;
     absolutePositions: Map<string, { x: number; y: number }>;
+  }> = [];
+  const preparedGrid: Array<{
+    frame: FrameNode;
+    plan: NonNullable<ReturnType<typeof createGridLayoutPlan>>;
   }> = [];
 
   for (const renderNode of renderTree.nodes) {
     const frame = nodesByRenderNodeId.get(renderNode.id);
     if (!isFrame(frame)) continue;
-    const plan = createAutoLayoutPlan({
-      container: renderNode,
-      children: directChildren(renderNode, renderNodes),
-    });
-    if (!plan) continue;
-    if (!plan.container.nativeCompatible) {
-      stats.skippedIncompatibleFlexCount += 1;
+    const children = directChildren(renderNode, renderNodes);
+    const flexPlan = createAutoLayoutPlan({ container: renderNode, children });
+    if (flexPlan) {
+      if (!flexPlan.container.nativeCompatible) {
+        stats.skippedIncompatibleFlexCount += 1;
+        continue;
+      }
+
+      const absolutePositions = new Map<string, { x: number; y: number }>();
+      for (const childPlan of flexPlan.children) {
+        if (!childPlan.absolutePositioned) continue;
+        const child = nodesByRenderNodeId.get(childPlan.renderNodeId);
+        if (child?.parent === frame) {
+          absolutePositions.set(childPlan.renderNodeId, { x: child.x, y: child.y });
+        }
+      }
+
+      const orderedIds = flexPlan.children.map((child) => child.renderNodeId);
+      if (flexPlan.container.reverseChildren) orderedIds.reverse();
+      reorderChildren(frame, orderedIds, nodesByRenderNodeId);
+
+      const originalWidth = frame.width;
+      const originalHeight = frame.height;
+      frame.layoutMode = flexPlan.container.mode;
+      if (frame.layoutMode === "HORIZONTAL") frame.layoutWrap = flexPlan.container.wrap;
+      frame.primaryAxisAlignItems = flexPlan.container.primaryAlign;
+      frame.counterAxisAlignItems = flexPlan.container.counterAlign;
+      frame.paddingTop = flexPlan.container.padding.top;
+      frame.paddingRight = flexPlan.container.padding.right;
+      frame.paddingBottom = flexPlan.container.padding.bottom;
+      frame.paddingLeft = flexPlan.container.padding.left;
+      frame.itemSpacing = flexPlan.container.itemSpacing;
+      if (frame.layoutMode === "HORIZONTAL" && flexPlan.container.wrap === "WRAP") {
+        frame.counterAxisSpacing =
+          flexPlan.container.counterAxisSpacing ?? flexPlan.container.itemSpacing;
+      }
+      frame.strokesIncludedInLayout = flexPlan.container.strokesIncludedInLayout;
+      frame.resize(Math.max(0.01, originalWidth), Math.max(0.01, originalHeight));
+      frame.layoutSizingHorizontal = flexPlan.container.horizontalSizing;
+      frame.layoutSizingVertical = flexPlan.container.verticalSizing;
+      stats.autoLayoutFrameCount += 1;
+      preparedFlex.push({ frame, plan: flexPlan, absolutePositions });
       continue;
     }
 
-    const absolutePositions = new Map<string, { x: number; y: number }>();
-    for (const childPlan of plan.children) {
-      if (!childPlan.absolutePositioned) continue;
-      const child = nodesByRenderNodeId.get(childPlan.renderNodeId);
-      if (child?.parent === frame) absolutePositions.set(childPlan.renderNodeId, { x: child.x, y: child.y });
+    const gridPlan = createGridLayoutPlan({ container: renderNode, children });
+    if (!gridPlan) continue;
+    if (!gridPlan.container.nativeCompatible) {
+      stats.skippedIncompatibleGridCount += 1;
+      continue;
     }
-
-    const orderedIds = plan.children.map((child) => child.renderNodeId);
-    if (plan.container.reverseChildren) orderedIds.reverse();
-    reorderChildren(frame, orderedIds, nodesByRenderNodeId);
 
     const originalWidth = frame.width;
     const originalHeight = frame.height;
-    frame.layoutMode = plan.container.mode;
-    frame.layoutWrap = plan.container.wrap;
-    frame.primaryAxisAlignItems = plan.container.primaryAlign;
-    frame.counterAxisAlignItems = plan.container.counterAlign;
-    frame.paddingTop = plan.container.padding.top;
-    frame.paddingRight = plan.container.padding.right;
-    frame.paddingBottom = plan.container.padding.bottom;
-    frame.paddingLeft = plan.container.padding.left;
-    frame.itemSpacing = plan.container.itemSpacing;
-    if (plan.container.wrap === "WRAP") {
-      frame.counterAxisSpacing = plan.container.counterAxisSpacing ?? plan.container.itemSpacing;
-    }
-    frame.strokesIncludedInLayout = plan.container.strokesIncludedInLayout;
+    frame.layoutMode = "GRID";
+    frame.gridAutoTracks = "NONE";
+    frame.gridItemsPositioning = gridPlan.container.itemsPositioning;
+    frame.gridColumnCount = Math.max(1, gridPlan.container.columns.length);
+    frame.gridRowCount = Math.max(1, gridPlan.container.rows.length);
+    frame.gridColumnGap = gridPlan.container.columnGap;
+    frame.gridRowGap = gridPlan.container.rowGap;
+    gridPlan.container.columns.forEach((track, index) => {
+      const target = frame.gridColumnSizes[index];
+      if (target) applyGridTrack(target, track);
+    });
+    gridPlan.container.rows.forEach((track, index) => {
+      const target = frame.gridRowSizes[index];
+      if (target) applyGridTrack(target, track);
+    });
     frame.resize(Math.max(0.01, originalWidth), Math.max(0.01, originalHeight));
-    frame.layoutSizingHorizontal = plan.container.horizontalSizing;
-    frame.layoutSizingVertical = plan.container.verticalSizing;
-    stats.autoLayoutFrameCount += 1;
-
-    prepared.push({ renderNode, frame, plan, absolutePositions });
+    stats.gridFrameCount += 1;
+    preparedGrid.push({ frame, plan: gridPlan });
   }
 
-  for (const { frame, plan, absolutePositions } of prepared) {
+  for (const { frame, plan, absolutePositions } of preparedFlex) {
     for (const childPlan of plan.children) {
       const child = nodesByRenderNodeId.get(childPlan.renderNodeId);
       if (!child || child.parent !== frame || !supportsLayoutChild(child)) continue;
@@ -200,6 +280,14 @@ export function applyFigmaLayouts(
       child.maxWidth = positiveOrNull(childPlan.maxWidth);
       child.minHeight = positiveOrNull(childPlan.minHeight);
       child.maxHeight = positiveOrNull(childPlan.maxHeight);
+    }
+  }
+
+  for (const { frame, plan } of preparedGrid) {
+    for (const childPlan of plan.children) {
+      const child = nodesByRenderNodeId.get(childPlan.renderNodeId);
+      if (!child || child.parent !== frame) continue;
+      applyGridChild(child, childPlan, stats);
     }
   }
 

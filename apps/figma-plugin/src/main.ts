@@ -1,6 +1,7 @@
 import { renderBasicFigmaScene, W2fBasicRendererError } from "@w2f/figma-renderer";
 import type { WtfAssetRecord } from "@w2f/w2f-ir";
 import { createFigmaBasicAdapter } from "./figma-basic-adapter.js";
+import { applyFigmaLayouts } from "./figma-layout-renderer.js";
 import { applyFigmaVisuals, type W2fVisualAssetBundle } from "./figma-visual-renderer.js";
 import { createFileIntakeDescriptor } from "./intake-state.js";
 import {
@@ -100,7 +101,7 @@ async function handleBasicRender(baseRequest: W2fBasicRenderRequest): Promise<vo
       completed: 0,
       total: 3,
       label: "Creating editable Figma scene",
-      detail: "Rebuilding hierarchy and geometry before text, assets and paint are applied.",
+      detail: "Rebuilding hierarchy and geometry before text, assets, paint and responsive layout are applied.",
     },
   });
 
@@ -128,8 +129,8 @@ async function handleBasicRender(baseRequest: W2fBasicRenderRequest): Promise<vo
         stage: "importing",
         completed: 1,
         total: 3,
-        label: "Restoring text, assets and paint",
-        detail: "Loading local fonts and embedded .wtf assets; SVG stays editable when available.",
+        label: "Restoring text, assets, paint and layout",
+        detail: "Loading local fonts and embedded .wtf assets, then rebuilding supported Flex layouts as native Figma Auto Layout.",
       },
     });
 
@@ -138,6 +139,7 @@ async function handleBasicRender(baseRequest: W2fBasicRenderRequest): Promise<vo
       request.renderTree,
       visualBundle(request),
     );
+    const layout = applyFigmaLayouts(visual.nodesByRenderNodeId, request.renderTree);
     if (cancelled) {
       renderedRoot.remove();
       return;
@@ -150,7 +152,7 @@ async function handleBasicRender(baseRequest: W2fBasicRenderRequest): Promise<vo
         completed: 2,
         total: 3,
         label: "Finalizing editable import",
-        detail: `${visual.stats.textNodeCount.toLocaleString()} text · ${visual.stats.imageFillCount.toLocaleString()} image fills · ${visual.stats.editableSvgCount.toLocaleString()} editable SVGs`,
+        detail: `${visual.stats.textNodeCount.toLocaleString()} text · ${visual.stats.imageFillCount.toLocaleString()} image fills · ${visual.stats.editableSvgCount.toLocaleString()} editable SVGs · ${layout.autoLayoutFrameCount.toLocaleString()} Auto Layout frames`,
       },
     });
     postToUi({
@@ -171,8 +173,8 @@ async function handleBasicRender(baseRequest: W2fBasicRenderRequest): Promise<vo
         label: "Editable Figma import complete",
         detail:
           visual.stats.missingAssetCount > 0
-            ? `${visual.stats.missingAssetCount} embedded asset(s) were unavailable; all other supported visuals were restored.`
-            : `Text, embedded images, SVG vectors, fills, borders, radii, shadows and opacity were restored. Font fallbacks: ${visual.stats.fontFallbackCount}.`,
+            ? `${visual.stats.missingAssetCount} embedded asset(s) were unavailable; all other supported visuals and native layouts were restored.`
+            : `Text, embedded images, SVG vectors, fills, borders, shadows and ${layout.autoLayoutFrameCount} native Auto Layout frame(s) were restored. Unsupported exact-Flex mappings kept source geometry: ${layout.skippedIncompatibleFlexCount}. Font fallbacks: ${visual.stats.fontFallbackCount}.`,
       },
     });
   } catch (error) {

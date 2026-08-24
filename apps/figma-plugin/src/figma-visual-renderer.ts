@@ -272,9 +272,7 @@ async function applyPaintModel(
         visible: true,
         blendMode: "NORMAL" as const,
       };
-      return shadow.inset
-        ? { type: "INNER_SHADOW", ...base }
-        : { type: "DROP_SHADOW", ...base };
+      return shadow.inset ? { type: "INNER_SHADOW", ...base } : { type: "DROP_SHADOW", ...base };
     });
   }
 

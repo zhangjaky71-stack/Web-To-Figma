@@ -1,6 +1,6 @@
 # NODE-25 — Basic Figma Renderer
 
-**Status:** IN PROGRESS  
+**Status:** EXIT GATE CANDIDATE  
 **Entry baseline:** `e9e4d1e92fa1db7c6e5c050f1b55ed39f688d354`  
 **Branch:** `feat/node-25-basic-figma-renderer`  
 **PR:** #29
@@ -129,6 +129,16 @@ Implemented fixtures cover:
 - [x] malformed-tree rejection before mutation;
 - [x] repeat-plan determinism.
 
+## Bootstrap validation
+
+Controlled Bootstrap CI #638 (`32680383507`) passed the complete repository `pnpm check` and produced candidate:
+
+```text
+9b07b67f20a8f67caacda94ee93d4d5b6d16e2f5
+```
+
+The candidate contains the permanent foundation import, refreshed frozen lockfile, formatted implementation and the narrowed historical NODE-22/NODE-23 guardrails required for the legitimate NODE-25 phase transition.
+
 ## Validation checklist
 
 - [x] renderer core implemented
@@ -137,9 +147,9 @@ Implemented fixtures cover:
 - [x] Figma bundle validator extended
 - [x] permanent NODE-25 validator authored
 - [x] ADR-0025 authored
-- [ ] permanent foundation import
-- [ ] frozen lockfile refresh
-- [ ] repository-wide `pnpm check`
+- [x] permanent foundation import
+- [x] frozen lockfile refresh
+- [x] repository-wide `pnpm check`
 - [ ] exact-head read-only CI
 - [ ] squash merge to `main`
 

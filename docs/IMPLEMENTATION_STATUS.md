@@ -35,7 +35,7 @@
 | 22 | Figma Plugin Shell & File Intake | DONE | Exact-head CI #571 PASS | PR #26 merged as `84ebc5ed` |
 | 23 | Secure Parser & Migration | DONE | Exact-head CI #624 PASS | PR #27 merged as `23cad572` |
 | 24 | Figma Capability Resolver | DONE | Exact-head CI #630 PASS | PR #28 merged as `e9e4d1e9` |
-| 25 | Basic Figma Renderer | IN PROGRESS | Renderer core + Figma integration implemented; Exit Gate pending | PR #29 |
+| 25 | Basic Figma Renderer | EXIT GATE CANDIDATE | Bootstrap CI #638 full `pnpm check` PASS; exact-head CI pending | PR #29; candidate `9b07b67f` |
 | 26 | Text / Font / Asset / Paint Renderer | TODO | - | - |
 | 27 | Figma Responsive Layout Renderer | TODO | - | - |
 | 28 | Hybrid Native / Raster Renderer | TODO | - | - |
@@ -92,7 +92,7 @@ z-order
 
 Text/font/assets/paint remain NODE-26. Auto Layout/Grid/responsive sizing remain NODE-27. Hybrid/raster execution remains NODE-28.
 
-## NODE-25 Implementation Direction
+## NODE-25 Implementation
 
 `packages/figma-renderer` separates deterministic planning from Figma mutation through an adapter contract.
 
@@ -104,10 +104,32 @@ Compact pluginData carries identity, source/stable mapping, render strategy, rev
 
 Whole Page and Selected Sections both consume data only after NODE-23 secure parsing. Canvas Drop coordinates are preserved as the import destination when present.
 
+## NODE-25 Bootstrap Closure
+
+The first Bootstrap pass correctly exposed historical NODE-22/NODE-23 guardrails that still asserted rendering could never advance. Those guardrails were narrowed without weakening their intake/parser security responsibilities.
+
+Controlled Bootstrap CI #638 (`32680383507`) then completed the NODE-25 closure successfully and pushed validated candidate:
+
+```text
+9b07b67f20a8f67caacda94ee93d4d5b6d16e2f5
+```
+
+The successful closure validated:
+
+- permanent NODE-25 foundation gate;
+- refreshed frozen workspace lockfile;
+- repository-wide lint;
+- strict TypeScript typecheck including Figma typings;
+- renderer and protocol tests;
+- repository-wide build including Figma bundle/package validation;
+- format check.
+
+Before candidate handoff the temporary write-enabled Bootstrap workflow/finalizer/failure log were removed and normal read-only CI was restored.
+
 ## Blockers
 
 No product/architecture blocker is known.
 
 ## Next
 
-Add permanent NODE-25 foundation validation and ADR, refresh the workspace lockfile through the controlled Bootstrap closure, run repository-wide `pnpm check`, fix only evidence-backed failures, then run exact-head read-only CI before PR #29 may merge.
+Run exact-head read-only frozen-lockfile CI on the normal evidence commit. Only after that exact head is fully green may PR #29 be marked Ready and squash merged to `main`, after which NODE-26 begins.

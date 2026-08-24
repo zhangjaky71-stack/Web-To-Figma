@@ -1,5 +1,7 @@
 import { renderBasicFigmaScene, W2fBasicRendererError } from "@w2f/figma-renderer";
+import type { WtfAssetRecord } from "@w2f/w2f-ir";
 import { createFigmaBasicAdapter } from "./figma-basic-adapter.js";
+import { applyFigmaVisuals, type W2fVisualAssetBundle } from "./figma-visual-renderer.js";
 import { createFileIntakeDescriptor } from "./intake-state.js";
 import {
   figmaMessage,
@@ -10,6 +12,12 @@ import {
 } from "./protocol.js";
 
 declare const __html__: string;
+
+type W2fNode26RenderRequest = W2fBasicRenderRequest & {
+  assets?: readonly WtfAssetRecord[];
+  assetPayloadsById?: Readonly<Record<string, Uint8Array>>;
+  sanitizedSvgById?: Readonly<Record<string, string>>;
+};
 
 const SHELL_INFO: W2fFigmaShellInfo = {
   version: "1.0.0",
@@ -66,7 +74,16 @@ async function handleCanvasDrop(file: DropFile, point: { x: number; y: number })
   }
 }
 
-function handleBasicRender(request: W2fBasicRenderRequest): void {
+function visualBundle(request: W2fNode26RenderRequest): W2fVisualAssetBundle {
+  return {
+    assets: request.assets ?? [],
+    assetPayloadsById: request.assetPayloadsById ?? {},
+    sanitizedSvgById: request.sanitizedSvgById ?? {},
+  };
+}
+
+async function handleBasicRender(baseRequest: W2fBasicRenderRequest): Promise<void> {
+  const request = baseRequest as W2fNode26RenderRequest;
   if (cancelled) return;
   if (
     request.profile !== importSelection.profile ||
@@ -81,13 +98,13 @@ function handleBasicRender(request: W2fBasicRenderRequest): void {
     progress: {
       stage: "importing",
       completed: 0,
-      total: 2,
-      label: "Creating basic Figma scene",
-      detail:
-        "Root, hierarchy, geometry, naming, pluginData and z-order are rendered transactionally.",
+      total: 3,
+      label: "Creating editable Figma scene",
+      detail: "Rebuilding hierarchy and geometry before text, assets and paint are applied.",
     },
   });
 
+  let renderedRoot: FrameNode | null = null;
   try {
     const result = renderBasicFigmaScene(createFigmaBasicAdapter(), {
       renderTree: request.renderTree,
@@ -99,8 +116,30 @@ function handleBasicRender(request: W2fBasicRenderRequest): void {
       ...(request.destination ? { destination: request.destination } : {}),
       ...(request.importName ? { importName: request.importName } : {}),
     });
+    renderedRoot = result.root as FrameNode;
     if (cancelled) {
-      result.root.remove();
+      renderedRoot.remove();
+      return;
+    }
+
+    postToUi({
+      type: "W2F_PROGRESS",
+      progress: {
+        stage: "importing",
+        completed: 1,
+        total: 3,
+        label: "Restoring text, assets and paint",
+        detail: "Loading local fonts and embedded .wtf assets; SVG stays editable when available.",
+      },
+    });
+
+    const visual = await applyFigmaVisuals(
+      result.nodesByRenderNodeId,
+      request.renderTree,
+      visualBundle(request),
+    );
+    if (cancelled) {
+      renderedRoot.remove();
       return;
     }
 
@@ -108,10 +147,10 @@ function handleBasicRender(request: W2fBasicRenderRequest): void {
       type: "W2F_PROGRESS",
       progress: {
         stage: "finalizing",
-        completed: 1,
-        total: 2,
-        label: "Finalizing import",
-        detail: `${result.createdNodeCount.toLocaleString()} basic Figma nodes created.`,
+        completed: 2,
+        total: 3,
+        label: "Finalizing editable import",
+        detail: `${visual.stats.textNodeCount.toLocaleString()} text · ${visual.stats.imageFillCount.toLocaleString()} image fills · ${visual.stats.editableSvgCount.toLocaleString()} editable SVGs`,
       },
     });
     postToUi({
@@ -120,25 +159,35 @@ function handleBasicRender(request: W2fBasicRenderRequest): void {
         intakeId: request.intakeId,
         rootNodeId: result.root.id,
         createdNodeCount: result.createdNodeCount,
-        mappedRenderNodeCount: result.mappedRenderNodeIds.length,
+        mappedRenderNodeCount: visual.nodesByRenderNodeId.size,
       },
     });
     postToUi({
       type: "W2F_PROGRESS",
       progress: {
         stage: "done",
-        completed: 2,
-        total: 2,
-        label: "Basic Figma import complete",
-        detail: "NODE-26 will add text, fonts, assets and paint on top of this scene graph.",
+        completed: 3,
+        total: 3,
+        label: "Editable Figma import complete",
+        detail:
+          visual.stats.missingAssetCount > 0
+            ? `${visual.stats.missingAssetCount} embedded asset(s) were unavailable; all other supported visuals were restored.`
+            : `Text, embedded images, SVG vectors, fills, borders, radii, shadows and opacity were restored. Font fallbacks: ${visual.stats.fontFallbackCount}.`,
       },
     });
   } catch (error) {
+    if (renderedRoot) {
+      try {
+        renderedRoot.remove();
+      } catch {
+        // Preserve the original rendering failure.
+      }
+    }
     if (error instanceof W2fBasicRendererError) {
       postError(error.code, error);
       return;
     }
-    postError("W2F_E_BASIC_RENDERER", error);
+    postError("W2F_E_VISUAL_RENDERER", error);
   }
 }
 
@@ -166,7 +215,7 @@ figma.ui.onmessage = (message: unknown) => {
       importSelection = { ...message.payload.selection };
       return;
     case "W2F_RENDER_BASIC_REQUEST":
-      handleBasicRender(message.payload.request);
+      void handleBasicRender(message.payload.request);
       return;
     case "W2F_CANCEL_IMPORT":
       cancelled = true;

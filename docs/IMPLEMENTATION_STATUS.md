@@ -1,6 +1,6 @@
 # W2F Implementation Status
 
-**Implementation Baseline:** V2 Baseline + V2.1 Addendum + NODE-00 Contracts  
+**Implementation Baseline:** V2 Baseline + V2.1 Addendum + NODE-00 Contracts + High-Fidelity Capture/Import Acceptance Standard  
 **Portable package:** `.wtf`  
 **MIME:** `application/x-wtf`  
 **Architecture:** FROZEN FOR IMPLEMENTATION  
@@ -35,8 +35,8 @@
 | 22 | Figma Plugin Shell & File Intake | DONE | Exact-head CI #571 PASS | PR #26 merged as `84ebc5ed` |
 | 23 | Secure Parser & Migration | DONE | Exact-head CI #624 PASS | PR #27 merged as `23cad572` |
 | 24 | Figma Capability Resolver | DONE | Exact-head CI #630 PASS | PR #28 merged as `e9e4d1e9` |
-| 25 | Basic Figma Renderer | EXIT GATE CANDIDATE | Bootstrap CI #638 full `pnpm check` PASS; exact-head CI pending | PR #29; candidate `9b07b67f` |
-| 26 | Text / Font / Asset / Paint Renderer | TODO | - | - |
+| 25 | Basic Figma Renderer | DONE | Bootstrap CI #638 + exact-head CI #640 PASS | PR #29 merged as `35d9a18b` |
+| 26 | Text / Font / Asset / Paint Renderer | IMPLEMENTING | Candidate validation pending | `node-26-text-assets-paint` |
 | 27 | Figma Responsive Layout Renderer | TODO | - | - |
 | 28 | Hybrid Native / Raster Renderer | TODO | - | - |
 | 29 | Visual / Structure / Editability QA | TODO | - | - |
@@ -45,91 +45,80 @@
 
 ## Current Node
 
-`NODE-25 — Basic Figma Renderer`
+`NODE-26 — Text / Font / Asset / Paint Renderer`
 
 Entry baseline:
 
 ```text
-e9e4d1e92fa1db7c6e5c050f1b55ed39f688d354
+f46d69a8e13f4fad80b03f26f0dc9acddb6db383
 ```
 
-Working branch / PR:
+Working branch:
 
 ```text
-feat/node-25-basic-figma-renderer
-PR #29
+node-26-text-assets-paint
 ```
 
-## NODE-24 Closure
+## NODE-25 Closure
 
-NODE-24 PR #28 passed exact-head read-only CI #630 (`32675390107`) on:
+NODE-25 was merged to `main` as:
 
 ```text
-7ad4a38ebd5297d93b3078b049471c02e02775e0
+35d9a18bdfda12e4a11382ef13d5039c2d7cc4ad
 ```
 
-and was squash merged into `main` as:
+The merge commit records Bootstrap CI #638 and exact-head read-only CI #640 as passing. The resulting renderer owns transactional root creation, hierarchy, fractional geometry, naming, pluginData, stable/revision mapping, whole-page/selected-section import and z-order. It intentionally leaves text/fonts/assets/paint to NODE-26, responsive layout to NODE-27 and hybrid/raster execution to NODE-28.
+
+The later `8ee11dd6` and `f46d69a8` documentation commits added and registered the mandatory high-fidelity capture/import development and acceptance standard; NODE-26 therefore branches from that newer `main` baseline.
+
+## NODE-26 Frozen Scope
+
+NODE-26 is limited to editable visual reconstruction on top of the NODE-25 scene graph:
 
 ```text
-e9e4d1e92fa1db7c6e5c050f1b55ed39f688d354
+editable TextNode reconstruction
+per-run font/style/size/line-height/letter-spacing/color/decoration
+local Figma font resolution + explicit fallback counting
+embedded raster image paints
+sanitized SVG -> editable Figma vector subtree
+solid/gradient/image fills
+border + corner radius
+box shadows
+opacity + equivalent blend modes
+asset/font/fidelity diagnostics counters
+transaction-preserving node replacement
 ```
 
-The merged tree provides the versioned Figma Capability Registry and deterministic `NATIVE / EMULATED / WRAPPER / ABSOLUTE / RASTER / UNSUPPORTED` policy boundary across Fidelity, Balanced and Design Friendly profiles while preserving revision/stable-source/literal-token invariants.
+No external image/font fetch is permitted during import. The existing Figma manifest remains `networkAccess.allowedDomains = ["none"]`.
 
-## NODE-25 Frozen Scope
+NODE-27 remains responsible for Auto Layout/Grid/responsive sizing/constraints. NODE-28 remains responsible for selective raster fallback when browser rendering semantics do not have a faithful Figma-native representation.
 
-V2 limits NODE-25 to:
+## NODE-26 Implementation
 
-```text
-root
-frames
-hierarchy
-geometry
-naming
-pluginData
-z-order
-```
+The Figma UI continues to run NODE-23 `parseWtfPackage` first. Only after validation succeeds does it remap `binaryPayloads` and `sanitizedSvgPayloads` from archive paths to stable asset IDs and hand those local payloads to the main runtime.
 
-Text/font/assets/paint remain NODE-26. Auto Layout/Grid/responsive sizing remain NODE-27. Hybrid/raster execution remains NODE-28.
+`figma-visual-renderer.ts` enriches the basic scene in deterministic Render Tree order:
 
-## NODE-25 Implementation
+- text placeholders are replaced at the same sibling index by real `TextNode` layers;
+- fonts are resolved against `listAvailableFontsAsync()` and loaded with `loadFontAsync()` before text/range mutation;
+- per-run text formatting is applied without allowing the generic paint pass to erase run colors;
+- embedded raster bytes are converted with the Figma image API and applied as image paints;
+- sanitized SVG is reconstructed with the Figma SVG node path, retaining an editable vector subtree;
+- solid/linear/radial/angular paints, borders, independent corner radii, drop/inner shadows, opacity and supported blend modes are applied natively;
+- all W2F pluginData is copied when placeholders are replaced so stable IDs, source mapping and revision metadata survive.
 
-`packages/figma-renderer` separates deterministic planning from Figma mutation through an adapter contract.
+NODE-25 remains the transaction owner. A fatal NODE-26 visual mutation removes the complete import root instead of leaving a partially reconstructed file.
 
-The planner validates the Render Tree before mutation, preserves fractional geometry and converts page coordinates to parent-local coordinates without rounding. Render Tree `childIds` order remains authoritative for Figma sibling z-order.
+## Fidelity Boundaries
 
-The real Figma adapter creates neutral Frame/Rectangle basics only. A temporary `__W2F_IMPORTING__` root owns the transaction: successful imports are finalized/selected/focused, while fatal adapter failures delete that root so partial imports do not remain in the document.
+NODE-26 does not claim a false one-to-one mapping for browser paint primitives that Figma cannot represent natively. Examples include independently colored border sides, some exact CSS gradient transforms, filters/backdrop filters, complex masks/clip paths and fonts unavailable to the Figma editor runtime.
 
-Compact pluginData carries identity, source/stable mapping, render strategy, revision hashes, document revision identity, RenderProfile and literal-token policy. Full IR is not stored in pluginData.
-
-Whole Page and Selected Sections both consume data only after NODE-23 secure parsing. Canvas Drop coordinates are preserved as the import destination when present.
-
-## NODE-25 Bootstrap Closure
-
-The first Bootstrap pass correctly exposed historical NODE-22/NODE-23 guardrails that still asserted rendering could never advance. Those guardrails were narrowed without weakening their intake/parser security responsibilities.
-
-Controlled Bootstrap CI #638 (`32680383507`) then completed the NODE-25 closure successfully and pushed validated candidate:
-
-```text
-9b07b67f20a8f67caacda94ee93d4d5b6d16e2f5
-```
-
-The successful closure validated:
-
-- permanent NODE-25 foundation gate;
-- refreshed frozen workspace lockfile;
-- repository-wide lint;
-- strict TypeScript typecheck including Figma typings;
-- renderer and protocol tests;
-- repository-wide build including Figma bundle/package validation;
-- format check.
-
-Before candidate handoff the temporary write-enabled Bootstrap workflow/finalizer/failure log were removed and normal read-only CI was restored.
+Those cases must remain explicit and are routed through the capability/fallback system rather than replaced by blank layers. NODE-28 executes hybrid/raster fallbacks, and NODE-29 evaluates visual fidelity against Pixel Ground Truth while also checking editability.
 
 ## Blockers
 
-No product/architecture blocker is known.
+No product or architecture blocker is currently known. Candidate CI may expose TypeScript/Figma API compatibility defects that must be fixed before NODE-26 can leave IMPLEMENTING.
 
 ## Next
 
-Run exact-head read-only frozen-lockfile CI on the normal evidence commit. Only after that exact head is fully green may PR #29 be marked Ready and squash merged to `main`, after which NODE-26 begins.
+Create the NODE-26 implementation commit and pull request, run frozen-lockfile CI on the exact head, fix any failures without weakening NODE-22/23 security or NODE-25 transaction invariants, and merge only after the normal read-only CI is green. Then begin NODE-27.

@@ -112,7 +112,6 @@ describe("NODE-26 paint planning", () => {
   it("preserves native fills, image references, borders, radius, shadows and clipping", () => {
     const painted = node({
       kind: "container",
-      text: undefined,
       layout: {
         mode: "flow",
         display: "block",
@@ -185,7 +184,6 @@ describe("NODE-26 paint planning", () => {
     const plan = createPaintRenderPlan(
       node({
         kind: "container",
-        text: undefined,
         paint: {
           fills: [],
           border: { top: side(1), right: side(2), bottom: side(3), left: side(4) },
@@ -207,7 +205,6 @@ describe("NODE-26 paint planning", () => {
     const plan = createPaintRenderPlan(
       node({
         kind: "decoration",
-        text: undefined,
         paint: {
           fills: [
             {

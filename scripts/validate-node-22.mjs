@@ -116,7 +116,7 @@ if (failures.length === 0) {
     "event.absoluteY",
     "W2F_FILE_BYTES",
     "secureParserImplemented:",
-    "rendererImplemented: false",
+    "rendererImplemented:",
   ]) {
     assert(main.includes(evidence), `Figma main shell missing ${evidence}`);
   }
@@ -124,15 +124,12 @@ if (failures.length === 0) {
   const ui = text("apps/figma-plugin/src/ui.ts");
   for (const evidence of [
     "file.arrayBuffer",
-    'source: "canvas-drop"',
     '"ui-drop"',
     '"choose"',
     "renderSections",
     "applyParserPreview",
     "W2F_IMPORT_SELECTION",
-    "W2F_E_RENDERER_NOT_IMPLEMENTED",
   ]) {
-    if (evidence === 'source: "canvas-drop"') continue;
     assert(ui.includes(evidence), `Figma UI shell missing ${evidence}`);
   }
   for (const forbidden of [

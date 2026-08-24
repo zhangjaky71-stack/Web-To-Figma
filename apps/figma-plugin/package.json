@@ -11,6 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@w2f/figma-renderer": "workspace:*",
     "@w2f/w2f-ir": "workspace:*",
     "@w2f/wtf-parser": "workspace:../../packages/wtf-parser",
     "@w2f/w2f-schema": "workspace:*"

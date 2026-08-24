@@ -21,8 +21,6 @@ import {
   W2F_FIGMA_PROTOCOL,
   W2F_FIGMA_PROTOCOL_VERSION,
   type W2fFileIntakeDescriptor,
-  type W2fImportProfile,
-  type W2fImportScope,
   type W2fMainToUiPayload,
   type W2fParserPreview,
   type W2fUiToMainPayload,
@@ -91,11 +89,11 @@ function setError(code: string, message: string): void {
       stage: "failed",
       completed: 0,
       total: 1,
-      label: "Secure validation failed",
+      label: "Import failed",
       detail: message,
     },
   };
-  progressLabel.textContent = "Secure validation failed";
+  progressLabel.textContent = "Import failed";
   progressDetail.textContent = `${code}: ${message}`;
   progressBar.value = 0;
   importButton.disabled = true;
@@ -274,7 +272,7 @@ async function acceptBytes(descriptor: W2fFileIntakeDescriptor, bytes: Uint8Arra
     completed: 1,
     total: 1,
     label: "Ready for secure validation",
-    detail: "NODE-23 will validate archive structure and integrity before any renderer handoff.",
+    detail: "NODE-23 validates archive structure and integrity before renderer handoff.",
   });
   postToMain({ type: "W2F_INTAKE_METADATA", descriptor });
   await runSecureParser(descriptor, bytes);
@@ -305,6 +303,14 @@ async function readUiFile(file: File, source: "choose" | "ui-drop"): Promise<voi
   }
 }
 
+function selectedRenderRootIds(parsed: WtfParsedPackage): string[] {
+  if (state.selection.scope === "whole-page") return [];
+  const selected = new Set(state.selection.selectedSectionIds);
+  return parsed.ir.renderTree.sections
+    .filter((section) => selected.has(section.id))
+    .map((section) => section.renderNodeId);
+}
+
 chooseButton.addEventListener("click", () => fileInput.click());
 fileInput.addEventListener("change", () => {
   const file = fileInput.files?.[0];
@@ -333,12 +339,31 @@ for (const input of document.querySelectorAll<HTMLInputElement>(
 }
 
 importButton.addEventListener("click", () => {
-  if (!state.preview || !currentBytes || !currentParsed) return;
+  if (!state.preview || !state.descriptor || !currentBytes || !currentParsed) return;
+  const parsed = currentParsed;
+  const selectedRootIds = selectedRenderRootIds(parsed);
+  if (state.selection.scope === "selected-sections" && selectedRootIds.length === 0) {
+    setError("W2F_E_RENDER_SELECTION_EMPTY", "Select at least one section to import.");
+    return;
+  }
+  importButton.disabled = true;
   postToMain({ type: "W2F_IMPORT_SELECTION", selection: state.selection });
-  setError(
-    "W2F_E_RENDERER_NOT_IMPLEMENTED",
-    "The .wtf package is securely validated. Capability planning begins in NODE-24 and Figma rendering begins in NODE-25.",
-  );
+  postToMain({
+    type: "W2F_RENDER_BASIC_REQUEST",
+    request: {
+      intakeId: state.descriptor.intakeId,
+      renderTree: parsed.ir.renderTree,
+      sourceGraph: parsed.ir.sourceGraph,
+      profile: state.selection.profile,
+      mode: state.selection.scope === "whole-page" ? "whole-page" : "selected-roots",
+      selectedRootIds,
+      tokenPolicy: "literal",
+      ...(state.descriptor.canvasPoint ? { destination: state.descriptor.canvasPoint } : {}),
+      ...(parsed.preview.title
+        ? { importName: parsed.preview.title }
+        : { importName: state.descriptor.fileName.replace(/\.wtf$/i, "") }),
+    },
+  });
 });
 cancelButton.addEventListener("click", () => {
   currentBytes = null;
@@ -360,6 +385,10 @@ window.addEventListener("message", (event: MessageEvent) => {
     case "W2F_PARSER_PREVIEW":
       applyParserPreview(payload.preview);
       return;
+    case "W2F_RENDER_RESULT":
+      if (state.descriptor?.intakeId !== payload.result.intakeId) return;
+      progressDetail.textContent = `${payload.result.createdNodeCount.toLocaleString()} nodes created · ${payload.result.mappedRenderNodeCount.toLocaleString()} Render Tree nodes mapped`;
+      return;
     case "W2F_PROGRESS":
       if (payload.progress.stage !== "awaiting-secure-parser" || !currentParsed) {
         setProgress(payload.progress);
@@ -375,6 +404,3 @@ scopeGroup.disabled = false;
 renderFile(null);
 renderSections(null);
 postToMain({ type: "W2F_UI_READY" });
-
-void (null as unknown as W2fImportProfile);
-void (null as unknown as W2fImportScope);

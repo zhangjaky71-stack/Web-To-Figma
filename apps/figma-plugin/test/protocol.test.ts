@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   figmaMessage,
+  isW2fBasicRenderRequest,
   isW2fImportSelection,
   isW2fUiToMainMessage,
   W2F_FIGMA_PROTOCOL,
@@ -8,7 +9,19 @@ import {
   W2F_IMPORT_PROFILES,
 } from "../src/protocol.js";
 
-describe("NODE-22 Figma protocol", () => {
+function renderRequest() {
+  return {
+    intakeId: "intake_fixture",
+    renderTree: { rootId: "root", nodes: [], sections: [] },
+    sourceGraph: { rootCaptureNodeId: "source-root", nodes: [], revision: {} },
+    profile: "balanced" as const,
+    mode: "whole-page" as const,
+    selectedRootIds: [],
+    tokenPolicy: "literal" as const,
+  };
+}
+
+describe("Figma protocol", () => {
   it("freezes the versioned main/UI envelope", () => {
     const message = figmaMessage({ type: "W2F_UI_READY" as const });
     expect(message.protocol).toBe(W2F_FIGMA_PROTOCOL);
@@ -37,6 +50,17 @@ describe("NODE-22 Figma protocol", () => {
         tokenPolicy: "figma-variables",
       }),
     ).toBe(false);
+  });
+
+  it("accepts only versioned basic-render handoffs with literal tokens", () => {
+    const request = renderRequest();
+    expect(isW2fBasicRenderRequest(request)).toBe(true);
+    expect(
+      isW2fUiToMainMessage(figmaMessage({ type: "W2F_RENDER_BASIC_REQUEST" as const, request })),
+    ).toBe(true);
+    expect(isW2fBasicRenderRequest({ ...request, tokenPolicy: "figma-variables" })).toBe(false);
+    expect(isW2fBasicRenderRequest({ ...request, mode: "unknown" })).toBe(false);
+    expect(isW2fBasicRenderRequest({ ...request, renderTree: null })).toBe(false);
   });
 
   it("rejects unversioned or unknown UI messages", () => {

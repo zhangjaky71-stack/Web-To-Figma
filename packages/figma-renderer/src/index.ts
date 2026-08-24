@@ -5,3 +5,5 @@ export * from "./color.js";
 export * from "./text/index.js";
 export * from "./paint/index.js";
 export * from "./visual-plan.js";
+export * from "./rich-types.js";
+export * from "./rich-transaction.js";

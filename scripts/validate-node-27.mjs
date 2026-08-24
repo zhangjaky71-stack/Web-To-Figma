@@ -57,7 +57,10 @@ if (failures.length === 0) {
     assert(planner.includes(evidence), `NODE-27 planner missing ${evidence}`);
   }
   for (const forbidden of ["figma.", "fetch(", "XMLHttpRequest", "WebSocket", "eval("]) {
-    assert(!planner.includes(forbidden), `NODE-27 planner must remain platform/local only: ${forbidden}`);
+    assert(
+      !planner.includes(forbidden),
+      `NODE-27 planner must remain platform/local only: ${forbidden}`,
+    );
   }
 
   const runtime = text("apps/figma-plugin/src/figma-layout-renderer.ts");
@@ -89,10 +92,13 @@ if (failures.length === 0) {
 
   const main = text("apps/figma-plugin/src/main.ts");
   const visualIndex = main.indexOf("await applyFigmaVisuals");
-  const layoutIndex = main.indexOf("applyFigmaLayouts");
+  const layoutIndex = main.indexOf("const layout = applyFigmaLayouts");
   assert(visualIndex >= 0, "NODE-27 main must keep NODE-26 visual reconstruction");
   assert(layoutIndex > visualIndex, "NODE-27 layout must run after NODE-26 node replacement");
-  assert(main.includes("renderedRoot.remove()"), "NODE-27 failures/cancellation must preserve full-root rollback");
+  assert(
+    main.includes("renderedRoot.remove()"),
+    "NODE-27 failures/cancellation must preserve full-root rollback",
+  );
 
   const tests = text("packages/figma-renderer/test/layout-planner.test.ts");
   for (const evidence of [

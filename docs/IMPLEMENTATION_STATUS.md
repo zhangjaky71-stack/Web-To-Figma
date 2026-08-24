@@ -34,7 +34,7 @@
 | 21 | WTF Packager | DONE | Exact-head read-only CI #540 PASS | PR #25 merged as `5395d1eb` |
 | 22 | Figma Plugin Shell & File Intake | DONE | Exact-head read-only CI #571 PASS | PR #26 merged as `84ebc5ed` |
 | 23 | Secure Parser & Migration | DONE | Exact-head read-only CI #624 PASS | PR #27 merged as `23cad572` |
-| 24 | Figma Capability Resolver | IN PROGRESS | Implementation starting from merged NODE-23 | `feat/node-24-figma-capability-resolver` |
+| 24 | Figma Capability Resolver | EXIT GATE CANDIDATE | Bootstrap CI #628 PASS; exact-head read-only CI pending | PR #28; candidate `b328b666` |
 | 25 | Basic Figma Renderer | TODO | - | - |
 | 26 | Text / Font / Asset / Paint Renderer | TODO | - | - |
 | 27 | Figma Responsive Layout Renderer | TODO | - | - |
@@ -107,11 +107,11 @@ partial
 unsupported
 ```
 
-NODE-24 must prevent NODE-25+ renderers from scattering direct Figma API capability conditionals.
+NODE-24 prevents NODE-25+ renderers from scattering direct Figma API capability conditionals.
 
 ## NODE-24 V2.1 Requirements
 
-Across Figma import/render the implementation must preserve revision metadata and stable source mapping, default to literal token values, and apply the frozen RenderProfile policy:
+Across Figma import/render the implementation preserves revision metadata and stable source mapping, defaults to literal token values, and applies the frozen RenderProfile policy:
 
 ```text
 Fidelity
@@ -121,10 +121,31 @@ Design Friendly
 
 NODE-24 creates policy/plans only. It does not create Figma scene nodes and does not execute raster fallback; those remain NODE-25+ / NODE-28 responsibilities.
 
+## NODE-24 Bootstrap Closure
+
+Controlled Bootstrap CI #628 (`32675192567`) passed the full repository `pnpm check` and pushed the validated candidate:
+
+```text
+b328b666cf27d30c66a185fc7337318588671987
+```
+
+The candidate contains the refreshed frozen lockfile, permanent NODE-24 foundation integration, formatted resolver package, deterministic six-outcome fixtures and ADR. Before candidate handoff, the temporary write-enabled bootstrap job and finalizer were removed and the normal read-only CI workflow was restored.
+
+## NODE-24 Capability Snapshot
+
+The versioned registry snapshot is:
+
+```text
+figma-plugin-api-2026-08-24
+@figma/plugin-typings 1.134.0
+```
+
+Registry facts and W2F policy remain separated. The resolver selects deterministic Native/Emulated/Wrapper/Absolute/Raster/Unsupported plans, records downgrade reasons, and carries stable-source/revision/literal-token invariants forward for NODE-25+.
+
 ## Blockers
 
 No product/architecture blocker is known.
 
 ## Next
 
-Implement `packages/figma-capability-resolver`, the Capability Registry, deterministic strategy resolution, RenderProfile policy, downgrade reasons and Figma integration contracts; then run the NODE-24 Exit Gate.
+Run exact-head read-only frozen-lockfile CI on this normal evidence commit. Only after the exact head is fully green may PR #28 be marked Ready and squash merged to `main`, after which NODE-25 begins.

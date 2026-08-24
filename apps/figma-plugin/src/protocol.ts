@@ -1,3 +1,5 @@
+import type { WtfRenderTree, WtfSourceGraph } from "@w2f/w2f-ir";
+
 export const W2F_FIGMA_PROTOCOL = "w2f-figma-plugin" as const;
 export const W2F_FIGMA_PROTOCOL_VERSION = 1 as const;
 export const W2F_FIGMA_SHELL_VERSION = "1.0.0" as const;
@@ -81,6 +83,25 @@ export interface W2fImportSelection {
   tokenPolicy: W2fTokenPolicy;
 }
 
+export interface W2fBasicRenderRequest {
+  intakeId: string;
+  renderTree: WtfRenderTree;
+  sourceGraph: WtfSourceGraph;
+  profile: W2fImportProfile;
+  mode: "whole-page" | "selected-roots";
+  selectedRootIds: string[];
+  tokenPolicy: "literal";
+  destination?: W2fCanvasPoint;
+  importName?: string;
+}
+
+export interface W2fBasicRenderResult {
+  intakeId: string;
+  rootNodeId: string;
+  createdNodeCount: number;
+  mappedRenderNodeCount: number;
+}
+
 export interface W2fImportProgress {
   stage: W2fImportProgressStage;
   completed: number;
@@ -100,7 +121,7 @@ export interface W2fFigmaShellInfo {
   canvasDropImplemented: true;
   partialImportContractImplemented: true;
   secureParserImplemented: true;
-  rendererImplemented: false;
+  rendererImplemented: true;
   defaultImportProfile: "balanced";
   defaultTokenPolicy: "literal";
 }
@@ -109,6 +130,7 @@ export type W2fMainToUiPayload =
   | { type: "W2F_SHELL_INFO"; info: W2fFigmaShellInfo }
   | { type: "W2F_FILE_BYTES"; descriptor: W2fFileIntakeDescriptor; bytes: Uint8Array }
   | { type: "W2F_PARSER_PREVIEW"; preview: W2fParserPreview }
+  | { type: "W2F_RENDER_RESULT"; result: W2fBasicRenderResult }
   | { type: "W2F_PROGRESS"; progress: W2fImportProgress }
   | { type: "W2F_ERROR"; code: string; message: string };
 
@@ -116,6 +138,7 @@ export type W2fUiToMainPayload =
   | { type: "W2F_UI_READY" }
   | { type: "W2F_INTAKE_METADATA"; descriptor: W2fFileIntakeDescriptor }
   | { type: "W2F_IMPORT_SELECTION"; selection: W2fImportSelection }
+  | { type: "W2F_RENDER_BASIC_REQUEST"; request: W2fBasicRenderRequest }
   | { type: "W2F_CANCEL_IMPORT" }
   | { type: "W2F_CLOSE_PLUGIN" };
 
@@ -141,6 +164,16 @@ function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((item) => typeof item === "string");
 }
 
+function isFinitePoint(value: unknown): value is W2fCanvasPoint {
+  return (
+    isRecord(value) &&
+    typeof value.x === "number" &&
+    Number.isFinite(value.x) &&
+    typeof value.y === "number" &&
+    Number.isFinite(value.y)
+  );
+}
+
 export function isW2fImportProfile(value: unknown): value is W2fImportProfile {
   return typeof value === "string" && (W2F_IMPORT_PROFILES as readonly string[]).includes(value);
 }
@@ -161,7 +194,8 @@ export function isW2fFileIntakeDescriptor(value: unknown): value is W2fFileIntak
     typeof value.mimeType === "string" &&
     typeof value.byteLength === "number" &&
     Number.isSafeInteger(value.byteLength) &&
-    value.byteLength >= 0
+    value.byteLength >= 0 &&
+    (value.canvasPoint === undefined || isFinitePoint(value.canvasPoint))
   );
 }
 
@@ -173,6 +207,30 @@ export function isW2fImportSelection(value: unknown): value is W2fImportSelectio
     isStringArray(value.selectedSectionIds) &&
     value.tokenPolicy === "literal"
   );
+}
+
+export function isW2fBasicRenderRequest(value: unknown): value is W2fBasicRenderRequest {
+  if (!isRecord(value)) return false;
+  if (
+    typeof value.intakeId !== "string" ||
+    value.intakeId.length === 0 ||
+    !isW2fImportProfile(value.profile) ||
+    (value.mode !== "whole-page" && value.mode !== "selected-roots") ||
+    !isStringArray(value.selectedRootIds) ||
+    value.tokenPolicy !== "literal" ||
+    !isRecord(value.renderTree) ||
+    typeof value.renderTree.rootId !== "string" ||
+    !Array.isArray(value.renderTree.nodes) ||
+    !isRecord(value.sourceGraph) ||
+    typeof value.sourceGraph.rootCaptureNodeId !== "string" ||
+    !Array.isArray(value.sourceGraph.nodes) ||
+    !isRecord(value.sourceGraph.revision)
+  ) {
+    return false;
+  }
+  if (value.destination !== undefined && !isFinitePoint(value.destination)) return false;
+  if (value.importName !== undefined && typeof value.importName !== "string") return false;
+  return true;
 }
 
 export function isW2fUiToMainMessage(value: unknown): value is W2fFigmaMessage<W2fUiToMainPayload> {
@@ -193,6 +251,8 @@ export function isW2fUiToMainMessage(value: unknown): value is W2fFigmaMessage<W
       return isW2fFileIntakeDescriptor(value.payload.descriptor);
     case "W2F_IMPORT_SELECTION":
       return isW2fImportSelection(value.payload.selection);
+    case "W2F_RENDER_BASIC_REQUEST":
+      return isW2fBasicRenderRequest(value.payload.request);
     default:
       return false;
   }

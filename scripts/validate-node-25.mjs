@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import "./validate-node-27.mjs";
 
 const root = process.cwd();
 const failures = [];

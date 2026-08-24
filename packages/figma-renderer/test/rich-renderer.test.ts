@@ -35,6 +35,7 @@ function sourceGraph(): WtfSourceGraph {
       capturedAt: "2026-08-24T00:00:00.000Z",
     },
     nodes: [],
+    scrollContainers: [],
   };
 }
 
@@ -74,7 +75,7 @@ function baseNode(
 function documentTree(children: WtfRenderNode[]): WtfRenderTree {
   const root = baseNode("root", "document", undefined, children.map((child) => child.id), 0);
   root.geometry.bounds = { x: 0, y: 0, width: 800, height: 600 };
-  return { rootId: root.id, nodes: [root, ...children] };
+  return { rootId: root.id, nodes: [root, ...children], sections: [] };
 }
 
 function textNode(id = "text-1"): WtfRenderNode {

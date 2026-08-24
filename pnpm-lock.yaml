@@ -93,6 +93,9 @@ importers:
 
   apps/figma-plugin:
     dependencies:
+      '@w2f/figma-renderer':
+        specifier: workspace:*
+        version: link:../../packages/figma-renderer
       '@w2f/w2f-ir':
         specifier: workspace:*
         version: link:../../packages/w2f-ir
@@ -211,6 +214,22 @@ importers:
 
   packages/figma-capability-resolver:
     dependencies:
+      '@w2f/w2f-ir':
+        specifier: workspace:*
+        version: link:../w2f-ir
+    devDependencies:
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: 4.1.11
+        version: 4.1.11(vite@8.2.2(esbuild@0.28.2))
+
+  packages/figma-renderer:
+    dependencies:
+      '@w2f/figma-capability-resolver':
+        specifier: workspace:*
+        version: link:../figma-capability-resolver
       '@w2f/w2f-ir':
         specifier: workspace:*
         version: link:../w2f-ir

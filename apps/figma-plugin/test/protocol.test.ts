@@ -56,9 +56,7 @@ describe("Figma protocol", () => {
     const request = renderRequest();
     expect(isW2fBasicRenderRequest(request)).toBe(true);
     expect(
-      isW2fUiToMainMessage(
-        figmaMessage({ type: "W2F_RENDER_BASIC_REQUEST" as const, request }),
-      ),
+      isW2fUiToMainMessage(figmaMessage({ type: "W2F_RENDER_BASIC_REQUEST" as const, request })),
     ).toBe(true);
     expect(isW2fBasicRenderRequest({ ...request, tokenPolicy: "figma-variables" })).toBe(false);
     expect(isW2fBasicRenderRequest({ ...request, mode: "unknown" })).toBe(false);

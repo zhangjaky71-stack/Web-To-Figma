@@ -60,27 +60,18 @@ function fixtureTree(): WtfRenderTree {
         ["a", "b"],
         { name: "Fixture Document" },
       ),
-      renderNode(
-        "a",
-        "container",
-        { x: 10.375, y: 20.75, width: 100.5, height: 100.25 },
-        ["c"],
-        { parentId: "root", name: "Card" },
-      ),
-      renderNode(
-        "c",
-        "decoration",
-        { x: 15.875, y: 26.5, width: 20.125, height: 20.25 },
-        [],
-        { parentId: "a", name: "Badge" },
-      ),
-      renderNode(
-        "b",
-        "image",
-        { x: 150.625, y: 20.75, width: 50.5, height: 50.25 },
-        [],
-        { parentId: "root", name: "   " },
-      ),
+      renderNode("a", "container", { x: 10.375, y: 20.75, width: 100.5, height: 100.25 }, ["c"], {
+        parentId: "root",
+        name: "Card",
+      }),
+      renderNode("c", "decoration", { x: 15.875, y: 26.5, width: 20.125, height: 20.25 }, [], {
+        parentId: "a",
+        name: "Badge",
+      }),
+      renderNode("b", "image", { x: 150.625, y: 20.75, width: 50.5, height: 50.25 }, [], {
+        parentId: "root",
+        name: "   ",
+      }),
     ],
     sections: [
       { id: "section-a", renderNodeId: "a", name: "Card", childSectionIds: [] },
@@ -238,10 +229,9 @@ describe("NODE-25 Basic Figma Renderer", () => {
     expect(result.createdNodeCount).toBe(4);
     expect(result.mappedRenderNodeIds).toEqual(["root", "a", "c", "b"]);
     expect(result.root.name).toBe("Fixture Document");
-    expect(result.root.children.map((child) => child.pluginData[W2F_PLUGIN_DATA_KEYS.nodeId])).toEqual([
-      "a",
-      "b",
-    ]);
+    expect(
+      result.root.children.map((child) => child.pluginData[W2F_PLUGIN_DATA_KEYS.nodeId]),
+    ).toEqual(["a", "b"]);
     expect(result.root.children[0]?.children[0]?.pluginData[W2F_PLUGIN_DATA_KEYS.nodeId]).toBe("c");
     expect(adapter.appendOrder).toEqual(["a", "c", "b"]);
     expect(adapter.selection).toEqual([result.root]);
@@ -288,9 +278,9 @@ describe("NODE-25 Basic Figma Renderer", () => {
     );
     expect(result.mappedRenderNodeIds).toEqual(["a", "c"]);
     expect(result.nodesByRenderNodeId.has("b")).toBe(false);
-    expect(result.root.children.map((child) => child.pluginData[W2F_PLUGIN_DATA_KEYS.nodeId])).toEqual([
-      "a",
-    ]);
+    expect(
+      result.root.children.map((child) => child.pluginData[W2F_PLUGIN_DATA_KEYS.nodeId]),
+    ).toEqual(["a"]);
   });
 
   it("positions a selected import at an explicit canvas destination while preserving local geometry", () => {

@@ -113,10 +113,7 @@ export interface W2fBasicRenderResult<TNode> {
 }
 
 export type W2fBasicRendererErrorCode =
-  | "W2F_RENDERER_INPUT"
-  | "W2F_RENDERER_TREE"
-  | "W2F_RENDERER_GEOMETRY"
-  | "W2F_RENDERER_ADAPTER";
+  "W2F_RENDERER_INPUT" | "W2F_RENDERER_TREE" | "W2F_RENDERER_GEOMETRY" | "W2F_RENDERER_ADAPTER";
 
 export class W2fBasicRendererError extends Error {
   readonly code: W2fBasicRendererErrorCode;

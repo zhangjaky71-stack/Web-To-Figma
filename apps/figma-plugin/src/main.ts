@@ -68,7 +68,10 @@ async function handleCanvasDrop(file: DropFile, point: { x: number; y: number })
 
 function handleBasicRender(request: W2fBasicRenderRequest): void {
   if (cancelled) return;
-  if (request.profile !== importSelection.profile || request.tokenPolicy !== importSelection.tokenPolicy) {
+  if (
+    request.profile !== importSelection.profile ||
+    request.tokenPolicy !== importSelection.tokenPolicy
+  ) {
     postError("W2F_E_RENDER_SELECTION_STALE", "Import selection changed before renderer handoff");
     return;
   }
@@ -80,7 +83,8 @@ function handleBasicRender(request: W2fBasicRenderRequest): void {
       completed: 0,
       total: 2,
       label: "Creating basic Figma scene",
-      detail: "Root, hierarchy, geometry, naming, pluginData and z-order are rendered transactionally.",
+      detail:
+        "Root, hierarchy, geometry, naming, pluginData and z-order are rendered transactionally.",
     },
   });
 

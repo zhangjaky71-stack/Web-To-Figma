@@ -256,9 +256,7 @@ function selectedRoots(
 
   const outermost = unique.filter(
     (candidate) =>
-      !unique.some(
-        (other) => other !== candidate && isAncestor(other, candidate, nodes),
-      ),
+      !unique.some((other) => other !== candidate && isAncestor(other, candidate, nodes)),
   );
   outermost.sort((left, right) => (order.get(left) ?? 0) - (order.get(right) ?? 0));
   return { mode, ids: outermost };
@@ -302,14 +300,11 @@ export function createBasicFigmaRenderPlan(input: W2fBasicRendererInput): W2fBas
   const sources = sourceNodeMap(input);
   const selectedGeometries = selection.ids.map((id) => assertGeometry(nodes.get(id)!));
   const sourceRootGeometry =
-    selection.mode === "whole-page"
-      ? selectedGeometries[0]!
-      : unionGeometry(selectedGeometries);
+    selection.mode === "whole-page" ? selectedGeometries[0]! : unionGeometry(selectedGeometries);
   const destination = input.destination ?? { x: sourceRootGeometry.x, y: sourceRootGeometry.y };
   assertPoint(destination, "destination");
 
-  const wholeRoot =
-    selection.mode === "whole-page" ? nodes.get(renderTree.rootId)! : undefined;
+  const wholeRoot = selection.mode === "whole-page" ? nodes.get(renderTree.rootId)! : undefined;
   const rootName = input.importName
     ? sanitizeFigmaLayerName(input.importName, "W2F Import", renderTree.rootId)
     : wholeRoot

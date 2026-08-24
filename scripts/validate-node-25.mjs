@@ -79,7 +79,10 @@ if (failures.length === 0) {
     assert(planner.includes(evidence), `NODE-25 planner missing ${evidence}`);
   }
   for (const forbidden of ["Math.round(", "figma.", "createFrame(", "createRectangle("]) {
-    assert(!planner.includes(forbidden), `NODE-25 planner must remain platform/precision neutral: ${forbidden}`);
+    assert(
+      !planner.includes(forbidden),
+      `NODE-25 planner must remain platform/precision neutral: ${forbidden}`,
+    );
   }
 
   const transaction = text("packages/figma-renderer/src/transaction.ts");
@@ -136,13 +139,19 @@ if (failures.length === 0) {
   }
 
   const main = text("apps/figma-plugin/src/main.ts");
-  assert(main.includes("renderBasicFigmaScene"), "NODE-25 Figma main must invoke renderer transaction");
+  assert(
+    main.includes("renderBasicFigmaScene"),
+    "NODE-25 Figma main must invoke renderer transaction",
+  );
   assert(main.includes("createFigmaBasicAdapter"), "NODE-25 Figma main must use real adapter");
   assert(main.includes("W2F_RENDER_RESULT"), "NODE-25 Figma main must report renderer success");
 
   const ui = text("apps/figma-plugin/src/ui.ts");
   assert(ui.includes("parsed.ir.renderTree"), "NODE-25 UI must hand validated Render Tree to main");
-  assert(ui.includes("parsed.ir.sourceGraph"), "NODE-25 UI must hand validated Source Graph to main");
+  assert(
+    ui.includes("parsed.ir.sourceGraph"),
+    "NODE-25 UI must hand validated Source Graph to main",
+  );
   assert(ui.includes("selectedRenderRootIds"), "NODE-25 UI must support Selected Sections handoff");
   assert(
     !ui.includes("W2F_E_RENDERER_NOT_IMPLEMENTED"),

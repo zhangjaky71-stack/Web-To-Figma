@@ -311,6 +311,23 @@ function selectedRenderRootIds(parsed: WtfParsedPackage): string[] {
     .map((section) => section.renderNodeId);
 }
 
+function node26AssetPayload(parsed: WtfParsedPackage) {
+  const assetPayloadsById: Record<string, Uint8Array> = {};
+  const sanitizedSvgById: Record<string, string> = {};
+  for (const asset of parsed.ir.assets.assets) {
+    if (!asset.embeddedPath) continue;
+    const bytes = parsed.binaryPayloads.get(asset.embeddedPath);
+    if (bytes) assetPayloadsById[asset.id] = bytes;
+    const svg = parsed.sanitizedSvgPayloads.get(asset.embeddedPath);
+    if (svg) sanitizedSvgById[asset.id] = svg;
+  }
+  return {
+    assets: parsed.ir.assets.assets.map((asset) => ({ ...asset })),
+    assetPayloadsById,
+    sanitizedSvgById,
+  };
+}
+
 chooseButton.addEventListener("click", () => fileInput.click());
 fileInput.addEventListener("change", () => {
   const file = fileInput.files?.[0];
@@ -348,22 +365,24 @@ importButton.addEventListener("click", () => {
   }
   importButton.disabled = true;
   postToMain({ type: "W2F_IMPORT_SELECTION", selection: state.selection });
-  postToMain({
-    type: "W2F_RENDER_BASIC_REQUEST",
-    request: {
-      intakeId: state.descriptor.intakeId,
-      renderTree: parsed.ir.renderTree,
-      sourceGraph: parsed.ir.sourceGraph,
-      profile: state.selection.profile,
-      mode: state.selection.scope === "whole-page" ? "whole-page" : "selected-roots",
-      selectedRootIds,
-      tokenPolicy: "literal",
-      ...(state.descriptor.canvasPoint ? { destination: state.descriptor.canvasPoint } : {}),
-      ...(parsed.preview.title
-        ? { importName: parsed.preview.title }
-        : { importName: state.descriptor.fileName.replace(/\.wtf$/i, "") }),
-    },
-  });
+  const request = {
+    intakeId: state.descriptor.intakeId,
+    renderTree: parsed.ir.renderTree,
+    sourceGraph: parsed.ir.sourceGraph,
+    profile: state.selection.profile,
+    mode:
+      state.selection.scope === "whole-page"
+        ? ("whole-page" as const)
+        : ("selected-roots" as const),
+    selectedRootIds,
+    tokenPolicy: "literal" as const,
+    ...node26AssetPayload(parsed),
+    ...(state.descriptor.canvasPoint ? { destination: state.descriptor.canvasPoint } : {}),
+    ...(parsed.preview.title
+      ? { importName: parsed.preview.title }
+      : { importName: state.descriptor.fileName.replace(/\.wtf$/i, "") }),
+  };
+  postToMain({ type: "W2F_RENDER_BASIC_REQUEST", request });
 });
 cancelButton.addEventListener("click", () => {
   currentBytes = null;

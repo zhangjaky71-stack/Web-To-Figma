@@ -47,7 +47,7 @@ Do not silently approximate CSS semantics that Figma cannot represent exactly. E
 - `space-around` / `space-evenly` when no exact native equivalent exists
 - unsupported mixed per-item alignment semantics
 
-For these cases, keep the NODE-26 source geometry path and record the mapping as non-native-compatible. NODE-28 owns hybrid/raster fallback execution.
+For these cases, keep the NODE-26 source geometry path and record the mapping as non-native-compatible. NODE-28 owns hybrid/raster fallback execution. NODE-29 owns Pixel Ground Truth visual, structure, and editability QA for the rendered result.
 
 ### Grid
 

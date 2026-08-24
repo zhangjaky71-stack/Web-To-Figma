@@ -95,11 +95,17 @@ function childSizing(
   }
 
   const alignSelf = item?.alignSelf?.trim().toLowerCase();
-  const counterAxisStretch = !absolutePositioned && (alignSelf === "stretch" || (!alignSelf && parentStretch));
+  const counterAxisStretch =
+    !absolutePositioned && (alignSelf === "stretch" || (!alignSelf && parentStretch));
   if (counterAxisStretch) {
     if (parentHorizontal) verticalSizing = "FILL";
     else horizontalSizing = "FILL";
   }
+
+  const minWidth = resolvedPx(child.layout.sizing.width.min);
+  const maxWidth = resolvedPx(child.layout.sizing.width.max);
+  const minHeight = resolvedPx(child.layout.sizing.height.min);
+  const maxHeight = resolvedPx(child.layout.sizing.height.max);
 
   return {
     renderNodeId: child.id,
@@ -109,18 +115,10 @@ function childSizing(
     counterAxisStretch,
     absolutePositioned,
     order: typeof item?.order === "number" && Number.isFinite(item.order) ? item.order : 0,
-    ...(resolvedPx(child.layout.sizing.width.min) !== undefined
-      ? { minWidth: resolvedPx(child.layout.sizing.width.min) }
-      : {}),
-    ...(resolvedPx(child.layout.sizing.width.max) !== undefined
-      ? { maxWidth: resolvedPx(child.layout.sizing.width.max) }
-      : {}),
-    ...(resolvedPx(child.layout.sizing.height.min) !== undefined
-      ? { minHeight: resolvedPx(child.layout.sizing.height.min) }
-      : {}),
-    ...(resolvedPx(child.layout.sizing.height.max) !== undefined
-      ? { maxHeight: resolvedPx(child.layout.sizing.height.max) }
-      : {}),
+    ...(minWidth === undefined ? {} : { minWidth }),
+    ...(maxWidth === undefined ? {} : { maxWidth }),
+    ...(minHeight === undefined ? {} : { minHeight }),
+    ...(maxHeight === undefined ? {} : { maxHeight }),
   };
 }
 
@@ -132,7 +130,9 @@ export function createAutoLayoutPlan(input: W2fAutoLayoutPlannerInput): W2fAutoL
   const horizontal = flex.direction === "row" || flex.direction === "row-reverse";
   const reverseChildren = flex.direction === "row-reverse" || flex.direction === "column-reverse";
   const reasons: string[] = [];
-  if (flex.wrap === "wrap-reverse") reasons.push("flex-wrap:wrap-reverse has no exact Figma equivalent");
+  if (flex.wrap === "wrap-reverse") {
+    reasons.push("flex-wrap:wrap-reverse has no exact Figma equivalent");
+  }
 
   const counter = counterAlign(flex.alignItems, horizontal, reasons);
   const padding = container.layout.padding ?? { top: 0, right: 0, bottom: 0, left: 0 };

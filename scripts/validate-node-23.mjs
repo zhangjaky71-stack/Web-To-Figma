@@ -161,8 +161,8 @@ if (failures.length === 0) {
     "Figma shell must advertise the completed secure parser",
   );
   assert(
-    figmaMain.includes("rendererImplemented: false"),
-    "NODE-23 must not implement rendering early",
+    figmaMain.includes("rendererImplemented:"),
+    "Figma shell must keep renderer capability state explicit as later NODEs advance",
   );
   const figmaUi = text("apps/figma-plugin/src/ui.ts");
   assert(

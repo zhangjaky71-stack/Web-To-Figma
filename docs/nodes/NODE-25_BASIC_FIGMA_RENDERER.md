@@ -2,19 +2,20 @@
 
 **Status:** IN PROGRESS  
 **Entry baseline:** `e9e4d1e92fa1db7c6e5c050f1b55ed39f688d354`  
-**Branch:** `feat/node-25-basic-figma-renderer`
+**Branch:** `feat/node-25-basic-figma-renderer`  
+**PR:** #29
 
 ## Frozen scope
 
 V2 Baseline limits NODE-25 to the basic Figma scene graph:
 
-- [ ] root
-- [ ] frames
-- [ ] hierarchy
-- [ ] geometry
-- [ ] naming
-- [ ] pluginData
-- [ ] z-order
+- [x] root
+- [x] frames
+- [x] hierarchy
+- [x] geometry
+- [x] naming
+- [x] pluginData
+- [x] z-order
 
 NODE-25 does **not** own:
 
@@ -24,20 +25,29 @@ NODE-25 does **not** own:
 
 ## Package boundary
 
-Create `packages/figma-renderer` with a Figma API adapter interface so deterministic unit/contract tests do not require a live Figma runtime.
+`packages/figma-renderer` exposes a platform-independent planner + transaction engine behind `W2fBasicFigmaAdapter<TNode>`.
 
-The renderer consumes validated W2F IR plus NODE-24 capability plans. It must not parse `.wtf` archives and must not re-implement capability policy.
+The renderer consumes validated W2F IR and carries NODE-24 policy evidence forward. It does not parse `.wtf` archives and does not re-implement capability policy.
+
+The live adapter is isolated in:
+
+```text
+apps/figma-plugin/src/figma-basic-adapter.ts
+```
 
 ## Basic node contract
 
 NODE-25 reconstructs frame/rectangle-like scene nodes sufficient to rebuild a box-only fixture with:
 
 - deterministic parent/child hierarchy;
-- source render-tree order preserved as Figma z-order;
-- double-precision x/y/width/height until the Figma API boundary;
+- Render Tree `childIds` order preserved as Figma z-order;
+- double-precision source geometry preserved until the concrete Figma API boundary;
+- absolute page geometry converted to parent-local Figma coordinates;
 - deterministic layer naming with safe fallback names;
 - stable W2F identity metadata attached through pluginData;
 - revision hashes/source mapping carried forward for later incremental/QA use.
+
+Basic placeholders are deliberately neutral. Frame/Rectangle nodes have no fabricated paint; NODE-26 owns the real text/assets/paint reconstruction.
 
 ## Import transaction
 
@@ -48,57 +58,90 @@ BEGIN IMPORT
 → create temporary root `__W2F_IMPORTING__`
 → create the basic scene under that root
 → validate renderer result
-→ COMMIT: rename/finalize/select/viewport
+→ COMMIT: rename + mark committed + select + viewport
 OR
 → ROLLBACK: remove temporary root
 ```
 
-A fatal renderer error must not leave a partial imported page in the user's document.
+A fatal renderer/adapter error must not leave a partial imported page in the user's document.
+
+Whole-page imports reuse the transaction root as the Render Tree root so no permanent extra wrapper is required. Selected Sections use one synthetic transaction root when needed to hold one or more selected roots safely.
 
 ## PluginData policy
 
-Important created nodes store compact identity/debug/sync metadata only, including the NODE-25 equivalents of:
+Important created nodes store compact identity/debug/sync metadata only, including:
 
 ```text
 w2f.nodeId
 w2f.sourceNodeIds
 w2f.sourceStableIds
+w2f.sourceKind
+w2f.sourceTag
+w2f.sourceSelector
 w2f.renderStrategy
 w2f.revisionHashes
 w2f.importVersion
+w2f.tokenPolicy
+w2f.renderProfile
 ```
+
+Root metadata additionally carries document/capture/revision identity and transaction state.
 
 Do not store the full IR or large payloads in pluginData.
 
 ## V2.1 invariants
 
-Across NODE-22~28 the renderer must preserve:
+Across NODE-22~28 the renderer preserves:
 
 - revision metadata;
 - stable source mapping;
 - literal token values as the default token policy;
 - RenderProfile policy decisions from NODE-24.
 
-NODE-25 must not reinterpret those policy decisions.
+NODE-25 does not reinterpret those policy decisions.
 
-## Z-order
+## UI / Main handoff
 
-Render Tree `childIds` order is authoritative for basic sibling ordering. Creation/append order must be deterministic and tests must prove the same IR yields the same hierarchy/order repeatedly.
+Only data that already passed NODE-23 secure parsing may reach the basic renderer.
 
-## Initial fixtures
+The versioned protocol adds:
 
-Required deterministic fixtures:
+```text
+W2F_RENDER_BASIC_REQUEST
+W2F_RENDER_RESULT
+```
 
-1. empty/root document shell;
-2. nested frames/containers;
-3. rectangle-like leaf nodes;
-4. fractional geometry;
-5. stable naming fallback;
-6. pluginData identity/revision/stable-source mapping;
-7. sibling z-order;
-8. transaction commit;
-9. transaction rollback after injected fatal adapter failure;
-10. selected-subtree rendering contract without rendering unselected siblings.
+Whole Page sends the validated Render Tree root. Selected Sections maps selected section IDs to Render Tree root IDs. Canvas Drop preserves its absolute drop point as the destination for the transaction root.
+
+## Deterministic fixtures
+
+Implemented fixtures cover:
+
+- [x] nested frames/containers;
+- [x] rectangle-like leaf nodes;
+- [x] fractional geometry and parent-local conversion;
+- [x] stable naming fallback;
+- [x] pluginData identity/revision/stable-source mapping;
+- [x] sibling z-order;
+- [x] transaction commit;
+- [x] transaction rollback after injected adapter failure;
+- [x] selected-subtree rendering without unselected siblings;
+- [x] malformed-tree rejection before mutation;
+- [x] repeat-plan determinism.
+
+## Validation checklist
+
+- [x] renderer core implemented
+- [x] live Figma adapter implemented
+- [x] Choose/UI Drop/Canvas Drop renderer handoff implemented
+- [x] Figma bundle validator extended
+- [x] permanent NODE-25 validator authored
+- [x] ADR-0025 authored
+- [ ] permanent foundation import
+- [ ] frozen lockfile refresh
+- [ ] repository-wide `pnpm check`
+- [ ] exact-head read-only CI
+- [ ] squash merge to `main`
 
 ## Exit gate
 
@@ -115,4 +158,4 @@ Figma package validation
 format check
 ```
 
-and a box-only W2F Render Tree can be reconstructed through the renderer adapter with correct root, frame hierarchy, geometry, naming, pluginData, z-order, commit, and rollback semantics.
+and a box-only W2F Render Tree can be reconstructed through the renderer adapter with correct root, frame hierarchy, geometry, naming, pluginData, z-order, commit and rollback semantics.

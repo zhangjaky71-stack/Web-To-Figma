@@ -203,9 +203,7 @@ function gridTrack(
     };
   }
 
-  const minmaxFr = normalized.match(
-    /^minmax\(\s*0(?:px)?\s*,\s*([0-9]*\.?[0-9]+)?fr\s*\)$/,
-  );
+  const minmaxFr = normalized.match(/^minmax\(\s*0(?:px)?\s*,\s*([0-9]*\.?[0-9]+)?fr\s*\)$/);
   if (minmaxFr) {
     const parsed = minmaxFr[1] ? Number.parseFloat(minmaxFr[1]) : 1;
     return {
@@ -224,7 +222,9 @@ function gridTrack(
     };
   }
 
-  reasons.push(`${axis} track ${index + 1} (${authored || "<empty>"}) has no exact Figma Grid track equivalent`);
+  reasons.push(
+    `${axis} track ${index + 1} (${authored || "<empty>"}) has no exact Figma Grid track equivalent`,
+  );
   return {
     type: "FIXED",
     value: finiteNonNegative(track.resolvedPx),
@@ -243,7 +243,9 @@ function positiveGridLine(
     const normalized = value.trim();
     if (/^[1-9]\d*$/.test(normalized)) return Number.parseInt(normalized, 10) - 1;
   }
-  reasons.push(`${label}:${String(value)} cannot be represented as a positive numeric Figma grid line`);
+  reasons.push(
+    `${label}:${String(value)} cannot be represented as a positive numeric Figma grid line`,
+  );
   return undefined;
 }
 
@@ -267,7 +269,11 @@ function gridSpan(
   return 1;
 }
 
-function gridChild(item: WtfGridItemModel | undefined, childId: string, reasons: string[]): W2fGridChildPlan {
+function gridChild(
+  item: WtfGridItemModel | undefined,
+  childId: string,
+  reasons: string[],
+): W2fGridChildPlan {
   if (!item) {
     return { renderNodeId: childId, rowSpan: 1, columnSpan: 1 };
   }
@@ -277,8 +283,13 @@ function gridChild(item: WtfGridItemModel | undefined, childId: string, reasons:
   const columnSpan = gridSpan(item.columnStart, item.columnEnd, `${childId}.column`, reasons);
   const hasExplicitRow = item.rowStart !== undefined || item.rowEnd !== undefined;
   const hasExplicitColumn = item.columnStart !== undefined || item.columnEnd !== undefined;
-  if ((hasExplicitRow || hasExplicitColumn) && (rowIndex === undefined || columnIndex === undefined)) {
-    reasons.push(`${childId} has partial explicit grid placement that Figma cannot position exactly`);
+  if (
+    (hasExplicitRow || hasExplicitColumn) &&
+    (rowIndex === undefined || columnIndex === undefined)
+  ) {
+    reasons.push(
+      `${childId} has partial explicit grid placement that Figma cannot position exactly`,
+    );
   }
   return {
     renderNodeId: childId,
@@ -296,7 +307,9 @@ export function createGridLayoutPlan(input: W2fGridLayoutPlannerInput): W2fGridL
   const grid = container.layout.gridContainer;
   const reasons: string[] = [];
   if (grid.columns.length === 0 || grid.rows.length === 0) {
-    reasons.push("implicit-only CSS Grid tracks do not have enough evidence for exact native Figma Grid");
+    reasons.push(
+      "implicit-only CSS Grid tracks do not have enough evidence for exact native Figma Grid",
+    );
   }
 
   const autoFlow = (grid.autoFlow ?? "row").trim().toLowerCase();
@@ -307,9 +320,15 @@ export function createGridLayoutPlan(input: W2fGridLayoutPlannerInput): W2fGridL
 
   const columns = grid.columns.map((track, index) => gridTrack(track, "column", index, reasons));
   const rows = grid.rows.map((track, index) => gridTrack(track, "row", index, reasons));
-  const children = input.children.map((child) => gridChild(child.layout.gridItem, child.id, reasons));
+  const children = input.children.map((child) =>
+    gridChild(child.layout.gridItem, child.id, reasons),
+  );
   const hasExplicitPlacement = children.some(
-    (child) => child.rowIndex !== undefined || child.columnIndex !== undefined || child.rowSpan > 1 || child.columnSpan > 1,
+    (child) =>
+      child.rowIndex !== undefined ||
+      child.columnIndex !== undefined ||
+      child.rowSpan > 1 ||
+      child.columnSpan > 1,
   );
 
   return {

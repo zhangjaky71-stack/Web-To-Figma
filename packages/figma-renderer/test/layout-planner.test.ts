@@ -63,14 +63,8 @@ function gridContainer(overrides: Partial<WtfRenderNode["layout"]> = {}): WtfRen
       display: "grid",
       effectiveGap: { row: 12, column: 16 },
       gridContainer: {
-        columns: [
-          { authored: "120px", resolvedPx: 120 },
-          { authored: "2fr" },
-        ],
-        rows: [
-          { authored: "80px", resolvedPx: 80 },
-          { authored: "1fr" },
-        ],
+        columns: [{ authored: "120px", resolvedPx: 120 }, { authored: "2fr" }],
+        rows: [{ authored: "80px", resolvedPx: 80 }, { authored: "1fr" }],
         rowGap: 12,
         columnGap: 16,
         autoFlow: "row",

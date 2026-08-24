@@ -115,17 +115,9 @@ function applyAbsoluteConstraints(node: LayoutChildNode, renderNode: WtfRenderNo
   const constraints = renderNode.layout.absoluteConstraints;
   if (!constraints || !("constraints" in node)) return;
   const horizontal: Constraints["horizontal"] =
-    constraints.left && constraints.right
-      ? "STRETCH"
-      : constraints.right
-        ? "MAX"
-        : "MIN";
+    constraints.left && constraints.right ? "STRETCH" : constraints.right ? "MAX" : "MIN";
   const vertical: Constraints["vertical"] =
-    constraints.top && constraints.bottom
-      ? "STRETCH"
-      : constraints.bottom
-        ? "MAX"
-        : "MIN";
+    constraints.top && constraints.bottom ? "STRETCH" : constraints.bottom ? "MAX" : "MIN";
   node.constraints = { horizontal, vertical };
 }
 

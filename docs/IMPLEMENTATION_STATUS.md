@@ -33,8 +33,8 @@
 | 20 | Compositing & Fallback Boundary | DONE | Exact-head read-only CI #503 PASS | PR #24 merged as `f0d10cdb` |
 | 21 | WTF Packager | DONE | Exact-head read-only CI #540 PASS | PR #25 merged as `5395d1eb` |
 | 22 | Figma Plugin Shell & File Intake | DONE | Exact-head read-only CI #571 PASS | PR #26 merged as `84ebc5ed` |
-| 23 | Secure Parser & Migration | EXIT GATE CANDIDATE | Bootstrap CI #622 PASS; exact-head read-only CI pending | PR #27; candidate `8162922d` |
-| 24 | Figma Capability Resolver | TODO | - | - |
+| 23 | Secure Parser & Migration | DONE | Exact-head read-only CI #624 PASS | PR #27 merged as `23cad572` |
+| 24 | Figma Capability Resolver | EXIT GATE CANDIDATE | Bootstrap CI #628 PASS; exact-head read-only CI pending | PR #28; candidate `b328b666` |
 | 25 | Basic Figma Renderer | TODO | - | - |
 | 26 | Text / Font / Asset / Paint Renderer | TODO | - | - |
 | 27 | Figma Responsive Layout Renderer | TODO | - | - |
@@ -45,84 +45,102 @@
 
 ## Current Node
 
-`NODE-23 — Secure Parser & Migration`
+`NODE-24 — Figma Capability Resolver`
 
 Entry baseline:
 
 ```text
-84ebc5eddec06b38dd757aecbcdcf7f49a1a76e1
+23cad5727ac66be448a187e02a6513a854136782
 ```
 
 Working branch:
 
 ```text
-feat/node-23-secure-parser-migration
+feat/node-24-figma-capability-resolver
 ```
 
-## NODE-22 Closure
+## NODE-23 Closure
 
-NODE-22 PR #26 passed final exact-head read-only CI #571 (`32646653514`) on:
+NODE-23 PR #27 passed exact-head read-only CI #624 (`32674601511`) on:
 
 ```text
-531f6784c2a2b2af3c3d1dcfaef0ca197b8de5c4
+a011a484023ce33bdfcc33f916ec137f96cb1667
 ```
 
 and was squash merged into `main` as:
 
 ```text
-84ebc5eddec06b38dd757aecbcdcf7f49a1a76e1
+23cad5727ac66be448a187e02a6513a854136782
 ```
 
-The merged tree provides a loadable Local First Figma main/UI shell, Choose/UI Drop/Canvas Drop intake, versioned protocol, progress/import policy, Whole Page / Selected Sections contracts, revision/stable-source/literal-token handoff and package validation while preserving the secure-parser trust boundary.
+The merged tree provides the hostile `.wtf` trust boundary: bounded ZIP parsing, Zip Slip/duplicate/shared-local-header rejection, CRC32 + exact-byte SHA-256 integrity, manifest/checksum/IR validation, asset and nested-archive policy, SVG sanitization, explicit V2 migration and validated Figma parser-preview integration.
 
-## NODE-23 Frozen Scope
+## NODE-24 Frozen Scope
 
-V2 Baseline requires:
+The V2 Baseline defines an independent Figma capability resolver. It accepts:
 
 ```text
-schema
-version
-zip bomb
-zip slip
-checksum
-SVG sanitize
-migration
+IR feature
++ node type
++ parent context
++ current Figma API capability
++ RenderProfile policy
 ```
 
-The secure parser treats every `.wtf` as hostile input. Validation fails closed before data becomes renderer input.
-
-## NODE-23 Security Order
-
-The implementation follows the frozen security sequence:
-
-1. archive signature/container structure;
-2. entry count and declared/compressed/uncompressed limits;
-3. portable path normalization, duplicate detection and Zip Slip rejection;
-4. required `manifest.json` / `checksums.json` presence;
-5. manifest kind/version/schema/feature compatibility;
-6. canonical inventory and per-entry size agreement;
-7. SHA-256 checksum verification over exact uncompressed bytes;
-8. JSON decode/schema/IR validation only after integrity passes;
-9. asset MIME/path policy and no nested archive auto-expansion;
-10. SVG sanitization before any SVG reaches later Figma rendering;
-11. explicit version migration into the current reader model;
-12. parser preview / validated document handoff to NODE-22 protocol.
-
-## NODE-23 Bootstrap Closure
-
-Controlled Bootstrap CI #622 (`32674411827`) passed the full repository `pnpm check` and pushed the validated candidate:
+and resolves to one deterministic renderer strategy:
 
 ```text
-8162922d0d99b820ff756de0143a2b8ecbb58404
+NATIVE
+EMULATED
+WRAPPER
+ABSOLUTE
+RASTER
+UNSUPPORTED
 ```
 
-The closure validated the permanent NODE-23 foundation gate, refreshed frozen lockfile, repository-wide lint/typecheck/tests/build, Figma bundle/package validation and format gate. The temporary write-enabled bootstrap job, finalizer and failure log were removed from the candidate tree before handoff.
+The Capability Registry records platform support as:
 
-## Boundaries
+```text
+native
+emulated
+partial
+unsupported
+```
 
-NODE-23 does not create Figma nodes and does not decide native/emulated/raster capability policy. Those remain NODE-24+ responsibilities.
+NODE-24 prevents NODE-25+ renderers from scattering direct Figma API capability conditionals.
 
-No `.wtf` HTML or JavaScript is executed. No `eval` is permitted. Parsing remains Local First and data-only.
+## NODE-24 V2.1 Requirements
+
+Across Figma import/render the implementation preserves revision metadata and stable source mapping, defaults to literal token values, and applies the frozen RenderProfile policy:
+
+```text
+Fidelity
+Balanced
+Design Friendly
+```
+
+NODE-24 creates policy/plans only. It does not create Figma scene nodes and does not execute raster fallback; those remain NODE-25+ / NODE-28 responsibilities.
+
+## NODE-24 Bootstrap Closure
+
+Controlled Bootstrap CI #628 (`32675192567`) passed the full repository `pnpm check` and pushed the validated candidate:
+
+```text
+b328b666cf27d30c66a185fc7337318588671987
+```
+
+The candidate contains the refreshed frozen lockfile, permanent NODE-24 foundation integration, formatted resolver package, deterministic six-outcome fixtures and ADR. Before candidate handoff, the temporary write-enabled bootstrap job and finalizer were removed and the normal read-only CI workflow was restored.
+
+## NODE-24 Capability Snapshot
+
+The versioned registry snapshot is:
+
+```text
+figma-plugin-api-2026-08-24
+@figma/plugin-typings 1.134.0
+```
+
+Registry facts and W2F policy remain separated. The resolver selects deterministic Native/Emulated/Wrapper/Absolute/Raster/Unsupported plans, records downgrade reasons, and carries stable-source/revision/literal-token invariants forward for NODE-25+.
 
 ## Blockers
 
@@ -130,4 +148,4 @@ No product/architecture blocker is known.
 
 ## Next
 
-Run exact-head read-only frozen-lockfile CI on the normal evidence commit. Only after that exact head is fully green may PR #27 be marked Ready and squash merged to `main`, after which NODE-24 begins.
+Run exact-head read-only frozen-lockfile CI on this normal evidence commit. Only after the exact head is fully green may PR #28 be marked Ready and squash merged to `main`, after which NODE-25 begins.

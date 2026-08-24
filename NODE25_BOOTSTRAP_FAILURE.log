@@ -1,0 +1,75 @@
+Scope: all 25 workspace projects
+? Verifying lockfile against supply-chain policies (188 entries)...
+✓ Lockfile passes supply-chain policies (188 entries in 1.4s)
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Progress: resolved 7, reused 0, downloaded 7, added 0
+Progress: resolved 57, reused 0, downloaded 12, added 0
+Progress: resolved 92, reused 0, downloaded 60, added 0
+Progress: resolved 137, reused 0, downloaded 106, added 0
+Packages: +133
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Packages are hard linked from the content-addressable store to the virtual store.
+  Content-addressable store is at: /home/runner/setup-pnpm/node_modules/.bin/store/v11
+  Virtual store is at:             node_modules/.pnpm
+Progress: resolved 188, reused 0, downloaded 132, added 131
+Progress: resolved 188, reused 0, downloaded 133, added 133, done
+.../esbuild@0.28.2/node_modules/esbuild postinstall$ node install.js
+.../esbuild@0.28.2/node_modules/esbuild postinstall: Done
+
+devDependencies:
++ eslint 10.8.1 (10.9.0 is available)
++ prettier 3.9.6
++ turbo 2.10.11
++ typescript 6.0.3 (7.0.2 is available)
++ typescript-eslint 8.67.0
++ vitest 4.1.11
+
+Done in 9.7s using pnpm v11.22.0
+NODE-25 integration finalizer applied successfully.
+Scope: all 25 workspace projects
+Already up to date
+Done in 280ms using pnpm v11.22.0
+[90mpackages/figma-renderer/package.json[39m 18ms (unchanged)
+[90mpackages/figma-renderer/src/index.ts[39m 29ms (unchanged)
+packages/figma-renderer/src/planner.ts 65ms
+[90mpackages/figma-renderer/src/transaction.ts[39m 10ms (unchanged)
+packages/figma-renderer/src/types.ts 11ms
+packages/figma-renderer/test/basic-renderer.test.ts 24ms
+[90mpackages/figma-renderer/tsconfig.build.json[39m 1ms (unchanged)
+[90mpackages/figma-renderer/tsconfig.json[39m 1ms (unchanged)
+[90mapps/figma-plugin/package.json[39m 1ms (unchanged)
+[90mapps/figma-plugin/src/figma-basic-adapter.ts[39m 5ms (unchanged)
+apps/figma-plugin/src/main.ts 11ms
+[90mapps/figma-plugin/src/protocol.ts[39m 16ms (unchanged)
+[90mapps/figma-plugin/src/ui.ts[39m 25ms (unchanged)
+apps/figma-plugin/test/protocol.test.ts 3ms
+[90mapps/figma-plugin/scripts/validate-plugin-package.mjs[39m 9ms (unchanged)
+scripts/validate-node-25.mjs 6ms
+[90mscripts/validate-foundation.mjs[39m 17ms (unchanged)
+rm 'scripts/node-25-finalize.mjs'
+$ pnpm validate:foundation && pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm format:check
+$ node scripts/validate-foundation.mjs
+NODE-08 foundation validation passed.
+NODE-09 foundation validation passed.
+NODE-10 foundation validation passed.
+NODE-11 foundation validation passed.
+NODE-12 foundation validation passed.
+NODE-13 foundation validation passed.
+NODE-14 foundation validation passed.
+NODE-15 foundation validation passed.
+NODE-16 foundation validation passed.
+NODE-17 foundation validation passed.
+NODE-18 foundation validation passed.
+NODE-19 foundation validation passed.
+NODE-20 foundation validation passed.
+NODE-21 foundation validation passed.
+NODE-22 foundation validation failed:
+- Figma main shell missing rendererImplemented: false
+- Figma UI shell missing W2F_E_RENDERER_NOT_IMPLEMENTED
+NODE-23 foundation validation failed:
+- NODE-23 must not implement rendering early
+NODE-24 foundation validation passed.
+NODE-25 foundation validation passed.
+Foundation validation passed.
+[ELIFECYCLE] Command failed with exit code 1.
+[ELIFECYCLE] Command failed with exit code 1.

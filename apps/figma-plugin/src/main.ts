@@ -1,4 +1,8 @@
-import { renderBasicFigmaScene, W2fBasicRendererError } from "@w2f/figma-renderer";
+import {
+  evaluateStructureAndEditabilityQa,
+  renderBasicFigmaScene,
+  W2fBasicRendererError,
+} from "@w2f/figma-renderer";
 import { createFigmaBasicAdapter } from "./figma-basic-adapter.js";
 import {
   applyFigmaHybridRasterFallbacks,
@@ -7,6 +11,7 @@ import {
   W2fHybridRasterError,
 } from "./figma-hybrid-renderer.js";
 import { applyFigmaLayouts } from "./figma-layout-renderer.js";
+import { inspectFigmaSceneForQa } from "./figma-qa.js";
 import { applyFigmaVisuals, type W2fVisualAssetBundle } from "./figma-visual-renderer.js";
 import { createFileIntakeDescriptor } from "./intake-state.js";
 import {
@@ -82,6 +87,15 @@ function visualBundle(request: W2fBasicRenderRequest): W2fVisualAssetBundle {
   };
 }
 
+function persistStructureQa(root: FrameNode, qa: ReturnType<typeof evaluateStructureAndEditabilityQa>): void {
+  root.setPluginData("w2f.qa.version", qa.version);
+  root.setPluginData("w2f.qa.structureStatus", qa.status);
+  root.setPluginData("w2f.qa.structureScore", qa.metrics.structureScore.toFixed(6));
+  root.setPluginData("w2f.qa.editableAreaRatio", qa.metrics.editableAreaRatio.toFixed(6));
+  root.setPluginData("w2f.qa.rasterAreaRatio", qa.metrics.rasterAreaRatio.toFixed(6));
+  root.setPluginData("w2f.qa.failureCount", String(qa.failures.length));
+}
+
 async function handleBasicRender(request: W2fBasicRenderRequest): Promise<void> {
   if (cancelled) return;
   if (
@@ -103,7 +117,7 @@ async function handleBasicRender(request: W2fBasicRenderRequest): Promise<void> 
     progress: {
       stage: "importing",
       completed: 0,
-      total: 4,
+      total: 5,
       label: "Creating editable Figma scene",
       detail:
         "Rebuilding native hierarchy and geometry while reserving only explicit minimal raster boundaries.",
@@ -133,7 +147,7 @@ async function handleBasicRender(request: W2fBasicRenderRequest): Promise<void> 
       progress: {
         stage: "importing",
         completed: 1,
-        total: 4,
+        total: 5,
         label: "Restoring editable text, assets and paint",
         detail:
           "Native-compatible layers stay editable; raster boundaries are excluded from SVG/text replacement.",
@@ -156,7 +170,7 @@ async function handleBasicRender(request: W2fBasicRenderRequest): Promise<void> 
       progress: {
         stage: "importing",
         completed: 2,
-        total: 4,
+        total: 5,
         label: "Applying minimal raster fallbacks",
         detail:
           "Only source-bound node fallback, canvas, WebGL or video evidence may become raster tiles.",
@@ -177,11 +191,31 @@ async function handleBasicRender(request: W2fBasicRenderRequest): Promise<void> 
       progress: {
         stage: "finalizing",
         completed: 3,
-        total: 4,
-        label: "Finalizing hybrid editable import",
-        detail: `${visual.stats.textNodeCount.toLocaleString()} text · ${visual.stats.imageFillCount.toLocaleString()} image fills · ${layout.autoLayoutFrameCount.toLocaleString()} Auto Layout · ${layout.gridFrameCount.toLocaleString()} Grid · ${raster.rasterNodeCount.toLocaleString()} local raster fallback(s)`,
+        total: 5,
+        label: "Running structure and editability QA",
+        detail:
+          "Checking source mapping, parent/sibling structure, editable text/vector surfaces and raster anti-cheating gates.",
       },
     });
+
+    const structureQa = evaluateStructureAndEditabilityQa({
+      renderTree: request.renderTree,
+      sceneNodes: inspectFigmaSceneForQa(renderedRoot),
+      ...(request.mode === "selected-roots" ? { includedRenderNodeIds: selectedRootIds } : {}),
+    });
+    persistStructureQa(renderedRoot, structureQa);
+
+    postToUi({
+      type: "W2F_PROGRESS",
+      progress: {
+        stage: "finalizing",
+        completed: 4,
+        total: 5,
+        label: `NODE-29 structure QA ${structureQa.status}`,
+        detail: `Structure ${(structureQa.metrics.structureScore * 100).toFixed(2)}% · editable ${(structureQa.metrics.editableAreaRatio * 100).toFixed(2)}% · raster ${(structureQa.metrics.rasterAreaRatio * 100).toFixed(2)}% · failures ${structureQa.failures.length}`,
+      },
+    });
+
     postToUi({
       type: "W2F_RENDER_RESULT",
       result: {
@@ -195,13 +229,10 @@ async function handleBasicRender(request: W2fBasicRenderRequest): Promise<void> 
       type: "W2F_PROGRESS",
       progress: {
         stage: "done",
-        completed: 4,
-        total: 4,
-        label: "Hybrid Figma import complete",
-        detail:
-          raster.rasterNodeCount > 0
-            ? `Kept native layers editable and materialized ${raster.rasterTileNodeCount} PNG tile(s) inside ${raster.rasterNodeCount} minimal fallback boundary frame(s); ${raster.suppressedNativeDescendantCount} unsafe descendant layer(s) stayed suppressed.`
-            : `Restored native-compatible content without raster fallback. Auto Layout ${layout.autoLayoutFrameCount}, Grid ${layout.gridFrameCount}, font fallbacks ${visual.stats.fontFallbackCount}.`,
+        completed: 5,
+        total: 5,
+        label: `Hybrid Figma import complete · QA ${structureQa.status}`,
+        detail: `${visual.stats.textNodeCount.toLocaleString()} text · ${visual.stats.imageFillCount.toLocaleString()} image fills · ${layout.autoLayoutFrameCount.toLocaleString()} Auto Layout · ${layout.gridFrameCount.toLocaleString()} Grid · ${raster.rasterNodeCount.toLocaleString()} local raster fallback(s) · structure ${(structureQa.metrics.structureScore * 100).toFixed(2)}% · editable ${(structureQa.metrics.editableAreaRatio * 100).toFixed(2)}% · raster ${(structureQa.metrics.rasterAreaRatio * 100).toFixed(2)}%`,
       },
     });
   } catch (error) {

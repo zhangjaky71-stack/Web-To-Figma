@@ -85,7 +85,10 @@ assert(existsSync(resolve(root, localMarkPath)), `missing ${localMarkPath}`);
 const localMark = read(localMarkPath);
 assert(localMark.trimStart().startsWith("<svg"), `${localMarkPath} must be SVG`);
 assert(localMark.includes('aria-label="Local fixture mark"'), `${localMarkPath} identity mismatch`);
-assert(!localMark.includes("<!doctype html>"), `${localMarkPath} must not contain HTML fixture content`);
+assert(
+  !localMark.includes("<!doctype html>"),
+  `${localMarkPath} must not contain HTML fixture content`,
+);
 
 let manifest;
 try {
@@ -110,7 +113,9 @@ if (manifest) {
 }
 
 if (failures.length > 0) {
-  console.error(`NODE-31 corpus validation failed:\n${failures.map((item) => `- ${item}`).join("\n")}`);
+  console.error(
+    `NODE-31 corpus validation failed:\n${failures.map((item) => `- ${item}`).join("\n")}`,
+  );
   process.exitCode = 1;
 } else {
   console.log("NODE-31 Class B corpus semantic validation passed.");

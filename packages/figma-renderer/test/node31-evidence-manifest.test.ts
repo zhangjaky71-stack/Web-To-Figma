@@ -6,6 +6,8 @@ import {
   W2F_NODE31_REQUIRED_SECURITY_FIXTURES,
 } from "../src/qa/node31-types.js";
 
+const CI_EVIDENCE = "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json";
+
 function collectingManifest(): Record<string, unknown> {
   return {
     version: "1.0.0",
@@ -75,16 +77,22 @@ function readyManifest(): Record<string, unknown> {
   manifest.security = {
     knownCriticalBlockers: 0,
     knownHighBlockers: 0,
-    fixtures: W2F_NODE31_REQUIRED_SECURITY_FIXTURES.map((id) => ({ id, status: "PASS" })),
+    blockerInventoryArtifact: CI_EVIDENCE,
+    fixtures: W2F_NODE31_REQUIRED_SECURITY_FIXTURES.map((id) => ({
+      id,
+      status: "PASS",
+      evidenceArtifact: CI_EVIDENCE,
+    })),
   };
   manifest.schemaCompatibility = W2F_NODE31_REQUIRED_SCHEMA_COMPATIBILITY_CASES.map((id) => ({
     id,
     status: "PASS",
+    evidenceArtifact: CI_EVIDENCE,
   }));
-  manifest.knownLimitations = { status: "PASS" };
-  manifest.p0 = { status: "PASS" };
-  manifest.determinism = { status: "PASS" };
-  manifest.scale = { status: "PASS" };
+  manifest.knownLimitations = { status: "PASS", evidenceArtifact: CI_EVIDENCE };
+  manifest.p0 = { status: "PASS", evidenceArtifact: CI_EVIDENCE };
+  manifest.determinism = { status: "PASS", evidenceArtifact: CI_EVIDENCE };
+  manifest.scale = { status: "PASS", evidenceArtifact: CI_EVIDENCE };
   return manifest;
 }
 
@@ -118,6 +126,27 @@ describe("NODE-31 evidence manifest evaluator", () => {
     expect(report.failures.join("\n")).toContain("cannot PASS without a measurementArtifact");
   });
 
+  it("requires evidenceArtifact provenance before non-metric evidence can PASS", () => {
+    const manifest = readyManifest();
+    manifest.schemaCompatibility = (
+      manifest.schemaCompatibility as Record<string, unknown>[]
+    ).map((entry, index) => (index === 0 ? { id: entry.id, status: "PASS" } : entry));
+    const report = evaluateNode31EvidenceManifest(manifest);
+    expect(report.status).toBe("FAIL");
+    expect(report.failures.join("\n")).toContain("cannot PASS without an evidenceArtifact");
+  });
+
+  it("requires blockerInventoryArtifact before zero blocker counts can be trusted", () => {
+    const manifest = readyManifest();
+    const security = manifest.security as Record<string, unknown>;
+    delete security.blockerInventoryArtifact;
+    const report = evaluateNode31EvidenceManifest(manifest);
+    expect(report.status).toBe("FAIL");
+    expect(report.failures.join("\n")).toContain(
+      "security blocker counts require a blockerInventoryArtifact",
+    );
+  });
+
   it("passes a ready manifest only when required evidence is measured and sourced", () => {
     const report = evaluateNode31EvidenceManifest(readyManifest());
     expect(report.status).toBe("PASS");
@@ -141,7 +170,12 @@ describe("NODE-31 evidence manifest evaluator", () => {
     manifest.security = {
       knownCriticalBlockers: 0,
       knownHighBlockers: 1,
-      fixtures: W2F_NODE31_REQUIRED_SECURITY_FIXTURES.map((id) => ({ id, status: "PASS" })),
+      blockerInventoryArtifact: CI_EVIDENCE,
+      fixtures: W2F_NODE31_REQUIRED_SECURITY_FIXTURES.map((id) => ({
+        id,
+        status: "PASS",
+        evidenceArtifact: CI_EVIDENCE,
+      })),
     };
     const report = evaluateNode31EvidenceManifest(manifest);
     expect(report.status).toBe("FAIL");

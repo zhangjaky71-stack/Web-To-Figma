@@ -21,7 +21,8 @@ const pixelContractPath = "apps/browser-extension/src/runtime/pixel-ground-truth
 const profilePackagePath = "apps/browser-extension/src/runtime/profile-compliant-wtf-package.ts";
 const wtfExportRuntimePath = "apps/browser-extension/src/runtime/wtf-export-runtime.ts";
 const wtfPackageBuilderPath = "apps/browser-extension/src/runtime/wtf-package-builder.ts";
-const pixelIntegrationTestPath = "apps/browser-extension/test/profile-compliant-wtf-package.test.ts";
+const pixelIntegrationTestPath =
+  "apps/browser-extension/test/profile-compliant-wtf-package.test.ts";
 const pixelRuntimeTestPath = "apps/browser-extension/test/pixel-ground-truth-runtime.test.ts";
 const node21PackageValidatorPath = "apps/browser-extension/scripts/validate-node-21-package.mjs";
 
@@ -462,7 +463,10 @@ if (pixelEvidence) {
   );
   for (const profile of ["standard", "highFidelity"]) {
     const validation = pixelEvidence.packageValidation?.[profile];
-    assert(validation?.extension === "PASS", `NODE-31 Pixel ${profile} extension package must PASS`);
+    assert(
+      validation?.extension === "PASS",
+      `NODE-31 Pixel ${profile} extension package must PASS`,
+    );
     assert(
       validation?.node14PixelGroundTruth === "PASS",
       `NODE-31 Pixel ${profile} NODE-14 package must PASS`,
@@ -577,9 +581,7 @@ if (audit) {
     (entry) => entry.id === "profile-required-pixel-ground-truth-end-to-end",
   );
   assert(pixelItem?.status === "PASS", "NODE-31 profile Pixel Ground Truth P0 item must be PASS");
-  const pixelArtifacts = Array.isArray(pixelItem?.sourceArtifacts)
-    ? pixelItem.sourceArtifacts
-    : [];
+  const pixelArtifacts = Array.isArray(pixelItem?.sourceArtifacts) ? pixelItem.sourceArtifacts : [];
   for (const artifact of [
     pixelRuntimePath,
     pixelContractPath,

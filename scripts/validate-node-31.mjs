@@ -12,6 +12,7 @@ const required = [
   "docs/qa/NODE-31_RC_EVIDENCE_V1.json",
   "docs/KNOWN_LIMITATIONS.md",
   "docs/ACCEPTANCE_CONTRACT_V2.md",
+  "qa/corpus/node31/README.md",
   "packages/w2f-schema/test/index.test.ts",
   "packages/wtf-parser/test/migrations.test.ts",
   "packages/wtf-parser/test/parser.test.ts",
@@ -112,7 +113,10 @@ if (failures.length === 0) {
   );
 
   for (const forbidden of localOnlyForbidden) {
-    assert(!release.includes(forbidden), `NODE-31 release evaluator must remain local-only: ${forbidden}`);
+    assert(
+      !release.includes(forbidden),
+      `NODE-31 release evaluator must remain local-only: ${forbidden}`,
+    );
     assert(
       !compatibility.includes(forbidden),
       `NODE-31 compatibility evaluator must remain local-only: ${forbidden}`,
@@ -141,7 +145,10 @@ if (failures.length === 0) {
   }
   if (manifest) {
     assert(manifest.version === "1.0.0", "NODE-31 evidence manifest version must be 1.0.0");
-    assert(manifest.status === "collecting", "NODE-31 initial evidence manifest must remain collecting until measured evidence is populated");
+    assert(
+      manifest.status === "collecting",
+      "NODE-31 initial evidence manifest must remain collecting until measured evidence is populated",
+    );
     assert(
       manifest.baselineCommit === "28b52dc3e0d3074bf76205c8deb324a06dfe9e23",
       "NODE-31 evidence manifest baseline must be the NODE-30 merge commit",
@@ -163,12 +170,30 @@ if (failures.length === 0) {
     ]) {
       assert(classBCategories.has(category), `NODE-31 evidence manifest missing Class B ${category}`);
     }
+    for (const entry of manifest.classB ?? []) {
+      assert(
+        typeof entry.sourceArtifact === "string" && entry.sourceArtifact.length > 0,
+        `NODE-31 Class B source ${entry.id} must name a sourceArtifact`,
+      );
+      if (typeof entry.sourceArtifact === "string" && entry.sourceArtifact.length > 0) {
+        assert(
+          existsSync(resolve(root, entry.sourceArtifact)),
+          `NODE-31 Class B sourceArtifact does not exist: ${entry.sourceArtifact}`,
+        );
+      }
+    }
     for (const entry of [...(manifest.classA ?? []), ...(manifest.classB ?? [])]) {
       if (entry.measurementStatus === "PASS") {
         assert(
-          typeof entry.sourceArtifact === "string" && entry.sourceArtifact.length > 0,
-          `NODE-31 evidence ${entry.id} cannot PASS without a sourceArtifact`,
+          typeof entry.measurementArtifact === "string" && entry.measurementArtifact.length > 0,
+          `NODE-31 evidence ${entry.id} cannot PASS without a measurementArtifact`,
         );
+        if (typeof entry.measurementArtifact === "string" && entry.measurementArtifact.length > 0) {
+          assert(
+            existsSync(resolve(root, entry.measurementArtifact)),
+            `NODE-31 measurementArtifact does not exist: ${entry.measurementArtifact}`,
+          );
+        }
       }
     }
   }

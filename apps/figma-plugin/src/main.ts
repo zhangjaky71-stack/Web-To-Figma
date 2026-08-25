@@ -87,7 +87,10 @@ function visualBundle(request: W2fBasicRenderRequest): W2fVisualAssetBundle {
   };
 }
 
-function persistStructureQa(root: FrameNode, qa: ReturnType<typeof evaluateStructureAndEditabilityQa>): void {
+function persistStructureQa(
+  root: FrameNode,
+  qa: ReturnType<typeof evaluateStructureAndEditabilityQa>,
+): void {
   root.setPluginData("w2f.qa.version", qa.version);
   root.setPluginData("w2f.qa.structureStatus", qa.status);
   root.setPluginData("w2f.qa.structureScore", qa.metrics.structureScore.toFixed(6));

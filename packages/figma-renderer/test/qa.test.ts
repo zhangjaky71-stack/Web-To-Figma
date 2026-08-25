@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { WtfRenderNode, WtfRenderTree } from "@w2f/w2f-ir";
-import { compareRgbaPixels, evaluateStructureAndEditabilityQa, evaluateVisualQa } from "../src/qa/index.js";
+import {
+  compareRgbaPixels,
+  evaluateStructureAndEditabilityQa,
+  evaluateVisualQa,
+} from "../src/qa/index.js";
 import type { W2fFigmaQaNodeSnapshot } from "../src/qa/types.js";
 
 function renderNode(
@@ -73,15 +77,30 @@ function tree(nodes: WtfRenderNode[], rootId = nodes[0]!.id): WtfRenderTree {
 
 describe("NODE-29 structure and editability QA", () => {
   it("passes a fully mapped editable native hierarchy", () => {
-    const root = renderNode("root", "container", { x: 0, y: 0, width: 400, height: 200 }, {
-      childIds: ["text", "vector"],
-    });
-    const text = renderNode("text", "text", { x: 0, y: 0, width: 200, height: 200 }, {
-      parentId: "root",
-    });
-    const vector = renderNode("vector", "vector", { x: 200, y: 0, width: 200, height: 200 }, {
-      parentId: "root",
-    });
+    const root = renderNode(
+      "root",
+      "container",
+      { x: 0, y: 0, width: 400, height: 200 },
+      {
+        childIds: ["text", "vector"],
+      },
+    );
+    const text = renderNode(
+      "text",
+      "text",
+      { x: 0, y: 0, width: 200, height: 200 },
+      {
+        parentId: "root",
+      },
+    );
+    const vector = renderNode(
+      "vector",
+      "vector",
+      { x: 200, y: 0, width: 200, height: 200 },
+      {
+        parentId: "root",
+      },
+    );
     const report = evaluateStructureAndEditabilityQa({
       renderTree: tree([root, text, vector]),
       sceneNodes: [
@@ -97,21 +116,36 @@ describe("NODE-29 structure and editability QA", () => {
   });
 
   it("suppresses descendants only behind an explicit minimal raster boundary", () => {
-    const root = renderNode("root", "container", { x: 0, y: 0, width: 400, height: 250 }, {
-      childIds: ["fallback", "native-text"],
-    });
+    const root = renderNode(
+      "root",
+      "container",
+      { x: 0, y: 0, width: 400, height: 250 },
+      {
+        childIds: ["fallback", "native-text"],
+      },
+    );
     const fallback = renderNode(
       "fallback",
       "fallback",
       { x: 0, y: 0, width: 100, height: 100 },
       { parentId: "root", childIds: ["hidden-text"], renderStrategy: "raster" },
     );
-    const hiddenText = renderNode("hidden-text", "text", { x: 0, y: 0, width: 100, height: 100 }, {
-      parentId: "fallback",
-    });
-    const nativeText = renderNode("native-text", "text", { x: 100, y: 0, width: 300, height: 300 }, {
-      parentId: "root",
-    });
+    const hiddenText = renderNode(
+      "hidden-text",
+      "text",
+      { x: 0, y: 0, width: 100, height: 100 },
+      {
+        parentId: "fallback",
+      },
+    );
+    const nativeText = renderNode(
+      "native-text",
+      "text",
+      { x: 100, y: 0, width: 300, height: 300 },
+      {
+        parentId: "root",
+      },
+    );
     const report = evaluateStructureAndEditabilityQa({
       renderTree: tree([root, fallback, hiddenText, nativeText]),
       sceneNodes: [

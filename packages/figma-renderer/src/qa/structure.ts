@@ -35,7 +35,10 @@ function expandIncludedNodes(input: W2fStructureQaInput): Set<string> {
   return included;
 }
 
-function suppressedByRaster(nodes: readonly WtfRenderNode[], included: ReadonlySet<string>): Set<string> {
+function suppressedByRaster(
+  nodes: readonly WtfRenderNode[],
+  included: ReadonlySet<string>,
+): Set<string> {
   const byId = new Map(nodes.map((node) => [node.id, node]));
   const suppressed = new Set<string>();
   for (const node of nodes) {
@@ -88,7 +91,9 @@ function ratio(numerator: number, denominator: number): number {
   return denominator > 0 ? clamp01(numerator / denominator) : 1;
 }
 
-export function evaluateStructureAndEditabilityQa(input: W2fStructureQaInput): W2fStructureQaReport {
+export function evaluateStructureAndEditabilityQa(
+  input: W2fStructureQaInput,
+): W2fStructureQaReport {
   const included = expandIncludedNodes(input);
   const suppressed = suppressedByRaster(input.renderTree.nodes, included);
   const expectedNodes = input.renderTree.nodes.filter(
@@ -116,7 +121,8 @@ export function evaluateStructureAndEditabilityQa(input: W2fStructureQaInput): W
     }
     mappedNodeCount += 1;
     const snapshot = matches[0]!;
-    const expectedParentId = node.parentId && expectedById.has(node.parentId) ? node.parentId : undefined;
+    const expectedParentId =
+      node.parentId && expectedById.has(node.parentId) ? node.parentId : undefined;
     parentComparableCount += 1;
     if (snapshot.parentRenderNodeId === expectedParentId) {
       parentCorrectCount += 1;
@@ -218,7 +224,9 @@ export function evaluateStructureAndEditabilityQa(input: W2fStructureQaInput): W
   }
 
   if (terminalNodes.length === 0) {
-    warnings.push("No terminal supported render nodes were available for area-based editability QA");
+    warnings.push(
+      "No terminal supported render nodes were available for area-based editability QA",
+    );
   }
 
   return {

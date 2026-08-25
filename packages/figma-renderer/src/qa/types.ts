@@ -12,13 +12,7 @@ export const W2F_NODE29_THRESHOLDS = {
 
 export type W2fQaStatus = "PASS" | "WARNING" | "FAIL" | "UNAVAILABLE";
 
-export type W2fEditableClass =
-  | "text"
-  | "vector"
-  | "image"
-  | "container"
-  | "raster"
-  | "other";
+export type W2fEditableClass = "text" | "vector" | "image" | "container" | "raster" | "other";
 
 export interface W2fFigmaQaNodeSnapshot {
   figmaNodeId: string;

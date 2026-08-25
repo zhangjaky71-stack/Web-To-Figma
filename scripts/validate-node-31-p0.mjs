@@ -3,10 +3,11 @@ import { resolve } from "node:path";
 
 const root = process.cwd();
 const failures = [];
-const auditPath = "docs/qa/results/NODE-31_P0_AUDIT_781.json";
+const auditPath = "docs/qa/results/NODE-31_P0_AUDIT_798.json";
 const manifestPath = "docs/qa/NODE-31_RC_EVIDENCE_V1.json";
 const runtimeEvidencePath = "docs/qa/results/NODE-31_BROWSER_RUNTIME_EVIDENCE_764.json";
 const fontEvidencePath = "docs/qa/results/NODE-31_FONT_EVIDENCE_781.json";
+const pixelEvidencePath = "docs/qa/results/NODE-31_PIXEL_GROUND_TRUTH_EVIDENCE_798.json";
 const runtimeHarnessPath = "scripts/run-node-31-browser-runtime.mjs";
 const runtimeProductSourcePath = "apps/browser-extension/src/runtime/content-script.ts";
 const runtimeBuiltArtifactPath = "apps/browser-extension/dist/runtime/content-script.js";
@@ -15,6 +16,14 @@ const fontDiagnosticsPath = "apps/figma-plugin/src/font-diagnostics.ts";
 const fontRendererPath = "apps/figma-plugin/src/figma-visual-renderer.ts";
 const fontResolutionTestPath = "apps/figma-plugin/test/font-resolution.test.ts";
 const fontDiagnosticsTestPath = "apps/figma-plugin/test/font-diagnostics.test.ts";
+const pixelRuntimePath = "apps/browser-extension/src/runtime/pixel-ground-truth-runtime.ts";
+const pixelContractPath = "apps/browser-extension/src/runtime/pixel-ground-truth-contract.ts";
+const profilePackagePath = "apps/browser-extension/src/runtime/profile-compliant-wtf-package.ts";
+const wtfExportRuntimePath = "apps/browser-extension/src/runtime/wtf-export-runtime.ts";
+const wtfPackageBuilderPath = "apps/browser-extension/src/runtime/wtf-package-builder.ts";
+const pixelIntegrationTestPath = "apps/browser-extension/test/profile-compliant-wtf-package.test.ts";
+const pixelRuntimeTestPath = "apps/browser-extension/test/pixel-ground-truth-runtime.test.ts";
+const node21PackageValidatorPath = "apps/browser-extension/scripts/validate-node-21-package.mjs";
 
 const requiredIds = {
   capture: [
@@ -91,6 +100,27 @@ const requiredFontBoundaries = [
   "class-b-browser-to-wtf-to-figma-measurements",
 ];
 
+const expectedPixelP0Items = ["profile-required-pixel-ground-truth-end-to-end"];
+
+const requiredPixelBoundaries = [
+  "current-document-deterministic-online",
+  "file-protocol-explicit-permission",
+  "region-intersections-and-structural-ancestors",
+  "document-and-primary-app-scroll-root-semantics",
+  "open-shadow-dom-slot-composed-tree",
+  "same-origin-iframe",
+  "inaccessible-cross-origin-frame-diagnostic",
+  "visual-state-freeze-and-restore",
+  "choose-file-path",
+  "drop-on-canvas-path",
+  "geometry-preserving-correction-policy",
+  "raster-text-only-when-policy-justifies",
+  "zero-known-critical-security-blockers",
+  "zero-known-high-security-blockers",
+  "class-a-visual-geometry-text-asset-structure-measurements",
+  "class-b-browser-to-wtf-to-figma-measurements",
+];
+
 function assert(condition, message) {
   if (!condition) failures.push(message);
 }
@@ -152,6 +182,7 @@ for (const path of [
   manifestPath,
   runtimeEvidencePath,
   fontEvidencePath,
+  pixelEvidencePath,
   runtimeHarnessPath,
   runtimeProductSourcePath,
   fontResolutionPath,
@@ -159,6 +190,14 @@ for (const path of [
   fontRendererPath,
   fontResolutionTestPath,
   fontDiagnosticsTestPath,
+  pixelRuntimePath,
+  pixelContractPath,
+  profilePackagePath,
+  wtfExportRuntimePath,
+  wtfPackageBuilderPath,
+  pixelIntegrationTestPath,
+  pixelRuntimeTestPath,
+  node21PackageValidatorPath,
 ]) {
   assert(existsSync(resolve(root, path)), `missing ${path}`);
 }
@@ -167,6 +206,7 @@ const audit = readJson(auditPath);
 const manifest = readJson(manifestPath);
 const runtimeEvidence = readJson(runtimeEvidencePath);
 const fontEvidence = readJson(fontEvidencePath);
+const pixelEvidence = readJson(pixelEvidencePath);
 
 if (runtimeEvidence) {
   assert(runtimeEvidence.version === "1.0.0", "NODE-31 browser runtime version must be 1.0.0");
@@ -341,16 +381,125 @@ if (fontEvidence) {
   }
 }
 
+if (pixelEvidence) {
+  assert(pixelEvidence.version === "1.0.0", "NODE-31 Pixel evidence version must be 1.0.0");
+  assert(
+    pixelEvidence.evidenceType === "node31-profile-pixel-ground-truth",
+    "NODE-31 Pixel evidenceType mismatch",
+  );
+  assert(pixelEvidence.status === "PASS", "NODE-31 Pixel evidence status must be PASS");
+  assert(pixelEvidence.ci?.runNumber === 798, "NODE-31 Pixel evidence must identify CI #798");
+  assert(pixelEvidence.ci?.runId === 32852849393, "NODE-31 Pixel evidence run id mismatch");
+  assert(pixelEvidence.ci?.jobId === 97817648113, "NODE-31 Pixel evidence job id mismatch");
+  assert(pixelEvidence.ci?.conclusion === "PASS", "NODE-31 Pixel evidence CI must be PASS");
+  assert(
+    pixelEvidence.ci?.branchHead === "281b193027202eaea4a0b4ca9c21bf8e15e66c06",
+    "NODE-31 Pixel evidence branch head mismatch",
+  );
+  assert(
+    pixelEvidence.ci?.mergeRef === "8ae000a9adc256c006cbd0844a258bad067820c3",
+    "NODE-31 Pixel evidence merge ref mismatch",
+  );
+  assert(
+    pixelEvidence.ci?.base === "28b52dc3e0d3074bf76205c8deb324a06dfe9e23",
+    "NODE-31 Pixel evidence base mismatch",
+  );
+  for (const check of [
+    "node31Validator",
+    "node31P0Validator",
+    "lint",
+    "typecheck",
+    "tests",
+    "build",
+    "browserRuntime",
+    "format",
+  ]) {
+    assert(
+      pixelEvidence.ci?.qualityChecks?.[check] === "PASS",
+      `NODE-31 Pixel evidence missing PASS ${check}`,
+    );
+  }
+  assert(pixelEvidence.environment?.node === "24.19.0", "NODE-31 Pixel Node version mismatch");
+  assert(pixelEvidence.environment?.pnpm === "11.22.0", "NODE-31 Pixel pnpm version mismatch");
+  assert(
+    pixelEvidence.environment?.chrome === "Chrome/151.0.7922.137",
+    "NODE-31 Pixel Chrome version mismatch",
+  );
+  const sourceArtifacts = new Set(
+    Array.isArray(pixelEvidence.sourceArtifacts) ? pixelEvidence.sourceArtifacts : [],
+  );
+  for (const artifact of [
+    pixelRuntimePath,
+    pixelContractPath,
+    profilePackagePath,
+    wtfExportRuntimePath,
+    wtfPackageBuilderPath,
+    node21PackageValidatorPath,
+  ]) {
+    assert(sourceArtifacts.has(artifact), `NODE-31 Pixel evidence missing source ${artifact}`);
+  }
+  const tests = new Map(
+    (Array.isArray(pixelEvidence.testArtifacts) ? pixelEvidence.testArtifacts : []).map((entry) => [
+      entry?.path,
+      entry,
+    ]),
+  );
+  assert(
+    tests.get(pixelIntegrationTestPath)?.testCount === 4 &&
+      tests.get(pixelIntegrationTestPath)?.status === "PASS",
+    "NODE-31 Pixel integration evidence must record four PASS tests",
+  );
+  assert(
+    tests.get(pixelRuntimeTestPath)?.testCount === 4 &&
+      tests.get(pixelRuntimeTestPath)?.status === "PASS",
+    "NODE-31 Pixel runtime evidence must record four PASS tests",
+  );
+  assert(
+    pixelEvidence.browserExtensionSuite?.testFiles === 27 &&
+      pixelEvidence.browserExtensionSuite?.testCount === 74 &&
+      pixelEvidence.browserExtensionSuite?.status === "PASS",
+    "NODE-31 Pixel browser-extension suite mismatch",
+  );
+  for (const profile of ["standard", "highFidelity"]) {
+    const validation = pixelEvidence.packageValidation?.[profile];
+    assert(validation?.extension === "PASS", `NODE-31 Pixel ${profile} extension package must PASS`);
+    assert(
+      validation?.node14PixelGroundTruth === "PASS",
+      `NODE-31 Pixel ${profile} NODE-14 package must PASS`,
+    );
+    assert(
+      validation?.node21WtfExport === "PASS",
+      `NODE-31 Pixel ${profile} NODE-21 package must PASS`,
+    );
+  }
+  const proves = Array.isArray(pixelEvidence.provesP0Items) ? pixelEvidence.provesP0Items : [];
+  assert(
+    JSON.stringify(proves) === JSON.stringify(expectedPixelP0Items),
+    "NODE-31 Pixel evidence must prove exactly the intended P0 item",
+  );
+  const notProven = new Set(
+    Array.isArray(pixelEvidence.notProvenByThisArtifact)
+      ? pixelEvidence.notProvenByThisArtifact
+      : [],
+  );
+  for (const boundary of requiredPixelBoundaries) {
+    assert(
+      notProven.has(boundary),
+      `NODE-31 Pixel evidence must preserve not-proven boundary ${boundary}`,
+    );
+  }
+}
+
 if (audit) {
   assert(audit.version === "1.0.0", "NODE-31 P0 audit version must be 1.0.0");
   assert(audit.evidenceType === "node31-p0-audit", "NODE-31 P0 audit evidenceType mismatch");
   assert(
-    audit.auditedAgainstBranchHead === "50d234bf977741a31b99b53f5bf579698c5d64c5",
-    "NODE-31 P0 audit must stay anchored to exact-head CI #781 until regenerated",
+    audit.auditedAgainstBranchHead === "281b193027202eaea4a0b4ca9c21bf8e15e66c06",
+    "NODE-31 P0 audit must stay anchored to exact-head CI #798 until regenerated",
   );
-  assert(audit.ci?.runNumber === 781, "NODE-31 P0 audit must identify CI #781");
-  assert(audit.ci?.runId === 32833779725, "NODE-31 P0 audit run id mismatch");
-  assert(audit.ci?.jobId === 97758035952, "NODE-31 P0 audit job id mismatch");
+  assert(audit.ci?.runNumber === 798, "NODE-31 P0 audit must identify CI #798");
+  assert(audit.ci?.runId === 32852849393, "NODE-31 P0 audit run id mismatch");
+  assert(audit.ci?.jobId === 97817648113, "NODE-31 P0 audit job id mismatch");
   assert(audit.ci?.conclusion === "PASS", "NODE-31 P0 audit CI conclusion must be PASS");
   for (const check of [
     "node31Validator",
@@ -424,6 +573,29 @@ if (audit) {
     );
   }
 
+  const pixelItem = allItems.find(
+    (entry) => entry.id === "profile-required-pixel-ground-truth-end-to-end",
+  );
+  assert(pixelItem?.status === "PASS", "NODE-31 profile Pixel Ground Truth P0 item must be PASS");
+  const pixelArtifacts = Array.isArray(pixelItem?.sourceArtifacts)
+    ? pixelItem.sourceArtifacts
+    : [];
+  for (const artifact of [
+    pixelRuntimePath,
+    pixelContractPath,
+    profilePackagePath,
+    wtfExportRuntimePath,
+    wtfPackageBuilderPath,
+    pixelIntegrationTestPath,
+    node21PackageValidatorPath,
+    pixelEvidencePath,
+  ]) {
+    assert(
+      pixelArtifacts.includes(artifact),
+      `NODE-31 profile Pixel Ground Truth P0 item missing provenance ${artifact}`,
+    );
+  }
+
   for (const id of [
     "geometry-preserving-correction-policy",
     "raster-text-only-when-policy-justifies",
@@ -445,7 +617,11 @@ if (audit) {
     JSON.stringify(declaredBlocking) === JSON.stringify(unavailableIds),
     "NODE-31 P0 blockingUnavailableIds must exactly match UNAVAILABLE items",
   );
-  assert(unavailableIds.length === 13, "NODE-31 P0 audit must retain exactly 13 unavailable items");
+  assert(unavailableIds.length === 12, "NODE-31 P0 audit must retain exactly 12 unavailable items");
+  assert(
+    audit.blockingUnavailableCount === unavailableIds.length,
+    "NODE-31 P0 audit blockingUnavailableCount mismatch",
+  );
   const derivedStatus = unavailableIds.length === 0 ? "PASS" : "UNAVAILABLE";
   assert(
     audit.policy?.overallStatus === derivedStatus,

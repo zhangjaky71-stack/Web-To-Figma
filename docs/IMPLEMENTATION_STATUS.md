@@ -40,7 +40,7 @@
 | 27 | Figma Responsive Layout Renderer | DONE | Exact-head CI #667 PASS | PR #32 merged as `4aef2daa` |
 | 28 | Hybrid Native / Raster Renderer | DONE | Exact-head CI #685 PASS | PR #33 merged as `ec880c4f` |
 | 29 | Visual / Structure / Editability QA | DONE | Core CI #697 + closure CI #704 PASS | PR #35 + PR #36, merge `4f5c0ed3` |
-| 30 | Responsive / Determinism / Performance QA | IMPLEMENTING | Candidate CI pending | PR #37 / `node-30-responsive-determinism-performance-qa` |
+| 30 | Responsive / Determinism / Performance QA | IMPLEMENTING | Candidate exact-head CI #714 PASS; closure docs CI pending | PR #37 / `node-30-responsive-determinism-performance-qa` |
 | 31 | Real-world Compatibility & Release Candidate | TODO | - | - |
 
 ## Current Node
@@ -78,7 +78,7 @@ PR #36 exact-head CI #704 passed foundation/NODE-27/NODE-28/NODE-29 validators, 
 4f5c0ed3fa3ab2049b4516eab5f3e80388d87b90
 ```
 
-NODE-30 must preserve this closure. Its PR merge-ref is authoritative and must include the latest `main` before NODE-30 is considered valid.
+NODE-30 preserves this closure: PR #37 merge-ref CI #714 passed the permanent NODE-29 validator together with the NODE-30 validator, lint, typecheck, tests, build/package validation and format checks.
 
 ## NODE-30 Frozen Scope
 
@@ -94,11 +94,11 @@ composite responsive score >= 90%
 
 Required evidence covers FILL/HUG/FIXED sizing, spacing, min/max sizing, flex/grid relationships, constraints, breakpoint/visibility/layout changes and container-query metadata. Structural breakpoint changes that Figma cannot execute still have to be detected and reported.
 
-NODE-30 reuses NODE-15 multi-viewport evidence, NODE-16 inference semantics, NODE-27 Figma layout reconstruction and NODE-29 single-import QA rather than re-inferring CSS from screenshots.
+The scorer uses the arithmetic mean of active responsive-domain scores instead of an undeclared priority model. Release-suite callers can require domain evidence explicitly; missing required evidence fails rather than disappearing from the denominator.
 
 ### 2. Determinism QA
 
-For deterministic fixtures captured under the same environment, the gate requires exactly the contract's minimum evidence of ten repeated runs. Across the run set:
+For deterministic fixtures captured under the same environment, the gate requires ten repeated runs. Across the run set:
 
 ```text
 asset hashes identical
@@ -108,7 +108,7 @@ stable identities identical
 layout decisions/reasons identical
 ```
 
-Intentionally volatile metadata must be named explicitly before exclusion from canonical hashing. Fewer than ten runs are `UNAVAILABLE`, never `PASS`.
+Each run requires the same non-empty `environmentFingerprint`. Intentionally volatile metadata must be named explicitly before exclusion from canonical hashing. Fewer than ten runs are `UNAVAILABLE`, never `PASS`.
 
 ### 3. Performance / Scale QA
 
@@ -123,33 +123,37 @@ Functional scale gates are frozen by the Acceptance Contract:
 >50k      explicit confirmation or section/simplified strategy
 ```
 
-A deterministic 10k-node benchmark that routinely crashes capture/import is release-blocking.
+A real 10k renderer benchmark is now permanent in the test suite. It constructs 10,000 W2F RenderNodes and SourceNodes, renders through `renderBasicFigmaScene` against the in-memory Figma adapter, performs a warm-up and five measured runs, and verifies all 10,000 target nodes are created without a fatal crash.
 
-Hard millisecond budgets are not invented. NODE-30 first records benchmark durations, median and p95 on a declared benchmark environment; any hard-ms calibration must be backed by that evidence and documented before it can become a release gate.
+Exact-head benchmark evidence in `linux-x64-node-24.19.0-memory-figma-v1`:
 
-## Current Implementation
+```text
+CI #712   median 243.32 ms   p95 269.11 ms   PASS
+CI #714   median 156.20 ms   p95 748.69 ms   PASS
+```
 
-The branch already contains an initial platform-neutral implementation:
+Both runs satisfy the functional 10k completion gate, but the hosted runner's p95 variation is too large to justify a cross-environment product SLA. The benchmark also uses an in-memory Figma adapter rather than production Figma runtime timing. Therefore `calibratedHardBudgetMs` intentionally remains `null`; no hard millisecond threshold exists in the frozen Acceptance Contract, and NODE-30 does not invent one.
 
-- canonical deterministic fingerprint support;
-- responsive QA scorer and fixture adapter;
-- ten-run determinism evaluator and IR adapter;
-- performance scale evaluator and benchmark timer adapter;
-- NODE-30 unit/integration tests;
-- `docs/nodes/NODE-30_RESPONSIVE_DETERMINISM_PERFORMANCE_QA.md`.
+## NODE-30 Implemented Guardrails
 
-Before merge, this implementation must be reviewed against the frozen contract, connected to permanent validation, tested against the latest NODE-29 Pixel QA closure and validated by exact-head CI.
+- permanent `validate-node-30.mjs` wired into CI;
+- responsive >=90% scoring with required-domain coverage;
+- container-query/breakpoint evidence;
+- ten-run same-environment determinism fingerprints;
+- performance scale-band enforcement from <2k through >50k;
+- environment-scoped timing aggregation;
+- real 10k renderer scale benchmark;
+- local-only QA guard with no network/eval primitives;
+- NODE-27/28/29 permanent validators preserved.
 
-## Implementation Plan
+Candidate exact-head CI #714 passed all validators, frozen install, lint, typecheck, full tests, build/Figma plugin and browser-extension package validation, and format checks at:
 
-1. normalize the initial NODE-30 scorer methodology against the approved contract;
-2. preserve latest NODE-29 Pixel QA closure in PR merge-ref validation;
-3. add benchmark fixture orchestration for responsive, ten-run determinism and scale evidence;
-4. add permanent `validate-node-30.mjs` and CI wiring;
-5. calibrate hard-ms budgets only if benchmark evidence is sufficient and reproducible;
-6. run exact-head CI without weakening NODE-27/28/29 validators;
-7. merge PR #37 only after all gates are green.
+```text
+ad8a578c029cef0a2cc885ec3179b943189665aa
+```
+
+This evidence/status documentation update must itself pass a final exact-head CI before PR #37 is made ready and merged.
 
 ## Next
 
-Complete NODE-30 and then begin NODE-31 Real-world Compatibility & Release Candidate.
+Run final closure-doc exact-head CI, merge PR #37 only if all gates remain green, then begin NODE-31 Real-world Compatibility & Release Candidate.

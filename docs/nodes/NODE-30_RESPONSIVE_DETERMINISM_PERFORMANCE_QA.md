@@ -65,6 +65,21 @@ The functional scale contract is already frozen:
 
 A deterministic 10k benchmark that routinely crashes capture/import is release-blocking.
 
+### 10k calibration evidence
+
+NODE-30 includes a real renderer benchmark rather than an empty timing task. The fixture constructs 10,000 W2F RenderNodes and 10,000 SourceNodes, performs a warm-up, then runs `renderBasicFigmaScene` five measured times against the in-memory Figma adapter while verifying that 10,000 Figma-side nodes are created and that the run completes without a fatal crash.
+
+Two exact-head pull-request runs produced the following evidence in the same declared benchmark environment, `linux-x64-node-24.19.0-memory-figma-v1`:
+
+| CI | Median | p95 | Result |
+| --- | ---: | ---: | --- |
+| #712 | 243.32 ms | 269.11 ms | PASS; five 10k runs completed |
+| #714 | 156.20 ms | 748.69 ms | PASS; five 10k runs completed |
+
+These measurements prove the frozen functional 10k scale gate can complete on the benchmark harness, but they do **not** justify a cross-environment hard millisecond release budget. The hosted runner shows substantial tail-latency variation between otherwise comparable runs, and the benchmark uses an in-memory Figma adapter rather than the production Figma desktop/runtime boundary.
+
+Therefore `calibratedHardBudgetMs` intentionally remains `null` at NODE-30 closure. This is not a silent PASS or a lowered threshold: no hard millisecond threshold was frozen in the Acceptance Contract. NODE-31 may add production-environment calibration evidence, but it may not retroactively claim that these CI timings are a product SLA.
+
 ## 4. Canonical fingerprints
 
 NODE-30 uses canonical JSON with lexicographically sorted object keys and preserved array order. Only explicitly named volatile keys are excluded. Diagnostic hashes are deterministic fingerprints; asset integrity continues to use the existing `.wtf` SHA-256 evidence.
@@ -103,6 +118,8 @@ NODE-30 is complete only when:
 6. permanent NODE-30 validator is in CI;
 7. exact-head lint, typecheck, tests, build/plugin validation and format checks all pass;
 8. NODE-27/28/29 permanent validators remain green.
+
+CI #714 satisfied these executable gates at commit `ad8a578c029cef0a2cc885ec3179b943189665aa`. A final exact-head CI is required after this evidence documentation commit before PR #37 can be merged.
 
 ## Boundary with NODE-31
 

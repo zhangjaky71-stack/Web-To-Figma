@@ -77,9 +77,11 @@ function inspectStatusEntry(
     return;
   }
   const status = evidenceStatus(entry.status);
+  const evidenceArtifact = stringValue(entry.evidenceArtifact);
   if (!status) failures.push(`${id} has invalid status`);
   else if (status === "FAIL") failures.push(`${id} failed`);
   else if (status === "UNAVAILABLE") unavailable.push(`${id} is unavailable`);
+  else if (!evidenceArtifact) failures.push(`${id} cannot PASS without an evidenceArtifact`);
 }
 
 export function evaluateNode31EvidenceManifest(input: unknown): W2fNode31EvidenceManifestReport {
@@ -149,6 +151,7 @@ export function evaluateNode31EvidenceManifest(input: unknown): W2fNode31Evidenc
   } else {
     const critical = security.knownCriticalBlockers;
     const high = security.knownHighBlockers;
+    const blockerInventoryArtifact = stringValue(security.blockerInventoryArtifact);
     if (critical === null || critical === undefined || high === null || high === undefined) {
       unavailable.push("security blocker counts are unavailable");
     } else if (
@@ -158,8 +161,13 @@ export function evaluateNode31EvidenceManifest(input: unknown): W2fNode31Evidenc
       Number(high) < 0
     ) {
       failures.push("security blocker counts must be non-negative safe integers");
-    } else if (Number(critical) > 0 || Number(high) > 0) {
-      failures.push(`known security blockers critical=${String(critical)} high=${String(high)}`);
+    } else {
+      if (!blockerInventoryArtifact) {
+        failures.push("security blocker counts require a blockerInventoryArtifact");
+      }
+      if (Number(critical) > 0 || Number(high) > 0) {
+        failures.push(`known security blockers critical=${String(critical)} high=${String(high)}`);
+      }
     }
 
     const fixtureById = new Map<string, unknown>();

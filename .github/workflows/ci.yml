@@ -57,6 +57,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: NODE-31 Browser runtime Prettier diagnostic
+        run: |
+          pnpm exec prettier --write scripts/run-node-31-browser-runtime.mjs
+          git diff -- scripts/run-node-31-browser-runtime.mjs
+          exit 1
+
       - name: Lint
         run: pnpm lint
 

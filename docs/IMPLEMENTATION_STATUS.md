@@ -36,8 +36,8 @@
 | 23 | Secure Parser & Migration | DONE | Exact-head CI #624 PASS | PR #27 merged as `23cad572` |
 | 24 | Figma Capability Resolver | DONE | Exact-head CI #630 PASS | PR #28 merged as `e9e4d1e9` |
 | 25 | Basic Figma Renderer | DONE | Bootstrap CI #638 + exact-head CI #640 PASS | PR #29 merged as `35d9a18b` |
-| 26 | Text / Font / Asset / Paint Renderer | IMPLEMENTING | Candidate validation pending | `node-26-text-assets-paint` |
-| 27 | Figma Responsive Layout Renderer | TODO | - | - |
+| 26 | Text / Font / Asset / Paint Renderer | DONE | Exact-head CI #651 PASS | PR #31 merged as `f6247ddc` |
+| 27 | Figma Responsive Layout Renderer | IMPLEMENTING | Candidate CI in progress | PR #32 / `node-27-responsive-layout` |
 | 28 | Hybrid Native / Raster Renderer | TODO | - | - |
 | 29 | Visual / Structure / Editability QA | TODO | - | - |
 | 30 | Responsive / Determinism / Performance QA | TODO | - | - |
@@ -45,80 +45,84 @@
 
 ## Current Node
 
-`NODE-26 — Text / Font / Asset / Paint Renderer`
+`NODE-27 — Figma Responsive Layout Renderer`
 
 Entry baseline:
 
 ```text
-f46d69a8e13f4fad80b03f26f0dc9acddb6db383
+f6247ddc6770a08c540dd5052936e788ca0c2b0e
 ```
 
 Working branch:
 
 ```text
-node-26-text-assets-paint
+node-27-responsive-layout
 ```
 
-## NODE-25 Closure
-
-NODE-25 was merged to `main` as:
+Pull request:
 
 ```text
-35d9a18bdfda12e4a11382ef13d5039c2d7cc4ad
+#32
 ```
 
-The merge commit records Bootstrap CI #638 and exact-head read-only CI #640 as passing. The resulting renderer owns transactional root creation, hierarchy, fractional geometry, naming, pluginData, stable/revision mapping, whole-page/selected-section import and z-order. It intentionally leaves text/fonts/assets/paint to NODE-26, responsive layout to NODE-27 and hybrid/raster execution to NODE-28.
+## NODE-26 Closure
 
-The later `8ee11dd6` and `f46d69a8` documentation commits added and registered the mandatory high-fidelity capture/import development and acceptance standard; NODE-26 therefore branches from that newer `main` baseline.
-
-## NODE-26 Frozen Scope
-
-NODE-26 is limited to editable visual reconstruction on top of the NODE-25 scene graph:
+NODE-26 was merged to `main` via PR #31 as:
 
 ```text
-editable TextNode reconstruction
-per-run font/style/size/line-height/letter-spacing/color/decoration
-local Figma font resolution + explicit fallback counting
-embedded raster image paints
-sanitized SVG -> editable Figma vector subtree
-solid/gradient/image fills
-border + corner radius
-box shadows
-opacity + equivalent blend modes
-asset/font/fidelity diagnostics counters
-transaction-preserving node replacement
+f6247ddc6770a08c540dd5052936e788ca0c2b0e
 ```
 
-No external image/font fetch is permitted during import. The existing Figma manifest remains `networkAccess.allowedDomains = ["none"]`.
+The merge records exact-head CI #651 passing Foundation, frozen install, Lint, Typecheck, Tests, Build, Format check, and packaged Figma plugin validation.
 
-NODE-27 remains responsible for Auto Layout/Grid/responsive sizing/constraints. NODE-28 remains responsible for selective raster fallback when browser rendering semantics do not have a faithful Figma-native representation.
+NODE-26 now owns editable text reconstruction, local font resolution, per-run text styling, embedded image paints, sanitized SVG reconstruction, native fills/gradients, border/radius, shadows, opacity/blend mapping and full-root rollback on visual-render failure. NODE-27 builds on those native nodes rather than replacing them.
 
-## NODE-26 Implementation
+## NODE-27 Frozen Scope
 
-The Figma UI continues to run NODE-23 `parseWtfPackage` first. Only after validation succeeds does it remap `binaryPayloads` and `sanitizedSvgPayloads` from archive paths to stable asset IDs and hand those local payloads to the main runtime.
+NODE-27 is limited to responsive/native layout reconstruction:
 
-`figma-visual-renderer.ts` enriches the basic scene in deterministic Render Tree order:
+```text
+Flex -> Figma Auto Layout
+row / row-reverse / column / column-reverse
+nowrap / wrap
+gap + independent wrapped-track gap
+four-side padding
+primary/counter-axis alignment
+FILL / HUG / FIXED sizing
+flex-grow mapping
+min/max width and height
+absolute/fixed child layout positioning + constraints
+native Figma GRID where captured semantics are faithfully representable
+```
 
-- text placeholders are replaced at the same sibling index by real `TextNode` layers;
-- fonts are resolved against `listAvailableFontsAsync()` and loaded with `loadFontAsync()` before text/range mutation;
-- per-run text formatting is applied without allowing the generic paint pass to erase run colors;
-- embedded raster bytes are converted with the Figma image API and applied as image paints;
-- sanitized SVG is reconstructed with the Figma SVG node path, retaining an editable vector subtree;
-- solid/linear/radial/angular paints, borders, independent corner radii, drop/inner shadows, opacity and supported blend modes are applied natively;
-- all W2F pluginData is copied when placeholders are replaced so stable IDs, source mapping and revision metadata survive.
+The W2F IR already carries the required evidence through `flexContainer`, `flexItem`, `gridContainer`, `gridItem`, axis sizing, padding/effective gaps and absolute constraints. NODE-27 must consume that evidence and must not re-infer layout from screenshots.
 
-NODE-25 remains the transaction owner. A fatal NODE-26 visual mutation removes the complete import root instead of leaving a partially reconstructed file.
+## Fidelity Policy
 
-## Fidelity Boundaries
+Unsupported browser layout semantics must never be silently approximated. If Figma lacks an exact native equivalent, NODE-27 keeps the NODE-25/NODE-26 source geometry and records the mapping as non-native-compatible. Examples include `wrap-reverse` and main-axis spacing modes without an exact Figma equivalent.
 
-NODE-26 does not claim a false one-to-one mapping for browser paint primitives that Figma cannot represent natively. Examples include independently colored border sides, some exact CSS gradient transforms, filters/backdrop filters, complex masks/clip paths and fonts unavailable to the Figma editor runtime.
+NODE-28 remains responsible for selective hybrid/raster fallback. NODE-29 remains responsible for Pixel Ground Truth visual/editability QA.
 
-Those cases must remain explicit and are routed through the capability/fallback system rather than replaced by blank layers. NODE-28 executes hybrid/raster fallbacks, and NODE-29 evaluates visual fidelity against Pixel Ground Truth while also checking editability.
+## Current NODE-27 Implementation
+
+The branch currently contains:
+
+- a deterministic Flex/Auto Layout planner in `@w2f/figma-renderer`;
+- native-compatible mapping for direction, wrapping, gap, padding and alignment;
+- FILL/HUG/FIXED and `flex-grow` planning;
+- min/max sizing evidence;
+- protection for absolute children;
+- a Figma runtime mapper using native Auto Layout properties;
+- import-pipeline integration after NODE-26 visual node replacement;
+- explicit skip accounting for unsupported exact-Flex mappings;
+- unit tests covering row/column, wrap, gap, padding, grow, min/max, absolute children and unsupported semantics.
+
+See `docs/nodes/NODE-27_FIGMA_RESPONSIVE_LAYOUT_RENDERER.md` for the frozen contract.
 
 ## Blockers
 
-No product or architecture blocker is currently known. Candidate CI may expose TypeScript/Figma API compatibility defects that must be fixed before NODE-26 can leave IMPLEMENTING.
+No product or architecture blocker is known. GitHub CI may expose strict TypeScript/Figma API or formatting issues; these must be fixed without weakening NODE-22/23 security, NODE-25 transaction invariants or NODE-26 visual fidelity.
 
 ## Next
 
-Create the NODE-26 implementation commit and pull request, run frozen-lockfile CI on the exact head, fix any failures without weakening NODE-22/23 security or NODE-25 transaction invariants, and merge only after the normal read-only CI is green. Then begin NODE-27.
+Finish candidate CI for the native Flex path, then implement and validate the faithful native GRID path and remaining constraint/min-max cases. Add a permanent NODE-27 validator, run exact-head read-only CI, mark PR #32 ready and merge only when the exact head is green. Then begin NODE-28.

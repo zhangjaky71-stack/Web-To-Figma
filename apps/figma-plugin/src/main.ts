@@ -1,6 +1,7 @@
 import { renderBasicFigmaScene, W2fBasicRendererError } from "@w2f/figma-renderer";
 import type { WtfAssetRecord } from "@w2f/w2f-ir";
 import { createFigmaBasicAdapter } from "./figma-basic-adapter.js";
+import { applyFigmaLayouts } from "./figma-layout-renderer.js";
 import { applyFigmaVisuals, type W2fVisualAssetBundle } from "./figma-visual-renderer.js";
 import { createFileIntakeDescriptor } from "./intake-state.js";
 import {
@@ -13,7 +14,7 @@ import {
 
 declare const __html__: string;
 
-type W2fNode26RenderRequest = W2fBasicRenderRequest & {
+type W2fNode27RenderRequest = W2fBasicRenderRequest & {
   assets?: readonly WtfAssetRecord[];
   assetPayloadsById?: Readonly<Record<string, Uint8Array>>;
   sanitizedSvgById?: Readonly<Record<string, string>>;
@@ -74,7 +75,7 @@ async function handleCanvasDrop(file: DropFile, point: { x: number; y: number })
   }
 }
 
-function visualBundle(request: W2fNode26RenderRequest): W2fVisualAssetBundle {
+function visualBundle(request: W2fNode27RenderRequest): W2fVisualAssetBundle {
   return {
     assets: request.assets ?? [],
     assetPayloadsById: request.assetPayloadsById ?? {},
@@ -83,7 +84,7 @@ function visualBundle(request: W2fNode26RenderRequest): W2fVisualAssetBundle {
 }
 
 async function handleBasicRender(baseRequest: W2fBasicRenderRequest): Promise<void> {
-  const request = baseRequest as W2fNode26RenderRequest;
+  const request = baseRequest as W2fNode27RenderRequest;
   if (cancelled) return;
   if (
     request.profile !== importSelection.profile ||
@@ -100,7 +101,8 @@ async function handleBasicRender(baseRequest: W2fBasicRenderRequest): Promise<vo
       completed: 0,
       total: 3,
       label: "Creating editable Figma scene",
-      detail: "Rebuilding hierarchy and geometry before text, assets and paint are applied.",
+      detail:
+        "Rebuilding hierarchy and geometry before text, assets, paint and responsive layout are applied.",
     },
   });
 
@@ -128,8 +130,9 @@ async function handleBasicRender(baseRequest: W2fBasicRenderRequest): Promise<vo
         stage: "importing",
         completed: 1,
         total: 3,
-        label: "Restoring text, assets and paint",
-        detail: "Loading local fonts and embedded .wtf assets; SVG stays editable when available.",
+        label: "Restoring text, assets, paint and layout",
+        detail:
+          "Loading local assets, then rebuilding native-compatible Flex and Grid layouts with Figma layout primitives.",
       },
     });
 
@@ -138,6 +141,7 @@ async function handleBasicRender(baseRequest: W2fBasicRenderRequest): Promise<vo
       request.renderTree,
       visualBundle(request),
     );
+    const layout = applyFigmaLayouts(visual.nodesByRenderNodeId, request.renderTree);
     if (cancelled) {
       renderedRoot.remove();
       return;
@@ -150,7 +154,7 @@ async function handleBasicRender(baseRequest: W2fBasicRenderRequest): Promise<vo
         completed: 2,
         total: 3,
         label: "Finalizing editable import",
-        detail: `${visual.stats.textNodeCount.toLocaleString()} text · ${visual.stats.imageFillCount.toLocaleString()} image fills · ${visual.stats.editableSvgCount.toLocaleString()} editable SVGs`,
+        detail: `${visual.stats.textNodeCount.toLocaleString()} text · ${visual.stats.imageFillCount.toLocaleString()} image fills · ${layout.autoLayoutFrameCount.toLocaleString()} Auto Layout · ${layout.gridFrameCount.toLocaleString()} Grid`,
       },
     });
     postToUi({
@@ -171,8 +175,8 @@ async function handleBasicRender(baseRequest: W2fBasicRenderRequest): Promise<vo
         label: "Editable Figma import complete",
         detail:
           visual.stats.missingAssetCount > 0
-            ? `${visual.stats.missingAssetCount} embedded asset(s) were unavailable; all other supported visuals were restored.`
-            : `Text, embedded images, SVG vectors, fills, borders, radii, shadows and opacity were restored. Font fallbacks: ${visual.stats.fontFallbackCount}.`,
+            ? `${visual.stats.missingAssetCount} embedded asset(s) were unavailable; supported visuals and native layouts were restored.`
+            : `Restored ${layout.autoLayoutFrameCount} Auto Layout and ${layout.gridFrameCount} Grid frame(s). Unsupported Flex/Grid mappings kept source geometry: ${layout.skippedIncompatibleFlexCount}/${layout.skippedIncompatibleGridCount}. Grid placement fallbacks: ${layout.gridPlacementFallbackCount}. Font fallbacks: ${visual.stats.fontFallbackCount}.`,
       },
     });
   } catch (error) {
@@ -187,7 +191,7 @@ async function handleBasicRender(baseRequest: W2fBasicRenderRequest): Promise<vo
       postError(error.code, error);
       return;
     }
-    postError("W2F_E_VISUAL_RENDERER", error);
+    postError("W2F_E_RESPONSIVE_LAYOUT_RENDERER", error);
   }
 }
 

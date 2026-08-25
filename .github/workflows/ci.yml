@@ -19,6 +19,9 @@ jobs:
       - name: Validate foundation
         run: node scripts/validate-foundation.mjs
 
+      - name: Validate NODE-27 responsive layout
+        run: node scripts/validate-node-27.mjs
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:

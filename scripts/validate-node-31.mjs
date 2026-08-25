@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 
 const root = process.cwd();
 const failures = [];
+const ciEvidencePath = "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json";
 const required = [
   "packages/figma-renderer/src/qa/node31-types.ts",
   "packages/figma-renderer/src/qa/compatibility.ts",
@@ -12,6 +13,7 @@ const required = [
   "packages/figma-renderer/test/node31-evidence-manifest.test.ts",
   "docs/nodes/NODE-31_REAL_WORLD_COMPATIBILITY_RELEASE_CANDIDATE.md",
   "docs/qa/NODE-31_RC_EVIDENCE_V1.json",
+  ciEvidencePath,
   "docs/KNOWN_LIMITATIONS.md",
   "docs/ACCEPTANCE_CONTRACT_V2.md",
   "qa/corpus/node31/README.md",
@@ -29,6 +31,13 @@ function assert(condition, message) {
 
 function text(path) {
   return readFileSync(resolve(root, path), "utf8");
+}
+
+function assertExistingArtifact(path, label) {
+  assert(typeof path === "string" && path.length > 0, `${label} must name an evidence artifact`);
+  if (typeof path === "string" && path.length > 0) {
+    assert(existsSync(resolve(root, path)), `${label} does not exist: ${path}`);
+  }
 }
 
 for (const path of required) {
@@ -120,6 +129,10 @@ if (failures.length === 0) {
     "missingRealisticCategories",
     "measurementArtifact",
     "cannot PASS without a measurementArtifact",
+    "evidenceArtifact",
+    "cannot PASS without an evidenceArtifact",
+    "blockerInventoryArtifact",
+    "security blocker counts require a blockerInventoryArtifact",
     "cannot claim ready while required evidence is unavailable",
     "known security blockers",
   ]) {
@@ -159,6 +172,8 @@ if (failures.length === 0) {
     "source-only collecting evidence UNAVAILABLE",
     "required Class B category disappears",
     "measurementArtifact provenance",
+    "evidenceArtifact provenance",
+    "blockerInventoryArtifact",
     "ready manifest only when required evidence is measured and sourced",
     "ready claim while required evidence is still unavailable",
     "known critical/high security blockers",
@@ -176,8 +191,8 @@ if (failures.length === 0) {
   if (manifest) {
     assert(manifest.version === "1.0.0", "NODE-31 evidence manifest version must be 1.0.0");
     assert(
-      manifest.status === "collecting",
-      "NODE-31 initial evidence manifest must remain collecting until measured evidence is populated",
+      manifest.status === "collecting" || manifest.status === "ready",
+      "NODE-31 evidence manifest status must be collecting or ready",
     );
     assert(
       manifest.baselineCommit === "28b52dc3e0d3074bf76205c8deb324a06dfe9e23",
@@ -217,17 +232,86 @@ if (failures.length === 0) {
     }
     for (const entry of [...(manifest.classA ?? []), ...(manifest.classB ?? [])]) {
       if (entry.measurementStatus === "PASS") {
-        assert(
-          typeof entry.measurementArtifact === "string" && entry.measurementArtifact.length > 0,
-          `NODE-31 evidence ${entry.id} cannot PASS without a measurementArtifact`,
-        );
-        if (typeof entry.measurementArtifact === "string" && entry.measurementArtifact.length > 0) {
-          assert(
-            existsSync(resolve(root, entry.measurementArtifact)),
-            `NODE-31 measurementArtifact does not exist: ${entry.measurementArtifact}`,
-          );
-        }
+        assertExistingArtifact(entry.measurementArtifact, `NODE-31 measurement ${entry.id}`);
       }
+    }
+    for (const fixture of manifest.security?.fixtures ?? []) {
+      if (fixture.status === "PASS") {
+        assertExistingArtifact(
+          fixture.evidenceArtifact,
+          `NODE-31 security fixture ${fixture.id} evidenceArtifact`,
+        );
+      }
+    }
+    if (
+      manifest.security?.knownCriticalBlockers !== null &&
+      manifest.security?.knownCriticalBlockers !== undefined &&
+      manifest.security?.knownHighBlockers !== null &&
+      manifest.security?.knownHighBlockers !== undefined
+    ) {
+      assertExistingArtifact(
+        manifest.security.blockerInventoryArtifact,
+        "NODE-31 security blockerInventoryArtifact",
+      );
+    }
+    for (const entry of manifest.schemaCompatibility ?? []) {
+      if (entry.status === "PASS") {
+        assertExistingArtifact(
+          entry.evidenceArtifact,
+          `NODE-31 schema compatibility ${entry.id} evidenceArtifact`,
+        );
+      }
+    }
+    for (const [label, entry] of [
+      ["known limitations", manifest.knownLimitations],
+      ["P0", manifest.p0],
+      ["determinism", manifest.determinism],
+      ["scale", manifest.scale],
+    ]) {
+      if (entry?.status === "PASS") {
+        assertExistingArtifact(entry.evidenceArtifact, `NODE-31 ${label} evidenceArtifact`);
+      }
+    }
+  }
+
+  let ciEvidence;
+  try {
+    ciEvidence = JSON.parse(text(ciEvidencePath));
+  } catch (error) {
+    failures.push(`NODE-31 CI evidence is invalid JSON: ${String(error)}`);
+  }
+  if (ciEvidence) {
+    assert(ciEvidence.version === "1.0.0", "NODE-31 CI evidence version must be 1.0.0");
+    assert(ciEvidence.evidenceType === "github-actions-ci", "NODE-31 CI evidence type mismatch");
+    assert(ciEvidence.workflow?.runNumber === 736, "NODE-31 CI evidence must identify run #736");
+    assert(ciEvidence.workflow?.runId === 32816187909, "NODE-31 CI evidence run id mismatch");
+    assert(ciEvidence.workflow?.jobId === 97704841337, "NODE-31 CI evidence job id mismatch");
+    assert(ciEvidence.workflow?.conclusion === "PASS", "NODE-31 CI evidence must be PASS");
+    assert(
+      ciEvidence.git?.branchHead === "8ea3bbde8580e97996e63c94fa0f08ea8f4ff63b",
+      "NODE-31 CI evidence branch head mismatch",
+    );
+    assert(ciEvidence.qualityChecks?.node31Validator === "PASS", "NODE-31 validator evidence missing");
+    assert(ciEvidence.qualityChecks?.tests === "PASS", "NODE-31 test evidence missing");
+    assert(ciEvidence.qualityChecks?.build === "PASS", "NODE-31 build evidence missing");
+    assert(ciEvidence.qualityChecks?.format === "PASS", "NODE-31 format evidence missing");
+    assert(ciEvidence.schemaCompatibility?.testCount === 15, "NODE-31 schema test count mismatch");
+    assert(ciEvidence.parserAndSecurityFixtures?.testCount === 20, "NODE-31 parser test count mismatch");
+    assert(ciEvidence.node30Scale?.measuredRuns === 5, "NODE-31 scale evidence run count mismatch");
+    assert(ciEvidence.node30Scale?.createdNodeTarget === 10000, "NODE-31 scale target mismatch");
+    assert(ciEvidence.node30Scale?.fatalCrash === false, "NODE-31 scale evidence reports fatal crash");
+    for (const unproven of [
+      "zero-known-critical-security-blockers",
+      "zero-known-high-security-blockers",
+      "P0-functional-completeness",
+      "known-limitations-currentness",
+      "Class-A-visual-geometry-text-asset-structure-measurements",
+      "Class-B-browser-to-wtf-to-Figma-measurements",
+    ]) {
+      assert(
+        ciEvidence.notProvenByThisArtifact?.includes(unproven),
+        `NODE-31 CI evidence must preserve unproven boundary ${unproven}`,
+      );
     }
   }
 

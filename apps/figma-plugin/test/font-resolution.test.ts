@@ -10,9 +10,7 @@ const available = [
 
 describe("NODE-31 font resolution", () => {
   it("prefers an exact available family and style without fallback", () => {
-    expect(
-      resolveFontDecision({ family: "acme sans", style: "bold" }, available),
-    ).toEqual({
+    expect(resolveFontDecision({ family: "acme sans", style: "bold" }, available)).toEqual({
       requestedFamily: "acme sans",
       requestedStyle: "bold",
       chosenFamily: "Acme Sans",

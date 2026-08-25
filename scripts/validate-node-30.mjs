@@ -14,6 +14,7 @@ const required = [
   "packages/figma-renderer/src/qa/performance-benchmark.ts",
   "packages/figma-renderer/test/node30-qa.test.ts",
   "packages/figma-renderer/test/node30-integration.test.ts",
+  "packages/figma-renderer/test/node30-scale.test.ts",
   "docs/nodes/NODE-30_RESPONSIVE_DETERMINISM_PERFORMANCE_QA.md",
 ];
 const localOnlyForbidden = ["fetch(", "XMLHttpRequest", "WebSocket", "eval(", "new Function("];
@@ -146,7 +147,7 @@ if (failures.length === 0) {
 
   const tests = `${text("packages/figma-renderer/test/node30-qa.test.ts")}\n${text(
     "packages/figma-renderer/test/node30-integration.test.ts",
-  )}`;
+  )}\n${text("packages/figma-renderer/test/node30-scale.test.ts")}`;
   for (const evidence of [
     "90% composite contract",
     "equal active-domain weighting",
@@ -158,6 +159,12 @@ if (failures.length === 0) {
     "mixed benchmark environments",
     "crashing 10k benchmark",
     "containerQuerySignature",
+    "required responsive fixture corpus",
+    "10k renderer scale benchmark",
+    "renderBasicFigmaScene",
+    "createdNodeCount).toBe(10_000)",
+    "medianDurationMs",
+    "p95DurationMs",
   ]) {
     assert(tests.includes(evidence), `NODE-30 tests missing ${evidence}`);
   }

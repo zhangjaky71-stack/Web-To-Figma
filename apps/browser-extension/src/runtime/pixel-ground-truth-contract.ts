@@ -34,7 +34,9 @@ function fullPageBounds(snapshot: RawSnapshot): Rect {
   return viewportBounds(snapshot);
 }
 
-function tileResourceMap(capture: PixelGroundTruthCapture): Map<string, (typeof capture.tileResources)[number]> {
+function tileResourceMap(
+  capture: PixelGroundTruthCapture,
+): Map<string, (typeof capture.tileResources)[number]> {
   const resources = new Map<string, (typeof capture.tileResources)[number]>();
   for (const resource of capture.tileResources) {
     if (resources.has(resource.path)) {

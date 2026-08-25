@@ -59,9 +59,9 @@
   },
   "p0": {
     "status": "UNAVAILABLE",
-    "evidenceArtifact": "docs/qa/results/NODE-31_P0_AUDIT_781.json",
-    "blockingUnavailableCount": 13,
-    "note": "P0 audit is intentionally fail-closed. Real Chrome proves region-selector cleanup, and exact/nearest font mapping now has deterministic policy tests plus persistent requested-to-chosen diagnostics. Thirteen browser-runtime/UI/package/font-policy items remain UNAVAILABLE until direct evidence exists."
+    "evidenceArtifact": "docs/qa/results/NODE-31_P0_AUDIT_798.json",
+    "blockingUnavailableCount": 12,
+    "note": "P0 audit is intentionally fail-closed. Real Chrome proves region-selector cleanup; exact/nearest font mapping has deterministic policy tests plus persistent requested-to-chosen diagnostics; CI #798 proves capture-profile-required Pixel Ground Truth is fail-closed at the final .wtf packaging boundary for Standard and High Fidelity. Twelve browser-runtime/UI/font-policy items remain UNAVAILABLE until direct evidence exists."
   },
   "determinism": { "status": "UNAVAILABLE", "source": "NODE-30 exact-head evidence" },
   "scale": {

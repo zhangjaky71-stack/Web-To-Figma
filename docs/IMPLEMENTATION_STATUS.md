@@ -39,122 +39,117 @@
 | 26 | Text / Font / Asset / Paint Renderer | DONE | Exact-head CI #651 PASS | PR #31 merged as `f6247ddc` |
 | 27 | Figma Responsive Layout Renderer | DONE | Exact-head CI #667 PASS | PR #32 merged as `4aef2daa` |
 | 28 | Hybrid Native / Raster Renderer | DONE | Exact-head CI #685 PASS | PR #33 merged as `ec880c4f` |
-| 29 | Visual / Structure / Editability QA | IMPLEMENTING | Candidate CI pending | `node-29-visual-structure-editability-qa` |
-| 30 | Responsive / Determinism / Performance QA | TODO | - | - |
+| 29 | Visual / Structure / Editability QA | DONE | Core CI #697 + closure CI #704 PASS | PR #35 + PR #36, merge `4f5c0ed3` |
+| 30 | Responsive / Determinism / Performance QA | IMPLEMENTING | Candidate CI pending | PR #37 / `node-30-responsive-determinism-performance-qa` |
 | 31 | Real-world Compatibility & Release Candidate | TODO | - | - |
 
 ## Current Node
 
-`NODE-29 — Visual / Structure / Editability QA`
+`NODE-30 — Responsive / Determinism / Performance QA`
 
 Entry baseline:
 
 ```text
-ec880c4f9672d2286925b58414909a09b82654b8
+4f5c0ed3fa3ab2049b4516eab5f3e80388d87b90
 ```
 
 Working branch:
 
 ```text
-node-29-visual-structure-editability-qa
+node-30-responsive-determinism-performance-qa
 ```
 
-## NODE-28 Closure
-
-NODE-28 was merged to `main` through PR #33 as:
+Draft pull request:
 
 ```text
-ec880c4f9672d2286925b58414909a09b82654b8
+PR #37
 ```
 
-The merge records exact-head CI #685 passing the permanent validators, frozen install, lint, strict typecheck, tests, build/Figma package validation and format checks.
+## NODE-29 Closure
 
-NODE-28 owns selective hybrid/native-raster fallback execution. It consumes upstream fallback/compositing evidence, keeps supported text/vector/layout output native/editable, and rasterizes only explicit fallback boundaries using validated local `.wtf` evidence. NODE-29 must treat those intended fallback boundaries as valid rather than reporting every raster layer as a failure.
+NODE-29 was completed in two merge steps:
 
-## NODE-29 Frozen Scope
+1. PR #35 merged the platform-neutral visual/structure/editability scoring core, Figma scene inspection and permanent NODE-29 QA guardrail after exact-head CI #697 passed.
+2. PR #36 closed the operational Pixel Ground Truth runtime gap: validated local `full-page` reference tiles are compared against Figma `SliceNode` tile exports in the plugin UI, results are persisted as `w2f.qa.visual*` evidence, and the entire path remains network-free.
 
-NODE-29 adds measurable acceptance gates in three domains.
-
-### 1. Visual QA
-
-Compare imported Figma output against NODE-14 Pixel Ground Truth using deterministic reference regions and pixel metrics. The QA result must expose measurable error instead of a subjective “looks close” result.
-
-Planned metrics include:
+PR #36 exact-head CI #704 passed foundation/NODE-27/NODE-28/NODE-29 validators, frozen install, lint, typecheck, full tests, build, packaged Figma plugin validation and format checks. It merged to `main` as:
 
 ```text
-pixel count
-mean absolute error (MAE)
-root mean square error (RMSE)
-per-channel maximum error
-changed-pixel ratio above a configured tolerance
-size/dimension mismatch
+4f5c0ed3fa3ab2049b4516eab5f3e80388d87b90
 ```
 
-The Figma runtime will export deterministic QA regions locally; the plugin UI will decode source/exported PNG bytes and calculate pixel metrics using browser canvas APIs. No remote service is required.
+NODE-30 must preserve this closure. Its PR merge-ref is authoritative and must include the latest `main` before NODE-30 is considered valid.
 
-### 2. Structure QA
+## NODE-30 Frozen Scope
 
-Verify the imported Figma scene still represents the validated Render Tree/source mapping:
+The authoritative source is `docs/ACCEPTANCE_CONTRACT_V2.md`. NODE-30 does not lower or reinterpret release thresholds.
+
+### 1. Responsive QA
+
+Supported responsive deterministic fixtures require:
 
 ```text
-render-node mapping coverage
-unique w2f.nodeId ownership
-expected parent/child hierarchy
-sibling ordering where native hierarchy remains
-source/stable/revision pluginData retention
-explicit exemptions for descendants intentionally collapsed by NODE-28 raster boundaries
+composite responsive score >= 90%
 ```
 
-### 3. Editability QA
+Required evidence covers FILL/HUG/FIXED sizing, spacing, min/max sizing, flex/grid relationships, constraints, breakpoint/visibility/layout changes and container-query metadata. Structural breakpoint changes that Figma cannot execute still have to be detected and reported.
 
-Measure whether content that should remain editable actually remains native/editable:
+NODE-30 reuses NODE-15 multi-viewport evidence, NODE-16 inference semantics, NODE-27 Figma layout reconstruction and NODE-29 single-import QA rather than re-inferring CSS from screenshots.
+
+### 2. Determinism QA
+
+For deterministic fixtures captured under the same environment, the gate requires exactly the contract's minimum evidence of ten repeated runs. Across the run set:
 
 ```text
-text RenderNode -> Figma TEXT coverage
-editable SVG/vector coverage
-native container/layout coverage
-intended raster-boundary count
-unexpected rasterization count
-over-rasterization / document-root raster guard
-missing-native-mapping count
+asset hashes identical
+normalized Source Graph hashes identical
+normalized Render Tree hashes identical
+stable identities identical
+layout decisions/reasons identical
 ```
 
-A NODE-28 raster boundary is valid only when the corresponding Render Tree strategy/fallback evidence allows it. Accidental rasterization of native content is a QA failure.
+Intentionally volatile metadata must be named explicitly before exclusion from canonical hashing. Fewer than ten runs are `UNAVAILABLE`, never `PASS`.
 
-## Quality Classification
+### 3. Performance / Scale QA
 
-NODE-29 results use explicit severity rather than hiding failures:
+Functional scale gates are frozen by the Acceptance Contract:
 
 ```text
-PASS        all required structural/editability gates pass and visual error is within threshold
-WARNING     non-fatal fidelity degradation is measured and reported
-FAIL        structure/editability invariants are broken or visual error exceeds the acceptance gate
-UNAVAILABLE visual comparison could not be executed because required reference/export bytes are absent
+<2k       normal path
+2k-5k     normal path
+5k-10k    chunking- or progress-capable path
+10k-20k   must complete without fatal crash; chunking/warning allowed
+20k-50k   warning + section/simplified recommendation
+>50k      explicit confirmation or section/simplified strategy
 ```
 
-`UNAVAILABLE` is not silently treated as `PASS`.
+A deterministic 10k-node benchmark that routinely crashes capture/import is release-blocking.
 
-## Safety / Determinism Rules
+Hard millisecond budgets are not invented. NODE-30 first records benchmark durations, median and p95 on a declared benchmark environment; any hard-ms calibration must be backed by that evidence and documented before it can become a release gate.
 
-- QA never fetches the original web page or external assets;
-- source references come only from the validated `.wtf` package;
-- Figma export bytes stay within the plugin main/UI runtime;
-- QA must not mutate the imported design except temporary export/slice helpers that are removed deterministically;
-- QA calculations are deterministic for the same imported document/reference bytes;
-- intended NODE-28 raster boundaries are tracked separately from unexpected rasterization;
-- whole-page screenshot substitution cannot satisfy editability QA unless the validated Render Tree itself explicitly requires a root raster fallback.
+## Current Implementation
+
+The branch already contains an initial platform-neutral implementation:
+
+- canonical deterministic fingerprint support;
+- responsive QA scorer and fixture adapter;
+- ten-run determinism evaluator and IR adapter;
+- performance scale evaluator and benchmark timer adapter;
+- NODE-30 unit/integration tests;
+- `docs/nodes/NODE-30_RESPONSIVE_DETERMINISM_PERFORMANCE_QA.md`.
+
+Before merge, this implementation must be reviewed against the frozen contract, connected to permanent validation, tested against the latest NODE-29 Pixel QA closure and validated by exact-head CI.
 
 ## Implementation Plan
 
-1. add platform-neutral structure/editability QA planning/scoring in `@w2f/figma-renderer`;
-2. add Figma runtime scene inspection with pluginData/hierarchy/type evidence;
-3. add local QA export-region support in Figma main;
-4. add UI PNG decoding + pixel comparison metrics;
-5. add protocol/result reporting without network access;
-6. add unit tests for PASS/WARNING/FAIL/UNAVAILABLE, raster exemptions and over-rasterization;
-7. add permanent NODE-29 validator, implementation doc and ADR;
-8. run exact-head CI and merge only after all existing NODE-22—28 invariants remain green.
+1. normalize the initial NODE-30 scorer methodology against the approved contract;
+2. preserve latest NODE-29 Pixel QA closure in PR merge-ref validation;
+3. add benchmark fixture orchestration for responsive, ten-run determinism and scale evidence;
+4. add permanent `validate-node-30.mjs` and CI wiring;
+5. calibrate hard-ms budgets only if benchmark evidence is sufficient and reproducible;
+6. run exact-head CI without weakening NODE-27/28/29 validators;
+7. merge PR #37 only after all gates are green.
 
 ## Next
 
-Implement NODE-29 measurable QA gates, merge after exact-head validation, then begin NODE-30 Responsive / Determinism / Performance QA.
+Complete NODE-30 and then begin NODE-31 Real-world Compatibility & Release Candidate.

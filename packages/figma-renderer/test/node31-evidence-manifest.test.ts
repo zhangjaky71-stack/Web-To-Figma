@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
+import { evaluateNode31EvidenceManifest } from "../src/qa/evidence-manifest.js";
 import {
   W2F_NODE31_REQUIRED_REALISTIC_CATEGORIES,
   W2F_NODE31_REQUIRED_SCHEMA_COMPATIBILITY_CASES,
   W2F_NODE31_REQUIRED_SECURITY_FIXTURES,
-  evaluateNode31EvidenceManifest,
-} from "../src/qa/evidence-manifest.js";
+} from "../src/qa/node31-types.js";
 
 function collectingManifest(): Record<string, unknown> {
   return {

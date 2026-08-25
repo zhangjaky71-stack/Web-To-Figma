@@ -45,7 +45,8 @@ class CdpClient {
       const pending = this.pending.get(message.id);
       if (!pending) return;
       this.pending.delete(message.id);
-      if (message.error) pending.reject(new Error(`${message.error.code}: ${message.error.message}`));
+      if (message.error)
+        pending.reject(new Error(`${message.error.code}: ${message.error.message}`));
       else pending.resolve(message.result ?? {});
     });
     socket.addEventListener("close", () => {
@@ -85,7 +86,9 @@ async function waitForDevToolsPort(profileDir, chromeProcess, stderr) {
   const activePortPath = join(profileDir, "DevToolsActivePort");
   for (let attempt = 0; attempt < 400; attempt += 1) {
     if (chromeProcess.exitCode !== null) {
-      throw new Error(`Chrome exited before CDP was ready (${chromeProcess.exitCode}).\n${stderr()}`);
+      throw new Error(
+        `Chrome exited before CDP was ready (${chromeProcess.exitCode}).\n${stderr()}`,
+      );
     }
     try {
       const [portLine] = (await readFile(activePortPath, "utf8")).trim().split("\n");
@@ -136,7 +139,10 @@ function assertRestored(state, label) {
   assertNear(state.scrollX, expectedScroll.x, `${label} scrollX`);
   assertNear(state.scrollY, expectedScroll.y, `${label} scrollY`);
   assert(state.activeId === "before", `${label} focus was not restored to #before`);
-  assert(state.scrollBehavior === "smooth", `${label} scroll-behavior inline style was not restored`);
+  assert(
+    state.scrollBehavior === "smooth",
+    `${label} scroll-behavior inline style was not restored`,
+  );
   assert(state.selectorCount === 0, `${label} selector overlay was not removed`);
 }
 
@@ -252,7 +258,9 @@ try {
     <main style="position:absolute;top:900px;left:80px;width:600px;height:1800px;background:#eee"></main>
   </body>
 </html>`;
-  await client.send("Page.navigate", { url: `data:text/html;charset=utf-8,${encodeURIComponent(html)}` });
+  await client.send("Page.navigate", {
+    url: `data:text/html;charset=utf-8,${encodeURIComponent(html)}`,
+  });
   await waitFor(client, `document.readyState === "complete"`, "Test page did not finish loading");
 
   await evaluate(

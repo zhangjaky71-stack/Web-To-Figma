@@ -4,3 +4,4 @@ dist-high-fidelity
 coverage
 pnpm-lock.yaml
 docs
+qa/corpus/node31

@@ -101,7 +101,8 @@ export function evaluateNode31EvidenceManifest(input: unknown): W2fNode31Evidenc
   if (input.version !== W2F_NODE31_RC_VERSION) {
     failures.push(`unsupported evidence manifest version ${String(input.version)}`);
   }
-  const manifestState = input.status === "collecting" || input.status === "ready" ? input.status : null;
+  const manifestState =
+    input.status === "collecting" || input.status === "ready" ? input.status : null;
   if (!manifestState) failures.push("evidence manifest status must be collecting or ready");
   if (!stringValue(input.baselineCommit)) failures.push("baselineCommit is required");
 
@@ -126,7 +127,9 @@ export function evaluateNode31EvidenceManifest(input: unknown): W2fNode31Evidenc
     else realisticCategories.add(category);
     const result = inspectMeasuredEntry(entry, `Class B #${index + 1}`, failures, unavailable);
     if (!result.source) {
-      failures.push(`${stringValue(entry.id) ?? `Class B #${index + 1}`} must name a sourceArtifact`);
+      failures.push(
+        `${stringValue(entry.id) ?? `Class B #${index + 1}`} must name a sourceArtifact`,
+      );
     } else {
       sourceCount += 1;
     }

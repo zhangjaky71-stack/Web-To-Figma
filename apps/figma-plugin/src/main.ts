@@ -1,6 +1,11 @@
 import { renderBasicFigmaScene, W2fBasicRendererError } from "@w2f/figma-renderer";
-import type { WtfAssetRecord } from "@w2f/w2f-ir";
 import { createFigmaBasicAdapter } from "./figma-basic-adapter.js";
+import {
+  applyFigmaHybridRasterFallbacks,
+  effectiveSelectedRootIds,
+  renderTreeForNativePass,
+  W2fHybridRasterError,
+} from "./figma-hybrid-renderer.js";
 import { applyFigmaLayouts } from "./figma-layout-renderer.js";
 import { applyFigmaVisuals, type W2fVisualAssetBundle } from "./figma-visual-renderer.js";
 import { createFileIntakeDescriptor } from "./intake-state.js";
@@ -13,12 +18,6 @@ import {
 } from "./protocol.js";
 
 declare const __html__: string;
-
-type W2fNode27RenderRequest = W2fBasicRenderRequest & {
-  assets?: readonly WtfAssetRecord[];
-  assetPayloadsById?: Readonly<Record<string, Uint8Array>>;
-  sanitizedSvgById?: Readonly<Record<string, string>>;
-};
 
 const SHELL_INFO: W2fFigmaShellInfo = {
   version: "1.0.0",
@@ -75,7 +74,7 @@ async function handleCanvasDrop(file: DropFile, point: { x: number; y: number })
   }
 }
 
-function visualBundle(request: W2fNode27RenderRequest): W2fVisualAssetBundle {
+function visualBundle(request: W2fBasicRenderRequest): W2fVisualAssetBundle {
   return {
     assets: request.assets ?? [],
     assetPayloadsById: request.assetPayloadsById ?? {},
@@ -83,8 +82,7 @@ function visualBundle(request: W2fNode27RenderRequest): W2fVisualAssetBundle {
   };
 }
 
-async function handleBasicRender(baseRequest: W2fBasicRenderRequest): Promise<void> {
-  const request = baseRequest as W2fNode27RenderRequest;
+async function handleBasicRender(request: W2fBasicRenderRequest): Promise<void> {
   if (cancelled) return;
   if (
     request.profile !== importSelection.profile ||
@@ -94,15 +92,21 @@ async function handleBasicRender(baseRequest: W2fBasicRenderRequest): Promise<vo
     return;
   }
 
+  const selectedRootIds = effectiveSelectedRootIds(
+    request.renderTree,
+    request.mode,
+    request.selectedRootIds,
+  );
+
   postToUi({
     type: "W2F_PROGRESS",
     progress: {
       stage: "importing",
       completed: 0,
-      total: 3,
+      total: 4,
       label: "Creating editable Figma scene",
       detail:
-        "Rebuilding hierarchy and geometry before text, assets, paint and responsive layout are applied.",
+        "Rebuilding native hierarchy and geometry while reserving only explicit minimal raster boundaries.",
     },
   });
 
@@ -113,7 +117,7 @@ async function handleBasicRender(baseRequest: W2fBasicRenderRequest): Promise<vo
       sourceGraph: request.sourceGraph,
       profile: request.profile,
       mode: request.mode,
-      selectedRootIds: request.selectedRootIds,
+      selectedRootIds,
       tokenPolicy: request.tokenPolicy,
       ...(request.destination ? { destination: request.destination } : {}),
       ...(request.importName ? { importName: request.importName } : {}),
@@ -129,16 +133,16 @@ async function handleBasicRender(baseRequest: W2fBasicRenderRequest): Promise<vo
       progress: {
         stage: "importing",
         completed: 1,
-        total: 3,
-        label: "Restoring text, assets, paint and layout",
+        total: 4,
+        label: "Restoring editable text, assets and paint",
         detail:
-          "Loading local assets, then rebuilding native-compatible Flex and Grid layouts with Figma layout primitives.",
+          "Native-compatible layers stay editable; raster boundaries are excluded from SVG/text replacement.",
       },
     });
 
     const visual = await applyFigmaVisuals(
       result.nodesByRenderNodeId,
-      request.renderTree,
+      renderTreeForNativePass(request.renderTree),
       visualBundle(request),
     );
     const layout = applyFigmaLayouts(visual.nodesByRenderNodeId, request.renderTree);
@@ -150,11 +154,32 @@ async function handleBasicRender(baseRequest: W2fBasicRenderRequest): Promise<vo
     postToUi({
       type: "W2F_PROGRESS",
       progress: {
-        stage: "finalizing",
+        stage: "importing",
         completed: 2,
-        total: 3,
-        label: "Finalizing editable import",
-        detail: `${visual.stats.textNodeCount.toLocaleString()} text · ${visual.stats.imageFillCount.toLocaleString()} image fills · ${layout.autoLayoutFrameCount.toLocaleString()} Auto Layout · ${layout.gridFrameCount.toLocaleString()} Grid`,
+        total: 4,
+        label: "Applying minimal raster fallbacks",
+        detail:
+          "Only source-bound node fallback, canvas, WebGL or video evidence may become raster tiles.",
+      },
+    });
+
+    const raster = applyFigmaHybridRasterFallbacks(visual.nodesByRenderNodeId, request.renderTree, {
+      references: request.rasterReferences ?? [],
+      tilePayloadsByPath: request.rasterTilePayloadsByPath ?? {},
+    });
+    if (cancelled) {
+      renderedRoot.remove();
+      return;
+    }
+
+    postToUi({
+      type: "W2F_PROGRESS",
+      progress: {
+        stage: "finalizing",
+        completed: 3,
+        total: 4,
+        label: "Finalizing hybrid editable import",
+        detail: `${visual.stats.textNodeCount.toLocaleString()} text · ${visual.stats.imageFillCount.toLocaleString()} image fills · ${layout.autoLayoutFrameCount.toLocaleString()} Auto Layout · ${layout.gridFrameCount.toLocaleString()} Grid · ${raster.rasterNodeCount.toLocaleString()} local raster fallback(s)`,
       },
     });
     postToUi({
@@ -162,7 +187,7 @@ async function handleBasicRender(baseRequest: W2fBasicRenderRequest): Promise<vo
       result: {
         intakeId: request.intakeId,
         rootNodeId: result.root.id,
-        createdNodeCount: result.createdNodeCount,
+        createdNodeCount: result.createdNodeCount + raster.rasterTileNodeCount,
         mappedRenderNodeCount: visual.nodesByRenderNodeId.size,
       },
     });
@@ -170,13 +195,13 @@ async function handleBasicRender(baseRequest: W2fBasicRenderRequest): Promise<vo
       type: "W2F_PROGRESS",
       progress: {
         stage: "done",
-        completed: 3,
-        total: 3,
-        label: "Editable Figma import complete",
+        completed: 4,
+        total: 4,
+        label: "Hybrid Figma import complete",
         detail:
-          visual.stats.missingAssetCount > 0
-            ? `${visual.stats.missingAssetCount} embedded asset(s) were unavailable; supported visuals and native layouts were restored.`
-            : `Restored ${layout.autoLayoutFrameCount} Auto Layout and ${layout.gridFrameCount} Grid frame(s). Unsupported Flex/Grid mappings kept source geometry: ${layout.skippedIncompatibleFlexCount}/${layout.skippedIncompatibleGridCount}. Grid placement fallbacks: ${layout.gridPlacementFallbackCount}. Font fallbacks: ${visual.stats.fontFallbackCount}.`,
+          raster.rasterNodeCount > 0
+            ? `Kept native layers editable and materialized ${raster.rasterTileNodeCount} PNG tile(s) inside ${raster.rasterNodeCount} minimal fallback boundary frame(s); ${raster.suppressedNativeDescendantCount} unsafe descendant layer(s) stayed suppressed.`
+            : `Restored native-compatible content without raster fallback. Auto Layout ${layout.autoLayoutFrameCount}, Grid ${layout.gridFrameCount}, font fallbacks ${visual.stats.fontFallbackCount}.`,
       },
     });
   } catch (error) {
@@ -187,11 +212,11 @@ async function handleBasicRender(baseRequest: W2fBasicRenderRequest): Promise<vo
         // Preserve the original rendering failure.
       }
     }
-    if (error instanceof W2fBasicRendererError) {
+    if (error instanceof W2fBasicRendererError || error instanceof W2fHybridRasterError) {
       postError(error.code, error);
       return;
     }
-    postError("W2F_E_RESPONSIVE_LAYOUT_RENDERER", error);
+    postError("W2F_E_HYBRID_RENDERER", error);
   }
 }
 

@@ -51,26 +51,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: NODE-30 Prettier diagnostic
-        run: |
-          pnpm exec prettier --write \
-            packages/figma-renderer/src/qa/canonical.ts \
-            packages/figma-renderer/src/qa/determinism.ts \
-            packages/figma-renderer/src/qa/node30-types.ts \
-            packages/figma-renderer/src/qa/performance.ts \
-            packages/figma-renderer/src/qa/responsive-fixture.ts \
-            packages/figma-renderer/test/node30-qa.test.ts \
-            scripts/validate-node-30.mjs
-          git diff --no-ext-diff -- \
-            packages/figma-renderer/src/qa/canonical.ts \
-            packages/figma-renderer/src/qa/determinism.ts \
-            packages/figma-renderer/src/qa/node30-types.ts \
-            packages/figma-renderer/src/qa/performance.ts \
-            packages/figma-renderer/src/qa/responsive-fixture.ts \
-            packages/figma-renderer/test/node30-qa.test.ts \
-            scripts/validate-node-30.mjs
-          exit 1
-
       - name: Lint
         run: pnpm lint
 

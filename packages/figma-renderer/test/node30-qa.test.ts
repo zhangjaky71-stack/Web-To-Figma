@@ -70,14 +70,7 @@ describe("NODE-30 responsive QA", () => {
         { id: "constraints", domain: "constraints", matched: 9, total: 10 },
         { id: "breakpoints", domain: "breakpoints", matched: 9, total: 10 },
       ],
-      requiredDomains: [
-        "sizing",
-        "spacing",
-        "min-max",
-        "layout",
-        "constraints",
-        "breakpoints",
-      ],
+      requiredDomains: ["sizing", "spacing", "min-max", "layout", "constraints", "breakpoints"],
       structuralChanges: [
         {
           id: "mobile-grid-columns",

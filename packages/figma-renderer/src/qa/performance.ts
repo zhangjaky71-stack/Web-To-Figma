@@ -19,7 +19,10 @@ export function performanceScaleBand(renderNodeCount: number): W2fPerformanceSca
 function percentile(values: readonly number[], probability: number): number | null {
   if (values.length === 0) return null;
   const sorted = [...values].sort((left, right) => left - right);
-  const index = Math.min(sorted.length - 1, Math.max(0, Math.ceil(probability * sorted.length) - 1));
+  const index = Math.min(
+    sorted.length - 1,
+    Math.max(0, Math.ceil(probability * sorted.length) - 1),
+  );
   return sorted[index] ?? null;
 }
 

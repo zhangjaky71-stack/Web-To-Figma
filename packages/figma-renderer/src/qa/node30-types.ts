@@ -75,12 +75,7 @@ export interface W2fDeterminismQaReport {
 }
 
 export type W2fPerformanceScaleBand =
-  | "lt-2k"
-  | "2k-5k"
-  | "5k-10k"
-  | "10k-20k"
-  | "20k-50k"
-  | "gt-50k";
+  "lt-2k" | "2k-5k" | "5k-10k" | "10k-20k" | "20k-50k" | "gt-50k";
 
 export interface W2fPerformanceSample {
   id: string;

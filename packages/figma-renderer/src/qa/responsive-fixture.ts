@@ -93,15 +93,57 @@ export function responsiveChecksFromFixture(
     );
     addCheck(checks, `${prefix}/layout-mode`, "layout", expected.layoutMode, observed.layoutMode);
     addNumberCheck(checks, `${prefix}/row-gap`, "spacing", expected.rowGap, observed.rowGap);
-    addNumberCheck(checks, `${prefix}/column-gap`, "spacing", expected.columnGap, observed.columnGap);
-    addNumberCheck(checks, `${prefix}/padding-top`, "spacing", expected.paddingTop, observed.paddingTop);
-    addNumberCheck(checks, `${prefix}/padding-right`, "spacing", expected.paddingRight, observed.paddingRight);
-    addNumberCheck(checks, `${prefix}/padding-bottom`, "spacing", expected.paddingBottom, observed.paddingBottom);
-    addNumberCheck(checks, `${prefix}/padding-left`, "spacing", expected.paddingLeft, observed.paddingLeft);
+    addNumberCheck(
+      checks,
+      `${prefix}/column-gap`,
+      "spacing",
+      expected.columnGap,
+      observed.columnGap,
+    );
+    addNumberCheck(
+      checks,
+      `${prefix}/padding-top`,
+      "spacing",
+      expected.paddingTop,
+      observed.paddingTop,
+    );
+    addNumberCheck(
+      checks,
+      `${prefix}/padding-right`,
+      "spacing",
+      expected.paddingRight,
+      observed.paddingRight,
+    );
+    addNumberCheck(
+      checks,
+      `${prefix}/padding-bottom`,
+      "spacing",
+      expected.paddingBottom,
+      observed.paddingBottom,
+    );
+    addNumberCheck(
+      checks,
+      `${prefix}/padding-left`,
+      "spacing",
+      expected.paddingLeft,
+      observed.paddingLeft,
+    );
     addNumberCheck(checks, `${prefix}/min-width`, "min-max", expected.minWidth, observed.minWidth);
     addNumberCheck(checks, `${prefix}/max-width`, "min-max", expected.maxWidth, observed.maxWidth);
-    addNumberCheck(checks, `${prefix}/min-height`, "min-max", expected.minHeight, observed.minHeight);
-    addNumberCheck(checks, `${prefix}/max-height`, "min-max", expected.maxHeight, observed.maxHeight);
+    addNumberCheck(
+      checks,
+      `${prefix}/min-height`,
+      "min-max",
+      expected.minHeight,
+      observed.minHeight,
+    );
+    addNumberCheck(
+      checks,
+      `${prefix}/max-height`,
+      "min-max",
+      expected.maxHeight,
+      observed.maxHeight,
+    );
     addNumberCheck(checks, `${prefix}/order`, "layout", expected.order, observed.order);
     addNumberCheck(
       checks,

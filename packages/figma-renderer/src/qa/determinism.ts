@@ -94,7 +94,9 @@ export function evaluateDeterminismQa(
   for (const candidate of fingerprints.slice(1)) {
     const mismatches = mismatchFields(baseline, candidate);
     if (mismatches.length > 0) {
-      failures.push(`Run ${candidate.runId} differs from ${baseline.runId}: ${mismatches.join(", ")}`);
+      failures.push(
+        `Run ${candidate.runId} differs from ${baseline.runId}: ${mismatches.join(", ")}`,
+      );
     }
   }
 

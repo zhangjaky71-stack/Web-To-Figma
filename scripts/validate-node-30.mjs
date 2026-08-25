@@ -96,7 +96,10 @@ if (failures.length === 0) {
     "expectedStableCaptureNodeIds",
     "layoutDecisions",
   ]) {
-    assert(determinismInput.includes(evidence), `NODE-30 IR determinism adapter missing ${evidence}`);
+    assert(
+      determinismInput.includes(evidence),
+      `NODE-30 IR determinism adapter missing ${evidence}`,
+    );
   }
 
   const performance = text("packages/figma-renderer/src/qa/performance.ts");
@@ -133,14 +136,14 @@ if (failures.length === 0) {
 
   const index = text("packages/figma-renderer/src/qa/index.ts");
   for (const evidence of [
-    './node30-types.js',
-    './canonical.js',
-    './responsive.js',
-    './responsive-fixture.js',
-    './determinism.js',
-    './determinism-input.js',
-    './performance.js',
-    './performance-benchmark.js',
+    "./node30-types.js",
+    "./canonical.js",
+    "./responsive.js",
+    "./responsive-fixture.js",
+    "./determinism.js",
+    "./determinism-input.js",
+    "./performance.js",
+    "./performance-benchmark.js",
   ]) {
     assert(index.includes(evidence), `NODE-30 QA index missing ${evidence}`);
   }
@@ -179,7 +182,10 @@ if (failures.length === 0) {
   ]) {
     const source = text(path);
     for (const forbidden of localOnlyForbidden) {
-      assert(!source.includes(forbidden), `NODE-30 QA must remain local-only: ${path} contains ${forbidden}`);
+      assert(
+        !source.includes(forbidden),
+        `NODE-30 QA must remain local-only: ${path} contains ${forbidden}`,
+      );
     }
   }
 
@@ -202,9 +208,7 @@ if (failures.length === 0) {
 }
 
 if (failures.length > 0) {
-  console.error(
-    `NODE-30 validation failed:\n${failures.map((item) => `- ${item}`).join("\n")}`,
-  );
+  console.error(`NODE-30 validation failed:\n${failures.map((item) => `- ${item}`).join("\n")}`);
   process.exitCode = 1;
 } else {
   console.log("NODE-30 validation passed.");

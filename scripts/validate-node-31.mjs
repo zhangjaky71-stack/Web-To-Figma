@@ -168,7 +168,10 @@ if (failures.length === 0) {
       "webgl",
       "responsive-app",
     ]) {
-      assert(classBCategories.has(category), `NODE-31 evidence manifest missing Class B ${category}`);
+      assert(
+        classBCategories.has(category),
+        `NODE-31 evidence manifest missing Class B ${category}`,
+      );
     }
     for (const entry of manifest.classB ?? []) {
       assert(
@@ -204,7 +207,10 @@ if (failures.length === 0) {
     "enforces min reader version",
     "allows unknown top-level metadata for forward-compatible readers",
   ]) {
-    assert(schemaTests.includes(evidence), `NODE-31 schema compatibility source missing ${evidence}`);
+    assert(
+      schemaTests.includes(evidence),
+      `NODE-31 schema compatibility source missing ${evidence}`,
+    );
   }
   const migrationTests = text("packages/wtf-parser/test/migrations.test.ts");
   for (const evidence of [
@@ -212,7 +218,10 @@ if (failures.length === 0) {
     "routes compatible V2 minor versions",
     "rejects unsupported major versions",
   ]) {
-    assert(migrationTests.includes(evidence), `NODE-31 migration compatibility source missing ${evidence}`);
+    assert(
+      migrationTests.includes(evidence),
+      `NODE-31 migration compatibility source missing ${evidence}`,
+    );
   }
 
   const doc = text("docs/nodes/NODE-31_REAL_WORLD_COMPATIBILITY_RELEASE_CANDIDATE.md");

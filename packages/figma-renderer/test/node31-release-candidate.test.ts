@@ -36,7 +36,9 @@ function realisticCorpus(): W2fNode31CorpusSample[] {
       id: `realistic-${category}`,
       testClass: "B" as const,
       category,
-      supportClass: expectedFallback ? ("expected-fallback" as const) : ("native-supported" as const),
+      supportClass: expectedFallback
+        ? ("expected-fallback" as const)
+        : ("native-supported" as const),
       standardHtmlCss: !expectedFallback,
       behaviorStatus: "PASS" as const,
       ...(expectedFallback
@@ -62,7 +64,10 @@ function passingInput(): W2fNode31ReleaseCandidateInput {
     security: {
       knownCriticalBlockers: 0,
       knownHighBlockers: 0,
-      fixtures: W2F_NODE31_REQUIRED_SECURITY_FIXTURES.map((id) => ({ id, status: "PASS" as const })),
+      fixtures: W2F_NODE31_REQUIRED_SECURITY_FIXTURES.map((id) => ({
+        id,
+        status: "PASS" as const,
+      })),
     },
     schemaCompatibility: W2F_NODE31_REQUIRED_SCHEMA_COMPATIBILITY_CASES.map((id) => ({
       id,

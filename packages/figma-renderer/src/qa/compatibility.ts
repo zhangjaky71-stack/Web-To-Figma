@@ -41,10 +41,7 @@ export function buildNode31CompatibilityMatrix(
       if (sample.behaviorStatus === "FAIL" || sample.behaviorStatus === "UNAVAILABLE") {
         failures.push(`Realistic corpus sample ${sample.id} is ${sample.behaviorStatus}`);
       }
-      if (
-        sample.supportClass !== "native-supported" &&
-        !sample.fallbackOrDiagnostic?.trim()
-      ) {
+      if (sample.supportClass !== "native-supported" && !sample.fallbackOrDiagnostic?.trim()) {
         failures.push(
           `Realistic non-native sample ${sample.id} is missing a documented fallback/diagnostic`,
         );

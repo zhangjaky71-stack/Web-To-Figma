@@ -48,11 +48,8 @@ export const W2F_NODE31_REQUIRED_SCHEMA_COMPATIBILITY_CASES = [
 export type W2fNode31Status = "PASS" | "WARNING" | "FAIL" | "UNAVAILABLE";
 export type W2fNode31TestClass = "A" | "B" | "C";
 export type W2fNode31SupportClass =
-  | "native-supported"
-  | "expected-fallback"
-  | "unsupported-blocked";
-export type W2fNode31RealisticCategory =
-  (typeof W2F_NODE31_REQUIRED_REALISTIC_CATEGORIES)[number];
+  "native-supported" | "expected-fallback" | "unsupported-blocked";
+export type W2fNode31RealisticCategory = (typeof W2F_NODE31_REQUIRED_REALISTIC_CATEGORIES)[number];
 export type W2fNode31SecurityFixture = (typeof W2F_NODE31_REQUIRED_SECURITY_FIXTURES)[number];
 export type W2fNode31SchemaCompatibilityCase =
   (typeof W2F_NODE31_REQUIRED_SCHEMA_COMPATIBILITY_CASES)[number];

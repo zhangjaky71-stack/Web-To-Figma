@@ -23,7 +23,11 @@ function median(values: readonly number[]): number | null {
   return left === undefined || right === undefined ? null : (left + right) / 2;
 }
 
-function unavailableGate(id: string, detail: string, target?: number | string): W2fNode31GateResult {
+function unavailableGate(
+  id: string,
+  detail: string,
+  target?: number | string,
+): W2fNode31GateResult {
   return {
     id,
     status: "UNAVAILABLE",
@@ -65,7 +69,8 @@ function allAtLeastGate(
       target,
     };
   }
-  if (values.length === 0) return unavailableGate(id, "Required metric evidence is missing", target);
+  if (values.length === 0)
+    return unavailableGate(id, "Required metric evidence is missing", target);
   const observed = Math.min(...values);
   return {
     id,
@@ -132,9 +137,12 @@ function medianAtMostGate(
 }
 
 function p0Gate(input: W2fNode31ReleaseCandidateInput): W2fNode31GateResult {
-  if (input.p0Items.length === 0) return unavailableGate("p0-functional", "P0 checklist evidence is missing");
+  if (input.p0Items.length === 0)
+    return unavailableGate("p0-functional", "P0 checklist evidence is missing");
   const invalid = input.p0Items.filter(
-    (item) => item.disposition === "missing" || (item.disposition === "approved-adr" && !item.adrId?.trim()),
+    (item) =>
+      item.disposition === "missing" ||
+      (item.disposition === "approved-adr" && !item.adrId?.trim()),
   );
   return {
     id: "p0-functional",
@@ -154,7 +162,8 @@ function antiCheatingGate(corpus: readonly W2fNode31CorpusSample[]): W2fNode31Ga
   return {
     id: "anti-cheating",
     status: violations.length === 0 ? "PASS" : "FAIL",
-    detail: violations.length === 0 ? "No anti-cheating violations reported" : violations.join("; "),
+    detail:
+      violations.length === 0 ? "No anti-cheating violations reported" : violations.join("; "),
   };
 }
 
@@ -194,7 +203,10 @@ function securityGate(input: W2fNode31ReleaseCandidateInput): W2fNode31GateResul
   return {
     id: "security",
     status: failures.length === 0 ? "PASS" : "FAIL",
-    detail: failures.length === 0 ? "Zero known critical/high blockers and all required fixtures pass" : failures.join("; "),
+    detail:
+      failures.length === 0
+        ? "Zero known critical/high blockers and all required fixtures pass"
+        : failures.join("; "),
     observed: `${input.security.knownCriticalBlockers} critical / ${input.security.knownHighBlockers} high`,
     target: "0 critical / 0 high",
   };
@@ -206,12 +218,16 @@ function schemaCompatibilityGate(input: W2fNode31ReleaseCandidateInput): W2fNode
   for (const id of W2F_NODE31_REQUIRED_SCHEMA_COMPATIBILITY_CASES) {
     const status = byId.get(id);
     if (!status) failures.push(`missing schema/version compatibility case ${id}`);
-    else if (status !== "PASS") failures.push(`schema/version compatibility case ${id} is ${status}`);
+    else if (status !== "PASS")
+      failures.push(`schema/version compatibility case ${id} is ${status}`);
   }
   return {
     id: "wtf-schema-version-compatibility",
     status: failures.length === 0 ? "PASS" : "FAIL",
-    detail: failures.length === 0 ? "All required schema/version compatibility cases pass" : failures.join("; "),
+    detail:
+      failures.length === 0
+        ? "All required schema/version compatibility cases pass"
+        : failures.join("; "),
   };
 }
 
@@ -230,7 +246,10 @@ function knownLimitationsGate(input: W2fNode31ReleaseCandidateInput): W2fNode31G
   return {
     id: "known-limitations",
     status: failures.length === 0 ? "PASS" : "FAIL",
-    detail: failures.length === 0 ? "Known limitations are current and compatible with the P0 contract" : failures.join("; "),
+    detail:
+      failures.length === 0
+        ? "Known limitations are current and compatible with the P0 contract"
+        : failures.join("; "),
   };
 }
 
@@ -244,7 +263,9 @@ function requiredStatusGate(
   return {
     id,
     status: passes ? status : "FAIL",
-    detail: passes ? `${id} gate is ${status}` : `${id} gate requires ${allowWarning ? "PASS/WARNING" : "PASS"}; observed ${status}`,
+    detail: passes
+      ? `${id} gate is ${status}`
+      : `${id} gate requires ${allowWarning ? "PASS/WARNING" : "PASS"}; observed ${status}`,
   };
 }
 
@@ -351,7 +372,9 @@ export function evaluateNode31ReleaseCandidate(
     .filter((gate) => gate.status === "UNAVAILABLE")
     .map((gate) => `${gate.id}: ${gate.detail}`);
   const warnings = [
-    ...gates.filter((gate) => gate.status === "WARNING").map((gate) => `${gate.id}: ${gate.detail}`),
+    ...gates
+      .filter((gate) => gate.status === "WARNING")
+      .map((gate) => `${gate.id}: ${gate.detail}`),
     ...compatibilityMatrix.warnings,
   ];
   const releaseReady = failures.length === 0 && unavailable.length === 0;

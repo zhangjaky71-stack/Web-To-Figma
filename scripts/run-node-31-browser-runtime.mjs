@@ -170,6 +170,37 @@ async function disturbPageState(client, y) {
   );
 }
 
+async function waitForProcessExit(childProcess, timeoutMs) {
+  if (childProcess.exitCode !== null) return true;
+  return Promise.race([
+    new Promise((resolve) => childProcess.once("exit", () => resolve(true))),
+    delay(timeoutMs).then(() => false),
+  ]);
+}
+
+async function stopChrome(childProcess) {
+  if (!childProcess || childProcess.exitCode !== null) return;
+  childProcess.kill("SIGTERM");
+  if (await waitForProcessExit(childProcess, 1500)) return;
+  childProcess.kill("SIGKILL");
+  if (!(await waitForProcessExit(childProcess, 1500))) {
+    throw new Error("Chrome did not exit after SIGTERM and SIGKILL");
+  }
+}
+
+async function removeProfileDir(profileDir) {
+  try {
+    await rm(profileDir, {
+      recursive: true,
+      force: true,
+      maxRetries: 8,
+      retryDelay: 100,
+    });
+  } catch (error) {
+    console.warn(`NODE-31 Chrome profile cleanup warning: ${String(error)}`);
+  }
+}
+
 const profileDir = await mkdtemp(join(tmpdir(), "w2f-node31-chrome-"));
 const chromePath = await findChrome();
 let chromeProcess;
@@ -242,7 +273,10 @@ try {
     })()`,
   );
   await evaluate(client, contentScript);
-  assert(await evaluate(client, `typeof globalThis.__w2fListener === "function"`), "Content script did not register its runtime listener");
+  assert(
+    await evaluate(client, `typeof globalThis.__w2fListener === "function"`),
+    "Content script did not register its runtime listener",
+  );
 
   const initialState = await readPageState(client);
   assertRestored(initialState, "initial state");
@@ -321,8 +355,14 @@ try {
     confirmResponse?.type === "W2F_CONTENT_REGION_RESULT",
     "Confirm path did not return W2F_CONTENT_REGION_RESULT",
   );
-  assert(confirmResponse.region?.bounds?.width >= 250, "Confirm path selection width was not captured");
-  assert(confirmResponse.region?.bounds?.height >= 150, "Confirm path selection height was not captured");
+  assert(
+    confirmResponse.region?.bounds?.width >= 250,
+    "Confirm path selection width was not captured",
+  );
+  assert(
+    confirmResponse.region?.bounds?.height >= 150,
+    "Confirm path selection height was not captured",
+  );
 
   console.log(
     JSON.stringify(
@@ -350,12 +390,6 @@ try {
   );
 } finally {
   client?.close();
-  if (chromeProcess && chromeProcess.exitCode === null) {
-    chromeProcess.kill("SIGTERM");
-    await Promise.race([
-      new Promise((resolve) => chromeProcess.once("exit", resolve)),
-      delay(1500).then(() => chromeProcess.kill("SIGKILL")),
-    ]);
-  }
-  await rm(profileDir, { recursive: true, force: true });
+  await stopChrome(chromeProcess);
+  await removeProfileDir(profileDir);
 }

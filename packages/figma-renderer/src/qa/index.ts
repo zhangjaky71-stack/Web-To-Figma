@@ -12,3 +12,4 @@ export * from "./performance-benchmark.js";
 export * from "./node31-types.js";
 export * from "./compatibility.js";
 export * from "./release-candidate.js";
+export * from "./evidence-manifest.js";

@@ -31,6 +31,9 @@ jobs:
       - name: Validate NODE-30 responsive determinism performance QA
         run: node scripts/validate-node-30.mjs
 
+      - name: Validate NODE-31 release candidate
+        run: node scripts/validate-node-31.mjs
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:

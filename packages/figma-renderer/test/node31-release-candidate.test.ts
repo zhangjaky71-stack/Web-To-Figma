@@ -115,8 +115,9 @@ describe("NODE-31 Release Candidate evaluator", () => {
     const input = passingInput();
     input.corpus = input.corpus.map((sample) => {
       if (sample.category === "canvas") {
-        const { fallbackOrDiagnostic: _removed, ...rest } = sample;
-        return { ...rest, antiCheatingViolations: ["ordinary text replaced by a page screenshot"] };
+        const copy = { ...sample };
+        delete copy.fallbackOrDiagnostic;
+        return { ...copy, antiCheatingViolations: ["ordinary text replaced by a page screenshot"] };
       }
       return sample;
     });
@@ -129,9 +130,12 @@ describe("NODE-31 Release Candidate evaluator", () => {
 
   it("treats missing required metric evidence as UNAVAILABLE rather than PASS", () => {
     const input = passingInput();
-    input.corpus = input.corpus.map((sample) =>
-      sample.testClass === "A" ? { ...sample, textFidelity: undefined } : sample,
-    );
+    input.corpus = input.corpus.map((sample) => {
+      if (sample.testClass !== "A") return sample;
+      const copy = { ...sample };
+      delete copy.textFidelity;
+      return copy;
+    });
     const report = evaluateNode31ReleaseCandidate(input);
     expect(report.status).toBe("UNAVAILABLE");
     expect(report.releaseReady).toBe(false);
@@ -184,8 +188,9 @@ describe("NODE-31 compatibility matrix", () => {
     const matrix = buildNode31CompatibilityMatrix(
       corpus.map((sample) => {
         if (sample.category !== "webgl") return sample;
-        const { fallbackOrDiagnostic: _removed, ...rest } = sample;
-        return rest;
+        const copy = { ...sample };
+        delete copy.fallbackOrDiagnostic;
+        return copy;
       }),
     );
     expect(matrix.status).toBe("FAIL");

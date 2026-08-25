@@ -1,0 +1,66 @@
+{
+  "version": "1.0.0",
+  "status": "collecting",
+  "contract": "docs/ACCEPTANCE_CONTRACT_V2.md",
+  "baselineCommit": "28b52dc3e0d3074bf76205c8deb324a06dfe9e23",
+  "note": "This manifest reserves versioned RC evidence slots. UNAVAILABLE means the measurement has not yet been produced by the declared source artifact; it must never be interpreted as PASS.",
+  "classA": [
+    {
+      "id": "deterministic-level1-core",
+      "level": 1,
+      "measurementStatus": "UNAVAILABLE",
+      "sourceArtifact": null
+    },
+    {
+      "id": "deterministic-level2-responsive",
+      "level": 2,
+      "measurementStatus": "UNAVAILABLE",
+      "sourceArtifact": null
+    }
+  ],
+  "classB": [
+    { "id": "realistic-landing-page", "category": "landing-page", "supportClass": "native-supported", "standardHtmlCss": true, "measurementStatus": "UNAVAILABLE", "sourceArtifact": null },
+    { "id": "realistic-ecommerce", "category": "ecommerce", "supportClass": "native-supported", "standardHtmlCss": true, "measurementStatus": "UNAVAILABLE", "sourceArtifact": null },
+    { "id": "realistic-docs", "category": "docs", "supportClass": "native-supported", "standardHtmlCss": true, "measurementStatus": "UNAVAILABLE", "sourceArtifact": null },
+    { "id": "realistic-dashboard", "category": "dashboard", "supportClass": "native-supported", "standardHtmlCss": true, "measurementStatus": "UNAVAILABLE", "sourceArtifact": null },
+    { "id": "realistic-table", "category": "table", "supportClass": "native-supported", "standardHtmlCss": true, "measurementStatus": "UNAVAILABLE", "sourceArtifact": null },
+    { "id": "realistic-saas-shell", "category": "saas-shell", "supportClass": "native-supported", "standardHtmlCss": true, "measurementStatus": "UNAVAILABLE", "sourceArtifact": null },
+    { "id": "realistic-local-site", "category": "local-site", "supportClass": "native-supported", "standardHtmlCss": true, "measurementStatus": "UNAVAILABLE", "sourceArtifact": null },
+    { "id": "realistic-shadow-dom", "category": "shadow-dom", "supportClass": "native-supported", "standardHtmlCss": true, "measurementStatus": "UNAVAILABLE", "sourceArtifact": null },
+    { "id": "realistic-iframe", "category": "iframe", "supportClass": "native-supported", "standardHtmlCss": true, "measurementStatus": "UNAVAILABLE", "sourceArtifact": null },
+    { "id": "realistic-canvas", "category": "canvas", "supportClass": "expected-fallback", "standardHtmlCss": false, "measurementStatus": "UNAVAILABLE", "sourceArtifact": null, "fallbackContract": "docs/KNOWN_LIMITATIONS.md#14-canvas" },
+    { "id": "realistic-webgl", "category": "webgl", "supportClass": "expected-fallback", "standardHtmlCss": false, "measurementStatus": "UNAVAILABLE", "sourceArtifact": null, "fallbackContract": "docs/KNOWN_LIMITATIONS.md#15-webgl" },
+    { "id": "realistic-responsive-app", "category": "responsive-app", "supportClass": "native-supported", "standardHtmlCss": true, "measurementStatus": "UNAVAILABLE", "sourceArtifact": null }
+  ],
+  "classC": [],
+  "security": {
+    "knownCriticalBlockers": null,
+    "knownHighBlockers": null,
+    "fixtures": [
+      { "id": "malformed-archive", "status": "UNAVAILABLE", "source": "packages/wtf-parser/test/parser.test.ts" },
+      { "id": "path-traversal", "status": "UNAVAILABLE", "source": "packages/wtf-parser/test/zip-reader.test.ts" },
+      { "id": "oversized-expansion", "status": "UNAVAILABLE", "source": "packages/wtf-parser/test/zip-reader.test.ts" },
+      { "id": "invalid-checksum", "status": "UNAVAILABLE", "source": "packages/wtf-parser/test/parser.test.ts" },
+      { "id": "malformed-schema", "status": "UNAVAILABLE", "source": "packages/wtf-parser/test/parser.test.ts" },
+      { "id": "hostile-svg", "status": "UNAVAILABLE", "source": "packages/wtf-parser/test/svg-sanitize.test.ts" }
+    ]
+  },
+  "schemaCompatibility": [
+    { "id": "canonical-v2-manifest", "status": "UNAVAILABLE", "source": "packages/w2f-schema/test/index.test.ts" },
+    { "id": "min-reader-enforced", "status": "UNAVAILABLE", "source": "packages/w2f-schema/test/index.test.ts" },
+    { "id": "v2-current-noop", "status": "UNAVAILABLE", "source": "packages/wtf-parser/test/migrations.test.ts" },
+    { "id": "v2-compatible-minor", "status": "UNAVAILABLE", "source": "packages/wtf-parser/test/migrations.test.ts" },
+    { "id": "unsupported-major-rejected", "status": "UNAVAILABLE", "source": "packages/wtf-parser/test/migrations.test.ts" },
+    { "id": "forward-optional-metadata-preserved", "status": "UNAVAILABLE", "source": "packages/w2f-schema/test/index.test.ts" }
+  ],
+  "knownLimitations": {
+    "document": "docs/KNOWN_LIMITATIONS.md",
+    "status": "UNAVAILABLE"
+  },
+  "p0": {
+    "status": "UNAVAILABLE",
+    "items": []
+  },
+  "determinism": { "status": "UNAVAILABLE", "source": "NODE-30 exact-head evidence" },
+  "scale": { "status": "UNAVAILABLE", "source": "NODE-30 exact-head evidence" }
+}

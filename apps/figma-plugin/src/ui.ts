@@ -311,9 +311,10 @@ function selectedRenderRootIds(parsed: WtfParsedPackage): string[] {
     .map((section) => section.renderNodeId);
 }
 
-function node26AssetPayload(parsed: WtfParsedPackage) {
+function localRendererPayload(parsed: WtfParsedPackage) {
   const assetPayloadsById: Record<string, Uint8Array> = {};
   const sanitizedSvgById: Record<string, string> = {};
+  const referenceTilePayloadsById: Record<string, Uint8Array> = {};
   for (const asset of parsed.ir.assets.assets) {
     if (!asset.embeddedPath) continue;
     const bytes = parsed.binaryPayloads.get(asset.embeddedPath);
@@ -321,10 +322,19 @@ function node26AssetPayload(parsed: WtfParsedPackage) {
     const svg = parsed.sanitizedSvgPayloads.get(asset.embeddedPath);
     if (svg) sanitizedSvgById[asset.id] = svg;
   }
+  for (const tile of parsed.ir.assets.referenceTiles) {
+    const bytes = parsed.binaryPayloads.get(tile.path);
+    if (bytes) referenceTilePayloadsById[tile.id] = bytes;
+  }
   return {
     assets: parsed.ir.assets.assets.map((asset) => ({ ...asset })),
     assetPayloadsById,
     sanitizedSvgById,
+    referenceTiles: parsed.ir.assets.referenceTiles.map((tile) => ({
+      ...tile,
+      bounds: { ...tile.bounds },
+    })),
+    referenceTilePayloadsById,
   };
 }
 
@@ -376,7 +386,7 @@ importButton.addEventListener("click", () => {
         : ("selected-roots" as const),
     selectedRootIds,
     tokenPolicy: "literal" as const,
-    ...node26AssetPayload(parsed),
+    ...localRendererPayload(parsed),
     ...(state.descriptor.canvasPoint ? { destination: state.descriptor.canvasPoint } : {}),
     ...(parsed.preview.title
       ? { importName: parsed.preview.title }

@@ -1,6 +1,15 @@
-import { renderBasicFigmaScene, W2fBasicRendererError } from "@w2f/figma-renderer";
+import {
+  renderBasicFigmaScene,
+  W2fBasicRendererError,
+  type W2fReferenceTileDescriptor,
+} from "@w2f/figma-renderer";
 import type { WtfAssetRecord } from "@w2f/w2f-ir";
 import { createFigmaBasicAdapter } from "./figma-basic-adapter.js";
+import {
+  applyFigmaHybridRaster,
+  rasterSafeLayoutTree,
+  type W2fHybridRasterBundle,
+} from "./figma-hybrid-renderer.js";
 import { applyFigmaLayouts } from "./figma-layout-renderer.js";
 import { applyFigmaVisuals, type W2fVisualAssetBundle } from "./figma-visual-renderer.js";
 import { createFileIntakeDescriptor } from "./intake-state.js";
@@ -14,10 +23,12 @@ import {
 
 declare const __html__: string;
 
-type W2fNode27RenderRequest = W2fBasicRenderRequest & {
+type W2fNode28RenderRequest = W2fBasicRenderRequest & {
   assets?: readonly WtfAssetRecord[];
   assetPayloadsById?: Readonly<Record<string, Uint8Array>>;
   sanitizedSvgById?: Readonly<Record<string, string>>;
+  referenceTiles?: readonly W2fReferenceTileDescriptor[];
+  referenceTilePayloadsById?: Readonly<Record<string, Uint8Array>>;
 };
 
 const SHELL_INFO: W2fFigmaShellInfo = {
@@ -75,7 +86,7 @@ async function handleCanvasDrop(file: DropFile, point: { x: number; y: number })
   }
 }
 
-function visualBundle(request: W2fNode27RenderRequest): W2fVisualAssetBundle {
+function visualBundle(request: W2fNode28RenderRequest): W2fVisualAssetBundle {
   return {
     assets: request.assets ?? [],
     assetPayloadsById: request.assetPayloadsById ?? {},
@@ -83,8 +94,15 @@ function visualBundle(request: W2fNode27RenderRequest): W2fVisualAssetBundle {
   };
 }
 
+function hybridBundle(request: W2fNode28RenderRequest): W2fHybridRasterBundle {
+  return {
+    referenceTiles: request.referenceTiles ?? [],
+    referenceTilePayloadsById: request.referenceTilePayloadsById ?? {},
+  };
+}
+
 async function handleBasicRender(baseRequest: W2fBasicRenderRequest): Promise<void> {
-  const request = baseRequest as W2fNode27RenderRequest;
+  const request = baseRequest as W2fNode28RenderRequest;
   if (cancelled) return;
   if (
     request.profile !== importSelection.profile ||
@@ -102,7 +120,7 @@ async function handleBasicRender(baseRequest: W2fBasicRenderRequest): Promise<vo
       total: 3,
       label: "Creating editable Figma scene",
       detail:
-        "Rebuilding hierarchy and geometry before text, assets, paint and responsive layout are applied.",
+        "Rebuilding hierarchy and geometry before native visuals, local raster boundaries and responsive layout are applied.",
     },
   });
 
@@ -130,9 +148,9 @@ async function handleBasicRender(baseRequest: W2fBasicRenderRequest): Promise<vo
         stage: "importing",
         completed: 1,
         total: 3,
-        label: "Restoring text, assets, paint and layout",
+        label: "Restoring native and raster visuals",
         detail:
-          "Loading local assets, then rebuilding native-compatible Flex and Grid layouts with Figma layout primitives.",
+          "Loading validated local assets and applying only NODE-20 raster boundaries backed by complete packaged PNG tiles.",
       },
     });
 
@@ -141,7 +159,16 @@ async function handleBasicRender(baseRequest: W2fBasicRenderRequest): Promise<vo
       request.renderTree,
       visualBundle(request),
     );
-    const layout = applyFigmaLayouts(visual.nodesByRenderNodeId, request.renderTree);
+    const hybrid = applyFigmaHybridRaster(
+      visual.nodesByRenderNodeId,
+      request.renderTree,
+      hybridBundle(request),
+    );
+    const layoutTree = rasterSafeLayoutTree(
+      request.renderTree,
+      hybrid.rasterizedRenderNodeIds,
+    );
+    const layout = applyFigmaLayouts(hybrid.nodesByRenderNodeId, layoutTree);
     if (cancelled) {
       renderedRoot.remove();
       return;
@@ -153,8 +180,8 @@ async function handleBasicRender(baseRequest: W2fBasicRenderRequest): Promise<vo
         stage: "finalizing",
         completed: 2,
         total: 3,
-        label: "Finalizing editable import",
-        detail: `${visual.stats.textNodeCount.toLocaleString()} text · ${visual.stats.imageFillCount.toLocaleString()} image fills · ${layout.autoLayoutFrameCount.toLocaleString()} Auto Layout · ${layout.gridFrameCount.toLocaleString()} Grid`,
+        label: "Finalizing hybrid editable import",
+        detail: `${visual.stats.textNodeCount.toLocaleString()} text · ${visual.stats.imageFillCount.toLocaleString()} native image fills · ${hybrid.stats.rasterizedBoundaryCount.toLocaleString()} raster boundaries / ${hybrid.stats.rasterTileCount.toLocaleString()} tiles · ${layout.autoLayoutFrameCount.toLocaleString()} Auto Layout · ${layout.gridFrameCount.toLocaleString()} Grid`,
       },
     });
     postToUi({
@@ -163,7 +190,7 @@ async function handleBasicRender(baseRequest: W2fBasicRenderRequest): Promise<vo
         intakeId: request.intakeId,
         rootNodeId: result.root.id,
         createdNodeCount: result.createdNodeCount,
-        mappedRenderNodeCount: visual.nodesByRenderNodeId.size,
+        mappedRenderNodeCount: hybrid.nodesByRenderNodeId.size,
       },
     });
     postToUi({
@@ -172,11 +199,8 @@ async function handleBasicRender(baseRequest: W2fBasicRenderRequest): Promise<vo
         stage: "done",
         completed: 3,
         total: 3,
-        label: "Editable Figma import complete",
-        detail:
-          visual.stats.missingAssetCount > 0
-            ? `${visual.stats.missingAssetCount} embedded asset(s) were unavailable; supported visuals and native layouts were restored.`
-            : `Restored ${layout.autoLayoutFrameCount} Auto Layout and ${layout.gridFrameCount} Grid frame(s). Unsupported Flex/Grid mappings kept source geometry: ${layout.skippedIncompatibleFlexCount}/${layout.skippedIncompatibleGridCount}. Grid placement fallbacks: ${layout.gridPlacementFallbackCount}. Font fallbacks: ${visual.stats.fontFallbackCount}.`,
+        label: "Hybrid Figma import complete",
+        detail: `Rasterized ${hybrid.stats.rasterizedBoundaryCount} explicit boundary(ies); kept ${hybrid.stats.keptNativeBoundaryCount} native because raster evidence was absent/incomplete. Missing tile payloads: ${hybrid.stats.missingTilePayloadCount}. Restored ${layout.autoLayoutFrameCount} Auto Layout and ${layout.gridFrameCount} Grid frame(s). Unsupported Flex/Grid mappings kept source geometry: ${layout.skippedIncompatibleFlexCount}/${layout.skippedIncompatibleGridCount}. Font fallbacks: ${visual.stats.fontFallbackCount}.`,
       },
     });
   } catch (error) {
@@ -191,7 +215,7 @@ async function handleBasicRender(baseRequest: W2fBasicRenderRequest): Promise<vo
       postError(error.code, error);
       return;
     }
-    postError("W2F_E_RESPONSIVE_LAYOUT_RENDERER", error);
+    postError("W2F_E_HYBRID_RASTER_RENDERER", error);
   }
 }
 

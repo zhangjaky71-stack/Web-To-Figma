@@ -128,9 +128,9 @@ describe("NODE-31 evidence manifest evaluator", () => {
 
   it("requires evidenceArtifact provenance before non-metric evidence can PASS", () => {
     const manifest = readyManifest();
-    manifest.schemaCompatibility = (
-      manifest.schemaCompatibility as Record<string, unknown>[]
-    ).map((entry, index) => (index === 0 ? { id: entry.id, status: "PASS" } : entry));
+    manifest.schemaCompatibility = (manifest.schemaCompatibility as Record<string, unknown>[]).map(
+      (entry, index) => (index === 0 ? { id: entry.id, status: "PASS" } : entry),
+    );
     const report = evaluateNode31EvidenceManifest(manifest);
     expect(report.status).toBe("FAIL");
     expect(report.failures.join("\n")).toContain("cannot PASS without an evidenceArtifact");

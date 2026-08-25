@@ -9,3 +9,6 @@ export * from "./determinism.js";
 export * from "./determinism-input.js";
 export * from "./performance.js";
 export * from "./performance-benchmark.js";
+export * from "./node31-types.js";
+export * from "./compatibility.js";
+export * from "./release-candidate.js";

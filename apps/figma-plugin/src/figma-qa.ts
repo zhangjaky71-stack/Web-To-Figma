@@ -16,9 +16,7 @@ function pluginData(node: BaseNode): Readonly<Record<string, string>> {
 
 function childNodes(node: BaseNode): readonly SceneNode[] {
   if (!("children" in node)) return [];
-  return (node as BaseNode & ChildrenMixin).children.filter(
-    (child): child is SceneNode => child.type !== "PAGE",
-  );
+  return (node as BaseNode & ChildrenMixin).children;
 }
 
 function hasImageFill(node: SceneNode): boolean {
@@ -55,7 +53,7 @@ function editableClass(node: SceneNode): W2fEditableClass {
   if (node.type === "TEXT") return "text";
   if (isVectorNodeType(node.type) || hasVectorDescendant(node)) return "vector";
   if (hasImageFill(node)) return "image";
-  if ("children" in node || node.type === "FRAME") return "container";
+  if ("children" in node) return "container";
   return "other";
 }
 

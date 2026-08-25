@@ -122,9 +122,7 @@ describe("NODE-31 evidence manifest evaluator", () => {
     const report = evaluateNode31EvidenceManifest(readyManifest());
     expect(report.status).toBe("PASS");
     expect(report.manifestState).toBe("ready");
-    expect(report.measuredCount).toBe(
-      W2F_NODE31_REQUIRED_REALISTIC_CATEGORIES.length + 2,
-    );
+    expect(report.measuredCount).toBe(W2F_NODE31_REQUIRED_REALISTIC_CATEGORIES.length + 2);
     expect(report.unavailable).toEqual([]);
   });
 

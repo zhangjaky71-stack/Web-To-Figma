@@ -30,8 +30,14 @@ interface DecodedRgba {
   data: Uint8Array;
 }
 
+function pngBlob(bytes: Uint8Array): Blob {
+  const buffer = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(buffer).set(bytes);
+  return new Blob([buffer], { type: "image/png" });
+}
+
 async function decodePng(bytes: Uint8Array): Promise<DecodedRgba> {
-  const bitmap = await createImageBitmap(new Blob([bytes], { type: "image/png" }));
+  const bitmap = await createImageBitmap(pngBlob(bytes));
   try {
     const canvas = document.createElement("canvas");
     canvas.width = bitmap.width;

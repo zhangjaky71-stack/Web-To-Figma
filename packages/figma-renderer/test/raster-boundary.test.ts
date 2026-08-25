@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { WtfRenderNode, WtfRenderTree } from "@w2f/w2f-ir";
-import {
-  renderBasicFigmaScene,
-  type W2fBasicFigmaAdapter,
-  type W2fBasicGeometry,
-} from "../src/index.js";
+import { renderBasicFigmaScene, type W2fBasicFigmaAdapter } from "../src/index.js";
 
 function node(
   id: string,
@@ -52,7 +48,7 @@ class Adapter implements W2fBasicFigmaAdapter<MockNode> {
     parent.children.push(child);
   }
   setName(): void {}
-  setGeometry(_node: MockNode, _geometry: W2fBasicGeometry): void {}
+  setGeometry(): void {}
   setPluginData(node: MockNode, key: string, value: string): void {
     node.pluginData[key] = value;
   }

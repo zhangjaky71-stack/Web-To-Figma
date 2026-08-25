@@ -97,7 +97,7 @@ if (failures.length === 0) {
   const main = text("apps/figma-plugin/src/main.ts");
   const visualIndex = main.indexOf("await applyFigmaVisuals");
   const layoutIndex = main.indexOf("const layout = applyFigmaLayouts");
-  const rasterIndex = main.indexOf("applyFigmaHybridRasterFallbacks");
+  const rasterIndex = main.indexOf("const raster = applyFigmaHybridRasterFallbacks", layoutIndex);
   assert(visualIndex >= 0, "NODE-28 must preserve editable NODE-26 visual reconstruction");
   assert(layoutIndex > visualIndex, "NODE-28 must preserve NODE-27 layout after visuals");
   assert(rasterIndex > layoutIndex, "NODE-28 raster materialization must run after native layout");

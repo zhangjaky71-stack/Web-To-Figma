@@ -17,15 +17,24 @@ The score covers:
 - min/max sizing;
 - flex/grid relationships;
 - constraints;
-- breakpoint, visibility and layout-change detection.
+- breakpoint, visibility and layout-change detection;
+- container-query metadata preservation.
 
 Required deterministic cases include horizontal flex, vertical flex, nested Auto Layout, flex-grow/FILL, HUG, fixed sizing, min/max constraints, simple Grid, grid column-count changes, visibility switches, flex-direction/order changes, and container-query metadata.
 
 Structural breakpoint changes that Figma cannot execute natively still have to be correctly **detected and reported**. They may not disappear from the score merely because the target editor cannot execute them.
 
+### Composite methodology
+
+NODE-30 does not invent priority weights between responsive domains. Each active domain first receives its own matched/total score; the composite is the arithmetic mean of the active domain scores. A release-suite caller may declare `requiredDomains`, and missing evidence for any declared required domain is a failure rather than being silently omitted from the denominator.
+
+This makes the 90% contract auditable without embedding an unapproved product-priority model into QA math.
+
 ## 2. Determinism gate
 
 A deterministic fixture is evaluated over **10 runs in the same environment**.
+
+Every run must carry the same non-empty `environmentFingerprint`. A run from a different environment is not comparable and fails the determinism gate rather than being averaged into it.
 
 The following must remain identical after explicit normalization of intentionally variable capture metadata:
 
@@ -37,11 +46,13 @@ The following must remain identical after explicit normalization of intentionall
 
 The Source Graph normalizer excludes only declared revision metadata that is expected to change per capture (`capturedAt`, `captureId`, `revisionId`, `parentRevisionId`). Stable semantic/source fields are not broadly ignored.
 
-Fewer than ten runs are `UNAVAILABLE`, not `PASS`. Any semantic mismatch across the ten-run set is a failure.
+Fewer than ten runs are `UNAVAILABLE`, not `PASS`. Duplicate/empty run ids, missing environment evidence, environment drift, or any semantic fingerprint mismatch across the run set are failures.
 
 ## 3. Performance and scale
 
-Hard millisecond budgets are **not invented up front**. NODE-30 records durations, median and p95, then calibrates hard budgets from benchmark evidence later in this node.
+Hard millisecond budgets are **not invented up front**. NODE-30 records durations, median and p95, then calibrates hard budgets only from reproducible benchmark evidence.
+
+Every timing sample must name one non-empty `benchmarkEnvironment`. Median and p95 are only meaningful across samples from the same declared environment; mixed-environment aggregation is a failure.
 
 The functional scale contract is already frozen:
 
@@ -69,17 +80,29 @@ This canonicalization is for repeat-run equality, not for security or package in
 
 `UNAVAILABLE` is never silently converted to `PASS`.
 
+## 6. Evidence boundary
+
+NODE-30 consumes existing system evidence rather than replacing prior nodes:
+
+- NODE-15 owns deterministic viewport plans and per-viewport captures;
+- NODE-16 owns responsive inference and confidence/reason evidence;
+- NODE-27 owns Figma-native responsive layout reconstruction;
+- NODE-29 owns single-import visual, structure, editability and raster QA.
+
+NODE-30 may aggregate or compare those outputs across viewports/runs, but it must not re-infer CSS from screenshots or weaken NODE-29 anti-raster rules.
+
 ## Exit gate
 
 NODE-30 is complete only when:
 
 1. responsive scoring covers the frozen deterministic cases and the >=90% threshold;
-2. ten-run determinism compares assets, normalized Source Graph, Render Tree, stable identities, and layout decisions;
-3. performance scale gates are enforced without premature hard-ms targets;
-4. benchmark measurements provide evidence for any later hard-ms calibration;
-5. permanent NODE-30 validator is in CI;
-6. exact-head lint, typecheck, tests, build/plugin validation and format checks all pass;
-7. NODE-27/28/29 permanent validators remain green.
+2. the composite uses documented domain math and required evidence cannot silently disappear;
+3. ten-run determinism compares assets, normalized Source Graph, Render Tree, stable identities, and layout decisions in one declared environment;
+4. performance scale gates are enforced and timing aggregation is environment-scoped;
+5. benchmark measurements provide evidence for any hard-ms calibration rather than inventing thresholds;
+6. permanent NODE-30 validator is in CI;
+7. exact-head lint, typecheck, tests, build/plugin validation and format checks all pass;
+8. NODE-27/28/29 permanent validators remain green.
 
 ## Boundary with NODE-31
 

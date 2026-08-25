@@ -1,16 +1,17 @@
 export const W2F_NODE30_QA_VERSION = "1.0.0" as const;
 export const W2F_NODE30_RESPONSIVE_SCORE_THRESHOLD = 0.9 as const;
 export const W2F_NODE30_REQUIRED_DETERMINISM_RUNS = 10 as const;
+export const W2F_NODE30_RESPONSIVE_DOMAINS = [
+  "sizing",
+  "spacing",
+  "min-max",
+  "layout",
+  "constraints",
+  "breakpoints",
+] as const;
 
 export type W2fNode30QaStatus = "PASS" | "WARNING" | "FAIL" | "UNAVAILABLE";
-
-export type W2fResponsiveQaDomain =
-  | "sizing"
-  | "spacing"
-  | "min-max"
-  | "layout"
-  | "constraints"
-  | "breakpoints";
+export type W2fResponsiveQaDomain = (typeof W2F_NODE30_RESPONSIVE_DOMAINS)[number];
 
 export interface W2fResponsiveQaCheck {
   id: string;
@@ -31,6 +32,7 @@ export interface W2fResponsiveStructuralChangeEvidence {
 export interface W2fResponsiveQaInput {
   checks: readonly W2fResponsiveQaCheck[];
   structuralChanges?: readonly W2fResponsiveStructuralChangeEvidence[];
+  requiredDomains?: readonly W2fResponsiveQaDomain[];
 }
 
 export interface W2fResponsiveQaReport {
@@ -45,6 +47,7 @@ export interface W2fResponsiveQaReport {
 
 export interface W2fDeterminismRunInput {
   runId: string;
+  environmentFingerprint: string;
   assetHashes: readonly string[];
   sourceGraph: unknown;
   renderTree: unknown;
@@ -66,6 +69,7 @@ export interface W2fDeterminismQaReport {
   status: W2fNode30QaStatus;
   requiredRuns: typeof W2F_NODE30_REQUIRED_DETERMINISM_RUNS;
   observedRuns: number;
+  environmentFingerprint: string | null;
   fingerprints: readonly W2fDeterminismRunFingerprint[];
   failures: readonly string[];
 }
@@ -80,6 +84,7 @@ export type W2fPerformanceScaleBand =
 
 export interface W2fPerformanceSample {
   id: string;
+  benchmarkEnvironment: string;
   renderNodeCount: number;
   durationMs: number;
   completed: boolean;
@@ -102,6 +107,7 @@ export interface W2fPerformanceQaSampleResult {
 export interface W2fPerformanceQaReport {
   version: typeof W2F_NODE30_QA_VERSION;
   status: W2fNode30QaStatus;
+  benchmarkEnvironment: string | null;
   sampleResults: readonly W2fPerformanceQaSampleResult[];
   medianDurationMs: number | null;
   p95DurationMs: number | null;

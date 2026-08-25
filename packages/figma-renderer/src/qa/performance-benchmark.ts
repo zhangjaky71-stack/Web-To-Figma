@@ -2,6 +2,7 @@ import type { W2fPerformanceSample } from "./node30-types.js";
 
 export interface W2fPerformanceBenchmarkContext {
   id: string;
+  benchmarkEnvironment: string;
   renderNodeCount: number;
   chunkingSupported: boolean;
   progressSupported: boolean;

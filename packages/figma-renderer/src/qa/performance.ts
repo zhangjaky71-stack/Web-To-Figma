@@ -28,6 +28,9 @@ function sampleResult(sample: W2fPerformanceSample): W2fPerformanceQaSampleResul
   const warnings: string[] = [];
   const band = performanceScaleBand(sample.renderNodeCount);
 
+  if (!sample.benchmarkEnvironment.trim()) {
+    failures.push("benchmarkEnvironment must be non-empty");
+  }
   if (!Number.isSafeInteger(sample.renderNodeCount) || sample.renderNodeCount < 0) {
     failures.push("renderNodeCount must be a non-negative safe integer");
   }
@@ -77,6 +80,13 @@ export function evaluatePerformanceQa(
   const warnings = sampleResults.flatMap((result) =>
     result.warnings.map((warning) => `${result.id}: ${warning}`),
   );
+  const benchmarkEnvironment = samples[0]?.benchmarkEnvironment.trim() || null;
+  const environments = new Set(
+    samples.map((sample) => sample.benchmarkEnvironment.trim()).filter((value) => value.length > 0),
+  );
+  if (environments.size > 1) {
+    failures.push("Performance samples must use one declared benchmark environment");
+  }
   const durations = samples
     .filter((sample) => Number.isFinite(sample.durationMs) && sample.durationMs >= 0)
     .map((sample) => sample.durationMs);
@@ -93,6 +103,7 @@ export function evaluatePerformanceQa(
   return {
     version: W2F_NODE30_QA_VERSION,
     status,
+    benchmarkEnvironment,
     sampleResults,
     medianDurationMs: percentile(durations, 0.5),
     p95DurationMs: percentile(durations, 0.95),

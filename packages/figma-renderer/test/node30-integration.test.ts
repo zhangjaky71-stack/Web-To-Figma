@@ -8,6 +8,8 @@ import {
   responsiveChecksFromFixture,
 } from "../src/qa/index.js";
 
+const BENCHMARK_ENVIRONMENT = "ubuntu-24-node-24-node30-v1";
+
 function renderNode(): WtfRenderNode {
   return {
     id: "root",
@@ -91,6 +93,7 @@ describe("NODE-30 responsive fixture adapter", () => {
         layoutMode: "HORIZONTAL" as const,
         columnGap: 16,
         paddingLeft: 24,
+        containerQuerySignature: "container:min-width:700",
       },
       {
         viewportId: "mobile",
@@ -101,6 +104,7 @@ describe("NODE-30 responsive fixture adapter", () => {
         layoutMode: "VERTICAL" as const,
         columnGap: 8,
         paddingLeft: 16,
+        containerQuerySignature: "container:max-width:699",
       },
     ];
     const report = evaluateResponsiveQa(
@@ -108,6 +112,7 @@ describe("NODE-30 responsive fixture adapter", () => {
     );
     expect(report.status).toBe("PASS");
     expect(report.compositeScore).toBe(1);
+    expect(report.domainScores.breakpoints).toBe(1);
   });
 
   it("counts an incorrect breakpoint layout mode against the responsive score", () => {
@@ -131,13 +136,16 @@ describe("NODE-30 IR determinism adapter", () => {
     const runs = Array.from({ length: 10 }, (_, index) =>
       createDeterminismRunFromIr({
         runId: `run-${index}`,
+        environmentFingerprint: BENCHMARK_ENVIRONMENT,
         assets: assets(),
         sourceGraph: sourceGraph(index),
         renderTree: tree(),
         expectedStableCaptureNodeIds: ["source-root"],
       }),
     );
-    expect(evaluateDeterminismQa(runs).status).toBe("PASS");
+    const report = evaluateDeterminismQa(runs);
+    expect(report.status).toBe("PASS");
+    expect(report.environmentFingerprint).toBe(BENCHMARK_ENVIRONMENT);
   });
 
   it("rejects benchmark evidence that omits an asset hash", () => {
@@ -145,6 +153,7 @@ describe("NODE-30 IR determinism adapter", () => {
     expect(() =>
       createDeterminismRunFromIr({
         runId: "bad",
+        environmentFingerprint: BENCHMARK_ENVIRONMENT,
         assets: unhashed,
         sourceGraph: sourceGraph(0),
         renderTree: tree(),
@@ -160,6 +169,7 @@ describe("NODE-30 performance benchmark instrumentation", () => {
     const result = await measurePerformanceBenchmark(
       {
         id: "10k-import",
+        benchmarkEnvironment: BENCHMARK_ENVIRONMENT,
         renderNodeCount: 10_000,
         chunkingSupported: true,
         progressSupported: true,
@@ -170,7 +180,12 @@ describe("NODE-30 performance benchmark instrumentation", () => {
       () => undefined,
       { now: () => times[cursor++] ?? 145 },
     );
-    expect(result.sample).toMatchObject({ durationMs: 45, completed: true, crashed: false });
+    expect(result.sample).toMatchObject({
+      benchmarkEnvironment: BENCHMARK_ENVIRONMENT,
+      durationMs: 45,
+      completed: true,
+      crashed: false,
+    });
   });
 
   it("records a thrown benchmark task as a crash sample instead of losing the evidence", async () => {
@@ -179,6 +194,7 @@ describe("NODE-30 performance benchmark instrumentation", () => {
     const result = await measurePerformanceBenchmark(
       {
         id: "crash",
+        benchmarkEnvironment: BENCHMARK_ENVIRONMENT,
         renderNodeCount: 10_000,
         chunkingSupported: true,
         progressSupported: true,

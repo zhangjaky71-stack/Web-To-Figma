@@ -10,9 +10,15 @@ import {
   type W2fPerformanceSample,
 } from "../src/qa/index.js";
 
-function deterministicRun(index: number, overrides: Partial<W2fDeterminismRunInput> = {}): W2fDeterminismRunInput {
+const BENCHMARK_ENVIRONMENT = "ubuntu-24-node-24-node30-v1";
+
+function deterministicRun(
+  index: number,
+  overrides: Partial<W2fDeterminismRunInput> = {},
+): W2fDeterminismRunInput {
   return {
     runId: `run-${index}`,
+    environmentFingerprint: BENCHMARK_ENVIRONMENT,
     assetHashes: ["asset-b", "asset-a"],
     sourceGraph: {
       revision: {
@@ -39,6 +45,7 @@ function performanceSample(
 ): W2fPerformanceSample {
   return {
     id,
+    benchmarkEnvironment: BENCHMARK_ENVIRONMENT,
     renderNodeCount,
     durationMs: renderNodeCount / 10,
     completed: true,
@@ -63,6 +70,14 @@ describe("NODE-30 responsive QA", () => {
         { id: "constraints", domain: "constraints", matched: 9, total: 10 },
         { id: "breakpoints", domain: "breakpoints", matched: 9, total: 10 },
       ],
+      requiredDomains: [
+        "sizing",
+        "spacing",
+        "min-max",
+        "layout",
+        "constraints",
+        "breakpoints",
+      ],
       structuralChanges: [
         {
           id: "mobile-grid-columns",
@@ -75,6 +90,26 @@ describe("NODE-30 responsive QA", () => {
     });
     expect(report.status).toBe("PASS");
     expect(report.compositeScore).toBeGreaterThanOrEqual(0.9);
+  });
+
+  it("uses equal active-domain weighting instead of an undeclared priority model", () => {
+    const report = evaluateResponsiveQa({
+      checks: [
+        { id: "sizing", domain: "sizing", matched: 1, total: 1 },
+        { id: "spacing", domain: "spacing", matched: 0, total: 1 },
+      ],
+    });
+    expect(report.compositeScore).toBe(0.5);
+    expect(report.status).toBe("FAIL");
+  });
+
+  it("fails when release-suite required domain evidence is missing", () => {
+    const report = evaluateResponsiveQa({
+      checks: [{ id: "sizing", domain: "sizing", matched: 1, total: 1 }],
+      requiredDomains: ["sizing", "breakpoints"],
+    });
+    expect(report.status).toBe("FAIL");
+    expect(report.failures.join("\n")).toContain("breakpoints has no evidence");
   });
 
   it("fails an unreported structural breakpoint change even when Figma cannot execute it", () => {
@@ -101,16 +136,32 @@ describe("NODE-30 deterministic canonicalization", () => {
     expect(deterministicHash({ b: 2, a: 1 })).toBe(deterministicHash({ a: 1, b: 2 }));
   });
 
-  it("passes ten identical semantic captures while excluding only declared volatile revision metadata", () => {
-    const report = evaluateDeterminismQa(Array.from({ length: 10 }, (_, index) => deterministicRun(index)));
+  it("passes ten identical semantic captures in one declared environment", () => {
+    const report = evaluateDeterminismQa(
+      Array.from({ length: 10 }, (_, index) => deterministicRun(index)),
+    );
     expect(report.status).toBe("PASS");
+    expect(report.environmentFingerprint).toBe(BENCHMARK_ENVIRONMENT);
     expect(new Set(report.fingerprints.map((entry) => entry.sourceGraphHash)).size).toBe(1);
     expect(new Set(report.fingerprints.map((entry) => entry.renderTreeHash)).size).toBe(1);
   });
 
   it("does not silently pass fewer than ten runs", () => {
-    const report = evaluateDeterminismQa(Array.from({ length: 9 }, (_, index) => deterministicRun(index)));
+    const report = evaluateDeterminismQa(
+      Array.from({ length: 9 }, (_, index) => deterministicRun(index)),
+    );
     expect(report.status).toBe("UNAVAILABLE");
+  });
+
+  it("fails when one repeat run comes from a different environment", () => {
+    const runs = Array.from({ length: 10 }, (_, index) =>
+      deterministicRun(index, {
+        environmentFingerprint: index === 9 ? "different-environment" : BENCHMARK_ENVIRONMENT,
+      }),
+    );
+    const report = evaluateDeterminismQa(runs);
+    expect(report.status).toBe("FAIL");
+    expect(report.failures.join("\n")).toContain("different environment fingerprint");
   });
 
   it("fails when layout decisions randomly change", () => {
@@ -147,8 +198,18 @@ describe("NODE-30 performance scale QA", () => {
       performanceSample("confirm", 55_000),
     ]);
     expect(report.status).toBe("PASS");
+    expect(report.benchmarkEnvironment).toBe(BENCHMARK_ENVIRONMENT);
     expect(report.calibratedHardBudgetMs).toBeNull();
     expect(report.p95DurationMs).not.toBeNull();
+  });
+
+  it("fails performance aggregation across mixed benchmark environments", () => {
+    const report = evaluatePerformanceQa([
+      performanceSample("first", 1_000),
+      performanceSample("second", 2_000, { benchmarkEnvironment: "different-environment" }),
+    ]);
+    expect(report.status).toBe("FAIL");
+    expect(report.failures.join("\n")).toContain("one declared benchmark environment");
   });
 
   it("fails a crashing 10k benchmark and missing large-page safeguards", () => {

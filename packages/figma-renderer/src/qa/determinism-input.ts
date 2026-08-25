@@ -3,6 +3,7 @@ import type { W2fDeterminismRunInput } from "./node30-types.js";
 
 export interface W2fDeterminismIrInput {
   runId: string;
+  environmentFingerprint: string;
   assets: readonly WtfAssetRecord[];
   sourceGraph: WtfSourceGraph;
   renderTree: WtfRenderTree;
@@ -10,6 +11,9 @@ export interface W2fDeterminismIrInput {
 }
 
 export function createDeterminismRunFromIr(input: W2fDeterminismIrInput): W2fDeterminismRunInput {
+  if (!input.environmentFingerprint.trim()) {
+    throw new Error("NODE-30 determinism requires environmentFingerprint");
+  }
   const missingAssetHashes = input.assets.filter((asset) => !asset.sha256).map((asset) => asset.id);
   if (missingAssetHashes.length > 0) {
     throw new Error(`NODE-30 determinism requires asset hashes: ${missingAssetHashes.join(", ")}`);
@@ -43,6 +47,7 @@ export function createDeterminismRunFromIr(input: W2fDeterminismIrInput): W2fDet
 
   return {
     runId: input.runId,
+    environmentFingerprint: input.environmentFingerprint,
     assetHashes: input.assets.map((asset) => asset.sha256!),
     sourceGraph: input.sourceGraph,
     renderTree: input.renderTree,

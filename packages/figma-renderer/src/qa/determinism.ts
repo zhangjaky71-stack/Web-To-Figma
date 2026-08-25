@@ -47,6 +47,7 @@ export function evaluateDeterminismQa(
 ): W2fDeterminismQaReport {
   const fingerprints = runs.map(fingerprintRun);
   const failures: string[] = [];
+  const environmentFingerprint = runs[0]?.environmentFingerprint.trim() || null;
 
   if (runs.length < W2F_NODE30_REQUIRED_DETERMINISM_RUNS) {
     return {
@@ -54,11 +55,27 @@ export function evaluateDeterminismQa(
       status: "UNAVAILABLE",
       requiredRuns: W2F_NODE30_REQUIRED_DETERMINISM_RUNS,
       observedRuns: runs.length,
+      environmentFingerprint,
       fingerprints,
       failures: [
         `Determinism gate requires ${W2F_NODE30_REQUIRED_DETERMINISM_RUNS} runs; observed ${runs.length}`,
       ],
     };
+  }
+
+  if (!environmentFingerprint) {
+    failures.push("Determinism gate requires a non-empty same-environment fingerprint");
+  }
+  const runIds = new Set<string>();
+  for (const run of runs) {
+    if (!run.runId.trim()) failures.push("Determinism runId must be non-empty");
+    if (runIds.has(run.runId)) failures.push(`Duplicate determinism runId ${run.runId}`);
+    runIds.add(run.runId);
+    if (!run.environmentFingerprint.trim()) {
+      failures.push(`Run ${run.runId} is missing environmentFingerprint`);
+    } else if (environmentFingerprint && run.environmentFingerprint !== environmentFingerprint) {
+      failures.push(`Run ${run.runId} used a different environment fingerprint`);
+    }
   }
 
   const baseline = fingerprints[0];
@@ -68,6 +85,7 @@ export function evaluateDeterminismQa(
       status: "UNAVAILABLE",
       requiredRuns: W2F_NODE30_REQUIRED_DETERMINISM_RUNS,
       observedRuns: 0,
+      environmentFingerprint,
       fingerprints,
       failures: ["Determinism gate has no baseline run"],
     };
@@ -85,6 +103,7 @@ export function evaluateDeterminismQa(
     status: failures.length > 0 ? "FAIL" : "PASS",
     requiredRuns: W2F_NODE30_REQUIRED_DETERMINISM_RUNS,
     observedRuns: runs.length,
+    environmentFingerprint,
     fingerprints,
     failures,
   };

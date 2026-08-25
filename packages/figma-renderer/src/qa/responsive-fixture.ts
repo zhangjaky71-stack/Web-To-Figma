@@ -23,6 +23,7 @@ export interface W2fResponsiveFixtureNodeState {
   order?: number;
   gridColumnCount?: number;
   constraintSignature?: string;
+  containerQuerySignature?: string;
 }
 
 export interface W2fResponsiveFixtureComparisonInput {
@@ -115,6 +116,13 @@ export function responsiveChecksFromFixture(
       "constraints",
       expected.constraintSignature,
       observed.constraintSignature,
+    );
+    addCheck(
+      checks,
+      `${prefix}/container-query`,
+      "breakpoints",
+      expected.containerQuerySignature,
+      observed.containerQuerySignature,
     );
   }
 

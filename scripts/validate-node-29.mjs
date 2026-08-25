@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 
 const root = process.cwd();
 const failures = [];
+const localOnlyForbidden = ["fetch(", "XMLHttpRequest", "WebSocket", "eval(", "new Function("];
 const required = [
   "packages/figma-renderer/src/qa/types.ts",
   "packages/figma-renderer/src/qa/pixel.ts",
@@ -95,16 +96,10 @@ if (failures.length === 0) {
   ]) {
     assert(qaPayload.includes(evidence), `NODE-29 full-page QA evidence missing ${evidence}`);
   }
-  for (const forbidden of [
-    "fetch(",
-    "XMLHttpRequest",
-    "WebSocket",
-    "eval(",
-    "new Function(",
-  ]) {
+  for (const forbidden of localOnlyForbidden) {
     assert(
       !qaPayload.includes(forbidden),
-      `NODE-29 QA payload must remain local-only: ${forbidden}`,
+      `NODE-29 QA payload must remain local-only at runtime: ${forbidden}`,
     );
   }
 
@@ -121,14 +116,11 @@ if (failures.length === 0) {
   ]) {
     assert(visualUi.includes(evidence), `NODE-29 UI pixel comparison missing ${evidence}`);
   }
-  for (const forbidden of [
-    "fetch(",
-    "XMLHttpRequest",
-    "WebSocket",
-    "eval(",
-    "new Function(",
-  ]) {
-    assert(!visualUi.includes(forbidden), `NODE-29 visual UI must remain local-only: ${forbidden}`);
+  for (const forbidden of localOnlyForbidden) {
+    assert(
+      !visualUi.includes(forbidden),
+      `NODE-29 visual UI must remain local-only at runtime: ${forbidden}`,
+    );
   }
 
   const main = text("apps/figma-plugin/src/main.ts");
@@ -155,14 +147,11 @@ if (failures.length === 0) {
   ]) {
     assert(main.includes(evidence), `NODE-29 Figma runtime missing ${evidence}`);
   }
-  for (const forbidden of [
-    "fetch(",
-    "XMLHttpRequest",
-    "WebSocket",
-    "eval(",
-    "new Function(",
-  ]) {
-    assert(!main.includes(forbidden), `NODE-29 Figma runtime must remain local-only: ${forbidden}`);
+  for (const forbidden of localOnlyForbidden) {
+    assert(
+      !main.includes(forbidden),
+      `NODE-29 Figma runtime must remain local-only at runtime: ${forbidden}`,
+    );
   }
 
   const ui = text("apps/figma-plugin/src/ui.ts");

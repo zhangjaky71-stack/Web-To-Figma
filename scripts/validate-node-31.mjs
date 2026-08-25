@@ -7,7 +7,9 @@ const required = [
   "packages/figma-renderer/src/qa/node31-types.ts",
   "packages/figma-renderer/src/qa/compatibility.ts",
   "packages/figma-renderer/src/qa/release-candidate.ts",
+  "packages/figma-renderer/src/qa/evidence-manifest.ts",
   "packages/figma-renderer/test/node31-release-candidate.test.ts",
+  "packages/figma-renderer/test/node31-evidence-manifest.test.ts",
   "docs/nodes/NODE-31_REAL_WORLD_COMPATIBILITY_RELEASE_CANDIDATE.md",
   "docs/qa/NODE-31_RC_EVIDENCE_V1.json",
   "docs/KNOWN_LIMITATIONS.md",
@@ -112,6 +114,18 @@ if (failures.length === 0) {
     "NODE-31 editable/raster medians must be scoped to native-supported standard HTML/CSS",
   );
 
+  const manifestEvaluator = text("packages/figma-renderer/src/qa/evidence-manifest.ts");
+  for (const evidence of [
+    "evaluateNode31EvidenceManifest",
+    "missingRealisticCategories",
+    "measurementArtifact",
+    "cannot PASS without a measurementArtifact",
+    "cannot claim ready while required evidence is unavailable",
+    "known security blockers",
+  ]) {
+    assert(manifestEvaluator.includes(evidence), `NODE-31 evidence evaluator missing ${evidence}`);
+  }
+
   for (const forbidden of localOnlyForbidden) {
     assert(
       !release.includes(forbidden),
@@ -120,6 +134,10 @@ if (failures.length === 0) {
     assert(
       !compatibility.includes(forbidden),
       `NODE-31 compatibility evaluator must remain local-only: ${forbidden}`,
+    );
+    assert(
+      !manifestEvaluator.includes(forbidden),
+      `NODE-31 evidence manifest evaluator must remain local-only: ${forbidden}`,
     );
   }
 
@@ -134,6 +152,18 @@ if (failures.length === 0) {
     "security, schema/version, determinism, P0, or known-limitations failures",
   ]) {
     assert(tests.includes(evidence), `NODE-31 tests missing ${evidence}`);
+  }
+
+  const manifestTests = text("packages/figma-renderer/test/node31-evidence-manifest.test.ts");
+  for (const evidence of [
+    "source-only collecting evidence UNAVAILABLE",
+    "required Class B category disappears",
+    "measurementArtifact provenance",
+    "ready manifest only when required evidence is measured and sourced",
+    "ready claim while required evidence is still unavailable",
+    "known critical/high security blockers",
+  ]) {
+    assert(manifestTests.includes(evidence), `NODE-31 evidence manifest tests missing ${evidence}`);
   }
 
   const manifestPath = "docs/qa/NODE-31_RC_EVIDENCE_V1.json";
@@ -223,6 +253,18 @@ if (failures.length === 0) {
       `NODE-31 migration compatibility source missing ${evidence}`,
     );
   }
+
+  const qaIndex = text("packages/figma-renderer/src/qa/index.ts");
+  assert(
+    qaIndex.includes('export * from "./evidence-manifest.js"'),
+    "NODE-31 evidence manifest evaluator must be exported",
+  );
+
+  const prettierIgnore = text(".prettierignore");
+  assert(
+    prettierIgnore.includes("qa/corpus/node31"),
+    "NODE-31 realistic corpus bytes must be excluded from auto-formatting",
+  );
 
   const doc = text("docs/nodes/NODE-31_REAL_WORLD_COMPATIBILITY_RELEASE_CANDIDATE.md");
   for (const evidence of [

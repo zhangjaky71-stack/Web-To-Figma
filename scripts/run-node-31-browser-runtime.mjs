@@ -83,7 +83,7 @@ class CdpClient {
 
 async function waitForDevToolsPort(profileDir, chromeProcess, stderr) {
   const activePortPath = join(profileDir, "DevToolsActivePort");
-  for (let attempt = 0; attempt < 120; attempt += 1) {
+  for (let attempt = 0; attempt < 400; attempt += 1) {
     if (chromeProcess.exitCode !== null) {
       throw new Error(`Chrome exited before CDP was ready (${chromeProcess.exitCode}).\n${stderr()}`);
     }

@@ -90,7 +90,9 @@ async function pixelCapture(
   adapter: "standard" | "cdp",
   includeFullPage: boolean,
 ): Promise<PixelGroundTruthCapture> {
-  const references = [reference("viewport:current", "viewport", { x: 0, y: 0, width: 100, height: 100 }, 1)];
+  const references = [
+    reference("viewport:current", "viewport", { x: 0, y: 0, width: 100, height: 100 }, 1),
+  ];
   if (includeFullPage) {
     references.push(
       reference("full-page:current", "full-page", { x: 0, y: 0, width: 100, height: 300 }, 2),

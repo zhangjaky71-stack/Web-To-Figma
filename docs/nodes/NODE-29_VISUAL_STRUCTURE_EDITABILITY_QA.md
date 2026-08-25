@@ -87,6 +87,13 @@ NODE-29 is complete only when:
 5. the permanent `validate-node-29.mjs` guardrail passes;
 6. lint, typecheck, tests, build, packaged plugin validation, and format checks pass on the exact PR head.
 
+## Candidate evidence
+
+- CI #691 passed lint, typecheck, tests, build, and packaged Figma plugin validation after the Figma scene typing correction.
+- CI #691 identified only four Prettier format differences.
+- The controlled NODE-29 format closure normalized those files and removed its temporary workflow before the exact-head candidate run.
+- The final candidate must still pass the permanent NODE-29 validator and the complete read-only CI on its exact head.
+
 ## Boundary with NODE-30
 
 NODE-30 owns Responsive / Determinism / Performance QA across repeated runs, viewport families, and performance budgets. NODE-29 establishes the single-import visual, structural, editability, and raster-quality contract that NODE-30 will reuse.

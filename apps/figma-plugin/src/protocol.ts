@@ -1,4 +1,5 @@
-import type { WtfRenderTree, WtfSourceGraph } from "@w2f/w2f-ir";
+import type { WtfAssetRecord, WtfRenderTree, WtfSourceGraph } from "@w2f/w2f-ir";
+import type { Rect, WtfReferenceTileDescriptor } from "@w2f/w2f-schema";
 
 export const W2F_FIGMA_PROTOCOL = "w2f-figma-plugin" as const;
 export const W2F_FIGMA_PROTOCOL_VERSION = 1 as const;
@@ -15,6 +16,25 @@ export type W2fTokenPolicy = (typeof W2F_TOKEN_POLICIES)[number];
 
 export const W2F_INTAKE_SOURCES = ["choose", "ui-drop", "canvas-drop"] as const;
 export type W2fIntakeSource = (typeof W2F_INTAKE_SOURCES)[number];
+
+export const W2F_RASTER_REFERENCE_KINDS = [
+  "node-fallback",
+  "canvas",
+  "webgl",
+  "video-frame",
+] as const;
+export type W2fRasterReferenceKind = (typeof W2F_RASTER_REFERENCE_KINDS)[number];
+
+export interface W2fRasterReferenceEvidence {
+  id: string;
+  kind: W2fRasterReferenceKind;
+  viewportId: string;
+  bounds: Rect;
+  dpr: number;
+  sourceNodeId: string;
+  reason?: string;
+  tiles: WtfReferenceTileDescriptor[];
+}
 
 export const W2F_IMPORT_PROGRESS_STAGES = [
   "idle",
@@ -91,6 +111,11 @@ export interface W2fBasicRenderRequest {
   mode: "whole-page" | "selected-roots";
   selectedRootIds: string[];
   tokenPolicy: "literal";
+  assets?: readonly WtfAssetRecord[];
+  assetPayloadsById?: Readonly<Record<string, Uint8Array>>;
+  sanitizedSvgById?: Readonly<Record<string, string>>;
+  rasterReferences?: readonly W2fRasterReferenceEvidence[];
+  rasterTilePayloadsByPath?: Readonly<Record<string, Uint8Array>>;
   destination?: W2fCanvasPoint;
   importName?: string;
 }
@@ -164,6 +189,14 @@ function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((item) => typeof item === "string");
 }
 
+function isUint8ArrayRecord(value: unknown): value is Record<string, Uint8Array> {
+  return isRecord(value) && Object.values(value).every((item) => item instanceof Uint8Array);
+}
+
+function isStringRecord(value: unknown): value is Record<string, string> {
+  return isRecord(value) && Object.values(value).every((item) => typeof item === "string");
+}
+
 function isFinitePoint(value: unknown): value is W2fCanvasPoint {
   return (
     isRecord(value) &&
@@ -171,6 +204,76 @@ function isFinitePoint(value: unknown): value is W2fCanvasPoint {
     Number.isFinite(value.x) &&
     typeof value.y === "number" &&
     Number.isFinite(value.y)
+  );
+}
+
+function isRect(value: unknown): value is Rect {
+  return (
+    isRecord(value) &&
+    typeof value.x === "number" &&
+    Number.isFinite(value.x) &&
+    typeof value.y === "number" &&
+    Number.isFinite(value.y) &&
+    typeof value.width === "number" &&
+    Number.isFinite(value.width) &&
+    value.width >= 0 &&
+    typeof value.height === "number" &&
+    Number.isFinite(value.height) &&
+    value.height >= 0
+  );
+}
+
+function isReferenceTile(value: unknown): value is WtfReferenceTileDescriptor {
+  return (
+    isRecord(value) &&
+    typeof value.id === "string" &&
+    value.id.length > 0 &&
+    typeof value.path === "string" &&
+    value.path.length > 0 &&
+    typeof value.viewportId === "string" &&
+    value.viewportId.length > 0 &&
+    isRect(value.bounds) &&
+    typeof value.dpr === "number" &&
+    Number.isFinite(value.dpr) &&
+    value.dpr > 0 &&
+    typeof value.sha256 === "string" &&
+    /^[a-f0-9]{64}$/i.test(value.sha256)
+  );
+}
+
+export function isW2fRasterReferenceEvidence(value: unknown): value is W2fRasterReferenceEvidence {
+  return (
+    isRecord(value) &&
+    typeof value.id === "string" &&
+    value.id.length > 0 &&
+    typeof value.kind === "string" &&
+    (W2F_RASTER_REFERENCE_KINDS as readonly string[]).includes(value.kind) &&
+    typeof value.viewportId === "string" &&
+    value.viewportId.length > 0 &&
+    isRect(value.bounds) &&
+    typeof value.dpr === "number" &&
+    Number.isFinite(value.dpr) &&
+    value.dpr > 0 &&
+    typeof value.sourceNodeId === "string" &&
+    value.sourceNodeId.length > 0 &&
+    (value.reason === undefined || typeof value.reason === "string") &&
+    Array.isArray(value.tiles) &&
+    value.tiles.length > 0 &&
+    value.tiles.every(isReferenceTile)
+  );
+}
+
+function isAssetArray(value: unknown): value is WtfAssetRecord[] {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (item) =>
+        isRecord(item) &&
+        typeof item.id === "string" &&
+        item.id.length > 0 &&
+        typeof item.kind === "string" &&
+        typeof item.mediaType === "string",
+    )
   );
 }
 
@@ -227,6 +330,32 @@ export function isW2fBasicRenderRequest(value: unknown): value is W2fBasicRender
     !isRecord(value.sourceGraph.revision)
   ) {
     return false;
+  }
+  if (value.assets !== undefined && !isAssetArray(value.assets)) return false;
+  if (value.assetPayloadsById !== undefined && !isUint8ArrayRecord(value.assetPayloadsById)) return false;
+  if (value.sanitizedSvgById !== undefined && !isStringRecord(value.sanitizedSvgById)) return false;
+  if (
+    value.rasterReferences !== undefined &&
+    (!Array.isArray(value.rasterReferences) ||
+      !value.rasterReferences.every(isW2fRasterReferenceEvidence))
+  ) {
+    return false;
+  }
+  if (
+    value.rasterTilePayloadsByPath !== undefined &&
+    !isUint8ArrayRecord(value.rasterTilePayloadsByPath)
+  ) {
+    return false;
+  }
+  if (Array.isArray(value.rasterReferences)) {
+    const payloads = value.rasterTilePayloadsByPath;
+    if (value.rasterReferences.length > 0 && !isUint8ArrayRecord(payloads)) return false;
+    for (const reference of value.rasterReferences) {
+      if (!isW2fRasterReferenceEvidence(reference)) return false;
+      for (const tile of reference.tiles) {
+        if (!payloads?.[tile.path]) return false;
+      }
+    }
   }
   if (value.destination !== undefined && !isFinitePoint(value.destination)) return false;
   if (value.importName !== undefined && typeof value.importName !== "string") return false;

@@ -57,18 +57,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: NODE-31 Pixel contract Prettier diagnostic
-        run: |
-          pnpm exec prettier --write \
-            apps/browser-extension/src/runtime/pixel-ground-truth-contract.ts \
-            apps/browser-extension/src/runtime/profile-compliant-wtf-package.ts \
-            apps/browser-extension/test/profile-compliant-wtf-package.test.ts
-          git diff -- \
-            apps/browser-extension/src/runtime/pixel-ground-truth-contract.ts \
-            apps/browser-extension/src/runtime/profile-compliant-wtf-package.ts \
-            apps/browser-extension/test/profile-compliant-wtf-package.test.ts
-          exit 1
-
       - name: Lint
         run: pnpm lint
 

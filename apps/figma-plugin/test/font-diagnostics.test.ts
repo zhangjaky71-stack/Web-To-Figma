@@ -23,9 +23,7 @@ describe("NODE-31 font substitution diagnostics", () => {
     );
 
     expect(pluginData.get("w2f.font.substitutionCount")).toBe("1");
-    expect(JSON.parse(pluginData.get("w2f.font.substitutions") ?? "[]")).toEqual([
-      diagnostic(1),
-    ]);
+    expect(JSON.parse(pluginData.get("w2f.font.substitutions") ?? "[]")).toEqual([diagnostic(1)]);
     expect(pluginData.get("w2f.font.substitutionsTruncated")).toBe("false");
   });
 

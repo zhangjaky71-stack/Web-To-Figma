@@ -60,6 +60,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: NODE-31 guard Prettier diagnostic
+        run: |
+          pnpm exec prettier --write scripts/validate-node-31-p0.mjs scripts/validate-node-31-corpus.mjs
+          git diff -- scripts/validate-node-31-p0.mjs scripts/validate-node-31-corpus.mjs
+          exit 1
+
       - name: Lint
         run: pnpm lint
 

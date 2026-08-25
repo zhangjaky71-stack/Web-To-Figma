@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { WtfRenderNode, WtfRenderTree } from "@w2f/w2f-ir";
 import {
+  combineVisualPixelMetrics,
   compareRgbaPixels,
   evaluateStructureAndEditabilityQa,
   evaluateVisualQa,
@@ -81,25 +82,19 @@ describe("NODE-29 structure and editability QA", () => {
       "root",
       "container",
       { x: 0, y: 0, width: 400, height: 200 },
-      {
-        childIds: ["text", "vector"],
-      },
+      { childIds: ["text", "vector"] },
     );
     const text = renderNode(
       "text",
       "text",
       { x: 0, y: 0, width: 200, height: 200 },
-      {
-        parentId: "root",
-      },
+      { parentId: "root" },
     );
     const vector = renderNode(
       "vector",
       "vector",
       { x: 200, y: 0, width: 200, height: 200 },
-      {
-        parentId: "root",
-      },
+      { parentId: "root" },
     );
     const report = evaluateStructureAndEditabilityQa({
       renderTree: tree([root, text, vector]),
@@ -120,9 +115,7 @@ describe("NODE-29 structure and editability QA", () => {
       "root",
       "container",
       { x: 0, y: 0, width: 400, height: 250 },
-      {
-        childIds: ["fallback", "native-text"],
-      },
+      { childIds: ["fallback", "native-text"] },
     );
     const fallback = renderNode(
       "fallback",
@@ -134,17 +127,13 @@ describe("NODE-29 structure and editability QA", () => {
       "hidden-text",
       "text",
       { x: 0, y: 0, width: 100, height: 100 },
-      {
-        parentId: "fallback",
-      },
+      { parentId: "fallback" },
     );
     const nativeText = renderNode(
       "native-text",
       "text",
       { x: 100, y: 0, width: 300, height: 300 },
-      {
-        parentId: "root",
-      },
+      { parentId: "root" },
     );
     const report = evaluateStructureAndEditabilityQa({
       renderTree: tree([root, fallback, hiddenText, nativeText]),
@@ -193,5 +182,20 @@ describe("NODE-29 pixel QA", () => {
     expect(metrics.normalizedSimilarity).toBeLessThan(0.99);
     expect(metrics.changedPixelRatio).toBe(1);
     expect(evaluateVisualQa(metrics, "deterministic").status).toBe("FAIL");
+  });
+
+  it("combines tiled visual metrics by pixel weight instead of averaging tiles equally", () => {
+    const perfectLarge = compareRgbaPixels(
+      Uint8Array.from(new Array(40).fill(0)),
+      Uint8Array.from(new Array(40).fill(0)),
+    );
+    const badSmall = compareRgbaPixels(
+      Uint8Array.from([0, 0, 0, 0]),
+      Uint8Array.from([255, 255, 255, 255]),
+    );
+    const combined = combineVisualPixelMetrics([perfectLarge, badSmall]);
+    expect(combined.pixelCount).toBe(11);
+    expect(combined.normalizedSimilarity).toBeCloseTo(10 / 11, 6);
+    expect(combined.changedPixelRatio).toBeCloseTo(1 / 11, 6);
   });
 });

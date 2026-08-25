@@ -26,6 +26,16 @@ import {
   type W2fUiToMainPayload,
 } from "./protocol.js";
 import { node28RasterPayload } from "./raster-payload.js";
+import { node29PixelQaReference } from "./qa-payload.js";
+import {
+  runNode29VisualQa,
+  unavailableNode29VisualQa,
+  type W2fQaVisualExportPayload,
+} from "./visual-qa-ui.js";
+
+type W2fNode29MainPayload =
+  | W2fMainToUiPayload
+  | ({ type: "W2F_QA_VISUAL_EXPORT"; intakeId: string } & W2fQaVisualExportPayload);
 
 function element<T extends HTMLElement>(id: string): T {
   const value = document.getElementById(id);
@@ -57,7 +67,26 @@ function postToMain(payload: W2fUiToMainPayload): void {
   parent.postMessage({ pluginMessage: figmaMessage(payload) }, "*");
 }
 
-function isMainMessage(value: unknown): value is { payload: W2fMainToUiPayload } {
+function postNode29VisualResult(
+  intakeId: string,
+  referenceId: string,
+  result: Awaited<ReturnType<typeof runNode29VisualQa>>,
+): void {
+  parent.postMessage(
+    {
+      pluginMessage: figmaMessage({
+        type: "W2F_QA_VISUAL_RESULT",
+        intakeId,
+        referenceId,
+        report: result.report,
+        detail: result.detail,
+      }),
+    },
+    "*",
+  );
+}
+
+function isMainMessage(value: unknown): value is { payload: W2fNode29MainPayload } {
   if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
   const record = value as Record<string, unknown>;
   if (record.protocol !== W2F_FIGMA_PROTOCOL || record.version !== W2F_FIGMA_PROTOCOL_VERSION)
@@ -329,6 +358,28 @@ function node26AssetPayload(parsed: WtfParsedPackage) {
   };
 }
 
+async function handleNode29VisualExport(
+  payload: Extract<W2fNode29MainPayload, { type: "W2F_QA_VISUAL_EXPORT" }>,
+): Promise<void> {
+  if (!state.descriptor || state.descriptor.intakeId !== payload.intakeId || !currentParsed) {
+    const unavailable = unavailableNode29VisualQa("secure parsed package is no longer available");
+    postNode29VisualResult(payload.intakeId, payload.referenceId, unavailable);
+    return;
+  }
+  try {
+    const result = await runNode29VisualQa(currentParsed, {
+      referenceId: payload.referenceId,
+      tiles: payload.tiles,
+    });
+    postNode29VisualResult(payload.intakeId, payload.referenceId, result);
+  } catch (error) {
+    const unavailable = unavailableNode29VisualQa(
+      error instanceof Error ? error.message : String(error),
+    );
+    postNode29VisualResult(payload.intakeId, payload.referenceId, unavailable);
+  }
+}
+
 chooseButton.addEventListener("click", () => fileInput.click());
 fileInput.addEventListener("change", () => {
   const file = fileInput.files?.[0];
@@ -371,6 +422,8 @@ importButton.addEventListener("click", () => {
     setError("W2F_E_RASTER_PAYLOAD", error instanceof Error ? error.message : String(error));
     return;
   }
+  const qaPixelReference =
+    state.selection.scope === "whole-page" ? node29PixelQaReference(parsed) : undefined;
   importButton.disabled = true;
   postToMain({ type: "W2F_IMPORT_SELECTION", selection: state.selection });
   const request = {
@@ -386,6 +439,7 @@ importButton.addEventListener("click", () => {
     tokenPolicy: "literal" as const,
     ...node26AssetPayload(parsed),
     ...rasterPayload,
+    ...(qaPixelReference ? { qaPixelReference } : {}),
     ...(state.descriptor.canvasPoint ? { destination: state.descriptor.canvasPoint } : {}),
     ...(parsed.preview.title
       ? { importName: parsed.preview.title }
@@ -416,6 +470,9 @@ window.addEventListener("message", (event: MessageEvent) => {
     case "W2F_RENDER_RESULT":
       if (state.descriptor?.intakeId !== payload.result.intakeId) return;
       progressDetail.textContent = `${payload.result.createdNodeCount.toLocaleString()} nodes created · ${payload.result.mappedRenderNodeCount.toLocaleString()} Render Tree nodes mapped`;
+      return;
+    case "W2F_QA_VISUAL_EXPORT":
+      void handleNode29VisualExport(payload);
       return;
     case "W2F_PROGRESS":
       if (payload.progress.stage !== "awaiting-secure-parser" || !currentParsed) {

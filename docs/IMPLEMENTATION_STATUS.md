@@ -4,7 +4,7 @@
 **Portable package:** `.wtf`  
 **MIME:** `application/x-wtf`  
 **Architecture:** FROZEN FOR IMPLEMENTATION  
-**Updated:** 2026-08-24
+**Updated:** 2026-08-25
 
 ## Roadmap
 
@@ -37,92 +37,124 @@
 | 24 | Figma Capability Resolver | DONE | Exact-head CI #630 PASS | PR #28 merged as `e9e4d1e9` |
 | 25 | Basic Figma Renderer | DONE | Bootstrap CI #638 + exact-head CI #640 PASS | PR #29 merged as `35d9a18b` |
 | 26 | Text / Font / Asset / Paint Renderer | DONE | Exact-head CI #651 PASS | PR #31 merged as `f6247ddc` |
-| 27 | Figma Responsive Layout Renderer | IMPLEMENTING | Candidate CI in progress | PR #32 / `node-27-responsive-layout` |
-| 28 | Hybrid Native / Raster Renderer | TODO | - | - |
-| 29 | Visual / Structure / Editability QA | TODO | - | - |
+| 27 | Figma Responsive Layout Renderer | DONE | Exact-head CI #667 PASS | PR #32 merged as `4aef2daa` |
+| 28 | Hybrid Native / Raster Renderer | DONE | Exact-head CI #685 PASS | PR #33 merged as `ec880c4f` |
+| 29 | Visual / Structure / Editability QA | IMPLEMENTING | Candidate CI pending | `node-29-visual-structure-editability-qa` |
 | 30 | Responsive / Determinism / Performance QA | TODO | - | - |
 | 31 | Real-world Compatibility & Release Candidate | TODO | - | - |
 
 ## Current Node
 
-`NODE-27 — Figma Responsive Layout Renderer`
+`NODE-29 — Visual / Structure / Editability QA`
 
 Entry baseline:
 
 ```text
-f6247ddc6770a08c540dd5052936e788ca0c2b0e
+ec880c4f9672d2286925b58414909a09b82654b8
 ```
 
 Working branch:
 
 ```text
-node-27-responsive-layout
+node-29-visual-structure-editability-qa
 ```
 
-Pull request:
+## NODE-28 Closure
+
+NODE-28 was merged to `main` through PR #33 as:
 
 ```text
-#32
+ec880c4f9672d2286925b58414909a09b82654b8
 ```
 
-## NODE-26 Closure
+The merge records exact-head CI #685 passing the permanent validators, frozen install, lint, strict typecheck, tests, build/Figma package validation and format checks.
 
-NODE-26 was merged to `main` via PR #31 as:
+NODE-28 owns selective hybrid/native-raster fallback execution. It consumes upstream fallback/compositing evidence, keeps supported text/vector/layout output native/editable, and rasterizes only explicit fallback boundaries using validated local `.wtf` evidence. NODE-29 must treat those intended fallback boundaries as valid rather than reporting every raster layer as a failure.
+
+## NODE-29 Frozen Scope
+
+NODE-29 adds measurable acceptance gates in three domains.
+
+### 1. Visual QA
+
+Compare imported Figma output against NODE-14 Pixel Ground Truth using deterministic reference regions and pixel metrics. The QA result must expose measurable error instead of a subjective “looks close” result.
+
+Planned metrics include:
 
 ```text
-f6247ddc6770a08c540dd5052936e788ca0c2b0e
+pixel count
+mean absolute error (MAE)
+root mean square error (RMSE)
+per-channel maximum error
+changed-pixel ratio above a configured tolerance
+size/dimension mismatch
 ```
 
-The merge records exact-head CI #651 passing Foundation, frozen install, Lint, Typecheck, Tests, Build, Format check, and packaged Figma plugin validation.
+The Figma runtime will export deterministic QA regions locally; the plugin UI will decode source/exported PNG bytes and calculate pixel metrics using browser canvas APIs. No remote service is required.
 
-NODE-26 now owns editable text reconstruction, local font resolution, per-run text styling, embedded image paints, sanitized SVG reconstruction, native fills/gradients, border/radius, shadows, opacity/blend mapping and full-root rollback on visual-render failure. NODE-27 builds on those native nodes rather than replacing them.
+### 2. Structure QA
 
-## NODE-27 Frozen Scope
-
-NODE-27 is limited to responsive/native layout reconstruction:
+Verify the imported Figma scene still represents the validated Render Tree/source mapping:
 
 ```text
-Flex -> Figma Auto Layout
-row / row-reverse / column / column-reverse
-nowrap / wrap
-gap + independent wrapped-track gap
-four-side padding
-primary/counter-axis alignment
-FILL / HUG / FIXED sizing
-flex-grow mapping
-min/max width and height
-absolute/fixed child layout positioning + constraints
-native Figma GRID where captured semantics are faithfully representable
+render-node mapping coverage
+unique w2f.nodeId ownership
+expected parent/child hierarchy
+sibling ordering where native hierarchy remains
+source/stable/revision pluginData retention
+explicit exemptions for descendants intentionally collapsed by NODE-28 raster boundaries
 ```
 
-The W2F IR already carries the required evidence through `flexContainer`, `flexItem`, `gridContainer`, `gridItem`, axis sizing, padding/effective gaps and absolute constraints. NODE-27 must consume that evidence and must not re-infer layout from screenshots.
+### 3. Editability QA
 
-## Fidelity Policy
+Measure whether content that should remain editable actually remains native/editable:
 
-Unsupported browser layout semantics must never be silently approximated. If Figma lacks an exact native equivalent, NODE-27 keeps the NODE-25/NODE-26 source geometry and records the mapping as non-native-compatible. Examples include `wrap-reverse` and main-axis spacing modes without an exact Figma equivalent.
+```text
+text RenderNode -> Figma TEXT coverage
+editable SVG/vector coverage
+native container/layout coverage
+intended raster-boundary count
+unexpected rasterization count
+over-rasterization / document-root raster guard
+missing-native-mapping count
+```
 
-NODE-28 remains responsible for selective hybrid/raster fallback. NODE-29 remains responsible for Pixel Ground Truth visual/editability QA.
+A NODE-28 raster boundary is valid only when the corresponding Render Tree strategy/fallback evidence allows it. Accidental rasterization of native content is a QA failure.
 
-## Current NODE-27 Implementation
+## Quality Classification
 
-The branch currently contains:
+NODE-29 results use explicit severity rather than hiding failures:
 
-- a deterministic Flex/Auto Layout planner in `@w2f/figma-renderer`;
-- native-compatible mapping for direction, wrapping, gap, padding and alignment;
-- FILL/HUG/FIXED and `flex-grow` planning;
-- min/max sizing evidence;
-- protection for absolute children;
-- a Figma runtime mapper using native Auto Layout properties;
-- import-pipeline integration after NODE-26 visual node replacement;
-- explicit skip accounting for unsupported exact-Flex mappings;
-- unit tests covering row/column, wrap, gap, padding, grow, min/max, absolute children and unsupported semantics.
+```text
+PASS        all required structural/editability gates pass and visual error is within threshold
+WARNING     non-fatal fidelity degradation is measured and reported
+FAIL        structure/editability invariants are broken or visual error exceeds the acceptance gate
+UNAVAILABLE visual comparison could not be executed because required reference/export bytes are absent
+```
 
-See `docs/nodes/NODE-27_FIGMA_RESPONSIVE_LAYOUT_RENDERER.md` for the frozen contract.
+`UNAVAILABLE` is not silently treated as `PASS`.
 
-## Blockers
+## Safety / Determinism Rules
 
-No product or architecture blocker is known. GitHub CI may expose strict TypeScript/Figma API or formatting issues; these must be fixed without weakening NODE-22/23 security, NODE-25 transaction invariants or NODE-26 visual fidelity.
+- QA never fetches the original web page or external assets;
+- source references come only from the validated `.wtf` package;
+- Figma export bytes stay within the plugin main/UI runtime;
+- QA must not mutate the imported design except temporary export/slice helpers that are removed deterministically;
+- QA calculations are deterministic for the same imported document/reference bytes;
+- intended NODE-28 raster boundaries are tracked separately from unexpected rasterization;
+- whole-page screenshot substitution cannot satisfy editability QA unless the validated Render Tree itself explicitly requires a root raster fallback.
+
+## Implementation Plan
+
+1. add platform-neutral structure/editability QA planning/scoring in `@w2f/figma-renderer`;
+2. add Figma runtime scene inspection with pluginData/hierarchy/type evidence;
+3. add local QA export-region support in Figma main;
+4. add UI PNG decoding + pixel comparison metrics;
+5. add protocol/result reporting without network access;
+6. add unit tests for PASS/WARNING/FAIL/UNAVAILABLE, raster exemptions and over-rasterization;
+7. add permanent NODE-29 validator, implementation doc and ADR;
+8. run exact-head CI and merge only after all existing NODE-22—28 invariants remain green.
 
 ## Next
 
-Finish candidate CI for the native Flex path, then implement and validate the faithful native GRID path and remaining constraint/min-max cases. Add a permanent NODE-27 validator, run exact-head read-only CI, mark PR #32 ready and merge only when the exact head is green. Then begin NODE-28.
+Implement NODE-29 measurable QA gates, merge after exact-head validation, then begin NODE-30 Responsive / Determinism / Performance QA.

@@ -25,6 +25,9 @@ jobs:
       - name: Validate NODE-28 hybrid raster renderer
         run: node scripts/validate-node-28.mjs
 
+      - name: Validate NODE-29 visual structure editability QA
+        run: node scripts/validate-node-29.mjs
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:

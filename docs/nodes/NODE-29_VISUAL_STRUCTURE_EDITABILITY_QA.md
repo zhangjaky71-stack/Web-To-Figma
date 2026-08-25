@@ -19,15 +19,39 @@ Real-world visual observations may use a **95%** warning/pass target when render
 
 ## Visual QA
 
-Visual QA compares equal-length RGBA buffers and records:
+Visual QA compares browser Pixel Ground Truth with Figma-rendered PNG evidence and records:
 
 - mean absolute channel error;
 - root mean squared channel error;
 - maximum channel error;
 - changed-pixel ratio;
-- normalized similarity.
+- normalized similarity;
+- missing tile or dimension mismatch failures.
 
 The browser Pixel Ground Truth remains the visual reference. Missing evidence must be surfaced rather than hidden in an aggregate score.
+
+### Tiled Pixel Ground Truth runtime
+
+Whole-page imports use NODE-14 `full-page` reference evidence already embedded in the securely parsed `.wtf` package. NODE-29 does not download the original page or assets again.
+
+The runtime path is:
+
+```text
+NODE-23 validated .wtf
+  -> full-page Pixel Ground Truth reference + PNG tiles
+  -> imported Figma root clone on a temporary isolated QA page
+  -> Figma SliceNode export for each matching tile region at captured DPR
+  -> W2F_QA_VISUAL_EXPORT
+  -> plugin UI createImageBitmap PNG decoding
+  -> browser tile vs Figma tile RGBA comparison
+  -> pixel-weighted page aggregate
+  -> W2F_QA_VISUAL_RESULT
+  -> root pluginData QA evidence
+```
+
+Using matching tiles avoids a single oversized page PNG and keeps long-page QA aligned to the exact browser Ground Truth tiling geometry. The temporary QA page is removed after export and is never part of the final imported design.
+
+Selected-section imports currently retain structure/editability QA but report page-level visual QA as unavailable unless an exact section-scoped Pixel Ground Truth reference is introduced by a later contract change. `UNAVAILABLE` is never treated as `PASS`.
 
 ## Structure QA
 
@@ -67,32 +91,44 @@ Only NODE-28 source-scoped minimal local fallback boundaries are valid raster su
 
 After import, the root Figma frame persists compact QA evidence in pluginData, including:
 
-- QA version;
-- structure status;
-- structure score;
-- editable area ratio;
-- raster area ratio;
-- failure count.
+- `w2f.qa.version`;
+- `w2f.qa.structureStatus`;
+- `w2f.qa.structureScore`;
+- `w2f.qa.editableAreaRatio`;
+- `w2f.qa.rasterAreaRatio`;
+- `w2f.qa.failureCount`;
+- `w2f.qa.visualStatus`;
+- `w2f.qa.visualSimilarity`;
+- `w2f.qa.changedPixelRatio`;
+- `w2f.qa.visualTarget`;
+- `w2f.qa.visualReferenceId`.
 
 This evidence is diagnostic metadata, not a replacement for benchmark artifacts or Pixel Ground Truth.
+
+## Failure isolation
+
+QA must not corrupt a valid import. Structure/editability failures are persisted and reported rather than silently ignored. Pixel export/decode failures become `UNAVAILABLE` or `FAIL` diagnostics as appropriate. Temporary QA-page cleanup errors are secondary and may not invalidate the committed imported root.
+
+The visual handshake has a bounded timeout so a UI decode failure cannot leave the import stuck indefinitely.
 
 ## Exit gate
 
 NODE-29 is complete only when:
 
 1. visual pixel comparison is implemented and tested;
-2. structure/editability evaluation is implemented and tested;
-3. Figma scene inspection is wired into the real import path;
-4. anti-raster-cheating tests pass;
-5. the permanent `validate-node-29.mjs` guardrail passes;
-6. lint, typecheck, tests, build, packaged plugin validation, and format checks pass on the exact PR head.
+2. browser full-page Ground Truth is connected to real Figma tile export and local UI decoding;
+3. structure/editability evaluation is implemented and tested;
+4. Figma scene inspection is wired into the real import path;
+5. anti-raster-cheating tests pass;
+6. the permanent `validate-node-29.mjs` guardrail covers the end-to-end Pixel QA path;
+7. packaged Figma validation requires the local Pixel QA runtime and remains network-free;
+8. lint, typecheck, tests, build, packaged plugin validation, and format checks pass on the exact closure PR head.
 
 ## Candidate evidence
 
-- CI #691 passed lint, typecheck, tests, build, and packaged Figma plugin validation after the Figma scene typing correction.
-- CI #691 identified only four Prettier format differences.
-- The controlled NODE-29 format closure normalized those files and removed its temporary workflow before the exact-head candidate run.
-- The final candidate must still pass the permanent NODE-29 validator and the complete read-only CI on its exact head.
+PR #35 / CI #697 validated and merged the platform-neutral scoring core, real Figma scene inspection, structure/editability guardrails, documentation, and permanent NODE-29 CI gate.
+
+A post-merge closure is required because the complete `full-page` Ground Truth -> Figma tiled export -> UI decode -> visual-result feedback loop landed after PR #35's merge cut. NODE-29 is not considered operationally closed until that closure passes exact-head CI and is merged to `main`.
 
 ## Boundary with NODE-30
 

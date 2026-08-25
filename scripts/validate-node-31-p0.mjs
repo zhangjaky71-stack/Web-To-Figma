@@ -3,8 +3,12 @@ import { resolve } from "node:path";
 
 const root = process.cwd();
 const failures = [];
-const auditPath = "docs/qa/results/NODE-31_P0_AUDIT_745.json";
+const auditPath = "docs/qa/results/NODE-31_P0_AUDIT_764.json";
 const manifestPath = "docs/qa/NODE-31_RC_EVIDENCE_V1.json";
+const runtimeEvidencePath = "docs/qa/results/NODE-31_BROWSER_RUNTIME_EVIDENCE_764.json";
+const runtimeHarnessPath = "scripts/run-node-31-browser-runtime.mjs";
+const runtimeProductSourcePath = "apps/browser-extension/src/runtime/content-script.ts";
+const runtimeBuiltArtifactPath = "apps/browser-extension/dist/runtime/content-script.js";
 
 const requiredIds = {
   capture: [
@@ -43,6 +47,28 @@ const requiredIds = {
     "raster-text-only-when-policy-justifies",
   ],
 };
+
+const expectedRuntimeAssertions = [
+  "cancel-restores-scroll",
+  "cancel-restores-focus",
+  "cancel-restores-inline-scroll-behavior",
+  "cancel-removes-selector-overlay",
+  "confirm-restores-scroll",
+  "confirm-restores-focus",
+  "confirm-restores-inline-scroll-behavior",
+  "confirm-removes-selector-overlay",
+  "confirm-returns-region-result",
+].sort();
+
+const requiredRuntimeBoundaries = [
+  "visual-state-freeze-and-restore",
+  "current-document-deterministic-online",
+  "file-protocol-explicit-permission",
+  "zero-known-critical-security-blockers",
+  "zero-known-high-security-blockers",
+  "class-a-visual-geometry-text-asset-structure-measurements",
+  "class-b-browser-to-wtf-to-figma-measurements",
+];
 
 function assert(condition, message) {
   if (!condition) failures.push(message);
@@ -102,22 +128,121 @@ function validateSection(audit, sectionName, ids, allItems) {
 
 assert(existsSync(resolve(root, auditPath)), `missing ${auditPath}`);
 assert(existsSync(resolve(root, manifestPath)), `missing ${manifestPath}`);
+assert(existsSync(resolve(root, runtimeEvidencePath)), `missing ${runtimeEvidencePath}`);
+assert(existsSync(resolve(root, runtimeHarnessPath)), `missing ${runtimeHarnessPath}`);
+assert(existsSync(resolve(root, runtimeProductSourcePath)), `missing ${runtimeProductSourcePath}`);
 
 const audit = readJson(auditPath);
 const manifest = readJson(manifestPath);
+const runtimeEvidence = readJson(runtimeEvidencePath);
+
+if (runtimeEvidence) {
+  assert(runtimeEvidence.version === "1.0.0", "NODE-31 browser runtime version must be 1.0.0");
+  assert(
+    runtimeEvidence.evidenceType === "node31-browser-runtime",
+    "NODE-31 browser runtime evidenceType mismatch",
+  );
+  assert(runtimeEvidence.status === "PASS", "NODE-31 browser runtime status must be PASS");
+  assert(runtimeEvidence.ci?.runNumber === 764, "NODE-31 browser runtime must identify CI #764");
+  assert(runtimeEvidence.ci?.runId === 32830737350, "NODE-31 browser runtime run id mismatch");
+  assert(runtimeEvidence.ci?.jobId === 97748603856, "NODE-31 browser runtime job id mismatch");
+  assert(runtimeEvidence.ci?.conclusion === "PASS", "NODE-31 browser runtime CI must be PASS");
+  assert(
+    runtimeEvidence.ci?.branchHead === "c5b3cbdbd0326951ceb23ff2271055c9acbaad19",
+    "NODE-31 browser runtime branch head mismatch",
+  );
+  assert(
+    runtimeEvidence.ci?.mergeRef === "b4603e0e74e9b3c00f7355d01db9d710e9af7c74",
+    "NODE-31 browser runtime merge ref mismatch",
+  );
+  assert(
+    runtimeEvidence.ci?.base === "28b52dc3e0d3074bf76205c8deb324a06dfe9e23",
+    "NODE-31 browser runtime base mismatch",
+  );
+  for (const check of [
+    "node31Validator",
+    "node31P0Validator",
+    "lint",
+    "typecheck",
+    "tests",
+    "build",
+    "browserRuntime",
+    "format",
+  ]) {
+    assert(
+      runtimeEvidence.ci?.qualityChecks?.[check] === "PASS",
+      `NODE-31 browser runtime missing PASS ${check}`,
+    );
+  }
+  assert(
+    runtimeEvidence.environment?.chrome === "Chrome/151.0.7922.137",
+    "NODE-31 browser runtime Chrome version mismatch",
+  );
+  assert(
+    runtimeEvidence.harnessArtifact === runtimeHarnessPath,
+    "NODE-31 browser runtime harness path mismatch",
+  );
+  assert(
+    runtimeEvidence.productSourceArtifact === runtimeProductSourcePath,
+    "NODE-31 browser runtime product source mismatch",
+  );
+  assert(
+    runtimeEvidence.loadedBuiltArtifact === runtimeBuiltArtifactPath,
+    "NODE-31 browser runtime built artifact mismatch",
+  );
+  const mockedBoundary = Array.isArray(runtimeEvidence.transportBoundary?.mocked)
+    ? runtimeEvidence.transportBoundary.mocked
+    : [];
+  assert(
+    mockedBoundary.length === 1 && mockedBoundary[0] === "chrome.runtime.onMessage message transport only",
+    "NODE-31 browser runtime must mock only chrome.runtime.onMessage transport",
+  );
+  const runtimeAssertions = Array.isArray(runtimeEvidence.assertions)
+    ? [...runtimeEvidence.assertions].sort()
+    : [];
+  assert(
+    JSON.stringify(runtimeAssertions) === JSON.stringify(expectedRuntimeAssertions),
+    "NODE-31 browser runtime assertion set mismatch",
+  );
+  const proves = Array.isArray(runtimeEvidence.provesP0Items) ? runtimeEvidence.provesP0Items : [];
+  assert(
+    proves.length === 1 && proves[0] === "finally-scroll-focus-temporary-style-restore",
+    "NODE-31 browser runtime must prove only the intended P0 item",
+  );
+  const notProven = new Set(
+    Array.isArray(runtimeEvidence.notProvenByThisArtifact)
+      ? runtimeEvidence.notProvenByThisArtifact
+      : [],
+  );
+  for (const boundary of requiredRuntimeBoundaries) {
+    assert(
+      notProven.has(boundary),
+      `NODE-31 browser runtime must preserve not-proven boundary ${boundary}`,
+    );
+  }
+}
 
 if (audit) {
   assert(audit.version === "1.0.0", "NODE-31 P0 audit version must be 1.0.0");
   assert(audit.evidenceType === "node31-p0-audit", "NODE-31 P0 audit evidenceType mismatch");
   assert(
-    audit.auditedAgainstBranchHead === "0f12f2b5ca745ebf7f67c967ac0b56efe3ba933a",
-    "NODE-31 P0 audit must stay anchored to exact-head CI #745 until regenerated",
+    audit.auditedAgainstBranchHead === "c5b3cbdbd0326951ceb23ff2271055c9acbaad19",
+    "NODE-31 P0 audit must stay anchored to exact-head CI #764 until regenerated",
   );
-  assert(audit.ci?.runNumber === 745, "NODE-31 P0 audit must identify CI #745");
-  assert(audit.ci?.runId === 32826628971, "NODE-31 P0 audit run id mismatch");
-  assert(audit.ci?.jobId === 97735967516, "NODE-31 P0 audit job id mismatch");
+  assert(audit.ci?.runNumber === 764, "NODE-31 P0 audit must identify CI #764");
+  assert(audit.ci?.runId === 32830737350, "NODE-31 P0 audit run id mismatch");
+  assert(audit.ci?.jobId === 97748603856, "NODE-31 P0 audit job id mismatch");
   assert(audit.ci?.conclusion === "PASS", "NODE-31 P0 audit CI conclusion must be PASS");
-  for (const check of ["node31Validator", "lint", "typecheck", "tests", "build", "format"]) {
+  for (const check of [
+    "node31Validator",
+    "node31P0Validator",
+    "lint",
+    "typecheck",
+    "tests",
+    "build",
+    "browserRuntime",
+    "format",
+  ]) {
     assert(audit.ci?.qualityChecks?.[check] === "PASS", `NODE-31 P0 audit missing PASS ${check}`);
   }
   assert(
@@ -128,6 +253,20 @@ if (audit) {
   const allItems = [];
   for (const [sectionName, ids] of Object.entries(requiredIds)) {
     validateSection(audit, sectionName, ids, allItems);
+  }
+
+  const runtimeItem = allItems.find(
+    (entry) => entry.id === "finally-scroll-focus-temporary-style-restore",
+  );
+  assert(runtimeItem?.status === "PASS", "NODE-31 Chrome-backed cleanup P0 item must be PASS");
+  const runtimeArtifacts = Array.isArray(runtimeItem?.sourceArtifacts)
+    ? runtimeItem.sourceArtifacts
+    : [];
+  for (const artifact of [runtimeProductSourcePath, runtimeHarnessPath, runtimeEvidencePath]) {
+    assert(
+      runtimeArtifacts.includes(artifact),
+      `NODE-31 Chrome-backed cleanup P0 item missing provenance ${artifact}`,
+    );
   }
 
   const unavailableIds = allItems
@@ -141,6 +280,7 @@ if (audit) {
     JSON.stringify(declaredBlocking) === JSON.stringify(unavailableIds),
     "NODE-31 P0 blockingUnavailableIds must exactly match UNAVAILABLE items",
   );
+  assert(unavailableIds.length === 15, "NODE-31 P0 audit must retain exactly 15 unavailable items");
   const derivedStatus = unavailableIds.length === 0 ? "PASS" : "UNAVAILABLE";
   assert(
     audit.policy?.overallStatus === derivedStatus,

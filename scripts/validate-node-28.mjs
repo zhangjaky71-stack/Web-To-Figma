@@ -95,9 +95,9 @@ if (failures.length === 0) {
   }
 
   const main = text("apps/figma-plugin/src/main.ts");
-  const visualIndex = main.indexOf("await applyFigmaVisuals");
-  const hybridIndex = main.indexOf("applyFigmaHybridRaster");
-  const layoutIndex = main.indexOf("applyFigmaLayouts");
+  const visualIndex = main.indexOf("const visual = await applyFigmaVisuals");
+  const hybridIndex = main.indexOf("const hybrid = applyFigmaHybridRaster");
+  const layoutIndex = main.indexOf("const layout = applyFigmaLayouts");
   assert(visualIndex >= 0, "NODE-28 main must retain NODE-26 visual reconstruction");
   assert(hybridIndex > visualIndex, "NODE-28 raster execution must follow NODE-26 visual replacement");
   assert(layoutIndex > hybridIndex, "NODE-27 parent layout must run after raster boundary replacement");

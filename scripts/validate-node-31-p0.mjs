@@ -194,7 +194,8 @@ if (runtimeEvidence) {
     ? runtimeEvidence.transportBoundary.mocked
     : [];
   assert(
-    mockedBoundary.length === 1 && mockedBoundary[0] === "chrome.runtime.onMessage message transport only",
+    mockedBoundary.length === 1 &&
+      mockedBoundary[0] === "chrome.runtime.onMessage message transport only",
     "NODE-31 browser runtime must mock only chrome.runtime.onMessage transport",
   );
   const runtimeAssertions = Array.isArray(runtimeEvidence.assertions)

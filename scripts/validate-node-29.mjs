@@ -3,13 +3,17 @@ import { resolve } from "node:path";
 
 const root = process.cwd();
 const failures = [];
+const localOnlyForbidden = ["fetch(", "XMLHttpRequest", "WebSocket", "eval(", "new Function("];
 const required = [
   "packages/figma-renderer/src/qa/types.ts",
   "packages/figma-renderer/src/qa/pixel.ts",
   "packages/figma-renderer/src/qa/structure.ts",
   "packages/figma-renderer/test/qa.test.ts",
   "apps/figma-plugin/src/figma-qa.ts",
+  "apps/figma-plugin/src/qa-payload.ts",
+  "apps/figma-plugin/src/visual-qa-ui.ts",
   "apps/figma-plugin/src/main.ts",
+  "apps/figma-plugin/src/ui.ts",
   "docs/nodes/NODE-29_VISUAL_STRUCTURE_EDITABILITY_QA.md",
 ];
 
@@ -42,6 +46,7 @@ if (failures.length === 0) {
   const pixel = text("packages/figma-renderer/src/qa/pixel.ts");
   for (const evidence of [
     "compareRgbaPixels",
+    "combineVisualPixelMetrics",
     "changedPixelRatio",
     "normalizedSimilarity",
     "evaluateVisualQa",
@@ -79,6 +84,45 @@ if (failures.length === 0) {
     assert(figmaQa.includes(evidence), `NODE-29 Figma inspection missing ${evidence}`);
   }
 
+  const qaPayload = text("apps/figma-plugin/src/qa-payload.ts");
+  for (const evidence of [
+    'kind: "full-page"',
+    "node29PixelQaReference",
+    "node29PixelQaReferenceById",
+    "manifest.entrypoints.referenceTiles",
+    "parsed.jsonPayloads.get",
+    "parsed.binaryPayloads.has",
+    "contains(reference.bounds, root.geometry.bounds)",
+  ]) {
+    assert(qaPayload.includes(evidence), `NODE-29 full-page QA evidence missing ${evidence}`);
+  }
+  for (const forbidden of localOnlyForbidden) {
+    assert(
+      !qaPayload.includes(forbidden),
+      `NODE-29 QA payload must remain local-only at runtime: ${forbidden}`,
+    );
+  }
+
+  const visualUi = text("apps/figma-plugin/src/visual-qa-ui.ts");
+  for (const evidence of [
+    "createImageBitmap",
+    "parsed.binaryPayloads.get",
+    "compareRgbaPixels",
+    "combineVisualPixelMetrics",
+    "evaluateVisualQa",
+    "changedChannelThreshold: 1",
+    "tile count mismatch",
+    "dimensions differ",
+  ]) {
+    assert(visualUi.includes(evidence), `NODE-29 UI pixel comparison missing ${evidence}`);
+  }
+  for (const forbidden of localOnlyForbidden) {
+    assert(
+      !visualUi.includes(forbidden),
+      `NODE-29 visual UI must remain local-only at runtime: ${forbidden}`,
+    );
+  }
+
   const main = text("apps/figma-plugin/src/main.ts");
   const qaIndex = main.indexOf("evaluateStructureAndEditabilityQa");
   const rasterIndex = main.indexOf("applyFigmaHybridRasterFallbacks");
@@ -90,9 +134,35 @@ if (failures.length === 0) {
     "w2f.qa.editableAreaRatio",
     "w2f.qa.rasterAreaRatio",
     "w2f.qa.failureCount",
+    "w2f.qa.visualStatus",
+    "w2f.qa.visualSimilarity",
+    "w2f.qa.changedPixelRatio",
     "inspectFigmaSceneForQa",
+    "figma.createPage",
+    "figma.createSlice",
+    "slice.exportAsync",
+    "W2F_QA_VISUAL_EXPORT",
+    "W2F_QA_VISUAL_RESULT",
+    "requestVisualQa",
   ]) {
     assert(main.includes(evidence), `NODE-29 Figma runtime missing ${evidence}`);
+  }
+  for (const forbidden of localOnlyForbidden) {
+    assert(
+      !main.includes(forbidden),
+      `NODE-29 Figma runtime must remain local-only at runtime: ${forbidden}`,
+    );
+  }
+
+  const ui = text("apps/figma-plugin/src/ui.ts");
+  for (const evidence of [
+    "node29PixelQaReference",
+    "runNode29VisualQa",
+    "W2F_QA_VISUAL_EXPORT",
+    "W2F_QA_VISUAL_RESULT",
+    "qaPixelReference",
+  ]) {
+    assert(ui.includes(evidence), `NODE-29 UI handoff missing ${evidence}`);
   }
 
   const tests = text("packages/figma-renderer/test/qa.test.ts");
@@ -102,6 +172,7 @@ if (failures.length === 0) {
     "fails native text that was rasterized to improve pixel similarity",
     "returns 100% similarity for identical RGBA pixels",
     "reports deterministic visual regressions below the 99% contract",
+    "combines tiled visual metrics by pixel weight",
   ]) {
     assert(tests.includes(evidence), `NODE-29 QA tests missing ${evidence}`);
   }
@@ -114,6 +185,10 @@ if (failures.length === 0) {
     "15%",
     "Anti-cheating",
     "No whole-page screenshot substitution",
+    "Tiled Pixel Ground Truth runtime",
+    "full-page",
+    "W2F_QA_VISUAL_EXPORT",
+    "w2f.qa.visualSimilarity",
     "NODE-30",
   ]) {
     assert(doc.includes(evidence), `NODE-29 contract doc missing ${evidence}`);

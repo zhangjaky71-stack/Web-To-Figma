@@ -58,6 +58,38 @@ export function compareRgbaPixels(
   };
 }
 
+export function combineVisualPixelMetrics(
+  metrics: readonly W2fVisualPixelMetrics[],
+): W2fVisualPixelMetrics {
+  if (metrics.length === 0) {
+    throw new Error("NODE-29 requires at least one visual metric sample");
+  }
+  const pixelCount = metrics.reduce((total, item) => total + item.pixelCount, 0);
+  if (pixelCount <= 0) throw new Error("NODE-29 visual metric samples contain no pixels");
+  const channelCount = pixelCount * 4;
+  const absoluteError = metrics.reduce(
+    (total, item) => total + item.meanAbsoluteChannelError * item.pixelCount * 4,
+    0,
+  );
+  const squaredError = metrics.reduce(
+    (total, item) => total + item.rootMeanSquaredChannelError ** 2 * item.pixelCount * 4,
+    0,
+  );
+  const changedPixels = metrics.reduce(
+    (total, item) => total + item.changedPixelRatio * item.pixelCount,
+    0,
+  );
+  const meanAbsoluteChannelError = absoluteError / channelCount;
+  return {
+    pixelCount,
+    meanAbsoluteChannelError,
+    rootMeanSquaredChannelError: Math.sqrt(squaredError / channelCount),
+    maxChannelError: Math.max(...metrics.map((item) => item.maxChannelError)),
+    changedPixelRatio: clamp01(changedPixels / pixelCount),
+    normalizedSimilarity: clamp01(1 - meanAbsoluteChannelError / 255),
+  };
+}
+
 export function evaluateVisualQa(
   metrics: W2fVisualPixelMetrics,
   target: "deterministic" | "realistic" = "deterministic",

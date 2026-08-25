@@ -76,10 +76,7 @@ const requiredRuntimeBoundaries = [
   "class-b-browser-to-wtf-to-figma-measurements",
 ];
 
-const expectedFontP0Items = [
-  "exact-available-font-preferred",
-  "nearest-mapping-with-diagnostic",
-];
+const expectedFontP0Items = ["exact-available-font-preferred", "nearest-mapping-with-diagnostic"];
 
 const requiredFontBoundaries = [
   "geometry-preserving-correction-policy",
@@ -260,10 +257,7 @@ if (runtimeEvidence) {
 
 if (fontEvidence) {
   assert(fontEvidence.version === "1.0.0", "NODE-31 font evidence version must be 1.0.0");
-  assert(
-    fontEvidence.evidenceType === "node31-font-policy",
-    "NODE-31 font evidenceType mismatch",
-  );
+  assert(fontEvidence.evidenceType === "node31-font-policy", "NODE-31 font evidenceType mismatch");
   assert(fontEvidence.status === "PASS", "NODE-31 font evidence status must be PASS");
   assert(fontEvidence.ci?.runNumber === 781, "NODE-31 font evidence must identify CI #781");
   assert(fontEvidence.ci?.runId === 32833779725, "NODE-31 font evidence run id mismatch");
@@ -337,9 +331,7 @@ if (fontEvidence) {
     "NODE-31 font evidence must prove exactly the intended two font P0 items",
   );
   const notProven = new Set(
-    Array.isArray(fontEvidence.notProvenByThisArtifact)
-      ? fontEvidence.notProvenByThisArtifact
-      : [],
+    Array.isArray(fontEvidence.notProvenByThisArtifact) ? fontEvidence.notProvenByThisArtifact : [],
   );
   for (const boundary of requiredFontBoundaries) {
     assert(
@@ -401,7 +393,12 @@ if (audit) {
   const exactFontArtifacts = Array.isArray(exactFontItem?.sourceArtifacts)
     ? exactFontItem.sourceArtifacts
     : [];
-  for (const artifact of [fontResolutionPath, fontRendererPath, fontResolutionTestPath, fontEvidencePath]) {
+  for (const artifact of [
+    fontResolutionPath,
+    fontRendererPath,
+    fontResolutionTestPath,
+    fontEvidencePath,
+  ]) {
     assert(
       exactFontArtifacts.includes(artifact),
       `NODE-31 exact-font P0 item missing provenance ${artifact}`,
@@ -427,7 +424,10 @@ if (audit) {
     );
   }
 
-  for (const id of ["geometry-preserving-correction-policy", "raster-text-only-when-policy-justifies"]) {
+  for (const id of [
+    "geometry-preserving-correction-policy",
+    "raster-text-only-when-policy-justifies",
+  ]) {
     assert(
       allItems.find((entry) => entry.id === id)?.status === "UNAVAILABLE",
       `NODE-31 font policy ${id} must remain UNAVAILABLE until direct evidence exists`,

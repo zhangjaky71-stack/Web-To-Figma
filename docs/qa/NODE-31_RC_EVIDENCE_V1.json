@@ -3,7 +3,7 @@
   "status": "collecting",
   "contract": "docs/ACCEPTANCE_CONTRACT_V2.md",
   "baselineCommit": "28b52dc3e0d3074bf76205c8deb324a06dfe9e23",
-  "note": "Versioned RC evidence manifest. UNAVAILABLE means the declared measurement has not yet been produced and must never be interpreted as PASS. Class B sourceArtifact paths identify source inputs only; they do not constitute measurement evidence.",
+  "note": "Versioned RC evidence manifest. UNAVAILABLE means the declared measurement has not yet been produced and must never be interpreted as PASS. Class B sourceArtifact paths identify source inputs only; they do not constitute measurement evidence. PASS status gates require a separate evidenceArtifact; Class A/B measurements require measurementArtifact provenance.",
   "classA": [
     {
       "id": "deterministic-level1-core",
@@ -37,21 +37,21 @@
     "knownCriticalBlockers": null,
     "knownHighBlockers": null,
     "fixtures": [
-      { "id": "malformed-archive", "status": "UNAVAILABLE", "source": "packages/wtf-parser/test/parser.test.ts" },
-      { "id": "path-traversal", "status": "UNAVAILABLE", "source": "packages/wtf-parser/test/zip-reader.test.ts" },
-      { "id": "oversized-expansion", "status": "UNAVAILABLE", "source": "packages/wtf-parser/test/zip-reader.test.ts" },
-      { "id": "invalid-checksum", "status": "UNAVAILABLE", "source": "packages/wtf-parser/test/parser.test.ts" },
-      { "id": "malformed-schema", "status": "UNAVAILABLE", "source": "packages/wtf-parser/test/parser.test.ts" },
-      { "id": "hostile-svg", "status": "UNAVAILABLE", "source": "packages/wtf-parser/test/svg-sanitize.test.ts" }
+      { "id": "malformed-archive", "status": "PASS", "source": "packages/wtf-parser/test/parser.test.ts", "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json" },
+      { "id": "path-traversal", "status": "PASS", "source": "packages/wtf-parser/test/zip-reader.test.ts", "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json" },
+      { "id": "oversized-expansion", "status": "PASS", "source": "packages/wtf-parser/test/zip-reader.test.ts", "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json" },
+      { "id": "invalid-checksum", "status": "PASS", "source": "packages/wtf-parser/test/parser.test.ts", "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json" },
+      { "id": "malformed-schema", "status": "PASS", "source": "packages/wtf-parser/test/parser.test.ts", "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json" },
+      { "id": "hostile-svg", "status": "PASS", "source": "packages/wtf-parser/test/svg-sanitize.test.ts", "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json" }
     ]
   },
   "schemaCompatibility": [
-    { "id": "canonical-v2-manifest", "status": "UNAVAILABLE", "source": "packages/w2f-schema/test/index.test.ts" },
-    { "id": "min-reader-enforced", "status": "UNAVAILABLE", "source": "packages/w2f-schema/test/index.test.ts" },
-    { "id": "v2-current-noop", "status": "UNAVAILABLE", "source": "packages/wtf-parser/test/migrations.test.ts" },
-    { "id": "v2-compatible-minor", "status": "UNAVAILABLE", "source": "packages/wtf-parser/test/migrations.test.ts" },
-    { "id": "unsupported-major-rejected", "status": "UNAVAILABLE", "source": "packages/wtf-parser/test/migrations.test.ts" },
-    { "id": "forward-optional-metadata-preserved", "status": "UNAVAILABLE", "source": "packages/w2f-schema/test/index.test.ts" }
+    { "id": "canonical-v2-manifest", "status": "PASS", "source": "packages/w2f-schema/test/index.test.ts", "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json" },
+    { "id": "min-reader-enforced", "status": "PASS", "source": "packages/w2f-schema/test/index.test.ts", "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json" },
+    { "id": "v2-current-noop", "status": "PASS", "source": "packages/wtf-parser/test/migrations.test.ts", "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json" },
+    { "id": "v2-compatible-minor", "status": "PASS", "source": "packages/wtf-parser/test/migrations.test.ts", "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json" },
+    { "id": "unsupported-major-rejected", "status": "PASS", "source": "packages/wtf-parser/test/migrations.test.ts", "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json" },
+    { "id": "forward-optional-metadata-preserved", "status": "PASS", "source": "packages/w2f-schema/test/index.test.ts", "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json" }
   ],
   "knownLimitations": {
     "document": "docs/KNOWN_LIMITATIONS.md",
@@ -62,5 +62,9 @@
     "items": []
   },
   "determinism": { "status": "UNAVAILABLE", "source": "NODE-30 exact-head evidence" },
-  "scale": { "status": "UNAVAILABLE", "source": "NODE-30 exact-head evidence" }
+  "scale": {
+    "status": "PASS",
+    "source": "NODE-30 10k renderer scale benchmark in CI #736",
+    "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json"
+  }
 }

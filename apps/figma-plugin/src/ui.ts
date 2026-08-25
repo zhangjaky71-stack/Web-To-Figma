@@ -25,6 +25,7 @@ import {
   type W2fParserPreview,
   type W2fUiToMainPayload,
 } from "./protocol.js";
+import { node28RasterPayload } from "./raster-payload.js";
 
 function element<T extends HTMLElement>(id: string): T {
   const value = document.getElementById(id);
@@ -363,6 +364,13 @@ importButton.addEventListener("click", () => {
     setError("W2F_E_RENDER_SELECTION_EMPTY", "Select at least one section to import.");
     return;
   }
+  let rasterPayload;
+  try {
+    rasterPayload = node28RasterPayload(parsed);
+  } catch (error) {
+    setError("W2F_E_RASTER_PAYLOAD", error instanceof Error ? error.message : String(error));
+    return;
+  }
   importButton.disabled = true;
   postToMain({ type: "W2F_IMPORT_SELECTION", selection: state.selection });
   const request = {
@@ -377,6 +385,7 @@ importButton.addEventListener("click", () => {
     selectedRootIds,
     tokenPolicy: "literal" as const,
     ...node26AssetPayload(parsed),
+    ...rasterPayload,
     ...(state.descriptor.canvasPoint ? { destination: state.descriptor.canvasPoint } : {}),
     ...(parsed.preview.title
       ? { importName: parsed.preview.title }

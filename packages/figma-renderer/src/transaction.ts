@@ -33,28 +33,47 @@ export function renderBasicFigmaScene<TNode>(
     adapter.setPluginData(root, W2F_PLUGIN_DATA_KEYS.transactionState, "importing");
 
     const nodesByRenderNodeId = new Map<string, TNode>();
+    const rasterBoundaryIds = new Set<string>();
+    const suppressedRenderNodeIds = new Set<string>();
+    let createdNodeCount = 1;
+
     if (plan.root.sourceRenderNodeId) {
       nodesByRenderNodeId.set(plan.root.sourceRenderNodeId, root);
+      if (plan.root.pluginData[W2F_PLUGIN_DATA_KEYS.renderStrategy] === "raster") {
+        rasterBoundaryIds.add(plan.root.sourceRenderNodeId);
+      }
     }
 
     for (const nodePlan of plan.nodes) {
+      const parentRenderNodeId = nodePlan.parentRenderNodeId;
+      if (
+        parentRenderNodeId &&
+        (rasterBoundaryIds.has(parentRenderNodeId) ||
+          suppressedRenderNodeIds.has(parentRenderNodeId))
+      ) {
+        suppressedRenderNodeIds.add(nodePlan.renderNodeId);
+        continue;
+      }
+
       const node =
-        nodePlan.nodeType === "FRAME" ? adapter.createFrame() : adapter.createRectangle();
+        nodePlan.renderStrategy === "raster" || nodePlan.nodeType === "FRAME"
+          ? adapter.createFrame()
+          : adapter.createRectangle();
       adapter.setName(node, nodePlan.name);
       adapter.setGeometry(node, nodePlan.localGeometry);
       applyPluginData(adapter, node, nodePlan.pluginData);
 
-      const parent = nodePlan.parentRenderNodeId
-        ? nodesByRenderNodeId.get(nodePlan.parentRenderNodeId)
-        : root;
+      const parent = parentRenderNodeId ? nodesByRenderNodeId.get(parentRenderNodeId) : root;
       if (!parent) {
         throw new W2fBasicRendererError(
           "W2F_RENDERER_TREE",
-          `Parent ${nodePlan.parentRenderNodeId ?? "transaction-root"} was not created before ${nodePlan.renderNodeId}`,
+          `Parent ${parentRenderNodeId ?? "transaction-root"} was not created before ${nodePlan.renderNodeId}`,
         );
       }
       adapter.appendChild(parent, node);
       nodesByRenderNodeId.set(nodePlan.renderNodeId, node);
+      createdNodeCount += 1;
+      if (nodePlan.renderStrategy === "raster") rasterBoundaryIds.add(nodePlan.renderNodeId);
     }
 
     adapter.validateRoot?.(root);
@@ -66,7 +85,7 @@ export function renderBasicFigmaScene<TNode>(
 
     return {
       root,
-      createdNodeCount: 1 + plan.nodes.length,
+      createdNodeCount,
       mappedRenderNodeIds: [...nodesByRenderNodeId.keys()],
       nodesByRenderNodeId,
       committed: true,

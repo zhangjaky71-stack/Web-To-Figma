@@ -3,12 +3,18 @@ import { resolve } from "node:path";
 
 const root = process.cwd();
 const failures = [];
-const auditPath = "docs/qa/results/NODE-31_P0_AUDIT_764.json";
+const auditPath = "docs/qa/results/NODE-31_P0_AUDIT_781.json";
 const manifestPath = "docs/qa/NODE-31_RC_EVIDENCE_V1.json";
 const runtimeEvidencePath = "docs/qa/results/NODE-31_BROWSER_RUNTIME_EVIDENCE_764.json";
+const fontEvidencePath = "docs/qa/results/NODE-31_FONT_EVIDENCE_781.json";
 const runtimeHarnessPath = "scripts/run-node-31-browser-runtime.mjs";
 const runtimeProductSourcePath = "apps/browser-extension/src/runtime/content-script.ts";
 const runtimeBuiltArtifactPath = "apps/browser-extension/dist/runtime/content-script.js";
+const fontResolutionPath = "apps/figma-plugin/src/font-resolution.ts";
+const fontDiagnosticsPath = "apps/figma-plugin/src/font-diagnostics.ts";
+const fontRendererPath = "apps/figma-plugin/src/figma-visual-renderer.ts";
+const fontResolutionTestPath = "apps/figma-plugin/test/font-resolution.test.ts";
+const fontDiagnosticsTestPath = "apps/figma-plugin/test/font-diagnostics.test.ts";
 
 const requiredIds = {
   capture: [
@@ -64,6 +70,24 @@ const requiredRuntimeBoundaries = [
   "visual-state-freeze-and-restore",
   "current-document-deterministic-online",
   "file-protocol-explicit-permission",
+  "zero-known-critical-security-blockers",
+  "zero-known-high-security-blockers",
+  "class-a-visual-geometry-text-asset-structure-measurements",
+  "class-b-browser-to-wtf-to-figma-measurements",
+];
+
+const expectedFontP0Items = [
+  "exact-available-font-preferred",
+  "nearest-mapping-with-diagnostic",
+];
+
+const requiredFontBoundaries = [
+  "geometry-preserving-correction-policy",
+  "raster-text-only-when-policy-justifies",
+  "current-document-deterministic-online",
+  "file-protocol-explicit-permission",
+  "choose-file-path",
+  "drop-on-canvas-path",
   "zero-known-critical-security-blockers",
   "zero-known-high-security-blockers",
   "class-a-visual-geometry-text-asset-structure-measurements",
@@ -126,15 +150,26 @@ function validateSection(audit, sectionName, ids, allItems) {
   }
 }
 
-assert(existsSync(resolve(root, auditPath)), `missing ${auditPath}`);
-assert(existsSync(resolve(root, manifestPath)), `missing ${manifestPath}`);
-assert(existsSync(resolve(root, runtimeEvidencePath)), `missing ${runtimeEvidencePath}`);
-assert(existsSync(resolve(root, runtimeHarnessPath)), `missing ${runtimeHarnessPath}`);
-assert(existsSync(resolve(root, runtimeProductSourcePath)), `missing ${runtimeProductSourcePath}`);
+for (const path of [
+  auditPath,
+  manifestPath,
+  runtimeEvidencePath,
+  fontEvidencePath,
+  runtimeHarnessPath,
+  runtimeProductSourcePath,
+  fontResolutionPath,
+  fontDiagnosticsPath,
+  fontRendererPath,
+  fontResolutionTestPath,
+  fontDiagnosticsTestPath,
+]) {
+  assert(existsSync(resolve(root, path)), `missing ${path}`);
+}
 
 const audit = readJson(auditPath);
 const manifest = readJson(manifestPath);
 const runtimeEvidence = readJson(runtimeEvidencePath);
+const fontEvidence = readJson(fontEvidencePath);
 
 if (runtimeEvidence) {
   assert(runtimeEvidence.version === "1.0.0", "NODE-31 browser runtime version must be 1.0.0");
@@ -223,16 +258,107 @@ if (runtimeEvidence) {
   }
 }
 
+if (fontEvidence) {
+  assert(fontEvidence.version === "1.0.0", "NODE-31 font evidence version must be 1.0.0");
+  assert(
+    fontEvidence.evidenceType === "node31-font-policy",
+    "NODE-31 font evidenceType mismatch",
+  );
+  assert(fontEvidence.status === "PASS", "NODE-31 font evidence status must be PASS");
+  assert(fontEvidence.ci?.runNumber === 781, "NODE-31 font evidence must identify CI #781");
+  assert(fontEvidence.ci?.runId === 32833779725, "NODE-31 font evidence run id mismatch");
+  assert(fontEvidence.ci?.jobId === 97758035952, "NODE-31 font evidence job id mismatch");
+  assert(fontEvidence.ci?.conclusion === "PASS", "NODE-31 font evidence CI must be PASS");
+  assert(
+    fontEvidence.ci?.branchHead === "50d234bf977741a31b99b53f5bf579698c5d64c5",
+    "NODE-31 font evidence branch head mismatch",
+  );
+  assert(
+    fontEvidence.ci?.mergeRef === "c2210996b4a40317102d3967275544db738f3baa",
+    "NODE-31 font evidence merge ref mismatch",
+  );
+  assert(
+    fontEvidence.ci?.base === "28b52dc3e0d3074bf76205c8deb324a06dfe9e23",
+    "NODE-31 font evidence base mismatch",
+  );
+  for (const check of [
+    "node31Validator",
+    "node31P0Validator",
+    "lint",
+    "typecheck",
+    "tests",
+    "build",
+    "figmaPluginPackage",
+    "browserRuntime",
+    "format",
+  ]) {
+    assert(
+      fontEvidence.ci?.qualityChecks?.[check] === "PASS",
+      `NODE-31 font evidence missing PASS ${check}`,
+    );
+  }
+  assert(fontEvidence.environment?.node === "24.19.0", "NODE-31 font Node version mismatch");
+  assert(fontEvidence.environment?.pnpm === "11.22.0", "NODE-31 font pnpm version mismatch");
+  assert(
+    fontEvidence.environment?.chrome === "Chrome/151.0.7922.137",
+    "NODE-31 font Chrome version mismatch",
+  );
+  const sourceArtifacts = new Set(
+    Array.isArray(fontEvidence.sourceArtifacts) ? fontEvidence.sourceArtifacts : [],
+  );
+  for (const artifact of [fontResolutionPath, fontDiagnosticsPath, fontRendererPath]) {
+    assert(sourceArtifacts.has(artifact), `NODE-31 font evidence missing source ${artifact}`);
+  }
+  const tests = new Map(
+    (Array.isArray(fontEvidence.testArtifacts) ? fontEvidence.testArtifacts : []).map((entry) => [
+      entry?.path,
+      entry,
+    ]),
+  );
+  assert(
+    tests.get(fontResolutionTestPath)?.testCount === 5 &&
+      tests.get(fontResolutionTestPath)?.status === "PASS",
+    "NODE-31 font resolution evidence must record five PASS tests",
+  );
+  assert(
+    tests.get(fontDiagnosticsTestPath)?.testCount === 2 &&
+      tests.get(fontDiagnosticsTestPath)?.status === "PASS",
+    "NODE-31 font diagnostic evidence must record two PASS tests",
+  );
+  assert(
+    fontEvidence.figmaPluginSuite?.testFiles === 6 &&
+      fontEvidence.figmaPluginSuite?.testCount === 25 &&
+      fontEvidence.figmaPluginSuite?.status === "PASS",
+    "NODE-31 font evidence Figma plugin suite mismatch",
+  );
+  const proves = Array.isArray(fontEvidence.provesP0Items) ? fontEvidence.provesP0Items : [];
+  assert(
+    JSON.stringify(proves) === JSON.stringify(expectedFontP0Items),
+    "NODE-31 font evidence must prove exactly the intended two font P0 items",
+  );
+  const notProven = new Set(
+    Array.isArray(fontEvidence.notProvenByThisArtifact)
+      ? fontEvidence.notProvenByThisArtifact
+      : [],
+  );
+  for (const boundary of requiredFontBoundaries) {
+    assert(
+      notProven.has(boundary),
+      `NODE-31 font evidence must preserve not-proven boundary ${boundary}`,
+    );
+  }
+}
+
 if (audit) {
   assert(audit.version === "1.0.0", "NODE-31 P0 audit version must be 1.0.0");
   assert(audit.evidenceType === "node31-p0-audit", "NODE-31 P0 audit evidenceType mismatch");
   assert(
-    audit.auditedAgainstBranchHead === "c5b3cbdbd0326951ceb23ff2271055c9acbaad19",
-    "NODE-31 P0 audit must stay anchored to exact-head CI #764 until regenerated",
+    audit.auditedAgainstBranchHead === "50d234bf977741a31b99b53f5bf579698c5d64c5",
+    "NODE-31 P0 audit must stay anchored to exact-head CI #781 until regenerated",
   );
-  assert(audit.ci?.runNumber === 764, "NODE-31 P0 audit must identify CI #764");
-  assert(audit.ci?.runId === 32830737350, "NODE-31 P0 audit run id mismatch");
-  assert(audit.ci?.jobId === 97748603856, "NODE-31 P0 audit job id mismatch");
+  assert(audit.ci?.runNumber === 781, "NODE-31 P0 audit must identify CI #781");
+  assert(audit.ci?.runId === 32833779725, "NODE-31 P0 audit run id mismatch");
+  assert(audit.ci?.jobId === 97758035952, "NODE-31 P0 audit job id mismatch");
   assert(audit.ci?.conclusion === "PASS", "NODE-31 P0 audit CI conclusion must be PASS");
   for (const check of [
     "node31Validator",
@@ -270,6 +396,44 @@ if (audit) {
     );
   }
 
+  const exactFontItem = allItems.find((entry) => entry.id === "exact-available-font-preferred");
+  assert(exactFontItem?.status === "PASS", "NODE-31 exact-font P0 item must be PASS");
+  const exactFontArtifacts = Array.isArray(exactFontItem?.sourceArtifacts)
+    ? exactFontItem.sourceArtifacts
+    : [];
+  for (const artifact of [fontResolutionPath, fontRendererPath, fontResolutionTestPath, fontEvidencePath]) {
+    assert(
+      exactFontArtifacts.includes(artifact),
+      `NODE-31 exact-font P0 item missing provenance ${artifact}`,
+    );
+  }
+
+  const mappedFontItem = allItems.find((entry) => entry.id === "nearest-mapping-with-diagnostic");
+  assert(mappedFontItem?.status === "PASS", "NODE-31 mapped-font P0 item must be PASS");
+  const mappedFontArtifacts = Array.isArray(mappedFontItem?.sourceArtifacts)
+    ? mappedFontItem.sourceArtifacts
+    : [];
+  for (const artifact of [
+    fontResolutionPath,
+    fontDiagnosticsPath,
+    fontRendererPath,
+    fontResolutionTestPath,
+    fontDiagnosticsTestPath,
+    fontEvidencePath,
+  ]) {
+    assert(
+      mappedFontArtifacts.includes(artifact),
+      `NODE-31 mapped-font P0 item missing provenance ${artifact}`,
+    );
+  }
+
+  for (const id of ["geometry-preserving-correction-policy", "raster-text-only-when-policy-justifies"]) {
+    assert(
+      allItems.find((entry) => entry.id === id)?.status === "UNAVAILABLE",
+      `NODE-31 font policy ${id} must remain UNAVAILABLE until direct evidence exists`,
+    );
+  }
+
   const unavailableIds = allItems
     .filter((entry) => entry.status === "UNAVAILABLE")
     .map((entry) => entry.id)
@@ -281,7 +445,7 @@ if (audit) {
     JSON.stringify(declaredBlocking) === JSON.stringify(unavailableIds),
     "NODE-31 P0 blockingUnavailableIds must exactly match UNAVAILABLE items",
   );
-  assert(unavailableIds.length === 15, "NODE-31 P0 audit must retain exactly 15 unavailable items");
+  assert(unavailableIds.length === 13, "NODE-31 P0 audit must retain exactly 13 unavailable items");
   const derivedStatus = unavailableIds.length === 0 ? "PASS" : "UNAVAILABLE";
   assert(
     audit.policy?.overallStatus === derivedStatus,

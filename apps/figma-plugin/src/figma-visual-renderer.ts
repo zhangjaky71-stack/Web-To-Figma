@@ -8,7 +8,10 @@ import type {
   WtfTextModel,
   WtfTextRun,
 } from "@w2f/w2f-ir";
-import type { W2fFontSubstitutionDiagnostic } from "./font-diagnostics.js";
+import {
+  persistFontSubstitutionDiagnostics,
+  type W2fFontSubstitutionDiagnostic,
+} from "./font-diagnostics.js";
 import {
   resolveFontDecision,
   type W2fFontResolutionDecision,
@@ -405,6 +408,7 @@ async function replaceWithText(
     replacement.setRangeTextDecoration(start, end, decoration(run.decoration));
   }
 
+  persistFontSubstitutionDiagnostics(replacement, fontSubstitutions);
   return { node: replacement, fontSubstitutions };
 }
 

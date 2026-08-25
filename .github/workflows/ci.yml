@@ -28,6 +28,9 @@ jobs:
       - name: Validate NODE-29 visual structure editability QA
         run: node scripts/validate-node-29.mjs
 
+      - name: Validate NODE-30 responsive determinism performance QA
+        run: node scripts/validate-node-30.mjs
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:

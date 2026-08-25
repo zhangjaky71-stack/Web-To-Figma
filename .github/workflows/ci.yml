@@ -57,6 +57,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: NODE-31 region restore Prettier diagnostic
+        run: |
+          pnpm exec prettier --write apps/browser-extension/src/runtime/content-script.ts
+          git diff -- apps/browser-extension/src/runtime/content-script.ts
+          exit 1
+
       - name: Lint
         run: pnpm lint
 

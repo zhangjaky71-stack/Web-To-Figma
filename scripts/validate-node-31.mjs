@@ -202,7 +202,7 @@ if (failures.length === 0) {
     "Class B",
     "Class C",
     "zero known critical/high",
-    "known limitations",
+    "KNOWN_LIMITATIONS.md",
     "schema/version compatibility",
     "releaseReady",
   ]) {

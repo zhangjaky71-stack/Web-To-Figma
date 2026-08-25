@@ -54,6 +54,22 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: NODE-31 Prettier diagnostic
+        run: |
+          pnpm exec prettier --write \
+            packages/figma-renderer/src/qa/compatibility.ts \
+            packages/figma-renderer/src/qa/node31-types.ts \
+            packages/figma-renderer/src/qa/release-candidate.ts \
+            packages/figma-renderer/test/node31-release-candidate.test.ts \
+            scripts/validate-node-31.mjs
+          git diff -- \
+            packages/figma-renderer/src/qa/compatibility.ts \
+            packages/figma-renderer/src/qa/node31-types.ts \
+            packages/figma-renderer/src/qa/release-candidate.ts \
+            packages/figma-renderer/test/node31-release-candidate.test.ts \
+            scripts/validate-node-31.mjs
+          exit 1
+
       - name: Lint
         run: pnpm lint
 

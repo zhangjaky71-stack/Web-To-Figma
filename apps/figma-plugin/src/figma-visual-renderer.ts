@@ -8,6 +8,12 @@ import type {
   WtfTextModel,
   WtfTextRun,
 } from "@w2f/w2f-ir";
+import type { W2fFontSubstitutionDiagnostic } from "./font-diagnostics.js";
+import {
+  resolveFontDecision,
+  type W2fFontResolutionDecision,
+  type W2fFontRequest,
+} from "./font-resolution.js";
 
 export interface W2fVisualAssetBundle {
   assets: readonly WtfAssetRecord[];
@@ -21,6 +27,7 @@ export interface W2fVisualRenderStats {
   imageFillCount: number;
   editableSvgCount: number;
   fontFallbackCount: number;
+  fontSubstitutions: W2fFontSubstitutionDiagnostic[];
   missingAssetCount: number;
 }
 
@@ -41,8 +48,6 @@ type CornerNode = SceneNode & {
   bottomLeftRadius: number;
 };
 type ResizableNode = SceneNode & { resize(width: number, height: number): void };
-
-const DEFAULT_FONT: FontName = { family: "Inter", style: "Regular" };
 
 function clamp01(value: number): number {
   if (!Number.isFinite(value)) return 1;
@@ -284,53 +289,45 @@ async function applyPaintModel(
   return { imageFills, missingAssets };
 }
 
-function fontStyleFromWeight(weight: number | string | undefined): string {
-  const numeric =
-    typeof weight === "number" ? weight : Number.parseInt(String(weight ?? "400"), 10);
-  if (!Number.isFinite(numeric)) return "Regular";
-  if (numeric >= 800) return "Extra Bold";
-  if (numeric >= 700) return "Bold";
-  if (numeric >= 600) return "Semi Bold";
-  if (numeric >= 500) return "Medium";
-  if (numeric <= 300) return "Light";
-  return "Regular";
+function requestFromRun(run: WtfTextRun | undefined): W2fFontRequest | undefined {
+  if (!run) return undefined;
+  return {
+    ...(run.font.family ? { family: run.font.family } : {}),
+    ...(run.font.style ? { style: run.font.style } : {}),
+    ...(run.font.weight !== undefined ? { weight: run.font.weight } : {}),
+  };
 }
 
 async function resolveFont(
   run: WtfTextRun | undefined,
   available: readonly Font[],
-): Promise<{ fontName: FontName; fallback: boolean }> {
-  const family = run?.font.family?.trim();
-  const requestedStyle = run?.font.style?.trim() || fontStyleFromWeight(run?.font.weight);
-  if (family) {
-    const exact = available.find(
-      (font) =>
-        font.fontName.family.toLowerCase() === family.toLowerCase() &&
-        font.fontName.style.toLowerCase() === requestedStyle.toLowerCase(),
-    );
-    const sameFamily =
-      exact ??
-      available.find(
-        (font) =>
-          font.fontName.family.toLowerCase() === family.toLowerCase() &&
-          font.fontName.style.toLowerCase() === "regular",
-      ) ??
-      available.find((font) => font.fontName.family.toLowerCase() === family.toLowerCase());
-    if (sameFamily) {
-      await figma.loadFontAsync(sameFamily.fontName);
-      return { fontName: sameFamily.fontName, fallback: exact === undefined };
-    }
-  }
-  const fallback =
-    available.find(
-      (font) =>
-        font.fontName.family.toLowerCase() === DEFAULT_FONT.family.toLowerCase() &&
-        font.fontName.style.toLowerCase() === DEFAULT_FONT.style.toLowerCase(),
-    )?.fontName ??
-    available[0]?.fontName ??
-    DEFAULT_FONT;
-  await figma.loadFontAsync(fallback);
-  return { fontName: fallback, fallback: true };
+): Promise<{ fontName: FontName; decision: W2fFontResolutionDecision }> {
+  const decision = resolveFontDecision(requestFromRun(run), available);
+  const fontName: FontName = {
+    family: decision.chosenFamily,
+    style: decision.chosenStyle,
+  };
+  await figma.loadFontAsync(fontName);
+  return { fontName, decision };
+}
+
+function substitutionDiagnostic(
+  renderNodeId: string,
+  start: number,
+  end: number,
+  decision: W2fFontResolutionDecision,
+): W2fFontSubstitutionDiagnostic | null {
+  if (!decision.fallback || decision.reason === "exact") return null;
+  return {
+    renderNodeId,
+    start,
+    end,
+    requestedFamily: decision.requestedFamily,
+    requestedStyle: decision.requestedStyle,
+    chosenFamily: decision.chosenFamily,
+    chosenStyle: decision.chosenStyle,
+    reason: decision.reason,
+  };
 }
 
 function lineHeight(value: number | string | undefined): LineHeight {
@@ -371,15 +368,16 @@ function align(value: string | undefined): TextNode["textAlignHorizontal"] {
 }
 
 async function replaceWithText(
+  renderNodeId: string,
   oldNode: SceneNode,
   text: WtfTextModel,
   availableFonts: readonly Font[],
-): Promise<{ node: TextNode; fontFallbacks: number }> {
+): Promise<{ node: TextNode; fontSubstitutions: W2fFontSubstitutionDiagnostic[] }> {
   const textNode = figma.createText();
   const replacement = replaceAtSameIndex(oldNode, textNode) as TextNode;
   const defaultRun = text.runs[0];
   const defaultFont = await resolveFont(defaultRun, availableFonts);
-  let fontFallbacks = defaultFont.fallback ? 1 : 0;
+  const fontSubstitutions: W2fFontSubstitutionDiagnostic[] = [];
   replacement.fontName = defaultFont.fontName;
   replacement.characters = text.value;
   replacement.textAlignHorizontal = align(text.textAlign);
@@ -390,7 +388,8 @@ async function replaceWithText(
     const end = Math.max(start, Math.min(text.value.length, run.end));
     if (end <= start) continue;
     const resolved = await resolveFont(run, availableFonts);
-    if (resolved.fallback) fontFallbacks += 1;
+    const diagnostic = substitutionDiagnostic(renderNodeId, start, end, resolved.decision);
+    if (diagnostic) fontSubstitutions.push(diagnostic);
     replacement.setRangeFontName(start, end, resolved.fontName);
     if (Number.isFinite(run.fontSize) && run.fontSize > 0) {
       replacement.setRangeFontSize(start, end, run.fontSize);
@@ -406,7 +405,7 @@ async function replaceWithText(
     replacement.setRangeTextDecoration(start, end, decoration(run.decoration));
   }
 
-  return { node: replacement, fontFallbacks };
+  return { node: replacement, fontSubstitutions };
 }
 
 function findAsset(
@@ -462,6 +461,7 @@ export async function applyFigmaVisuals(
     imageFillCount: 0,
     editableSvgCount: 0,
     fontFallbackCount: 0,
+    fontSubstitutions: [],
     missingAssetCount: 0,
   };
 
@@ -470,11 +470,17 @@ export async function applyFigmaVisuals(
     if (!node) continue;
 
     if (renderNode.text) {
-      const textResult = await replaceWithText(node, renderNode.text, availableFonts);
+      const textResult = await replaceWithText(
+        renderNode.id,
+        node,
+        renderNode.text,
+        availableFonts,
+      );
       node = textResult.node;
       nodes.set(renderNode.id, node);
       stats.textNodeCount += 1;
-      stats.fontFallbackCount += textResult.fontFallbacks;
+      stats.fontSubstitutions.push(...textResult.fontSubstitutions);
+      stats.fontFallbackCount = stats.fontSubstitutions.length;
     } else {
       const svgAsset = findAsset(renderNode, assets, "svg");
       const svg = svgAsset ? bundle.sanitizedSvgById[svgAsset.id] : undefined;

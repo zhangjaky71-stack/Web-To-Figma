@@ -164,10 +164,7 @@ async function handleBasicRender(baseRequest: W2fBasicRenderRequest): Promise<vo
       request.renderTree,
       hybridBundle(request),
     );
-    const layoutTree = rasterSafeLayoutTree(
-      request.renderTree,
-      hybrid.rasterizedRenderNodeIds,
-    );
+    const layoutTree = rasterSafeLayoutTree(request.renderTree, hybrid.rasterizedRenderNodeIds);
     const layout = applyFigmaLayouts(hybrid.nodesByRenderNodeId, layoutTree);
     if (cancelled) {
       renderedRoot.remove();

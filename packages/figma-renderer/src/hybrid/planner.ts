@@ -81,7 +81,10 @@ function referenceIdsForSource(sourceNodeId: string): string[] {
 
 function groupReferenceTiles(
   tiles: readonly W2fReferenceTileDescriptor[],
-): ReadonlyMap<string, Array<{ descriptor: W2fReferenceTileDescriptor; parsed: ParsedTileId }>> {
+): ReadonlyMap<
+  string,
+  Array<{ descriptor: W2fReferenceTileDescriptor; parsed: ParsedTileId }>
+> {
   const grouped = new Map<
     string,
     Array<{ descriptor: W2fReferenceTileDescriptor; parsed: ParsedTileId }>
@@ -129,7 +132,9 @@ function validateCoverage(
       return { ok: false, reason: `${tile.id} escapes raster boundary ${renderNode.id}` };
     }
     const key = `${entry.parsed.row}:${entry.parsed.column}`;
-    if (cells.has(key)) return { ok: false, reason: `${referenceId} contains duplicate tile ${key}` };
+    if (cells.has(key)) {
+      return { ok: false, reason: `${referenceId} contains duplicate tile ${key}` };
+    }
     cells.set(key, entry);
     maxRow = Math.max(maxRow, entry.parsed.row);
     maxColumn = Math.max(maxColumn, entry.parsed.column);
@@ -232,7 +237,9 @@ function planBoundary(
   };
 }
 
-export function createHybridRasterPlan(input: W2fHybridRasterPlannerInput): W2fHybridRasterPlan {
+export function createHybridRasterPlan(
+  input: W2fHybridRasterPlannerInput,
+): W2fHybridRasterPlan {
   const byId = new Map(input.renderTree.nodes.map((node) => [node.id, node]));
   const parents = parentMap(input.renderTree.nodes);
   const grouped = groupReferenceTiles(input.referenceTiles);

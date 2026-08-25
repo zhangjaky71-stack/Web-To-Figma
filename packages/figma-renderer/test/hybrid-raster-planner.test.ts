@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import type { WtfIrBundle, WtfRenderNode, WtfRenderTree } from "@w2f/w2f-ir";
+import type {
+  WtfIrBundle,
+  WtfRenderNode,
+  WtfRenderTree,
+} from "@w2f/w2f-ir";
 import { createHybridRasterPlan } from "../src/hybrid/planner.js";
 
 type Tile = WtfIrBundle["assets"]["referenceTiles"][number];
@@ -71,7 +75,11 @@ describe("NODE-28 hybrid raster planner", () => {
       referenceTiles: [tile(referenceId, 0, 0, raster.geometry.bounds)],
     });
 
-    expect(plan).toMatchObject({ readyBoundaryCount: 1, missingBoundaryCount: 0, tileCount: 1 });
+    expect(plan).toMatchObject({
+      readyBoundaryCount: 1,
+      missingBoundaryCount: 0,
+      tileCount: 1,
+    });
     expect(plan.boundaries[0]).toMatchObject({
       state: "ready",
       renderNodeId: "fallback",
@@ -101,7 +109,9 @@ describe("NODE-28 hybrid raster planner", () => {
     const boundary = plan.boundaries[0];
     expect(boundary?.state).toBe("ready");
     if (boundary?.state !== "ready") return;
-    expect(boundary.tiles.map((item) => [item.row, item.column, item.localX, item.localY])).toEqual([
+    expect(
+      boundary.tiles.map((item) => [item.row, item.column, item.localX, item.localY]),
+    ).toEqual([
       [0, 0, 0, 0],
       [0, 1, 60, 0],
       [1, 0, 0, 40],
@@ -121,7 +131,11 @@ describe("NODE-28 hybrid raster planner", () => {
       renderTree: tree([raster]),
       referenceTiles: [tile(referenceId, 0, 0, raster.geometry.bounds)],
     });
-    expect(plan.boundaries[0]).toMatchObject({ state: "ready", sourceNodeId, referenceId });
+    expect(plan.boundaries[0]).toMatchObject({
+      state: "ready",
+      sourceNodeId,
+      referenceId,
+    });
   });
 
   it("accepts canvas/video reference kinds without confusing viewport/full-page references", () => {
@@ -154,8 +168,15 @@ describe("NODE-28 hybrid raster planner", () => {
       renderTree: tree([raster]),
       referenceTiles: [tile(referenceId, 0, 1, { x: 50, y: 0, width: 50, height: 40 })],
     });
-    expect(plan).toMatchObject({ readyBoundaryCount: 0, missingBoundaryCount: 1, tileCount: 0 });
-    expect(plan.boundaries[0]).toMatchObject({ state: "missing", renderNodeId: "fallback" });
+    expect(plan).toMatchObject({
+      readyBoundaryCount: 0,
+      missingBoundaryCount: 1,
+      tileCount: 0,
+    });
+    expect(plan.boundaries[0]).toMatchObject({
+      state: "missing",
+      renderNodeId: "fallback",
+    });
   });
 
   it("suppresses nested raster roots because the outer NODE-20 boundary already owns the subtree", () => {
@@ -194,6 +215,11 @@ describe("NODE-28 hybrid raster planner", () => {
       renderTree: tree([native]),
       referenceTiles: [tile("node-fallback:source-native", 0, 0, native.geometry.bounds)],
     });
-    expect(plan).toEqual({ boundaries: [], readyBoundaryCount: 0, missingBoundaryCount: 0, tileCount: 0 });
+    expect(plan).toEqual({
+      boundaries: [],
+      readyBoundaryCount: 0,
+      missingBoundaryCount: 0,
+      tileCount: 0,
+    });
   });
 });

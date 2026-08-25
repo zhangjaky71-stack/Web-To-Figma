@@ -58,7 +58,10 @@ if (failures.length === 0) {
     assert(planner.includes(evidence), `NODE-28 planner missing ${evidence}`);
   }
   for (const forbidden of ["figma.", "fetch(", "XMLHttpRequest", "WebSocket", "eval("]) {
-    assert(!planner.includes(forbidden), `NODE-28 planner must stay platform/local only: ${forbidden}`);
+    assert(
+      !planner.includes(forbidden),
+      `NODE-28 planner must stay platform/local only: ${forbidden}`,
+    );
   }
 
   const runtime = text("apps/figma-plugin/src/figma-hybrid-renderer.ts");
@@ -81,7 +84,10 @@ if (failures.length === 0) {
     assert(runtime.includes(evidence), `NODE-28 Figma runtime missing ${evidence}`);
   }
   for (const forbidden of ["fetch(", "XMLHttpRequest", "WebSocket", "eval(", "new Function("]) {
-    assert(!runtime.includes(forbidden), `NODE-28 Figma runtime must remain local-only: ${forbidden}`);
+    assert(
+      !runtime.includes(forbidden),
+      `NODE-28 Figma runtime must remain local-only: ${forbidden}`,
+    );
   }
 
   const ui = text("apps/figma-plugin/src/ui.ts");
@@ -99,10 +105,22 @@ if (failures.length === 0) {
   const hybridIndex = main.indexOf("const hybrid = applyFigmaHybridRaster");
   const layoutIndex = main.indexOf("const layout = applyFigmaLayouts");
   assert(visualIndex >= 0, "NODE-28 main must retain NODE-26 visual reconstruction");
-  assert(hybridIndex > visualIndex, "NODE-28 raster execution must follow NODE-26 visual replacement");
-  assert(layoutIndex > hybridIndex, "NODE-27 parent layout must run after raster boundary replacement");
-  assert(main.includes("rasterSafeLayoutTree"), "NODE-28 must protect raster tile geometry from container layout");
-  assert(main.includes("renderedRoot.remove()"), "NODE-28 fatal mutations must preserve full-root rollback");
+  assert(
+    hybridIndex > visualIndex,
+    "NODE-28 raster execution must follow NODE-26 visual replacement",
+  );
+  assert(
+    layoutIndex > hybridIndex,
+    "NODE-27 parent layout must run after raster boundary replacement",
+  );
+  assert(
+    main.includes("rasterSafeLayoutTree"),
+    "NODE-28 must protect raster tile geometry from container layout",
+  );
+  assert(
+    main.includes("renderedRoot.remove()"),
+    "NODE-28 fatal mutations must preserve full-root rollback",
+  );
 
   const plannerTests = text("packages/figma-renderer/test/hybrid-raster-planner.test.ts");
   for (const evidence of [

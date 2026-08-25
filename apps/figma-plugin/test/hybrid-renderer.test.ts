@@ -42,7 +42,11 @@ describe("NODE-28 raster-safe layout tree", () => {
       renderStrategy: "native" as const,
       childIds: ["raster", "native"],
     };
-    const renderTree: WtfRenderTree = { rootId: "parent", nodes: [parent, raster, native], sections: [] };
+    const renderTree: WtfRenderTree = {
+      rootId: "parent",
+      nodes: [parent, raster, native],
+      sections: [],
+    };
     const safe = rasterSafeLayoutTree(renderTree, ["raster"]);
     const safeRaster = safe.nodes.find((item) => item.id === "raster");
     const safeNative = safe.nodes.find((item) => item.id === "native");

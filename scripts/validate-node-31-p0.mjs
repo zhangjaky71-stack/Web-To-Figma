@@ -120,7 +120,10 @@ if (audit) {
   for (const check of ["node31Validator", "lint", "typecheck", "tests", "build", "format"]) {
     assert(audit.ci?.qualityChecks?.[check] === "PASS", `NODE-31 P0 audit missing PASS ${check}`);
   }
-  assert(audit.policy?.unavailableIsPass === false, "NODE-31 P0 audit must fail closed on UNAVAILABLE");
+  assert(
+    audit.policy?.unavailableIsPass === false,
+    "NODE-31 P0 audit must fail closed on UNAVAILABLE",
+  );
 
   const allItems = [];
   for (const [sectionName, ids] of Object.entries(requiredIds)) {
@@ -145,7 +148,10 @@ if (audit) {
   );
 
   if (manifest) {
-    assert(manifest.p0?.status === derivedStatus, `NODE-31 manifest P0 status must be ${derivedStatus}`);
+    assert(
+      manifest.p0?.status === derivedStatus,
+      `NODE-31 manifest P0 status must be ${derivedStatus}`,
+    );
     assert(
       manifest.p0?.evidenceArtifact === auditPath,
       "NODE-31 manifest P0 evidenceArtifact must point to the P0 audit",

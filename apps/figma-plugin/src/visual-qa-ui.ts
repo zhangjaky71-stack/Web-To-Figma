@@ -57,10 +57,7 @@ async function decodePng(bytes: Uint8Array): Promise<DecodedRgba> {
   }
 }
 
-function terminalResult(
-  status: "FAIL" | "UNAVAILABLE",
-  detail: string,
-): W2fQaVisualUiResult {
+function terminalResult(status: "FAIL" | "UNAVAILABLE", detail: string): W2fQaVisualUiResult {
   return {
     report: {
       version: W2F_NODE29_QA_VERSION,

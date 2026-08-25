@@ -114,7 +114,8 @@ export function node29PixelQaReference(
     contains(reference.bounds, root.geometry.bounds),
   );
   return references.sort((left, right) => {
-    const distance = geometryDistance(left, root.geometry.bounds) - geometryDistance(right, root.geometry.bounds);
+    const distance =
+      geometryDistance(left, root.geometry.bounds) - geometryDistance(right, root.geometry.bounds);
     if (distance !== 0) return distance;
     return left.id.localeCompare(right.id);
   })[0];

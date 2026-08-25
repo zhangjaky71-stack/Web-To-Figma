@@ -72,8 +72,7 @@ export function combineVisualPixelMetrics(
     0,
   );
   const squaredError = metrics.reduce(
-    (total, item) =>
-      total + item.rootMeanSquaredChannelError ** 2 * item.pixelCount * 4,
+    (total, item) => total + item.rootMeanSquaredChannelError ** 2 * item.pixelCount * 4,
     0,
   );
   const changedPixels = metrics.reduce(

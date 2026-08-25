@@ -95,8 +95,17 @@ if (failures.length === 0) {
   ]) {
     assert(qaPayload.includes(evidence), `NODE-29 full-page QA evidence missing ${evidence}`);
   }
-  for (const forbidden of ["fetch(", "XMLHttpRequest", "WebSocket", "eval(", "new Function("]) {
-    assert(!qaPayload.includes(forbidden), `NODE-29 QA payload must remain local-only: ${forbidden}`);
+  for (const forbidden of [
+    "fetch(",
+    "XMLHttpRequest",
+    "WebSocket",
+    "eval(",
+    "new Function(",
+  ]) {
+    assert(
+      !qaPayload.includes(forbidden),
+      `NODE-29 QA payload must remain local-only: ${forbidden}`,
+    );
   }
 
   const visualUi = text("apps/figma-plugin/src/visual-qa-ui.ts");
@@ -112,7 +121,13 @@ if (failures.length === 0) {
   ]) {
     assert(visualUi.includes(evidence), `NODE-29 UI pixel comparison missing ${evidence}`);
   }
-  for (const forbidden of ["fetch(", "XMLHttpRequest", "WebSocket", "eval(", "new Function("]) {
+  for (const forbidden of [
+    "fetch(",
+    "XMLHttpRequest",
+    "WebSocket",
+    "eval(",
+    "new Function(",
+  ]) {
     assert(!visualUi.includes(forbidden), `NODE-29 visual UI must remain local-only: ${forbidden}`);
   }
 
@@ -140,7 +155,13 @@ if (failures.length === 0) {
   ]) {
     assert(main.includes(evidence), `NODE-29 Figma runtime missing ${evidence}`);
   }
-  for (const forbidden of ["fetch(", "XMLHttpRequest", "WebSocket", "eval(", "new Function("]) {
+  for (const forbidden of [
+    "fetch(",
+    "XMLHttpRequest",
+    "WebSocket",
+    "eval(",
+    "new Function(",
+  ]) {
     assert(!main.includes(forbidden), `NODE-29 Figma runtime must remain local-only: ${forbidden}`);
   }
 

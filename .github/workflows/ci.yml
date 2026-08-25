@@ -45,6 +45,26 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Generate exact NODE-28 formatting
+        run: >-
+          pnpm exec prettier --write
+          apps/figma-plugin/src/figma-hybrid-renderer.ts
+          apps/figma-plugin/src/protocol.ts
+          apps/figma-plugin/test/hybrid-raster.test.ts
+          packages/figma-renderer/src/transaction.ts
+          scripts/validate-node-28.mjs
+
+      - name: Upload exact NODE-28 formatting
+        uses: actions/upload-artifact@v4
+        with:
+          name: node-28-prettier-output
+          path: |
+            apps/figma-plugin/src/figma-hybrid-renderer.ts
+            apps/figma-plugin/src/protocol.ts
+            apps/figma-plugin/test/hybrid-raster.test.ts
+            packages/figma-renderer/src/transaction.ts
+            scripts/validate-node-28.mjs
+
       - name: Lint
         run: pnpm lint
 

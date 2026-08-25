@@ -59,9 +59,9 @@
   },
   "p0": {
     "status": "UNAVAILABLE",
-    "evidenceArtifact": "docs/qa/results/NODE-31_P0_AUDIT_745.json",
-    "blockingUnavailableCount": 16,
-    "note": "P0 audit is intentionally fail-closed. Existing unit/contract evidence passes selected items, while browser-runtime/UI/font items remain unavailable until direct evidence exists."
+    "evidenceArtifact": "docs/qa/results/NODE-31_P0_AUDIT_764.json",
+    "blockingUnavailableCount": 15,
+    "note": "P0 audit is intentionally fail-closed. Real Chrome now proves region-selector scroll/focus/temporary-style cleanup, while the remaining browser-runtime/UI/font items stay UNAVAILABLE until direct evidence exists."
   },
   "determinism": { "status": "UNAVAILABLE", "source": "NODE-30 exact-head evidence" },
   "scale": {

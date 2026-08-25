@@ -54,16 +54,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: NODE-31 evidence Prettier diagnostic
-        run: |
-          pnpm exec prettier --write \
-            packages/figma-renderer/src/qa/evidence-manifest.ts \
-            packages/figma-renderer/test/node31-evidence-manifest.test.ts
-          git diff -- \
-            packages/figma-renderer/src/qa/evidence-manifest.ts \
-            packages/figma-renderer/test/node31-evidence-manifest.test.ts
-          exit 1
-
       - name: Lint
         run: pnpm lint
 

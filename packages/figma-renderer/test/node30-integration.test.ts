@@ -149,7 +149,13 @@ describe("NODE-30 IR determinism adapter", () => {
   });
 
   it("rejects benchmark evidence that omits an asset hash", () => {
-    const unhashed = [{ ...assets()[0]!, sha256: undefined }];
+    const unhashed: WtfAssetRecord[] = [
+      {
+        id: "asset-1",
+        kind: "image",
+        mediaType: "image/png",
+      },
+    ];
     expect(() =>
       createDeterminismRunFromIr({
         runId: "bad",

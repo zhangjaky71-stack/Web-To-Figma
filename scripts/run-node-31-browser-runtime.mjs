@@ -232,18 +232,13 @@ try {
       document.documentElement.style.scrollBehavior = "smooth";
       document.getElementById("before").focus({ preventScroll: true });
       globalThis.__w2fListener = null;
-      Object.defineProperty(globalThis, "chrome", {
-        configurable: true,
-        value: {
-          runtime: {
-            onMessage: {
-              addListener(listener) {
-                globalThis.__w2fListener = listener;
-              }
-            }
+      globalThis.chrome.runtime = {
+        onMessage: {
+          addListener(listener) {
+            globalThis.__w2fListener = listener;
           }
         }
-      });
+      };
     })()`,
   );
   await evaluate(client, contentScript);

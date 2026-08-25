@@ -90,8 +90,14 @@ if (failures.length === 0) {
     assert(hybrid.includes(evidence), `NODE-28 hybrid renderer missing ${evidence}`);
   }
   for (const forbidden of ["fetch(", "XMLHttpRequest", "WebSocket", "eval(", "new Function("]) {
-    assert(!hybrid.includes(forbidden), `NODE-28 hybrid renderer must stay local/safe: ${forbidden}`);
-    assert(!payload.includes(forbidden), `NODE-28 raster payload must stay local/safe: ${forbidden}`);
+    assert(
+      !hybrid.includes(forbidden),
+      `NODE-28 hybrid renderer must stay local/safe: ${forbidden}`,
+    );
+    assert(
+      !payload.includes(forbidden),
+      `NODE-28 raster payload must stay local/safe: ${forbidden}`,
+    );
   }
 
   const main = text("apps/figma-plugin/src/main.ts");

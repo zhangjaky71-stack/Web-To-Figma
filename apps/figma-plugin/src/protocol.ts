@@ -332,7 +332,8 @@ export function isW2fBasicRenderRequest(value: unknown): value is W2fBasicRender
     return false;
   }
   if (value.assets !== undefined && !isAssetArray(value.assets)) return false;
-  if (value.assetPayloadsById !== undefined && !isUint8ArrayRecord(value.assetPayloadsById)) return false;
+  if (value.assetPayloadsById !== undefined && !isUint8ArrayRecord(value.assetPayloadsById))
+    return false;
   if (value.sanitizedSvgById !== undefined && !isStringRecord(value.sanitizedSvgById)) return false;
   if (
     value.rasterReferences !== undefined &&

@@ -48,7 +48,8 @@ export function renderBasicFigmaScene<TNode>(
       const parentRenderNodeId = nodePlan.parentRenderNodeId;
       if (
         parentRenderNodeId &&
-        (rasterBoundaryIds.has(parentRenderNodeId) || suppressedRenderNodeIds.has(parentRenderNodeId))
+        (rasterBoundaryIds.has(parentRenderNodeId) ||
+          suppressedRenderNodeIds.has(parentRenderNodeId))
       ) {
         suppressedRenderNodeIds.add(nodePlan.renderNodeId);
         continue;

@@ -87,9 +87,7 @@ export function effectiveSelectedRootIds(
   if (mode === "whole-page") return [];
   const nodes = renderNodeMap(renderTree);
   return [
-    ...new Set(
-      selectedRootIds.map((renderNodeId) => nearestRasterBoundary(renderNodeId, nodes)),
-    ),
+    ...new Set(selectedRootIds.map((renderNodeId) => nearestRasterBoundary(renderNodeId, nodes))),
   ];
 }
 
@@ -118,10 +116,7 @@ function containsBounds(
   );
 }
 
-function boundsDistance(
-  reference: W2fRasterReferenceEvidence,
-  node: WtfRenderNode,
-): number {
+function boundsDistance(reference: W2fRasterReferenceEvidence, node: WtfRenderNode): number {
   const left = reference.bounds;
   const right = node.geometry.bounds;
   return (
@@ -144,7 +139,9 @@ function selectReference(
       `Raster render node ${node.id} has no source-bound local raster evidence`,
     );
   }
-  const covering = sourceBound.filter((reference) => containsBounds(reference.bounds, node.geometry.bounds));
+  const covering = sourceBound.filter((reference) =>
+    containsBounds(reference.bounds, node.geometry.bounds),
+  );
   if (covering.length === 0) {
     throw new W2fHybridRasterError(
       "W2F_E_RASTER_REFERENCE_BOUNDS",
@@ -158,10 +155,7 @@ function selectReference(
   })[0]!;
 }
 
-function tileOrder(
-  left: WtfReferenceTileDescriptor,
-  right: WtfReferenceTileDescriptor,
-): number {
+function tileOrder(left: WtfReferenceTileDescriptor, right: WtfReferenceTileDescriptor): number {
   if (left.bounds.y !== right.bounds.y) return left.bounds.y - right.bounds.y;
   if (left.bounds.x !== right.bounds.x) return left.bounds.x - right.bounds.x;
   return left.id.localeCompare(right.id);
@@ -242,7 +236,10 @@ function setSurfacePluginData(frame: FrameNode, surface: W2fHybridRasterSurfaceP
   frame.setPluginData(W2F_RASTER_PLUGIN_DATA_KEYS.dpr, String(surface.reference.dpr));
   frame.setPluginData(W2F_RASTER_PLUGIN_DATA_KEYS.tileCount, String(surface.tiles.length));
   if (surface.reference.reason) {
-    frame.setPluginData(W2F_RASTER_PLUGIN_DATA_KEYS.reason, surface.reference.reason.slice(0, 1024));
+    frame.setPluginData(
+      W2F_RASTER_PLUGIN_DATA_KEYS.reason,
+      surface.reference.reason.slice(0, 1024),
+    );
   }
 }
 

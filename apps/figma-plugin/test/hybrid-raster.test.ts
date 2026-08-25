@@ -6,10 +6,7 @@ import {
   renderTreeForNativePass,
   W2fHybridRasterError,
 } from "../src/figma-hybrid-renderer.js";
-import {
-  isW2fRasterReferenceEvidence,
-  type W2fRasterReferenceEvidence,
-} from "../src/protocol.js";
+import { isW2fRasterReferenceEvidence, type W2fRasterReferenceEvidence } from "../src/protocol.js";
 
 function renderNode(
   id: string,
@@ -51,12 +48,11 @@ function tree(): WtfRenderTree {
     rootId: "root",
     nodes: [
       renderNode("root", { x: 0, y: 0, width: 500, height: 500 }, ["fallback"]),
-      renderNode(
-        "fallback",
-        { x: 100, y: 120, width: 200, height: 160 },
-        ["child"],
-        { parentId: "root", strategy: "raster", sourceNodeId: "source-fallback" },
-      ),
+      renderNode("fallback", { x: 100, y: 120, width: 200, height: 160 }, ["child"], {
+        parentId: "root",
+        strategy: "raster",
+        sourceNodeId: "source-fallback",
+      }),
       renderNode("child", { x: 110, y: 130, width: 20, height: 20 }, [], {
         parentId: "fallback",
       }),
@@ -65,7 +61,9 @@ function tree(): WtfRenderTree {
   };
 }
 
-function reference(overrides: Partial<W2fRasterReferenceEvidence> = {}): W2fRasterReferenceEvidence {
+function reference(
+  overrides: Partial<W2fRasterReferenceEvidence> = {},
+): W2fRasterReferenceEvidence {
   return {
     id: "ref-fallback",
     kind: "node-fallback",
@@ -90,9 +88,7 @@ function reference(overrides: Partial<W2fRasterReferenceEvidence> = {}): W2fRast
 
 describe("NODE-28 hybrid raster planning", () => {
   it("escalates a selected descendant to the nearest minimal raster boundary", () => {
-    expect(effectiveSelectedRootIds(tree(), "selected-roots", ["child"])).toEqual([
-      "fallback",
-    ]);
+    expect(effectiveSelectedRootIds(tree(), "selected-roots", ["child"])).toEqual(["fallback"]);
   });
 
   it("strips text/assets from raster nodes during the native visual pass", () => {

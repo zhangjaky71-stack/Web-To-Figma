@@ -347,13 +347,13 @@ export function isW2fBasicRenderRequest(value: unknown): value is W2fBasicRender
   ) {
     return false;
   }
-  if (Array.isArray(value.rasterReferences)) {
+  if (Array.isArray(value.rasterReferences) && value.rasterReferences.length > 0) {
     const payloads = value.rasterTilePayloadsByPath;
-    if (value.rasterReferences.length > 0 && !isUint8ArrayRecord(payloads)) return false;
+    if (!isUint8ArrayRecord(payloads)) return false;
     for (const reference of value.rasterReferences) {
       if (!isW2fRasterReferenceEvidence(reference)) return false;
       for (const tile of reference.tiles) {
-        if (!payloads?.[tile.path]) return false;
+        if (!payloads[tile.path]) return false;
       }
     }
   }

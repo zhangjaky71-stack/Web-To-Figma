@@ -4,7 +4,7 @@
 **Portable package:** `.wtf`  
 **MIME:** `application/x-wtf`  
 **Architecture:** FROZEN FOR IMPLEMENTATION  
-**Updated:** 2026-08-24
+**Updated:** 2026-08-25
 
 ## Roadmap
 
@@ -37,92 +37,84 @@
 | 24 | Figma Capability Resolver | DONE | Exact-head CI #630 PASS | PR #28 merged as `e9e4d1e9` |
 | 25 | Basic Figma Renderer | DONE | Bootstrap CI #638 + exact-head CI #640 PASS | PR #29 merged as `35d9a18b` |
 | 26 | Text / Font / Asset / Paint Renderer | DONE | Exact-head CI #651 PASS | PR #31 merged as `f6247ddc` |
-| 27 | Figma Responsive Layout Renderer | IMPLEMENTING | Candidate CI in progress | PR #32 / `node-27-responsive-layout` |
-| 28 | Hybrid Native / Raster Renderer | TODO | - | - |
+| 27 | Figma Responsive Layout Renderer | DONE | Exact-head CI #667 PASS | PR #32 merged as `4aef2daa` |
+| 28 | Hybrid Native / Raster Renderer | IMPLEMENTING | Candidate CI pending | `node-28-hybrid-raster` |
 | 29 | Visual / Structure / Editability QA | TODO | - | - |
 | 30 | Responsive / Determinism / Performance QA | TODO | - | - |
 | 31 | Real-world Compatibility & Release Candidate | TODO | - | - |
 
 ## Current Node
 
-`NODE-27 — Figma Responsive Layout Renderer`
+`NODE-28 — Hybrid Native / Raster Renderer`
 
 Entry baseline:
 
 ```text
-f6247ddc6770a08c540dd5052936e788ca0c2b0e
+4aef2daaafe338d4677e714d5bcadd26db6b152f
 ```
 
 Working branch:
 
 ```text
-node-27-responsive-layout
+node-28-hybrid-raster
 ```
 
-Pull request:
+## NODE-27 Closure
+
+NODE-27 was merged to `main` via PR #32 as:
 
 ```text
-#32
+4aef2daaafe338d4677e714d5bcadd26db6b152f
 ```
 
-## NODE-26 Closure
+Exact-head CI #667 passed Foundation, frozen install, Lint, Typecheck, Tests, Build, packaged Figma plugin validation and Format check.
 
-NODE-26 was merged to `main` via PR #31 as:
+NODE-27 now owns deterministic Flex → Figma Auto Layout translation, supported native Grid translation, FILL/HUG/FIXED sizing, flex-grow, min/max sizing, gaps/padding/alignment, absolute/fixed child constraints, and explicit preservation of source geometry when browser layout semantics do not have an exact Figma-native equivalent.
+
+## NODE-28 Frozen Direction
+
+NODE-28 does **not** decide where fallback is needed. It consumes the existing NODE-20 compositing/fallback decision and NODE-14 Pixel Ground Truth tiles.
+
+The core execution contract is:
 
 ```text
-f6247ddc6770a08c540dd5052936e788ca0c2b0e
+NODE-20 minimal safe compositing boundary
+        ↓ renderStrategy: raster
+NODE-14 deterministic local PNG reference tiles
+        ↓
+NODE-28 local hybrid renderer
+        ↓
+replace only the raster boundary subtree in Figma
 ```
 
-The merge records exact-head CI #651 passing Foundation, frozen install, Lint, Typecheck, Tests, Build, Format check, and packaged Figma plugin validation.
+Fallback reference IDs are already source-addressable (`node-fallback:<encoded source node id>`, plus canvas/video variants), and NODE-20 boundary capture chooses a source node whose geometry represents the promoted boundary. NODE-28 therefore maps raster roots to packaged local tile evidence without network access or screenshot re-inference.
 
-NODE-26 now owns editable text reconstruction, local font resolution, per-run text styling, embedded image paints, sanitized SVG reconstruction, native fills/gradients, border/radius, shadows, opacity/blend mapping and full-root rollback on visual-render failure. NODE-27 builds on those native nodes rather than replacing them.
+## NODE-28 Fidelity / Safety Rules
 
-## NODE-27 Frozen Scope
+- native/editable layers remain native outside explicit raster boundaries;
+- rasterization is local/minimal and follows NODE-20 boundaries;
+- whole-page rasterization is never the default and is only legal when the document root itself is the already-computed minimal safe boundary;
+- all PNG bytes come from the validated `.wtf` package;
+- missing or incomplete raster evidence must keep the existing native subtree instead of producing blank placeholders;
+- raster replacement must preserve boundary geometry, sibling position, layer name, source/stable/revision pluginData and import transaction rollback;
+- multi-tile boundaries must be reconstructed at exact captured coordinates inside a clipped local frame;
+- no network access is introduced.
 
-NODE-27 is limited to responsive/native layout reconstruction:
+## Current NODE-28 Implementation
 
-```text
-Flex -> Figma Auto Layout
-row / row-reverse / column / column-reverse
-nowrap / wrap
-gap + independent wrapped-track gap
-four-side padding
-primary/counter-axis alignment
-FILL / HUG / FIXED sizing
-flex-grow mapping
-min/max width and height
-absolute/fixed child layout positioning + constraints
-native Figma GRID where captured semantics are faithfully representable
-```
+Implementation is starting from the merged NODE-27 baseline. The next concrete work is:
 
-The W2F IR already carries the required evidence through `flexContainer`, `flexItem`, `gridContainer`, `gridItem`, axis sizing, padding/effective gaps and absolute constraints. NODE-27 must consume that evidence and must not re-infer layout from screenshots.
-
-## Fidelity Policy
-
-Unsupported browser layout semantics must never be silently approximated. If Figma lacks an exact native equivalent, NODE-27 keeps the NODE-25/NODE-26 source geometry and records the mapping as non-native-compatible. Examples include `wrap-reverse` and main-axis spacing modes without an exact Figma equivalent.
-
-NODE-28 remains responsible for selective hybrid/raster fallback. NODE-29 remains responsible for Pixel Ground Truth visual/editability QA.
-
-## Current NODE-27 Implementation
-
-The branch currently contains:
-
-- a deterministic Flex/Auto Layout planner in `@w2f/figma-renderer`;
-- native-compatible mapping for direction, wrapping, gap, padding and alignment;
-- FILL/HUG/FIXED and `flex-grow` planning;
-- min/max sizing evidence;
-- protection for absolute children;
-- a Figma runtime mapper using native Auto Layout properties;
-- import-pipeline integration after NODE-26 visual node replacement;
-- explicit skip accounting for unsupported exact-Flex mappings;
-- unit tests covering row/column, wrap, gap, padding, grow, min/max, absolute children and unsupported semantics.
-
-See `docs/nodes/NODE-27_FIGMA_RESPONSIVE_LAYOUT_RENDERER.md` for the frozen contract.
+1. extend the secure UI → main handoff with validated `referenceTiles` and local tile bytes;
+2. add a deterministic hybrid/raster planner in `@w2f/figma-renderer`;
+3. add a Figma runtime that materializes raster boundaries as local clipped frames with image-filled tile rectangles;
+4. preserve native subtrees when fallback evidence is incomplete;
+5. add planner/runtime tests, permanent foundation/package validation, NODE-28 implementation documentation and ADR;
+6. run exact-head CI, open/finish the NODE-28 PR and merge only when the exact head is green.
 
 ## Blockers
 
-No product or architecture blocker is known. GitHub CI may expose strict TypeScript/Figma API or formatting issues; these must be fixed without weakening NODE-22/23 security, NODE-25 transaction invariants or NODE-26 visual fidelity.
+No product or architecture blocker is known. The remaining implementation risk is limited to strict Figma runtime typings and exact reference-tile coverage/mapping; CI and deterministic planner tests will gate both.
 
 ## Next
 
-Finish candidate CI for the native Flex path, then implement and validate the faithful native GRID path and remaining constraint/min-max cases. Add a permanent NODE-27 validator, run exact-head read-only CI, mark PR #32 ready and merge only when the exact head is green. Then begin NODE-28.
+Implement the NODE-28 local hybrid/raster execution path, validate exact-head CI, merge it, then begin NODE-29 Visual / Structure / Editability QA.

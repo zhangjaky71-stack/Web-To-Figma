@@ -291,15 +291,24 @@ if (failures.length === 0) {
       ciEvidence.git?.branchHead === "8ea3bbde8580e97996e63c94fa0f08ea8f4ff63b",
       "NODE-31 CI evidence branch head mismatch",
     );
-    assert(ciEvidence.qualityChecks?.node31Validator === "PASS", "NODE-31 validator evidence missing");
+    assert(
+      ciEvidence.qualityChecks?.node31Validator === "PASS",
+      "NODE-31 validator evidence missing",
+    );
     assert(ciEvidence.qualityChecks?.tests === "PASS", "NODE-31 test evidence missing");
     assert(ciEvidence.qualityChecks?.build === "PASS", "NODE-31 build evidence missing");
     assert(ciEvidence.qualityChecks?.format === "PASS", "NODE-31 format evidence missing");
     assert(ciEvidence.schemaCompatibility?.testCount === 15, "NODE-31 schema test count mismatch");
-    assert(ciEvidence.parserAndSecurityFixtures?.testCount === 20, "NODE-31 parser test count mismatch");
+    assert(
+      ciEvidence.parserAndSecurityFixtures?.testCount === 20,
+      "NODE-31 parser test count mismatch",
+    );
     assert(ciEvidence.node30Scale?.measuredRuns === 5, "NODE-31 scale evidence run count mismatch");
     assert(ciEvidence.node30Scale?.createdNodeTarget === 10000, "NODE-31 scale target mismatch");
-    assert(ciEvidence.node30Scale?.fatalCrash === false, "NODE-31 scale evidence reports fatal crash");
+    assert(
+      ciEvidence.node30Scale?.fatalCrash === false,
+      "NODE-31 scale evidence reports fatal crash",
+    );
     for (const unproven of [
       "zero-known-critical-security-blockers",
       "zero-known-high-security-blockers",

@@ -155,7 +155,17 @@ function tenThousandNodeInput(): W2fBasicRendererInput {
   return { renderTree, sourceGraph, profile: "balanced", tokenPolicy: "literal" };
 }
 
-const BENCHMARK_ENVIRONMENT = `${process.platform}-${process.arch}-node-${process.versions.node}-memory-figma-v1`;
+function benchmarkEnvironment(): string {
+  const runtime = globalThis as unknown as {
+    process?: { platform?: string; arch?: string; versions?: { node?: string } };
+  };
+  const platform = runtime.process?.platform ?? "unknown-platform";
+  const arch = runtime.process?.arch ?? "unknown-arch";
+  const node = runtime.process?.versions?.node ?? "unknown-node";
+  return `${platform}-${arch}-node-${node}-memory-figma-v1`;
+}
+
+const BENCHMARK_ENVIRONMENT = benchmarkEnvironment();
 
 describe("NODE-30 required responsive fixture corpus", () => {
   it("covers every contract domain including breakpoint, grid and container-query changes", () => {

@@ -53,9 +53,13 @@ class BenchmarkAdapter implements W2fBasicFigmaAdapter<BenchmarkNode> {
     node.removed = true;
   }
 
-  setSelection(): void {}
+  setSelection(nodes: readonly BenchmarkNode[]): void {
+    void nodes;
+  }
 
-  focusNodes(): void {}
+  focusNodes(nodes: readonly BenchmarkNode[]): void {
+    void nodes;
+  }
 
   private create(type: BenchmarkNode["type"]): BenchmarkNode {
     const node: BenchmarkNode = {

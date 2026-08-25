@@ -34,6 +34,9 @@ jobs:
       - name: Validate NODE-31 release candidate
         run: node scripts/validate-node-31.mjs
 
+      - name: Validate NODE-31 Class B corpus
+        run: node scripts/validate-node-31-corpus.mjs
+
       - name: Validate NODE-31 P0 audit
         run: node scripts/validate-node-31-p0.mjs
 

@@ -3,7 +3,7 @@
   "status": "collecting",
   "contract": "docs/ACCEPTANCE_CONTRACT_V2.md",
   "baselineCommit": "28b52dc3e0d3074bf76205c8deb324a06dfe9e23",
-  "note": "This manifest reserves versioned RC evidence slots. UNAVAILABLE means the measurement has not yet been produced by the declared source artifact; it must never be interpreted as PASS.",
+  "note": "Versioned RC evidence manifest. UNAVAILABLE means the declared measurement has not yet been produced and must never be interpreted as PASS. Class B sourceArtifact paths identify source inputs only; they do not constitute measurement evidence.",
   "classA": [
     {
       "id": "deterministic-level1-core",
@@ -19,18 +19,18 @@
     }
   ],
   "classB": [
-    { "id": "realistic-landing-page", "category": "landing-page", "supportClass": "native-supported", "standardHtmlCss": true, "measurementStatus": "UNAVAILABLE", "sourceArtifact": null },
-    { "id": "realistic-ecommerce", "category": "ecommerce", "supportClass": "native-supported", "standardHtmlCss": true, "measurementStatus": "UNAVAILABLE", "sourceArtifact": null },
-    { "id": "realistic-docs", "category": "docs", "supportClass": "native-supported", "standardHtmlCss": true, "measurementStatus": "UNAVAILABLE", "sourceArtifact": null },
-    { "id": "realistic-dashboard", "category": "dashboard", "supportClass": "native-supported", "standardHtmlCss": true, "measurementStatus": "UNAVAILABLE", "sourceArtifact": null },
-    { "id": "realistic-table", "category": "table", "supportClass": "native-supported", "standardHtmlCss": true, "measurementStatus": "UNAVAILABLE", "sourceArtifact": null },
-    { "id": "realistic-saas-shell", "category": "saas-shell", "supportClass": "native-supported", "standardHtmlCss": true, "measurementStatus": "UNAVAILABLE", "sourceArtifact": null },
-    { "id": "realistic-local-site", "category": "local-site", "supportClass": "native-supported", "standardHtmlCss": true, "measurementStatus": "UNAVAILABLE", "sourceArtifact": null },
-    { "id": "realistic-shadow-dom", "category": "shadow-dom", "supportClass": "native-supported", "standardHtmlCss": true, "measurementStatus": "UNAVAILABLE", "sourceArtifact": null },
-    { "id": "realistic-iframe", "category": "iframe", "supportClass": "native-supported", "standardHtmlCss": true, "measurementStatus": "UNAVAILABLE", "sourceArtifact": null },
-    { "id": "realistic-canvas", "category": "canvas", "supportClass": "expected-fallback", "standardHtmlCss": false, "measurementStatus": "UNAVAILABLE", "sourceArtifact": null, "fallbackContract": "docs/KNOWN_LIMITATIONS.md#14-canvas" },
-    { "id": "realistic-webgl", "category": "webgl", "supportClass": "expected-fallback", "standardHtmlCss": false, "measurementStatus": "UNAVAILABLE", "sourceArtifact": null, "fallbackContract": "docs/KNOWN_LIMITATIONS.md#15-webgl" },
-    { "id": "realistic-responsive-app", "category": "responsive-app", "supportClass": "native-supported", "standardHtmlCss": true, "measurementStatus": "UNAVAILABLE", "sourceArtifact": null }
+    { "id": "realistic-landing-page", "category": "landing-page", "supportClass": "native-supported", "standardHtmlCss": true, "measurementStatus": "UNAVAILABLE", "sourceArtifact": "qa/corpus/node31/class-b/landing-page.html" },
+    { "id": "realistic-ecommerce", "category": "ecommerce", "supportClass": "native-supported", "standardHtmlCss": true, "measurementStatus": "UNAVAILABLE", "sourceArtifact": "qa/corpus/node31/class-b/ecommerce.html" },
+    { "id": "realistic-docs", "category": "docs", "supportClass": "native-supported", "standardHtmlCss": true, "measurementStatus": "UNAVAILABLE", "sourceArtifact": "qa/corpus/node31/class-b/docs.html" },
+    { "id": "realistic-dashboard", "category": "dashboard", "supportClass": "native-supported", "standardHtmlCss": true, "measurementStatus": "UNAVAILABLE", "sourceArtifact": "qa/corpus/node31/class-b/dashboard.html" },
+    { "id": "realistic-table", "category": "table", "supportClass": "native-supported", "standardHtmlCss": true, "measurementStatus": "UNAVAILABLE", "sourceArtifact": "qa/corpus/node31/class-b/table.html" },
+    { "id": "realistic-saas-shell", "category": "saas-shell", "supportClass": "native-supported", "standardHtmlCss": true, "measurementStatus": "UNAVAILABLE", "sourceArtifact": "qa/corpus/node31/class-b/saas-shell.html" },
+    { "id": "realistic-local-site", "category": "local-site", "supportClass": "native-supported", "standardHtmlCss": true, "measurementStatus": "UNAVAILABLE", "sourceArtifact": "qa/corpus/node31/class-b/local-site.html" },
+    { "id": "realistic-shadow-dom", "category": "shadow-dom", "supportClass": "native-supported", "standardHtmlCss": true, "measurementStatus": "UNAVAILABLE", "sourceArtifact": "qa/corpus/node31/class-b/shadow-dom.html" },
+    { "id": "realistic-iframe", "category": "iframe", "supportClass": "native-supported", "standardHtmlCss": true, "measurementStatus": "UNAVAILABLE", "sourceArtifact": "qa/corpus/node31/class-b/iframe.html" },
+    { "id": "realistic-canvas", "category": "canvas", "supportClass": "expected-fallback", "standardHtmlCss": false, "measurementStatus": "UNAVAILABLE", "sourceArtifact": "qa/corpus/node31/class-b/canvas.html", "fallbackContract": "docs/KNOWN_LIMITATIONS.md#14-canvas" },
+    { "id": "realistic-webgl", "category": "webgl", "supportClass": "expected-fallback", "standardHtmlCss": false, "measurementStatus": "UNAVAILABLE", "sourceArtifact": "qa/corpus/node31/class-b/webgl.html", "fallbackContract": "docs/KNOWN_LIMITATIONS.md#15-webgl" },
+    { "id": "realistic-responsive-app", "category": "responsive-app", "supportClass": "native-supported", "standardHtmlCss": true, "measurementStatus": "UNAVAILABLE", "sourceArtifact": "qa/corpus/node31/class-b/responsive-app.html" }
   ],
   "classC": [],
   "security": {

@@ -78,5 +78,8 @@ jobs:
       - name: NODE-31 Standard capture runtime P0
         run: node scripts/run-node-31-standard-capture-runtime.mjs
 
-      - name: Format check
-        run: pnpm format:check
+      - name: NODE-31 P0 Prettier diagnostic
+        run: |
+          pnpm exec prettier scripts/validate-node-31-p0.mjs --write
+          git diff -- scripts/validate-node-31-p0.mjs
+          exit 1

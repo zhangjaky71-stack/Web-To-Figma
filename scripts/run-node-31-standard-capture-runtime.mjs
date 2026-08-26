@@ -8,6 +8,7 @@ import { setTimeout as delay } from "node:timers/promises";
 const captureModulePath = "apps/browser-extension/dist/runtime/standard-capture-adapter/capture.js";
 const shadowFixturePath = "qa/corpus/node31/class-b/shadow-dom.html";
 const iframeFixturePath = "qa/corpus/node31/class-b/iframe.html";
+const p0FixturePath = "qa/corpus/node31/p0/standard-capture-runtime.html";
 const chromeCandidates = [
   process.env.CHROME_BIN,
   "/usr/bin/google-chrome",
@@ -159,11 +160,22 @@ function contentType(path) {
   return "application/octet-stream";
 }
 
+async function listen(server) {
+  await new Promise((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", resolve);
+  });
+  const address = server.address();
+  assert(address && typeof address === "object", "Fixture server did not expose a TCP address");
+  return `http://127.0.0.1:${address.port}`;
+}
+
 async function startFixtureServer() {
   const routes = new Map([
     ["/runtime/standard-capture-adapter/capture.js", captureModulePath],
     ["/fixture/shadow-dom.html", shadowFixturePath],
     ["/fixture/iframe.html", iframeFixturePath],
+    ["/fixture/standard-capture-p0.html", p0FixturePath],
   ]);
   const server = createServer(async (request, response) => {
     try {
@@ -185,16 +197,26 @@ async function startFixtureServer() {
       response.end(String(error));
     }
   });
-  await new Promise((resolve, reject) => {
-    server.once("error", reject);
-    server.listen(0, "127.0.0.1", resolve);
+  return { server, baseUrl: await listen(server) };
+}
+
+async function startCrossOriginServer() {
+  const server = createServer((request, response) => {
+    const requestUrl = new URL(request.url ?? "/", "http://127.0.0.1");
+    if (requestUrl.pathname !== "/fixture/cross-origin-child.html") {
+      response.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
+      response.end("Not found");
+      return;
+    }
+    response.writeHead(200, {
+      "content-type": "text/html; charset=utf-8",
+      "cache-control": "no-store",
+    });
+    response.end(
+      "<!doctype html><html><body><main data-node31-role=\"cross-origin-child\">Cross-origin child must stay inaccessible to Standard capture.</main></body></html>",
+    );
   });
-  const address = server.address();
-  assert(address && typeof address === "object", "Fixture server did not expose a TCP address");
-  return {
-    server,
-    baseUrl: `http://127.0.0.1:${address.port}`,
-  };
+  return { server, baseUrl: await listen(server) };
 }
 
 async function closeServer(server) {
@@ -210,12 +232,12 @@ async function navigate(client, url, readinessExpression, label) {
   await waitFor(client, readinessExpression, `${label} fixture readiness condition failed`);
 }
 
-async function captureSnapshot(client, moduleUrl) {
+async function captureSnapshot(client, moduleUrl, captureTarget = { type: "document" }) {
   return evaluate(
     client,
     `(async () => {
       const module = await import(${JSON.stringify(moduleUrl)});
-      const result = module.captureStandardSnapshotInPage({ captureTarget: { type: "document" } });
+      const result = module.captureStandardSnapshotInPage({ captureTarget: ${JSON.stringify(captureTarget)} });
       return result.snapshot;
     })()`,
   );
@@ -225,6 +247,16 @@ function findNode(snapshot, predicate, label) {
   const node = snapshot.nodes.find(predicate);
   assert(node, `Missing ${label}`);
   return node;
+}
+
+function findNodeByRole(snapshot, role, label) {
+  return findNode(snapshot, (node) => node.source?.attributes?.["data-node31-role"] === role, label);
+}
+
+function normalizeSnapshot(snapshot) {
+  const normalized = structuredClone(snapshot);
+  delete normalized.capturedAt;
+  return JSON.stringify(normalized);
 }
 
 function assertShadowSnapshot(snapshot) {
@@ -310,18 +342,133 @@ function assertIframeSnapshot(snapshot) {
   );
 }
 
+function assertDocumentAndCrossOriginSnapshot(snapshot, expectedState, crossOriginUrl) {
+  assert(snapshot?.adapter === "standard", "P0 fixture did not use the Standard adapter");
+  assert(snapshot.captureTarget?.type === "document", "P0 current-document capture target mismatch");
+  assert(snapshot.url.startsWith("http://127.0.0.1:"), "P0 fixture was not captured from HTTP");
+
+  const documentScrollRoot = snapshot.scrollContainers.find(
+    (item) => item.isDocumentScrollRoot === true && item.sourceNodeId === snapshot.rootCaptureNodeId,
+  );
+  assert(documentScrollRoot, "Document scroll root record was not captured");
+  assert(
+    Math.abs(documentScrollRoot.scrollTop - expectedState.windowScrollY) <= 1,
+    "Document scroll root did not preserve the live scroll position",
+  );
+
+  const appNode = findNodeByRole(snapshot, "primary-scroll-root", "primary app scroll-root node");
+  const appScrollRoot = snapshot.scrollContainers.find(
+    (item) => item.sourceNodeId === appNode.captureNodeId,
+  );
+  assert(appScrollRoot, "Primary app scroll-root record was not captured");
+  assert(
+    appScrollRoot.isPrimaryApplicationScrollRoot === true,
+    "Largest visible application scroller was not identified as the primary app scroll root",
+  );
+  assert(
+    Math.abs(appScrollRoot.scrollTop - expectedState.appScrollTop) <= 1,
+    "Primary app scroll root did not preserve its live scrollTop",
+  );
+
+  const iframe = findNode(
+    snapshot,
+    (node) => node.kind === "iframe" && node.source?.attributes?.id === "cross-origin-frame",
+    "cross-origin iframe boundary",
+  );
+  const inaccessibleFrame = snapshot.frames.find(
+    (frame) => frame.context?.parentFrameId === "frame-main" && frame.accessible === false,
+  );
+  assert(inaccessibleFrame, "Cross-origin iframe did not produce an inaccessible frame record");
+  assert(
+    inaccessibleFrame.inaccessibleReason === "cross-origin-or-inaccessible",
+    "Cross-origin frame inaccessible reason mismatch",
+  );
+  assert(
+    inaccessibleFrame.context?.url === crossOriginUrl,
+    "Cross-origin frame record did not preserve the iframe URL",
+  );
+  assert(
+    !snapshot.nodes.some((node) => node.frameContext?.frameId === inaccessibleFrame.context.frameId),
+    "Cross-origin iframe fabricated an editable child-document subtree",
+  );
+  const diagnostic = snapshot.diagnostics.find(
+    (item) =>
+      item.code === "STANDARD_CAPTURE_FRAME_INACCESSIBLE" &&
+      item.frameId === inaccessibleFrame.context.frameId,
+  );
+  assert(diagnostic, "Cross-origin iframe diagnostic was not emitted");
+  assert(
+    diagnostic.sourceNodeId === iframe.captureNodeId,
+    "Cross-origin iframe diagnostic is not linked to the iframe boundary",
+  );
+}
+
+function assertRegionSnapshot(snapshot, bounds) {
+  assert(snapshot.captureTarget?.type === "region", "Region capture target type mismatch");
+  assert(
+    JSON.stringify(snapshot.captureTarget.bounds) === JSON.stringify(bounds),
+    "Region capture bounds were not preserved",
+  );
+
+  const target = findNodeByRole(snapshot, "region-target", "intersecting region target");
+  const wrapper = findNodeByRole(
+    snapshot,
+    "region-structural-wrapper",
+    "geometry-free structural wrapper",
+  );
+  const ancestor = findNodeByRole(snapshot, "region-ancestor", "region structural ancestor");
+  assert(wrapper.geometry === undefined, "Structural wrapper unexpectedly gained geometry evidence");
+  assert(
+    target.relationships?.sourceParentId === wrapper.captureNodeId,
+    "Region target lost its source structural parent",
+  );
+  assert(
+    wrapper.relationships?.sourceParentId === ancestor.captureNodeId,
+    "Geometry-free structural wrapper lost its ancestor relationship",
+  );
+  assert(
+    ancestor.childCaptureNodeIds.includes(wrapper.captureNodeId) &&
+      wrapper.childCaptureNodeIds.includes(target.captureNodeId),
+    "Region ancestor child closure was not preserved",
+  );
+  assert(
+    !snapshot.nodes.some(
+      (node) => node.source?.attributes?.["data-node31-role"] === "region-outside-sibling",
+    ),
+    "Non-intersecting region sibling was incorrectly retained",
+  );
+
+  const retainedIds = new Set(snapshot.nodes.map((node) => node.captureNodeId));
+  for (const node of snapshot.nodes) {
+    for (const relation of [
+      node.relationships?.sourceParentId,
+      node.relationships?.composedParentId,
+      node.relationships?.assignedSlotId,
+      node.relationships?.shadowHostId,
+    ]) {
+      assert(!relation || retainedIds.has(relation), `Region relationship points outside retained set: ${relation}`);
+    }
+    for (const childId of node.childCaptureNodeIds) {
+      assert(retainedIds.has(childId), `Region childCaptureNodeIds points outside retained set: ${childId}`);
+    }
+  }
+}
+
 const profileDir = await mkdtemp(join(tmpdir(), "w2f-node31-standard-capture-"));
 const chromePath = await findChrome();
 let chromeProcess;
 let client;
 let fixtureServer;
+let crossOriginServer;
 let chromeStderr = "";
 
 try {
   await access(captureModulePath);
   await access(shadowFixturePath);
   await access(iframeFixturePath);
+  await access(p0FixturePath);
   fixtureServer = await startFixtureServer();
+  crossOriginServer = await startCrossOriginServer();
 
   chromeProcess = spawn(
     chromePath,
@@ -376,15 +523,73 @@ try {
   const iframeSnapshot = await captureSnapshot(client, moduleUrl);
   assertIframeSnapshot(iframeSnapshot);
 
+  await navigate(
+    client,
+    `${fixtureServer.baseUrl}/fixture/standard-capture-p0.html`,
+    `document.documentElement.dataset.node31Ready === "true"`,
+    "Standard capture P0",
+  );
+  const crossOriginUrl = `${crossOriginServer.baseUrl}/fixture/cross-origin-child.html`;
+  const p0State = await evaluate(
+    client,
+    `(async () => {
+      const iframe = document.querySelector("#cross-origin-frame");
+      const app = document.querySelector("#app-scroll");
+      if (!(iframe instanceof HTMLIFrameElement) || !(app instanceof HTMLElement)) {
+        throw new Error("P0 fixture controls are missing");
+      }
+      const loaded = new Promise((resolve) => iframe.addEventListener("load", resolve, { once: true }));
+      iframe.src = ${JSON.stringify(crossOriginUrl)};
+      await loaded;
+      app.scrollTop = 420;
+      window.scrollTo(0, 500);
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      const target = document.querySelector("#region-target");
+      if (!(target instanceof HTMLElement)) throw new Error("P0 region target is missing");
+      const rect = target.getBoundingClientRect();
+      return {
+        windowScrollY: window.scrollY,
+        appScrollTop: app.scrollTop,
+        regionBounds: {
+          x: rect.left + window.scrollX + 16,
+          y: rect.top + window.scrollY + 16,
+          width: Math.max(1, rect.width - 32),
+          height: Math.max(1, Math.min(72, rect.height - 32)),
+        },
+      };
+    })()`,
+  );
+
+  const p0Snapshots = [];
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    p0Snapshots.push(await captureSnapshot(client, moduleUrl));
+  }
+  const normalizedBaseline = normalizeSnapshot(p0Snapshots[0]);
+  for (let attempt = 1; attempt < p0Snapshots.length; attempt += 1) {
+    assert(
+      normalizeSnapshot(p0Snapshots[attempt]) === normalizedBaseline,
+      `Current HTTP document capture was nondeterministic on repeat ${attempt + 1}`,
+    );
+  }
+  assertDocumentAndCrossOriginSnapshot(p0Snapshots[0], p0State, crossOriginUrl);
+
+  const regionTarget = {
+    type: "region",
+    bounds: p0State.regionBounds,
+    exclusions: [],
+  };
+  const regionSnapshot = await captureSnapshot(client, moduleUrl, regionTarget);
+  assertRegionSnapshot(regionSnapshot, p0State.regionBounds);
+
   console.log(
     JSON.stringify(
       {
-        version: "1.0.0",
+        version: "1.1.0",
         evidenceType: "node31-standard-capture-browser-runtime",
         status: "PASS",
         chrome: browserVersion.product,
         moduleArtifact: captureModulePath,
-        fixtureArtifacts: [shadowFixturePath, iframeFixturePath],
+        fixtureArtifacts: [shadowFixturePath, iframeFixturePath, p0FixturePath],
         assertions: [
           "open-shadow-root-captured",
           "shadow-host-relationship-preserved",
@@ -397,8 +602,26 @@ try {
           "same-origin-iframe-root-linked-to-boundary",
           "same-origin-iframe-editable-text-captured",
           "same-origin-iframe-no-inaccessible-diagnostic",
+          "current-http-document-capture-repeat-10-normalized-identical",
+          "document-scroll-root-live-position-preserved",
+          "primary-app-scroll-root-identified",
+          "primary-app-scroll-root-live-position-preserved",
+          "cross-origin-iframe-inaccessible-frame-recorded",
+          "cross-origin-iframe-diagnostic-linked-to-boundary",
+          "cross-origin-iframe-no-editable-child-subtree-fabricated",
+          "region-partial-intersection-retained",
+          "region-geometry-free-structural-ancestor-retained",
+          "region-non-intersecting-sibling-excluded",
+          "region-relationship-closure-preserved",
         ],
-        provesP0Items: ["open-shadow-dom-slot-composed-tree", "same-origin-iframe"],
+        provesP0Items: [
+          "current-document-deterministic-online",
+          "region-intersections-and-structural-ancestors",
+          "document-and-primary-app-scroll-root-semantics",
+          "open-shadow-dom-slot-composed-tree",
+          "same-origin-iframe",
+          "inaccessible-cross-origin-frame-diagnostic",
+        ],
       },
       null,
       2,
@@ -408,5 +631,6 @@ try {
   client?.close();
   await stopChrome(chromeProcess);
   await closeServer(fixtureServer?.server);
+  await closeServer(crossOriginServer?.server);
   await removeProfileDir(profileDir);
 }

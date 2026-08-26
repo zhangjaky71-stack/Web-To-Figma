@@ -236,7 +236,10 @@ const standardCaptureEvidence = readJson(standardCaptureEvidencePath);
 
 if (runtimeEvidence) {
   assert(runtimeEvidence.version === "1.0.0", "browser runtime evidence version mismatch");
-  assert(runtimeEvidence.evidenceType === "node31-browser-runtime", "browser runtime evidenceType mismatch");
+  assert(
+    runtimeEvidence.evidenceType === "node31-browser-runtime",
+    "browser runtime evidenceType mismatch",
+  );
   assert(runtimeEvidence.status === "PASS", "browser runtime evidence must PASS");
   assert(runtimeEvidence.ci?.runNumber === 764, "browser runtime must identify CI #764");
   assert(runtimeEvidence.ci?.runId === 32830737350, "browser runtime run id mismatch");
@@ -251,14 +254,39 @@ if (runtimeEvidence) {
   );
   assertQualityChecks(
     runtimeEvidence,
-    ["node31Validator", "node31P0Validator", "lint", "typecheck", "tests", "build", "browserRuntime", "format"],
+    [
+      "node31Validator",
+      "node31P0Validator",
+      "lint",
+      "typecheck",
+      "tests",
+      "build",
+      "browserRuntime",
+      "format",
+    ],
     "browser runtime",
   );
-  assert(runtimeEvidence.environment?.chrome === "Chrome/151.0.7922.137", "browser runtime Chrome mismatch");
-  assert(runtimeEvidence.harnessArtifact === runtimeHarnessPath, "browser runtime harness mismatch");
-  assert(runtimeEvidence.productSourceArtifact === runtimeProductSourcePath, "browser runtime source mismatch");
-  assert(runtimeEvidence.loadedBuiltArtifact === runtimeBuiltArtifactPath, "browser runtime built artifact mismatch");
-  assertArrayEquals(runtimeEvidence.assertions, expectedRuntimeAssertions, "browser runtime assertion set mismatch");
+  assert(
+    runtimeEvidence.environment?.chrome === "Chrome/151.0.7922.137",
+    "browser runtime Chrome mismatch",
+  );
+  assert(
+    runtimeEvidence.harnessArtifact === runtimeHarnessPath,
+    "browser runtime harness mismatch",
+  );
+  assert(
+    runtimeEvidence.productSourceArtifact === runtimeProductSourcePath,
+    "browser runtime source mismatch",
+  );
+  assert(
+    runtimeEvidence.loadedBuiltArtifact === runtimeBuiltArtifactPath,
+    "browser runtime built artifact mismatch",
+  );
+  assertArrayEquals(
+    runtimeEvidence.assertions,
+    expectedRuntimeAssertions,
+    "browser runtime assertion set mismatch",
+  );
   assertArrayEquals(
     runtimeEvidence.provesP0Items,
     ["finally-scroll-focus-temporary-style-restore"],
@@ -312,7 +340,10 @@ if (fontEvidence) {
     "font evidence source",
   );
   const fontTests = new Map(
-    (Array.isArray(fontEvidence.testArtifacts) ? fontEvidence.testArtifacts : []).map((entry) => [entry?.path, entry]),
+    (Array.isArray(fontEvidence.testArtifacts) ? fontEvidence.testArtifacts : []).map((entry) => [
+      entry?.path,
+      entry,
+    ]),
   );
   assert(
     fontTests.get(fontResolutionTestPath)?.testCount === 5 &&
@@ -337,14 +368,21 @@ if (fontEvidence) {
   );
   assertIncludesAll(
     fontEvidence.notProvenByThisArtifact,
-    ["geometry-preserving-correction-policy", "raster-text-only-when-policy-justifies", ...releaseBoundaries],
+    [
+      "geometry-preserving-correction-policy",
+      "raster-text-only-when-policy-justifies",
+      ...releaseBoundaries,
+    ],
     "font evidence not-proven boundary",
   );
 }
 
 if (pixelEvidence) {
   assert(pixelEvidence.version === "1.0.0", "Pixel evidence version mismatch");
-  assert(pixelEvidence.evidenceType === "node31-profile-pixel-ground-truth", "Pixel evidenceType mismatch");
+  assert(
+    pixelEvidence.evidenceType === "node31-profile-pixel-ground-truth",
+    "Pixel evidenceType mismatch",
+  );
   assert(pixelEvidence.status === "PASS", "Pixel evidence must PASS");
   assert(pixelEvidence.ci?.runNumber === 798, "Pixel evidence must identify CI #798");
   assert(pixelEvidence.ci?.runId === 32852849393, "Pixel evidence run id mismatch");
@@ -359,7 +397,16 @@ if (pixelEvidence) {
   );
   assertQualityChecks(
     pixelEvidence,
-    ["node31Validator", "node31P0Validator", "lint", "typecheck", "tests", "build", "browserRuntime", "format"],
+    [
+      "node31Validator",
+      "node31P0Validator",
+      "lint",
+      "typecheck",
+      "tests",
+      "build",
+      "browserRuntime",
+      "format",
+    ],
     "Pixel evidence",
   );
   assertIncludesAll(
@@ -375,7 +422,10 @@ if (pixelEvidence) {
     "Pixel evidence source",
   );
   const pixelTests = new Map(
-    (Array.isArray(pixelEvidence.testArtifacts) ? pixelEvidence.testArtifacts : []).map((entry) => [entry?.path, entry]),
+    (Array.isArray(pixelEvidence.testArtifacts) ? pixelEvidence.testArtifacts : []).map((entry) => [
+      entry?.path,
+      entry,
+    ]),
   );
   assert(
     pixelTests.get(pixelIntegrationTestPath)?.testCount === 4 &&
@@ -502,7 +552,12 @@ if (standardCaptureEvidence) {
   );
   assertIncludesAll(
     standardCaptureEvidence.notProvenByThisArtifact,
-    [...expectedBlockingIds, "finally-scroll-focus-temporary-style-restore", "profile-required-pixel-ground-truth-end-to-end", ...releaseBoundaries],
+    [
+      ...expectedBlockingIds,
+      "finally-scroll-focus-temporary-style-restore",
+      "profile-required-pixel-ground-truth-end-to-end",
+      ...releaseBoundaries,
+    ],
     "Standard capture not-proven boundary",
   );
 }
@@ -536,7 +591,10 @@ if (audit) {
     "P0 audit",
   );
   assert(audit.policy?.unavailableIsPass === false, "P0 audit must fail closed on UNAVAILABLE");
-  assert(audit.policy?.overallStatus === "UNAVAILABLE", "P0 audit overall status must remain UNAVAILABLE");
+  assert(
+    audit.policy?.overallStatus === "UNAVAILABLE",
+    "P0 audit overall status must remain UNAVAILABLE",
+  );
 
   const allItems = [];
   for (const [sectionName, ids] of Object.entries(requiredIds)) {
@@ -610,7 +668,11 @@ if (audit) {
     .map((entry) => entry.id)
     .sort();
   assertArrayEquals(unavailableIds, expectedBlockingIds, "P0 unavailable set mismatch");
-  assertArrayEquals(audit.blockingUnavailableIds, expectedBlockingIds, "P0 declared blocker set mismatch");
+  assertArrayEquals(
+    audit.blockingUnavailableIds,
+    expectedBlockingIds,
+    "P0 declared blocker set mismatch",
+  );
   assert(audit.blockingUnavailableCount === 10, "P0 audit must retain exactly 10 blockers");
 
   if (manifest) {

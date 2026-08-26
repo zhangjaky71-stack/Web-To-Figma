@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NODE-31 Standard Capture P0 Runtime</title>
+    <style>
+      :root {
+        font-family: Arial, sans-serif;
+        color: #111827;
+        background: #ffffff;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 2400px;
+      }
+
+      #top-spacer {
+        height: 600px;
+      }
+
+      #app-scroll {
+        width: calc(100vw - 40px);
+        height: 70vh;
+        min-height: 420px;
+        margin: 20px;
+        overflow: auto;
+        border: 2px solid #111827;
+        border-radius: 12px;
+        background: #f8fafc;
+      }
+
+      #app-content {
+        min-height: 1800px;
+        padding: 24px;
+      }
+
+      #region-ancestor {
+        margin-top: 420px;
+        width: 520px;
+        padding: 20px;
+        border: 1px solid #94a3b8;
+        background: #ffffff;
+      }
+
+      #region-wrapper {
+        display: contents;
+      }
+
+      #region-target {
+        width: 320px;
+        min-height: 140px;
+        padding: 24px;
+        border: 2px solid #2563eb;
+        background: #dbeafe;
+      }
+
+      #region-outside-sibling {
+        width: 320px;
+        min-height: 120px;
+        margin-top: 700px;
+        padding: 20px;
+        border: 2px solid #dc2626;
+        background: #fee2e2;
+      }
+
+      #cross-origin-frame {
+        display: block;
+        width: 480px;
+        height: 180px;
+        margin: 48px 20px;
+        border: 2px solid #7c3aed;
+      }
+    </style>
+  </head>
+  <body data-node31-category="standard-capture-p0-runtime">
+    <div id="top-spacer" aria-hidden="true"></div>
+
+    <main id="app-scroll" data-node31-role="primary-scroll-root">
+      <div id="app-content">
+        <section id="region-ancestor" data-node31-role="region-ancestor">
+          <div id="region-wrapper" data-node31-role="region-structural-wrapper">
+            <article id="region-target" data-node31-role="region-target">
+              <h1>Partially intersecting editable target</h1>
+              <p>NODE-31 region selection must preserve this content and its structural ancestors.</p>
+            </article>
+          </div>
+
+          <aside id="region-outside-sibling" data-node31-role="region-outside-sibling">
+            This non-intersecting sibling must not survive a target-only region capture.
+          </aside>
+        </section>
+      </div>
+    </main>
+
+    <iframe id="cross-origin-frame" title="Cross-origin diagnostic fixture"></iframe>
+
+    <script>
+      document.documentElement.dataset.node31Ready = "true";
+    </script>
+  </body>
+</html>

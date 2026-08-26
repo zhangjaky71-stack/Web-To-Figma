@@ -236,7 +236,8 @@ function assertShadowSnapshot(snapshot) {
   );
   const shadowRoot = findNode(
     snapshot,
-    (node) => node.kind === "shadow-root" && node.relationships?.shadowHostId === host.captureNodeId,
+    (node) =>
+      node.kind === "shadow-root" && node.relationships?.shadowHostId === host.captureNodeId,
     "open ShadowRoot node",
   );
   assert(

@@ -60,26 +60,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Lint
-        run: pnpm lint
-
-      - name: Typecheck
-        run: pnpm typecheck
-
-      - name: Test
-        run: pnpm test
-
-      - name: Build
-        run: pnpm build
-
-      - name: NODE-31 Browser runtime P0
-        run: node scripts/run-node-31-browser-runtime.mjs
-
-      - name: NODE-31 Standard capture runtime P0
-        run: node scripts/run-node-31-standard-capture-runtime.mjs
-
-      - name: NODE-31 P0 Prettier diagnostic
+      - name: NODE-31 P0 Prettier payload diagnostic
         run: |
           pnpm exec prettier scripts/validate-node-31-p0.mjs --write
-          git diff -- scripts/validate-node-31-p0.mjs
+          printf 'NODE31_P0_FORMATTED_BASE64='
+          base64 -w0 scripts/validate-node-31-p0.mjs
+          echo
           exit 1

@@ -21,7 +21,12 @@ const fixtures = [
   {
     category: "shadow-dom",
     file: "shadow-dom.html",
-    required: ["attachShadow({mode:'open'})", "<fixture-card>", "<slot name=\"meta\">", "slot=\"meta\""],
+    required: [
+      "attachShadow({mode:'open'})",
+      "<fixture-card>",
+      '<slot name="meta">',
+      'slot="meta"',
+    ],
   },
   {
     category: "iframe",

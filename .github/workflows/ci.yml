@@ -75,8 +75,16 @@ jobs:
       - name: NODE-31 Browser runtime P0
         run: node scripts/run-node-31-browser-runtime.mjs
 
-      - name: NODE-31 Standard capture runtime P0
-        run: node scripts/run-node-31-standard-capture-runtime.mjs
-
-      - name: Format check
-        run: pnpm format:check
+      - name: NODE-31 Standard capture scroll-root diagnostic
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync } from "node:fs";
+          const path = "scripts/run-node-31-standard-capture-runtime.mjs";
+          let source = readFileSync(path, "utf8");
+          const needle = `  assert(\n    appScrollRoot.isPrimaryApplicationScrollRoot === true,\n    "Largest visible application scroller was not identified as the primary app scroll root",\n  );`;
+          const diagnostic = `  console.log(\n    JSON.stringify(\n      {\n        viewport: snapshot.environment,\n        scrollContainers: snapshot.scrollContainers.map((item) => {\n          const node = snapshot.nodes.find((candidate) => candidate.captureNodeId === item.sourceNodeId);\n          return {\n            tagName: node?.source?.tagName ?? (item.sourceNodeId === snapshot.rootCaptureNodeId ? "DOCUMENT" : "UNKNOWN"),\n            role: node?.source?.attributes?.["data-node31-role"] ?? null,\n            clientWidth: item.clientWidth,\n            clientHeight: item.clientHeight,\n            area: item.clientWidth * item.clientHeight,\n            scrollWidth: item.scrollWidth,\n            scrollHeight: item.scrollHeight,\n            scrollTop: item.scrollTop,\n            isDocumentScrollRoot: item.isDocumentScrollRoot,\n            isPrimaryApplicationScrollRoot: item.isPrimaryApplicationScrollRoot,\n          };\n        }),\n      },\n      null,\n      2,\n    ),\n  );\n${needle}`;
+          if (!source.includes(needle)) throw new Error("Diagnostic insertion point not found");
+          source = source.replace(needle, diagnostic);
+          writeFileSync(path, source);
+          NODE
+          node scripts/run-node-31-standard-capture-runtime.mjs

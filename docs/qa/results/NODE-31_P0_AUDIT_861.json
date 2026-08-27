@@ -1,0 +1,327 @@
+{
+  "version": "1.0.0",
+  "evidenceType": "node31-p0-audit",
+  "contract": "docs/ACCEPTANCE_CONTRACT_V2.md",
+  "auditedAgainstBranchHead": "6195def8a960843c2ea2883638c84386e2ef733a",
+  "ci": {
+    "runNumber": 861,
+    "runId": 33074321682,
+    "jobId": 98524433660,
+    "branchHead": "6195def8a960843c2ea2883638c84386e2ef733a",
+    "mergeRef": "0b1bd9b0278471c1621d4c502c5579bef05e185c",
+    "base": "28b52dc3e0d3074bf76205c8deb324a06dfe9e23",
+    "conclusion": "PASS",
+    "qualityChecks": {
+      "node31Validator": "PASS",
+      "node31CorpusValidator": "PASS",
+      "node31P0Validator": "PASS",
+      "lint": "PASS",
+      "typecheck": "PASS",
+      "tests": "PASS",
+      "build": "PASS",
+      "browserRuntime": "PASS",
+      "standardCaptureRuntime": "PASS",
+      "pluginUiChooseFileRuntime": "PASS",
+      "pluginCanvasDropRuntime": "PASS",
+      "format": "PASS"
+    }
+  },
+  "policy": {
+    "overallStatus": "UNAVAILABLE",
+    "rule": "A functional item is PASS only when repository evidence plus an exact-head CI run directly proves the declared behavior. Source-code presence alone is not sufficient for browser/Figma runtime behavior.",
+    "unavailableIsPass": false
+  },
+  "capture": [
+    {
+      "id": "current-document-deterministic-online",
+      "status": "PASS",
+      "sourceArtifacts": [
+        "packages/standard-capture-adapter/src/capture.ts",
+        "packages/standard-capture-adapter/test/capture-contract.test.ts",
+        "qa/corpus/node31/p0/standard-capture-runtime.html",
+        "scripts/run-node-31-standard-capture-runtime.mjs",
+        "docs/qa/results/NODE-31_STANDARD_CAPTURE_RUNTIME_EVIDENCE_847.json"
+      ],
+      "reason": "CI #861 runs the final packaged Standard capture adapter against a real current HTTP document in headless Chrome and repeats document capture 10 times. After removing only volatile capturedAt evidence, all ten snapshots are byte-identical, directly proving deterministic current-document capture for this versioned runtime fixture."
+    },
+    {
+      "id": "file-protocol-explicit-permission",
+      "status": "UNAVAILABLE",
+      "sourceArtifacts": [
+        "docs/ACCEPTANCE_CONTRACT_V2.md"
+      ],
+      "reason": "No exact-head automated browser test currently proves successful file:// capture after explicit extension file-access permission."
+    },
+    {
+      "id": "local-folder-relative-asset-resolution",
+      "status": "PASS",
+      "sourceArtifacts": [
+        "packages/source-providers/test/local-folder.test.ts"
+      ],
+      "reason": "LocalFolderProvider tests prove document-relative/root-relative resolution, missing-resource reporting, traversal blocking and remote-reference separation; the source-providers suite passed in CI #861."
+    },
+    {
+      "id": "region-intersections-and-structural-ancestors",
+      "status": "PASS",
+      "sourceArtifacts": [
+        "packages/standard-capture-adapter/src/capture.ts",
+        "packages/standard-capture-adapter/test/capture-contract.test.ts",
+        "qa/corpus/node31/p0/standard-capture-runtime.html",
+        "scripts/run-node-31-standard-capture-runtime.mjs",
+        "docs/qa/results/NODE-31_STANDARD_CAPTURE_RUNTIME_EVIDENCE_847.json"
+      ],
+      "reason": "CI #861 exercises real-browser region capture and proves partial intersections are retained, geometry-free structural ancestors are retained, non-intersecting siblings are excluded, and relationship closure remains valid."
+    },
+    {
+      "id": "document-and-primary-app-scroll-root-semantics",
+      "status": "PASS",
+      "sourceArtifacts": [
+        "packages/standard-capture-adapter/src/capture.ts",
+        "packages/standard-capture-adapter/test/capture-contract.test.ts",
+        "qa/corpus/node31/p0/standard-capture-runtime.html",
+        "scripts/run-node-31-standard-capture-runtime.mjs",
+        "docs/qa/results/NODE-31_STANDARD_CAPTURE_RUNTIME_EVIDENCE_847.json"
+      ],
+      "reason": "CI #861 uses a real browser fixture with both the document scroll root and a large application scroll container. The final packaged Standard adapter preserves both live scroll positions and marks the qualifying application container as the primary application scroll root."
+    },
+    {
+      "id": "open-shadow-dom-slot-composed-tree",
+      "status": "PASS",
+      "sourceArtifacts": [
+        "packages/standard-capture-adapter/src/capture.ts",
+        "qa/corpus/node31/class-b/shadow-dom.html",
+        "scripts/validate-node-31-corpus.mjs",
+        "scripts/run-node-31-standard-capture-runtime.mjs",
+        "docs/qa/results/NODE-31_STANDARD_CAPTURE_RUNTIME_EVIDENCE_847.json"
+      ],
+      "reason": "CI #861 reruns the final packaged Standard adapter in real Chrome against the versioned open-ShadowRoot fixture and preserves host, named slot, source/composed parent, assignedSlotId, and editable shadow/slotted text evidence."
+    },
+    {
+      "id": "same-origin-iframe",
+      "status": "PASS",
+      "sourceArtifacts": [
+        "packages/standard-capture-adapter/src/capture.ts",
+        "qa/corpus/node31/class-b/iframe.html",
+        "scripts/validate-node-31-corpus.mjs",
+        "scripts/run-node-31-standard-capture-runtime.mjs",
+        "docs/qa/results/NODE-31_STANDARD_CAPTURE_RUNTIME_EVIDENCE_847.json"
+      ],
+      "reason": "CI #861 reruns the final packaged Standard adapter in real Chrome against the versioned same-origin iframe fixture and preserves the accessible child frame, nested document linkage, editable child-frame text, and absence of false inaccessible-frame diagnostics."
+    },
+    {
+      "id": "inaccessible-cross-origin-frame-diagnostic",
+      "status": "PASS",
+      "sourceArtifacts": [
+        "packages/standard-capture-adapter/src/capture.ts",
+        "packages/standard-capture-adapter/test/capture-contract.test.ts",
+        "qa/corpus/node31/p0/standard-capture-runtime.html",
+        "scripts/run-node-31-standard-capture-runtime.mjs",
+        "docs/qa/results/NODE-31_STANDARD_CAPTURE_RUNTIME_EVIDENCE_847.json"
+      ],
+      "reason": "CI #861 runs the final packaged Standard adapter against a real cross-origin iframe boundary. The snapshot records an inaccessible child frame, links STANDARD_CAPTURE_FRAME_INACCESSIBLE to the iframe boundary, and does not fabricate an editable child subtree."
+    },
+    {
+      "id": "visual-state-freeze-and-restore",
+      "status": "UNAVAILABLE",
+      "sourceArtifacts": [
+        "docs/ACCEPTANCE_CONTRACT_V2.md"
+      ],
+      "reason": "No automated runtime artifact currently proves capture freezes the current visual state and restores the page without permanent mutation."
+    },
+    {
+      "id": "finally-scroll-focus-temporary-style-restore",
+      "status": "PASS",
+      "sourceArtifacts": [
+        "apps/browser-extension/src/runtime/content-script.ts",
+        "scripts/run-node-31-browser-runtime.mjs",
+        "docs/qa/results/NODE-31_BROWSER_RUNTIME_EVIDENCE_764.json"
+      ],
+      "reason": "Real headless Chrome/CDP evidence from CI #764 executes the packaged content script and proves cancel and confirm both restore scroll, focus and inline scroll behavior and remove the selector overlay. CI #861 reruns the permanent browser runtime harness successfully."
+    }
+  ],
+  "packageAcceptance": [
+    {
+      "id": "canonical-container-manifest-checksums-determinism",
+      "status": "PASS",
+      "sourceArtifacts": [
+        "packages/wtf-packager/test/packager.test.ts",
+        "packages/w2f-schema/test/index.test.ts"
+      ],
+      "reason": "Packager tests prove deterministic .wtf ZIP bytes, manifest/checksums, required payload paths, traversal rejection and canonical JSON; the relevant suites passed in CI #861."
+    },
+    {
+      "id": "malicious-package-fails-before-render",
+      "status": "PASS",
+      "sourceArtifacts": [
+        "packages/wtf-parser/test/parser.test.ts",
+        "packages/wtf-parser/test/zip-reader.test.ts",
+        "packages/wtf-parser/test/svg-sanitize.test.ts",
+        "apps/figma-plugin/src/ui.ts"
+      ],
+      "reason": "Parser hostile-fixture tests pass and the UI performs parseWtfPackage before enabling renderer handoff. The parser suite reran successfully in CI #861."
+    },
+    {
+      "id": "profile-required-pixel-ground-truth-end-to-end",
+      "status": "PASS",
+      "sourceArtifacts": [
+        "apps/browser-extension/src/runtime/pixel-ground-truth-runtime.ts",
+        "apps/browser-extension/src/runtime/pixel-ground-truth-contract.ts",
+        "apps/browser-extension/src/runtime/profile-compliant-wtf-package.ts",
+        "apps/browser-extension/src/runtime/wtf-export-runtime.ts",
+        "apps/browser-extension/src/runtime/wtf-package-builder.ts",
+        "apps/browser-extension/test/profile-compliant-wtf-package.test.ts",
+        "apps/browser-extension/scripts/validate-node-21-package.mjs",
+        "docs/qa/results/NODE-31_PIXEL_GROUND_TRUTH_EVIDENCE_798.json"
+      ],
+      "reason": "CI #798 proves final .wtf export fails closed unless the capture-profile-required reference ground truth is complete. CI #861 reruns the Standard and High Fidelity NODE-14/NODE-21 package validators successfully."
+    }
+  ],
+  "importAcceptance": [
+    {
+      "id": "choose-file-path",
+      "status": "PASS",
+      "sourceArtifacts": [
+        "apps/figma-plugin/static/ui.html",
+        "apps/figma-plugin/src/ui.ts",
+        "apps/figma-plugin/src/intake-state.ts",
+        "scripts/run-node-31-plugin-ui-runtime.mjs",
+        "docs/qa/results/NODE-31_PLUGIN_UI_EVIDENCE_847.json"
+      ],
+      "reason": "CI #861 loads the final built Figma plugin UI in real Chrome, uses a trusted CDP pointer click to open the native single-file chooser, assigns a real .wtf archive, securely parses it to preview-ready, preserves choose-source intake metadata and parsed handoff payloads, and emits the render request only after the user import action."
+    },
+    {
+      "id": "drop-on-canvas-path",
+      "status": "PASS",
+      "sourceArtifacts": [
+        "apps/figma-plugin/src/main.ts",
+        "apps/figma-plugin/src/ui.ts",
+        "apps/figma-plugin/src/intake-state.ts",
+        "scripts/run-node-31-plugin-canvas-drop-runtime.mjs",
+        "docs/qa/results/NODE-31_PLUGIN_CANVAS_DROP_EVIDENCE_861.json"
+      ],
+      "reason": "CI #861 executes the final built plugin main bundle unchanged against a narrow simulated Figma host boundary, invokes its registered canvas drop handler with a real .wtf archive, reads the dropped bytes once, preserves canvas-drop source and absolute destination, forwards the bytes to the final built UI in real Chrome, completes secure parsing before enabling import, and uses a trusted pointer import action to emit a render request with the parsed Render Tree, Source Graph and destination intact. The evidence explicitly does not claim Figma Desktop execution."
+    },
+    {
+      "id": "secure-parse-before-render",
+      "status": "PASS",
+      "sourceArtifacts": [
+        "apps/figma-plugin/src/ui.ts",
+        "packages/wtf-parser/test/parser.test.ts"
+      ],
+      "reason": "The UI disables import until parseWtfPackage succeeds, parser hostile fixtures pass, and renderer handoff consumes only currentParsed validated content."
+    },
+    {
+      "id": "temporary-import-root-transaction",
+      "status": "PASS",
+      "sourceArtifacts": [
+        "packages/figma-renderer/src/transaction.ts",
+        "packages/figma-renderer/test/basic-renderer.test.ts"
+      ],
+      "reason": "The renderer creates W2F_IMPORTING_ROOT_NAME, marks transactionState importing, then commits after the plan is applied; the behavior is covered by tests."
+    },
+    {
+      "id": "rollback-on-fatal-error",
+      "status": "PASS",
+      "sourceArtifacts": [
+        "packages/figma-renderer/src/transaction.ts",
+        "packages/figma-renderer/test/basic-renderer.test.ts",
+        "apps/figma-plugin/src/main.ts"
+      ],
+      "reason": "Injected adapter mutation failure proves the temporary root is removed; the plugin also removes renderedRoot if later hybrid/visual/layout stages fail."
+    },
+    {
+      "id": "meaningful-layer-naming",
+      "status": "PASS",
+      "sourceArtifacts": [
+        "packages/figma-renderer/test/basic-renderer.test.ts"
+      ],
+      "reason": "Renderer tests prove semantic names are preserved and blank names receive deterministic useful fallback names."
+    },
+    {
+      "id": "source-mapping-plugin-data",
+      "status": "PASS",
+      "sourceArtifacts": [
+        "packages/figma-renderer/test/basic-renderer.test.ts"
+      ],
+      "reason": "Tests prove stable source IDs, revision hashes, source tag/selector and document/revision identities are persisted in pluginData."
+    },
+    {
+      "id": "render-strategy-diagnostics",
+      "status": "PASS",
+      "sourceArtifacts": [
+        "packages/figma-capability-resolver/test/resolver.test.ts",
+        "packages/figma-renderer/test/basic-renderer.test.ts"
+      ],
+      "reason": "Capability resolver tests prove native/wrapper/absolute/emulated/raster/unsupported decisions and stable reasons; renderer pluginData preserves render strategy metadata."
+    },
+    {
+      "id": "section-selective-import",
+      "status": "PASS",
+      "sourceArtifacts": [
+        "apps/figma-plugin/test/intake-state.test.ts",
+        "packages/figma-renderer/test/basic-renderer.test.ts"
+      ],
+      "reason": "Section defaults/normalization and selected-root subtree rendering are directly covered by tests."
+    },
+    {
+      "id": "viewport-selection-and-focus-after-commit",
+      "status": "PASS",
+      "sourceArtifacts": [
+        "packages/figma-renderer/src/transaction.ts",
+        "packages/figma-renderer/test/basic-renderer.test.ts",
+        "apps/figma-plugin/src/figma-basic-adapter.ts"
+      ],
+      "reason": "Commit calls adapter.setSelection([root]) and adapter.focusNodes([root]); tests assert both calls and the Figma adapter maps them to currentPage.selection and viewport.scrollAndZoomIntoView."
+    }
+  ],
+  "fontAcceptance": [
+    {
+      "id": "exact-available-font-preferred",
+      "status": "PASS",
+      "sourceArtifacts": [
+        "apps/figma-plugin/src/font-resolution.ts",
+        "apps/figma-plugin/src/figma-visual-renderer.ts",
+        "apps/figma-plugin/test/font-resolution.test.ts",
+        "docs/qa/results/NODE-31_FONT_EVIDENCE_781.json"
+      ],
+      "reason": "CI #781 proves the product renderer uses a deterministic case-insensitive exact family/style decision before any fallback, and the dedicated five-test policy suite verifies exact matches are reported without substitution."
+    },
+    {
+      "id": "nearest-mapping-with-diagnostic",
+      "status": "PASS",
+      "sourceArtifacts": [
+        "apps/figma-plugin/src/font-resolution.ts",
+        "apps/figma-plugin/src/font-diagnostics.ts",
+        "apps/figma-plugin/src/figma-visual-renderer.ts",
+        "apps/figma-plugin/test/font-resolution.test.ts",
+        "apps/figma-plugin/test/font-diagnostics.test.ts",
+        "docs/qa/results/NODE-31_FONT_EVIDENCE_781.json"
+      ],
+      "reason": "CI #781 proves same-family Regular/nearest/default resolution is explicit and every editable TextNode persists requested-to-chosen font mappings plus reason, count and truncation state in pluginData."
+    },
+    {
+      "id": "geometry-preserving-correction-policy",
+      "status": "UNAVAILABLE",
+      "sourceArtifacts": [
+        "docs/ACCEPTANCE_CONTRACT_V2.md"
+      ],
+      "reason": "Correction is an allowed strategy, but no tested end-to-end policy currently proves geometry-preserving correction is attempted or validated before a different fallback strategy."
+    },
+    {
+      "id": "raster-text-only-when-policy-justifies",
+      "status": "UNAVAILABLE",
+      "sourceArtifacts": [
+        "docs/ACCEPTANCE_CONTRACT_V2.md",
+        "docs/KNOWN_LIMITATIONS.md"
+      ],
+      "reason": "No dedicated policy test currently proves text cannot be rasterized solely to hide missing-font/substitution errors and that raster text is used only when the fidelity profile explicitly justifies it."
+    }
+  ],
+  "blockingUnavailableCount": 4,
+  "blockingUnavailableIds": [
+    "file-protocol-explicit-permission",
+    "geometry-preserving-correction-policy",
+    "raster-text-only-when-policy-justifies",
+    "visual-state-freeze-and-restore"
+  ]
+}

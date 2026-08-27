@@ -5,13 +5,14 @@ const root = process.cwd();
 const failures = [];
 
 const manifestPath = "docs/qa/NODE-31_RC_EVIDENCE_V1.json";
-const auditPath = "docs/qa/results/NODE-31_P0_AUDIT_847.json";
+const auditPath = "docs/qa/results/NODE-31_P0_AUDIT_861.json";
 const runtimeEvidencePath = "docs/qa/results/NODE-31_BROWSER_RUNTIME_EVIDENCE_764.json";
 const fontEvidencePath = "docs/qa/results/NODE-31_FONT_EVIDENCE_781.json";
 const pixelEvidencePath = "docs/qa/results/NODE-31_PIXEL_GROUND_TRUTH_EVIDENCE_798.json";
 const standardCaptureEvidencePath =
   "docs/qa/results/NODE-31_STANDARD_CAPTURE_RUNTIME_EVIDENCE_847.json";
 const pluginUiEvidencePath = "docs/qa/results/NODE-31_PLUGIN_UI_EVIDENCE_847.json";
+const pluginCanvasEvidencePath = "docs/qa/results/NODE-31_PLUGIN_CANVAS_DROP_EVIDENCE_861.json";
 
 const runtimeHarnessPath = "scripts/run-node-31-browser-runtime.mjs";
 const runtimeProductSourcePath = "apps/browser-extension/src/runtime/content-script.ts";
@@ -46,6 +47,8 @@ const pluginUiHarnessPath = "scripts/run-node-31-plugin-ui-runtime.mjs";
 const pluginUiStaticPath = "apps/figma-plugin/static/ui.html";
 const pluginUiSourcePath = "apps/figma-plugin/src/ui.ts";
 const pluginUiIntakePath = "apps/figma-plugin/src/intake-state.ts";
+const pluginCanvasHarnessPath = "scripts/run-node-31-plugin-canvas-drop-runtime.mjs";
+const pluginMainSourcePath = "apps/figma-plugin/src/main.ts";
 
 const requiredIds = {
   capture: [
@@ -88,7 +91,6 @@ const requiredIds = {
 const expectedBlockingIds = [
   "file-protocol-explicit-permission",
   "visual-state-freeze-and-restore",
-  "drop-on-canvas-path",
   "geometry-preserving-correction-policy",
   "raster-text-only-when-policy-justifies",
 ].sort();
@@ -141,6 +143,25 @@ const expectedPluginUiAssertions = [
   "parsed-render-tree-handoff-preserved",
   "parsed-source-graph-handoff-preserved",
   "render-request-emitted-after-user-import-action",
+].sort();
+
+const expectedPluginCanvasAssertions = [
+  "final-main-registers-figma-canvas-drop-handler",
+  "non-wtf-canvas-drop-passes-through-without-byte-read",
+  "wtf-canvas-drop-consumed-by-plugin",
+  "canvas-drop-file-bytes-read-once",
+  "canvas-drop-bytes-forwarded-main-to-final-ui",
+  "canvas-drop-source-preserved",
+  "canvas-drop-absolute-point-preserved-in-intake-metadata",
+  "canvas-drop-byte-length-preserved",
+  "canvas-drop-secure-parser-reaches-preview-ready",
+  "canvas-drop-import-disabled-until-secure-parse-completes",
+  "canvas-drop-source-and-rounded-point-visible-in-ui",
+  "trusted-import-pointer-emits-render-request",
+  "canvas-drop-intake-identity-preserved-to-render-request",
+  "canvas-drop-destination-preserved-to-render-request",
+  "canvas-drop-parsed-render-tree-handoff-preserved",
+  "canvas-drop-parsed-source-graph-handoff-preserved",
 ].sort();
 
 const p0BoundaryIds = [
@@ -232,6 +253,7 @@ requireFiles([
   pixelEvidencePath,
   standardCaptureEvidencePath,
   pluginUiEvidencePath,
+  pluginCanvasEvidencePath,
   runtimeHarnessPath,
   runtimeProductSourcePath,
   fontResolutionPath,
@@ -258,6 +280,8 @@ requireFiles([
   pluginUiStaticPath,
   pluginUiSourcePath,
   pluginUiIntakePath,
+  pluginCanvasHarnessPath,
+  pluginMainSourcePath,
 ]);
 
 const manifest = readJson(manifestPath);
@@ -267,6 +291,7 @@ const fontEvidence = readJson(fontEvidencePath);
 const pixelEvidence = readJson(pixelEvidencePath);
 const standardCaptureEvidence = readJson(standardCaptureEvidencePath);
 const pluginUiEvidence = readJson(pluginUiEvidencePath);
+const pluginCanvasEvidence = readJson(pluginCanvasEvidencePath);
 
 if (runtimeEvidence) {
   assert(runtimeEvidence.version === "1.0.0", "browser runtime evidence version mismatch");
@@ -678,23 +703,138 @@ if (pluginUiEvidence) {
   );
 }
 
+if (pluginCanvasEvidence) {
+  assert(pluginCanvasEvidence.version === "1.0.0", "Plugin canvas evidence version mismatch");
+  assert(
+    pluginCanvasEvidence.evidenceType === "node31-plugin-canvas-drop-integration-runtime",
+    "Plugin canvas evidenceType mismatch",
+  );
+  assert(pluginCanvasEvidence.status === "PASS", "Plugin canvas evidence must PASS");
+  assert(
+    pluginCanvasEvidence.contract === "docs/ACCEPTANCE_CONTRACT_V2.md",
+    "Plugin canvas contract mismatch",
+  );
+  assert(
+    pluginCanvasEvidence.ci?.runNumber === 861,
+    "Plugin canvas evidence must identify CI #861",
+  );
+  assert(pluginCanvasEvidence.ci?.runId === 33074321682, "Plugin canvas run id mismatch");
+  assert(pluginCanvasEvidence.ci?.jobId === 98524433660, "Plugin canvas job id mismatch");
+  assert(
+    pluginCanvasEvidence.ci?.branchHead === "6195def8a960843c2ea2883638c84386e2ef733a",
+    "Plugin canvas branch head mismatch",
+  );
+  assert(
+    pluginCanvasEvidence.ci?.mergeRef === "0b1bd9b0278471c1621d4c502c5579bef05e185c",
+    "Plugin canvas merge ref mismatch",
+  );
+  assert(
+    pluginCanvasEvidence.ci?.base === "28b52dc3e0d3074bf76205c8deb324a06dfe9e23",
+    "Plugin canvas base mismatch",
+  );
+  assertQualityChecks(
+    pluginCanvasEvidence,
+    [
+      "node31Validator",
+      "node31CorpusValidator",
+      "node31P0Validator",
+      "lint",
+      "typecheck",
+      "tests",
+      "build",
+      "browserRuntime",
+      "standardCaptureRuntime",
+      "pluginUiChooseFileRuntime",
+      "pluginCanvasDropRuntime",
+      "format",
+    ],
+    "Plugin canvas evidence",
+  );
+  assert(
+    pluginCanvasEvidence.environment?.chrome === "Chrome/151.0.7922.137",
+    "Plugin canvas Chrome mismatch",
+  );
+  assert(pluginCanvasEvidence.environment?.node === "24.19.0", "Plugin canvas Node mismatch");
+  assert(pluginCanvasEvidence.environment?.pnpm === "11.22.0", "Plugin canvas pnpm mismatch");
+  assert(
+    pluginCanvasEvidence.harnessArtifact === pluginCanvasHarnessPath,
+    "Plugin canvas harness mismatch",
+  );
+  assertIncludesAll(
+    pluginCanvasEvidence.productSourceArtifacts,
+    [pluginMainSourcePath, pluginUiSourcePath, pluginUiIntakePath],
+    "Plugin canvas source",
+  );
+  assert(
+    pluginCanvasEvidence.mainBundleArtifact === "apps/figma-plugin/dist/code.js",
+    "Plugin canvas main bundle artifact mismatch",
+  );
+  assert(
+    pluginCanvasEvidence.uiBundleArtifact === "apps/figma-plugin/dist/ui.html",
+    "Plugin canvas UI bundle artifact mismatch",
+  );
+  assert(
+    pluginCanvasEvidence.mainBundleSha256 ===
+      "a4a4ccd413f3830542ddd0d96ed669a9c3883ffdbb601c2f9b669bf662822711",
+    "Plugin canvas main bundle hash mismatch",
+  );
+  assert(
+    pluginCanvasEvidence.uiBundleSha256 ===
+      "d71609a9fd4041ad34060d74b64163163d4fc44b8f07f46ed980bb9382137147",
+    "Plugin canvas UI bundle hash mismatch",
+  );
+  assert(
+    pluginCanvasEvidence.fixtureProducer === "packages/wtf-packager/dist/index.js",
+    "Plugin canvas fixture producer mismatch",
+  );
+  assert(
+    pluginCanvasEvidence.fixtureArchiveSha256 ===
+      "9e02cd0d1b6ae6369d1c7553f395c5cd020f4dcfcea63decccf05bebf38b9cb6",
+    "Plugin canvas fixture archive hash mismatch",
+  );
+  assert(
+    pluginCanvasEvidence.hostBoundary?.figmaApi === "simulated",
+    "Plugin canvas host boundary mismatch",
+  );
+  assert(
+    typeof pluginCanvasEvidence.hostBoundary?.note === "string" &&
+      pluginCanvasEvidence.hostBoundary.note.includes("not a claim of Figma Desktop execution"),
+    "Plugin canvas evidence must preserve the non-Desktop claim boundary",
+  );
+  assertArrayEquals(
+    pluginCanvasEvidence.assertions,
+    expectedPluginCanvasAssertions,
+    "Plugin canvas assertion set mismatch",
+  );
+  assertArrayEquals(
+    pluginCanvasEvidence.provesP0Items,
+    ["drop-on-canvas-path"],
+    "Plugin canvas proven P0 set mismatch",
+  );
+  assertIncludesAll(
+    pluginCanvasEvidence.notProvenByThisArtifact,
+    [...expectedBlockingIds, ...releaseBoundaries],
+    "Plugin canvas not-proven boundary",
+  );
+}
+
 if (audit) {
   assert(audit.version === "1.0.0", "P0 audit version mismatch");
   assert(audit.evidenceType === "node31-p0-audit", "P0 audit evidenceType mismatch");
   assert(audit.contract === "docs/ACCEPTANCE_CONTRACT_V2.md", "P0 audit contract mismatch");
   assert(
-    audit.auditedAgainstBranchHead === "a563cf2046b613d64ba7402034979c70e567bd7a",
-    "P0 audit must stay anchored to exact-head CI #847",
+    audit.auditedAgainstBranchHead === "6195def8a960843c2ea2883638c84386e2ef733a",
+    "P0 audit must stay anchored to exact-head CI #861",
   );
-  assert(audit.ci?.runNumber === 847, "P0 audit must identify CI #847");
-  assert(audit.ci?.runId === 33049035729, "P0 audit run id mismatch");
-  assert(audit.ci?.jobId === 98439753613, "P0 audit job id mismatch");
+  assert(audit.ci?.runNumber === 861, "P0 audit must identify CI #861");
+  assert(audit.ci?.runId === 33074321682, "P0 audit run id mismatch");
+  assert(audit.ci?.jobId === 98524433660, "P0 audit job id mismatch");
   assert(
-    audit.ci?.branchHead === "a563cf2046b613d64ba7402034979c70e567bd7a",
+    audit.ci?.branchHead === "6195def8a960843c2ea2883638c84386e2ef733a",
     "P0 audit branch head mismatch",
   );
   assert(
-    audit.ci?.mergeRef === "778f68f85c9b4032b39dc8053c7496a743fe5322",
+    audit.ci?.mergeRef === "0b1bd9b0278471c1621d4c502c5579bef05e185c",
     "P0 audit merge ref mismatch",
   );
   assert(audit.ci?.base === "28b52dc3e0d3074bf76205c8deb324a06dfe9e23", "P0 audit base mismatch");
@@ -712,6 +852,7 @@ if (audit) {
       "browserRuntime",
       "standardCaptureRuntime",
       "pluginUiChooseFileRuntime",
+      "pluginCanvasDropRuntime",
       "format",
     ],
     "P0 audit",
@@ -802,6 +943,16 @@ if (audit) {
         pluginUiEvidencePath,
       ],
     ],
+    [
+      "drop-on-canvas-path",
+      [
+        pluginMainSourcePath,
+        pluginUiSourcePath,
+        pluginUiIntakePath,
+        pluginCanvasHarnessPath,
+        pluginCanvasEvidencePath,
+      ],
+    ],
   ]);
 
   for (const [id, artifacts] of requiredPassProvenance) {
@@ -820,12 +971,12 @@ if (audit) {
     expectedBlockingIds,
     "P0 declared blocker set mismatch",
   );
-  assert(audit.blockingUnavailableCount === 5, "P0 audit must retain exactly 5 blockers");
+  assert(audit.blockingUnavailableCount === 4, "P0 audit must retain exactly 4 blockers");
 
   if (manifest) {
     assert(manifest.p0?.status === "UNAVAILABLE", "manifest P0 must remain UNAVAILABLE");
     assert(manifest.p0?.evidenceArtifact === auditPath, "manifest P0 evidenceArtifact mismatch");
-    assert(manifest.p0?.blockingUnavailableCount === 5, "manifest P0 blocker count must be 5");
+    assert(manifest.p0?.blockingUnavailableCount === 4, "manifest P0 blocker count must be 4");
   }
 }
 

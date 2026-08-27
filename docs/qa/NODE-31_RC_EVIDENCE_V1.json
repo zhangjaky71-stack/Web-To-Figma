@@ -19,51 +19,200 @@
     }
   ],
   "classB": [
-    { "id": "realistic-landing-page", "category": "landing-page", "supportClass": "native-supported", "standardHtmlCss": true, "measurementStatus": "UNAVAILABLE", "sourceArtifact": "qa/corpus/node31/class-b/landing-page.html" },
-    { "id": "realistic-ecommerce", "category": "ecommerce", "supportClass": "native-supported", "standardHtmlCss": true, "measurementStatus": "UNAVAILABLE", "sourceArtifact": "qa/corpus/node31/class-b/ecommerce.html" },
-    { "id": "realistic-docs", "category": "docs", "supportClass": "native-supported", "standardHtmlCss": true, "measurementStatus": "UNAVAILABLE", "sourceArtifact": "qa/corpus/node31/class-b/docs.html" },
-    { "id": "realistic-dashboard", "category": "dashboard", "supportClass": "native-supported", "standardHtmlCss": true, "measurementStatus": "UNAVAILABLE", "sourceArtifact": "qa/corpus/node31/class-b/dashboard.html" },
-    { "id": "realistic-table", "category": "table", "supportClass": "native-supported", "standardHtmlCss": true, "measurementStatus": "UNAVAILABLE", "sourceArtifact": "qa/corpus/node31/class-b/table.html" },
-    { "id": "realistic-saas-shell", "category": "saas-shell", "supportClass": "native-supported", "standardHtmlCss": true, "measurementStatus": "UNAVAILABLE", "sourceArtifact": "qa/corpus/node31/class-b/saas-shell.html" },
-    { "id": "realistic-local-site", "category": "local-site", "supportClass": "native-supported", "standardHtmlCss": true, "measurementStatus": "UNAVAILABLE", "sourceArtifact": "qa/corpus/node31/class-b/local-site.html" },
-    { "id": "realistic-shadow-dom", "category": "shadow-dom", "supportClass": "native-supported", "standardHtmlCss": true, "measurementStatus": "UNAVAILABLE", "sourceArtifact": "qa/corpus/node31/class-b/shadow-dom.html" },
-    { "id": "realistic-iframe", "category": "iframe", "supportClass": "native-supported", "standardHtmlCss": true, "measurementStatus": "UNAVAILABLE", "sourceArtifact": "qa/corpus/node31/class-b/iframe.html" },
-    { "id": "realistic-canvas", "category": "canvas", "supportClass": "expected-fallback", "standardHtmlCss": false, "measurementStatus": "UNAVAILABLE", "sourceArtifact": "qa/corpus/node31/class-b/canvas.html", "fallbackContract": "docs/KNOWN_LIMITATIONS.md#14-canvas" },
-    { "id": "realistic-webgl", "category": "webgl", "supportClass": "expected-fallback", "standardHtmlCss": false, "measurementStatus": "UNAVAILABLE", "sourceArtifact": "qa/corpus/node31/class-b/webgl.html", "fallbackContract": "docs/KNOWN_LIMITATIONS.md#15-webgl" },
-    { "id": "realistic-responsive-app", "category": "responsive-app", "supportClass": "native-supported", "standardHtmlCss": true, "measurementStatus": "UNAVAILABLE", "sourceArtifact": "qa/corpus/node31/class-b/responsive-app.html" }
+    {
+      "id": "realistic-landing-page",
+      "category": "landing-page",
+      "supportClass": "native-supported",
+      "standardHtmlCss": true,
+      "measurementStatus": "UNAVAILABLE",
+      "sourceArtifact": "qa/corpus/node31/class-b/landing-page.html"
+    },
+    {
+      "id": "realistic-ecommerce",
+      "category": "ecommerce",
+      "supportClass": "native-supported",
+      "standardHtmlCss": true,
+      "measurementStatus": "UNAVAILABLE",
+      "sourceArtifact": "qa/corpus/node31/class-b/ecommerce.html"
+    },
+    {
+      "id": "realistic-docs",
+      "category": "docs",
+      "supportClass": "native-supported",
+      "standardHtmlCss": true,
+      "measurementStatus": "UNAVAILABLE",
+      "sourceArtifact": "qa/corpus/node31/class-b/docs.html"
+    },
+    {
+      "id": "realistic-dashboard",
+      "category": "dashboard",
+      "supportClass": "native-supported",
+      "standardHtmlCss": true,
+      "measurementStatus": "UNAVAILABLE",
+      "sourceArtifact": "qa/corpus/node31/class-b/dashboard.html"
+    },
+    {
+      "id": "realistic-table",
+      "category": "table",
+      "supportClass": "native-supported",
+      "standardHtmlCss": true,
+      "measurementStatus": "UNAVAILABLE",
+      "sourceArtifact": "qa/corpus/node31/class-b/table.html"
+    },
+    {
+      "id": "realistic-saas-shell",
+      "category": "saas-shell",
+      "supportClass": "native-supported",
+      "standardHtmlCss": true,
+      "measurementStatus": "UNAVAILABLE",
+      "sourceArtifact": "qa/corpus/node31/class-b/saas-shell.html"
+    },
+    {
+      "id": "realistic-local-site",
+      "category": "local-site",
+      "supportClass": "native-supported",
+      "standardHtmlCss": true,
+      "measurementStatus": "UNAVAILABLE",
+      "sourceArtifact": "qa/corpus/node31/class-b/local-site.html"
+    },
+    {
+      "id": "realistic-shadow-dom",
+      "category": "shadow-dom",
+      "supportClass": "native-supported",
+      "standardHtmlCss": true,
+      "measurementStatus": "UNAVAILABLE",
+      "sourceArtifact": "qa/corpus/node31/class-b/shadow-dom.html"
+    },
+    {
+      "id": "realistic-iframe",
+      "category": "iframe",
+      "supportClass": "native-supported",
+      "standardHtmlCss": true,
+      "measurementStatus": "UNAVAILABLE",
+      "sourceArtifact": "qa/corpus/node31/class-b/iframe.html"
+    },
+    {
+      "id": "realistic-canvas",
+      "category": "canvas",
+      "supportClass": "expected-fallback",
+      "standardHtmlCss": false,
+      "measurementStatus": "UNAVAILABLE",
+      "sourceArtifact": "qa/corpus/node31/class-b/canvas.html",
+      "fallbackContract": "docs/KNOWN_LIMITATIONS.md#14-canvas"
+    },
+    {
+      "id": "realistic-webgl",
+      "category": "webgl",
+      "supportClass": "expected-fallback",
+      "standardHtmlCss": false,
+      "measurementStatus": "UNAVAILABLE",
+      "sourceArtifact": "qa/corpus/node31/class-b/webgl.html",
+      "fallbackContract": "docs/KNOWN_LIMITATIONS.md#15-webgl"
+    },
+    {
+      "id": "realistic-responsive-app",
+      "category": "responsive-app",
+      "supportClass": "native-supported",
+      "standardHtmlCss": true,
+      "measurementStatus": "UNAVAILABLE",
+      "sourceArtifact": "qa/corpus/node31/class-b/responsive-app.html"
+    }
   ],
   "classC": [],
   "security": {
     "knownCriticalBlockers": null,
     "knownHighBlockers": null,
     "fixtures": [
-      { "id": "malformed-archive", "status": "PASS", "source": "packages/wtf-parser/test/parser.test.ts", "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json" },
-      { "id": "path-traversal", "status": "PASS", "source": "packages/wtf-parser/test/zip-reader.test.ts", "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json" },
-      { "id": "oversized-expansion", "status": "PASS", "source": "packages/wtf-parser/test/zip-reader.test.ts", "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json" },
-      { "id": "invalid-checksum", "status": "PASS", "source": "packages/wtf-parser/test/parser.test.ts", "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json" },
-      { "id": "malformed-schema", "status": "PASS", "source": "packages/wtf-parser/test/parser.test.ts", "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json" },
-      { "id": "hostile-svg", "status": "PASS", "source": "packages/wtf-parser/test/svg-sanitize.test.ts", "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json" }
+      {
+        "id": "malformed-archive",
+        "status": "PASS",
+        "source": "packages/wtf-parser/test/parser.test.ts",
+        "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json"
+      },
+      {
+        "id": "path-traversal",
+        "status": "PASS",
+        "source": "packages/wtf-parser/test/zip-reader.test.ts",
+        "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json"
+      },
+      {
+        "id": "oversized-expansion",
+        "status": "PASS",
+        "source": "packages/wtf-parser/test/zip-reader.test.ts",
+        "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json"
+      },
+      {
+        "id": "invalid-checksum",
+        "status": "PASS",
+        "source": "packages/wtf-parser/test/parser.test.ts",
+        "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json"
+      },
+      {
+        "id": "malformed-schema",
+        "status": "PASS",
+        "source": "packages/wtf-parser/test/parser.test.ts",
+        "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json"
+      },
+      {
+        "id": "hostile-svg",
+        "status": "PASS",
+        "source": "packages/wtf-parser/test/svg-sanitize.test.ts",
+        "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json"
+      }
     ]
   },
   "schemaCompatibility": [
-    { "id": "canonical-v2-manifest", "status": "PASS", "source": "packages/w2f-schema/test/index.test.ts", "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json" },
-    { "id": "min-reader-enforced", "status": "PASS", "source": "packages/w2f-schema/test/index.test.ts", "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json" },
-    { "id": "v2-current-noop", "status": "PASS", "source": "packages/wtf-parser/test/migrations.test.ts", "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json" },
-    { "id": "v2-compatible-minor", "status": "PASS", "source": "packages/wtf-parser/test/migrations.test.ts", "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json" },
-    { "id": "unsupported-major-rejected", "status": "PASS", "source": "packages/wtf-parser/test/migrations.test.ts", "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json" },
-    { "id": "forward-optional-metadata-preserved", "status": "PASS", "source": "packages/w2f-schema/test/index.test.ts", "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json" }
+    {
+      "id": "canonical-v2-manifest",
+      "status": "PASS",
+      "source": "packages/w2f-schema/test/index.test.ts",
+      "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json"
+    },
+    {
+      "id": "min-reader-enforced",
+      "status": "PASS",
+      "source": "packages/w2f-schema/test/index.test.ts",
+      "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json"
+    },
+    {
+      "id": "v2-current-noop",
+      "status": "PASS",
+      "source": "packages/wtf-parser/test/migrations.test.ts",
+      "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json"
+    },
+    {
+      "id": "v2-compatible-minor",
+      "status": "PASS",
+      "source": "packages/wtf-parser/test/migrations.test.ts",
+      "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json"
+    },
+    {
+      "id": "unsupported-major-rejected",
+      "status": "PASS",
+      "source": "packages/wtf-parser/test/migrations.test.ts",
+      "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json"
+    },
+    {
+      "id": "forward-optional-metadata-preserved",
+      "status": "PASS",
+      "source": "packages/w2f-schema/test/index.test.ts",
+      "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json"
+    }
   ],
   "knownLimitations": {
     "document": "docs/KNOWN_LIMITATIONS.md",
     "status": "UNAVAILABLE"
   },
   "p0": {
-  "status": "UNAVAILABLE",
-  "evidenceArtifact": "docs/qa/results/NODE-31_P0_AUDIT_847.json",
-  "blockingUnavailableCount": 5,
-  "note": "P0 audit remains fail-closed. CI #847 adds real-Chrome proof for deterministic current HTTP document capture, region ancestor closure, document/primary application scroll roots, inaccessible cross-origin iframe diagnostics, and the native choose-file intake path. Five items remain UNAVAILABLE: explicit file:// permission capture, visual-state freeze/restore, drop-on-canvas intake, geometry-preserving correction policy, and raster-text policy justification."
-},
-  "determinism": { "status": "UNAVAILABLE", "source": "NODE-30 exact-head evidence" },
+    "status": "UNAVAILABLE",
+    "evidenceArtifact": "docs/qa/results/NODE-31_P0_AUDIT_861.json",
+    "blockingUnavailableCount": 4,
+    "note": "P0 audit remains fail-closed. CI #861 preserves the previously proven browser/capture/choose-file paths and adds exact-head Canvas-drop integration proof using the final built plugin main bundle, a narrow simulated Figma host boundary, the final UI in real Chrome, secure parsing, destination preservation, and trusted-pointer render handoff. Four items remain UNAVAILABLE: explicit file:// permission capture, visual-state freeze/restore, geometry-preserving correction policy, and raster-text policy justification."
+  },
+  "determinism": {
+    "status": "UNAVAILABLE",
+    "source": "NODE-30 exact-head evidence"
+  },
   "scale": {
     "status": "PASS",
     "source": "NODE-30 10k renderer scale benchmark in CI #736",

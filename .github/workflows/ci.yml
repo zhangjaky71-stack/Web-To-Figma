@@ -6,7 +6,7 @@ on:
   pull_request:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   quality:
@@ -55,10 +55,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Apply repository formatting
-        if: github.event_name == 'pull_request' && github.head_ref == 'node-31-real-world-compatibility-release-candidate'
-        run: pnpm format
-
       - name: Lint
         run: pnpm lint
 
@@ -79,84 +75,3 @@ jobs:
 
       - name: Format check
         run: pnpm format:check
-
-      - name: Commit validated formatting changes
-        if: github.event_name == 'pull_request' && github.head_ref == 'node-31-real-world-compatibility-release-candidate'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          HEAD_REF: ${{ github.head_ref }}
-        run: |
-          node --input-type=module <<'NODE'
-          import { readFileSync } from "node:fs";
-          import { execFileSync } from "node:child_process";
-
-          const paths = execFileSync("git", ["diff", "--name-only", "--diff-filter=ACMRT"], {
-            encoding: "utf8",
-          })
-            .trim()
-            .split("\n")
-            .map((value) => value.trim())
-            .filter(Boolean);
-
-          if (paths.length === 0) {
-            console.log("Repository is already Prettier-clean.");
-            process.exit(0);
-          }
-
-          const api = "https://api.github.com";
-          const headers = {
-            accept: "application/vnd.github+json",
-            authorization: `Bearer ${process.env.GH_TOKEN}`,
-            "x-github-api-version": "2022-11-28",
-            "content-type": "application/json",
-          };
-
-          async function request(path, init = {}) {
-            const response = await fetch(`${api}${path}`, {
-              ...init,
-              headers: { ...headers, ...(init.headers ?? {}) },
-            });
-            const body = await response.json();
-            if (!response.ok) {
-              throw new Error(`GitHub API failed ${response.status} ${path}: ${JSON.stringify(body)}`);
-            }
-            return body;
-          }
-
-          const blobs = [];
-          for (const path of paths) {
-            const blob = await request(`/repos/${process.env.GITHUB_REPOSITORY}/git/blobs`, {
-              method: "POST",
-              body: JSON.stringify({
-                content: readFileSync(path).toString("base64"),
-                encoding: "base64",
-              }),
-            });
-            blobs.push({ path, sha: blob.sha });
-          }
-
-          const headCommit = await request(
-            `/repos/${process.env.GITHUB_REPOSITORY}/git/commits/${process.env.HEAD_SHA}`,
-          );
-          const tree = await request(`/repos/${process.env.GITHUB_REPOSITORY}/git/trees`, {
-            method: "POST",
-            body: JSON.stringify({
-              base_tree: headCommit.tree.sha,
-              tree: blobs.map(({ path, sha }) => ({ path, mode: "100644", type: "blob", sha })),
-            }),
-          });
-          const commit = await request(`/repos/${process.env.GITHUB_REPOSITORY}/git/commits`, {
-            method: "POST",
-            body: JSON.stringify({
-              message: "style(node-31): normalize release-candidate formatting",
-              tree: tree.sha,
-              parents: [process.env.HEAD_SHA],
-            }),
-          });
-          await request(`/repos/${process.env.GITHUB_REPOSITORY}/git/refs/heads/${process.env.HEAD_REF}`, {
-            method: "PATCH",
-            body: JSON.stringify({ sha: commit.sha, force: false }),
-          });
-          console.log(`Materialized ${paths.length} formatted file(s) as ${commit.sha}.`);
-          NODE

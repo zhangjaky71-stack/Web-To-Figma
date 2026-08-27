@@ -455,7 +455,10 @@ try {
     TextDecoder,
   });
   runInContext(mainCode, context, { filename: mainBundlePath });
-  assert(showUiCall?.options?.title === "W2F Import", "Built main bundle did not initialize plugin UI");
+  assert(
+    showUiCall?.options?.title === "W2F Import",
+    "Built main bundle did not initialize plugin UI",
+  );
   assert(typeof dropHandler === "function", "Built main bundle did not register figma.on('drop')");
 
   async function flushMainToUi() {
@@ -469,8 +472,7 @@ try {
   let renderSummary = null;
   let intakeDescriptor = null;
   async function drainUiOutbound() {
-    const entries =
-      (await evaluate(client, `globalThis.__node31UiOutbound.splice(0)`)) ?? [];
+    const entries = (await evaluate(client, `globalThis.__node31UiOutbound.splice(0)`)) ?? [];
     for (const entry of entries) {
       uiMessages.push(entry.type);
       if (entry.type === "W2F_RENDER_BASIC_REQUEST") {
@@ -538,7 +540,12 @@ try {
         detail: document.getElementById("progress-detail")?.textContent ?? "",
       }))()`,
     );
-    if (previewState?.stage === "preview-ready" && previewState.importDisabled === false) break;
+    if (
+      previewState?.stage === "preview-ready" &&
+      previewState.importDisabled === false &&
+      intakeDescriptor
+    )
+      break;
     if (previewState?.stage === "failed") {
       throw new Error(`Canvas-drop secure parser failed: ${previewState.detail}`);
     }
@@ -562,7 +569,8 @@ try {
     "Canvas-drop filename was not rendered in the final UI",
   );
   assert(
-    previewState.fileMeta.includes("canvas-drop") && previewState.fileMeta.includes("canvas 321, 655"),
+    previewState.fileMeta.includes("canvas-drop") &&
+      previewState.fileMeta.includes("canvas 321, 655"),
     "Canvas-drop source/point were not exposed by the final UI",
   );
   assert(
@@ -574,6 +582,16 @@ try {
     "Canvas-drop main path did not forward DropFile bytes to the final UI",
   );
 
+  await evaluate(
+    client,
+    `(async () => {
+      const button = document.getElementById("import-button");
+      if (!(button instanceof HTMLElement) || button.disabled) return false;
+      button.scrollIntoView({ block: "center", inline: "center" });
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      return true;
+    })()`,
+  );
   const importButtonCenter = await evaluate(
     client,
     `(() => {
@@ -583,7 +601,10 @@ try {
       return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
     })()`,
   );
-  assert(importButtonCenter, "Canvas-drop import button has no clickable geometry after secure parse");
+  assert(
+    importButtonCenter,
+    "Canvas-drop import button has no clickable geometry after secure parse",
+  );
   await client.send("Input.dispatchMouseEvent", {
     type: "mousePressed",
     x: importButtonCenter.x,
@@ -622,7 +643,10 @@ try {
   assert(renderSummary?.tokenPolicy === "literal", "Canvas-drop token policy changed unexpectedly");
   assert(renderSummary?.renderNodeCount === 1, "Canvas-drop parsed render tree handoff changed");
   assert(renderSummary?.sourceNodeCount === 1, "Canvas-drop parsed source graph handoff changed");
-  assert(renderSummary?.selectedRootCount === 0, "Whole-page canvas drop must not inject selected roots");
+  assert(
+    renderSummary?.selectedRootCount === 0,
+    "Whole-page canvas drop must not inject selected roots",
+  );
   assert(
     renderSummary?.importName === "NODE-31 Canvas Drop Runtime",
     "Canvas-drop import name did not preserve parsed package title",

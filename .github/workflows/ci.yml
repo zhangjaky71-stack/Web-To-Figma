@@ -6,7 +6,7 @@ on:
   pull_request:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   quality:
@@ -55,34 +55,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Apply NODE-31 canvas-drop runtime fixes candidate
-        if: github.event_name == 'pull_request' && github.head_ref == 'node-31-real-world-compatibility-release-candidate'
-        run: |
-          node --input-type=module <<'NODE'
-          import { readFileSync, writeFileSync } from "node:fs";
-          const path = "scripts/run-node-31-plugin-canvas-drop-runtime.mjs";
-          let source = readFileSync(path, "utf8");
-
-          const raceBefore = `    if (previewState?.stage === "preview-ready" && previewState.importDisabled === false) break;`;
-          const raceAfter = `    if (\n      previewState?.stage === "preview-ready" &&\n      previewState.importDisabled === false &&\n      intakeDescriptor\n    )\n      break;`;
-          if (source.includes(raceBefore)) {
-            source = source.replace(raceBefore, raceAfter);
-          } else if (!source.includes(raceAfter)) {
-            throw new Error("canvas-drop preview-ready race patch point not found");
-          }
-
-          const pointerBefore = `  const importButtonCenter = await evaluate(\n    client,`;
-          const pointerAfter = `  await evaluate(\n    client,\n    \`(async () => {\n      const button = document.getElementById("import-button");\n      if (!(button instanceof HTMLElement) || button.disabled) return false;\n      button.scrollIntoView({ block: "center", inline: "center" });\n      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));\n      return true;\n    })()\`,\n  );\n  const importButtonCenter = await evaluate(\n    client,`;
-          if (source.includes(pointerBefore)) {
-            source = source.replace(pointerBefore, pointerAfter);
-          } else if (!source.includes(`button.scrollIntoView({ block: "center", inline: "center" })`)) {
-            throw new Error("canvas-drop pointer viewport patch point not found");
-          }
-
-          writeFileSync(path, source);
-          NODE
-          pnpm exec prettier scripts/run-node-31-plugin-canvas-drop-runtime.mjs --write
-
       - name: Lint
         run: pnpm lint
 
@@ -109,74 +81,3 @@ jobs:
 
       - name: Format check
         run: pnpm format:check
-
-      - name: Commit validated canvas-drop runtime fixes
-        if: github.event_name == 'pull_request' && github.head_ref == 'node-31-real-world-compatibility-release-candidate'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          HEAD_REF: ${{ github.head_ref }}
-        run: |
-          node --input-type=module <<'NODE'
-          import { readFileSync } from "node:fs";
-
-          const path = "scripts/run-node-31-plugin-canvas-drop-runtime.mjs";
-          const api = "https://api.github.com";
-          const headers = {
-            accept: "application/vnd.github+json",
-            authorization: `Bearer ${process.env.GH_TOKEN}`,
-            "x-github-api-version": "2022-11-28",
-            "content-type": "application/json",
-          };
-
-          async function request(apiPath, init = {}) {
-            const response = await fetch(`${api}${apiPath}`, {
-              ...init,
-              headers: { ...headers, ...(init.headers ?? {}) },
-            });
-            const body = await response.json();
-            if (!response.ok) {
-              throw new Error(`GitHub API failed ${response.status} ${apiPath}: ${JSON.stringify(body)}`);
-            }
-            return body;
-          }
-
-          const blob = await request(`/repos/${process.env.GITHUB_REPOSITORY}/git/blobs`, {
-            method: "POST",
-            body: JSON.stringify({
-              content: readFileSync(path).toString("base64"),
-              encoding: "base64",
-            }),
-          });
-          const current = await request(
-            `/repos/${process.env.GITHUB_REPOSITORY}/contents/${path}?ref=${process.env.HEAD_SHA}`,
-          );
-          if (current.sha === blob.sha) {
-            console.log("Validated canvas-drop runtime fixes are already materialized.");
-            process.exit(0);
-          }
-
-          const headCommit = await request(
-            `/repos/${process.env.GITHUB_REPOSITORY}/git/commits/${process.env.HEAD_SHA}`,
-          );
-          const tree = await request(`/repos/${process.env.GITHUB_REPOSITORY}/git/trees`, {
-            method: "POST",
-            body: JSON.stringify({
-              base_tree: headCommit.tree.sha,
-              tree: [{ path, mode: "100644", type: "blob", sha: blob.sha }],
-            }),
-          });
-          const commit = await request(`/repos/${process.env.GITHUB_REPOSITORY}/git/commits`, {
-            method: "POST",
-            body: JSON.stringify({
-              message: "test(node-31): stabilize canvas-drop integration runtime",
-              tree: tree.sha,
-              parents: [process.env.HEAD_SHA],
-            }),
-          });
-          await request(`/repos/${process.env.GITHUB_REPOSITORY}/git/refs/heads/${process.env.HEAD_REF}`, {
-            method: "PATCH",
-            body: JSON.stringify({ sha: commit.sha, force: false }),
-          });
-          console.log(`Materialized validated canvas-drop runtime fixes as ${commit.sha}.`);
-          NODE

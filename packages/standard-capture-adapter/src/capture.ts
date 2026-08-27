@@ -583,6 +583,10 @@ export function captureStandardSnapshotInPage(input: StandardCaptureInput): Stan
   ): string | undefined {
     const view = element.ownerDocument.defaultView;
     if (!view) return parentScrollContainerId;
+    const doc = element.ownerDocument;
+    if (element === doc.scrollingElement || element === doc.documentElement) {
+      return parentScrollContainerId;
+    }
     const style = view.getComputedStyle(element);
     const html = element as HTMLElement;
     const scrollable = html.scrollWidth > html.clientWidth || html.scrollHeight > html.clientHeight;

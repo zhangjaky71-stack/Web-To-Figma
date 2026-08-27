@@ -55,21 +55,31 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Apply NODE-31 canvas-drop bridge race fix candidate
+      - name: Apply NODE-31 canvas-drop runtime fixes candidate
         if: github.event_name == 'pull_request' && github.head_ref == 'node-31-real-world-compatibility-release-candidate'
         run: |
           node --input-type=module <<'NODE'
           import { readFileSync, writeFileSync } from "node:fs";
           const path = "scripts/run-node-31-plugin-canvas-drop-runtime.mjs";
           let source = readFileSync(path, "utf8");
-          const before = `    if (previewState?.stage === "preview-ready" && previewState.importDisabled === false) break;`;
-          const after = `    if (\n      previewState?.stage === "preview-ready" &&\n      previewState.importDisabled === false &&\n      intakeDescriptor\n    )\n      break;`;
-          if (source.includes(before)) {
-            source = source.replace(before, after);
-            writeFileSync(path, source);
-          } else if (!source.includes(after)) {
+
+          const raceBefore = `    if (previewState?.stage === "preview-ready" && previewState.importDisabled === false) break;`;
+          const raceAfter = `    if (\n      previewState?.stage === "preview-ready" &&\n      previewState.importDisabled === false &&\n      intakeDescriptor\n    )\n      break;`;
+          if (source.includes(raceBefore)) {
+            source = source.replace(raceBefore, raceAfter);
+          } else if (!source.includes(raceAfter)) {
             throw new Error("canvas-drop preview-ready race patch point not found");
           }
+
+          const pointerBefore = `  const importButtonCenter = await evaluate(\n    client,`;
+          const pointerAfter = `  await evaluate(\n    client,\n    \`(async () => {\n      const button = document.getElementById("import-button");\n      if (!(button instanceof HTMLElement) || button.disabled) return false;\n      button.scrollIntoView({ block: "center", inline: "center" });\n      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));\n      return true;\n    })()\`,\n  );\n  const importButtonCenter = await evaluate(\n    client,`;
+          if (source.includes(pointerBefore)) {
+            source = source.replace(pointerBefore, pointerAfter);
+          } else if (!source.includes(`button.scrollIntoView({ block: "center", inline: "center" })`)) {
+            throw new Error("canvas-drop pointer viewport patch point not found");
+          }
+
+          writeFileSync(path, source);
           NODE
           pnpm exec prettier scripts/run-node-31-plugin-canvas-drop-runtime.mjs --write
 
@@ -100,7 +110,7 @@ jobs:
       - name: Format check
         run: pnpm format:check
 
-      - name: Commit validated canvas-drop bridge race fix
+      - name: Commit validated canvas-drop runtime fixes
         if: github.event_name == 'pull_request' && github.head_ref == 'node-31-real-world-compatibility-release-candidate'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -142,7 +152,7 @@ jobs:
             `/repos/${process.env.GITHUB_REPOSITORY}/contents/${path}?ref=${process.env.HEAD_SHA}`,
           );
           if (current.sha === blob.sha) {
-            console.log("Validated canvas-drop race fix is already materialized.");
+            console.log("Validated canvas-drop runtime fixes are already materialized.");
             process.exit(0);
           }
 
@@ -159,7 +169,7 @@ jobs:
           const commit = await request(`/repos/${process.env.GITHUB_REPOSITORY}/git/commits`, {
             method: "POST",
             body: JSON.stringify({
-              message: "test(node-31): wait for canvas-drop intake bridge",
+              message: "test(node-31): stabilize canvas-drop integration runtime",
               tree: tree.sha,
               parents: [process.env.HEAD_SHA],
             }),
@@ -168,5 +178,5 @@ jobs:
             method: "PATCH",
             body: JSON.stringify({ sha: commit.sha, force: false }),
           });
-          console.log(`Materialized validated canvas-drop bridge fix as ${commit.sha}.`);
+          console.log(`Materialized validated canvas-drop runtime fixes as ${commit.sha}.`);
           NODE

@@ -406,9 +406,37 @@ try {
 
   await client.send("Page.setInterceptFileChooserDialog", { enabled: true });
   const chooserOpened = client.waitForEvent("Page.fileChooserOpened");
-  await evaluate(client, `document.getElementById("choose-file").click()`);
+  const chooseButtonCenter = await evaluate(
+    client,
+    `(() => {
+    const button = document.getElementById("choose-file");
+    if (!(button instanceof HTMLElement)) return null;
+    const rect = button.getBoundingClientRect();
+    return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+  })()`,
+  );
+  assert(chooseButtonCenter, "choose-file button has no clickable geometry");
+  await client.send("Input.dispatchMouseEvent", {
+    type: "mousePressed",
+    x: chooseButtonCenter.x,
+    y: chooseButtonCenter.y,
+    button: "left",
+    buttons: 1,
+    clickCount: 1,
+  });
+  await client.send("Input.dispatchMouseEvent", {
+    type: "mouseReleased",
+    x: chooseButtonCenter.x,
+    y: chooseButtonCenter.y,
+    button: "left",
+    buttons: 0,
+    clickCount: 1,
+  });
   const chooser = await chooserOpened;
-  assert(chooser.mode === "selectSingle", `choose button opened unexpected file mode ${chooser.mode}`);
+  assert(
+    chooser.mode === "selectSingle",
+    `choose button opened unexpected file mode ${chooser.mode}`,
+  );
 
   const documentNode = await client.send("DOM.getDocument", { depth: 2, pierce: true });
   const fileInputNode = await client.send("DOM.querySelector", {
@@ -441,14 +469,26 @@ try {
     }))()`,
   );
   assert(previewState.fileName === packaged.filename, "selected filename was not rendered in UI");
-  assert(previewState.fileMeta.includes("choose"), "selected file metadata did not preserve choose source");
-  assert(previewState.progressLabel === "Secure validation complete", "secure parser did not complete");
-  assert(previewState.progressDetail.includes("1 render nodes"), "preview render-node count mismatch");
+  assert(
+    previewState.fileMeta.includes("choose"),
+    "selected file metadata did not preserve choose source",
+  );
+  assert(
+    previewState.progressLabel === "Secure validation complete",
+    "secure parser did not complete",
+  );
+  assert(
+    previewState.progressDetail.includes("1 render nodes"),
+    "preview render-node count mismatch",
+  );
   assert(previewState.progressDetail.includes("1 sections"), "preview section count mismatch");
   assert(previewState.stage === "preview-ready", "UI progress stage did not reach preview-ready");
   assert(previewState.importDisabled === false, "import button was not enabled after secure parse");
   assert(previewState.errors === 0, "choose-file flow emitted an unexpected W2F_ERROR");
-  assert(previewState.intake?.descriptor?.source === "choose", "intake metadata source was not choose");
+  assert(
+    previewState.intake?.descriptor?.source === "choose",
+    "intake metadata source was not choose",
+  );
   assert(
     previewState.intake?.descriptor?.fileName === packaged.filename,
     "intake metadata filename mismatch",
@@ -478,7 +518,10 @@ try {
     })()`,
   );
   assert(renderHandoff?.mode === "whole-page", "choose-file render request mode mismatch");
-  assert(renderHandoff?.importName === "NODE-31 Choose Runtime", "choose-file import name mismatch");
+  assert(
+    renderHandoff?.importName === "NODE-31 Choose Runtime",
+    "choose-file import name mismatch",
+  );
   assert(renderHandoff?.renderRootId === "render_root", "render-tree handoff root mismatch");
   assert(renderHandoff?.sourceRootId === "source_root", "source-graph handoff root mismatch");
 

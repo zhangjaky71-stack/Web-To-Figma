@@ -59,9 +59,9 @@
   },
   "p0": {
   "status": "UNAVAILABLE",
-  "evidenceArtifact": "docs/qa/results/NODE-31_P0_AUDIT_825.json",
-  "blockingUnavailableCount": 10,
-  "note": "P0 audit is intentionally fail-closed. Real Chrome proves region-selector cleanup and now directly proves open Shadow DOM/slot composed-tree plus same-origin iframe structured Standard capture; exact/nearest font mapping has deterministic policy tests plus persistent requested-to-chosen diagnostics; CI #798 proves capture-profile-required Pixel Ground Truth is fail-closed at the final .wtf packaging boundary. Ten browser-runtime/UI/font-policy items remain UNAVAILABLE until direct evidence exists."
+  "evidenceArtifact": "docs/qa/results/NODE-31_P0_AUDIT_847.json",
+  "blockingUnavailableCount": 5,
+  "note": "P0 audit remains fail-closed. CI #847 adds real-Chrome proof for deterministic current HTTP document capture, region ancestor closure, document/primary application scroll roots, inaccessible cross-origin iframe diagnostics, and the native choose-file intake path. Five items remain UNAVAILABLE: explicit file:// permission capture, visual-state freeze/restore, drop-on-canvas intake, geometry-preserving correction policy, and raster-text policy justification."
 },
   "determinism": { "status": "UNAVAILABLE", "source": "NODE-30 exact-head evidence" },
   "scale": {

@@ -5,12 +5,13 @@ const root = process.cwd();
 const failures = [];
 
 const manifestPath = "docs/qa/NODE-31_RC_EVIDENCE_V1.json";
-const auditPath = "docs/qa/results/NODE-31_P0_AUDIT_825.json";
+const auditPath = "docs/qa/results/NODE-31_P0_AUDIT_847.json";
 const runtimeEvidencePath = "docs/qa/results/NODE-31_BROWSER_RUNTIME_EVIDENCE_764.json";
 const fontEvidencePath = "docs/qa/results/NODE-31_FONT_EVIDENCE_781.json";
 const pixelEvidencePath = "docs/qa/results/NODE-31_PIXEL_GROUND_TRUTH_EVIDENCE_798.json";
 const standardCaptureEvidencePath =
-  "docs/qa/results/NODE-31_STANDARD_CAPTURE_RUNTIME_EVIDENCE_825.json";
+  "docs/qa/results/NODE-31_STANDARD_CAPTURE_RUNTIME_EVIDENCE_847.json";
+const pluginUiEvidencePath = "docs/qa/results/NODE-31_PLUGIN_UI_EVIDENCE_847.json";
 
 const runtimeHarnessPath = "scripts/run-node-31-browser-runtime.mjs";
 const runtimeProductSourcePath = "apps/browser-extension/src/runtime/content-script.ts";
@@ -39,6 +40,12 @@ const standardCaptureBuiltArtifactPath =
 const corpusValidatorPath = "scripts/validate-node-31-corpus.mjs";
 const shadowFixturePath = "qa/corpus/node31/class-b/shadow-dom.html";
 const iframeFixturePath = "qa/corpus/node31/class-b/iframe.html";
+const p0StandardFixturePath = "qa/corpus/node31/p0/standard-capture-runtime.html";
+const standardCaptureTestPath = "packages/standard-capture-adapter/test/capture-contract.test.ts";
+const pluginUiHarnessPath = "scripts/run-node-31-plugin-ui-runtime.mjs";
+const pluginUiStaticPath = "apps/figma-plugin/static/ui.html";
+const pluginUiSourcePath = "apps/figma-plugin/src/ui.ts";
+const pluginUiIntakePath = "apps/figma-plugin/src/intake-state.ts";
 
 const requiredIds = {
   capture: [
@@ -79,13 +86,8 @@ const requiredIds = {
 };
 
 const expectedBlockingIds = [
-  "current-document-deterministic-online",
   "file-protocol-explicit-permission",
-  "region-intersections-and-structural-ancestors",
-  "document-and-primary-app-scroll-root-semantics",
-  "inaccessible-cross-origin-frame-diagnostic",
   "visual-state-freeze-and-restore",
-  "choose-file-path",
   "drop-on-canvas-path",
   "geometry-preserving-correction-policy",
   "raster-text-only-when-policy-justifies",
@@ -115,6 +117,30 @@ const expectedStandardCaptureAssertions = [
   "same-origin-iframe-root-linked-to-boundary",
   "same-origin-iframe-editable-text-captured",
   "same-origin-iframe-no-inaccessible-diagnostic",
+  "current-http-document-capture-repeat-10-normalized-identical",
+  "document-scroll-root-live-position-preserved",
+  "primary-app-scroll-root-identified",
+  "primary-app-scroll-root-live-position-preserved",
+  "cross-origin-iframe-inaccessible-frame-recorded",
+  "cross-origin-iframe-diagnostic-linked-to-boundary",
+  "cross-origin-iframe-no-editable-child-subtree-fabricated",
+  "region-partial-intersection-retained",
+  "region-geometry-free-structural-ancestor-retained",
+  "region-non-intersecting-sibling-excluded",
+  "region-relationship-closure-preserved",
+].sort();
+
+const expectedPluginUiAssertions = [
+  "choose-button-opens-native-single-file-chooser",
+  "native-file-input-receives-real-wtf-file",
+  "intake-metadata-preserves-choose-source",
+  "secure-parser-reaches-preview-ready",
+  "secure-parser-preview-exposes-render-and-section-counts",
+  "import-enabled-only-after-secure-parse",
+  "choose-flow-emits-no-runtime-error",
+  "parsed-render-tree-handoff-preserved",
+  "parsed-source-graph-handoff-preserved",
+  "render-request-emitted-after-user-import-action",
 ].sort();
 
 const p0BoundaryIds = [
@@ -205,6 +231,7 @@ requireFiles([
   fontEvidencePath,
   pixelEvidencePath,
   standardCaptureEvidencePath,
+  pluginUiEvidencePath,
   runtimeHarnessPath,
   runtimeProductSourcePath,
   fontResolutionPath,
@@ -225,6 +252,12 @@ requireFiles([
   corpusValidatorPath,
   shadowFixturePath,
   iframeFixturePath,
+  p0StandardFixturePath,
+  standardCaptureTestPath,
+  pluginUiHarnessPath,
+  pluginUiStaticPath,
+  pluginUiSourcePath,
+  pluginUiIntakePath,
 ]);
 
 const manifest = readJson(manifestPath);
@@ -233,6 +266,7 @@ const runtimeEvidence = readJson(runtimeEvidencePath);
 const fontEvidence = readJson(fontEvidencePath);
 const pixelEvidence = readJson(pixelEvidencePath);
 const standardCaptureEvidence = readJson(standardCaptureEvidencePath);
+const pluginUiEvidence = readJson(pluginUiEvidencePath);
 
 if (runtimeEvidence) {
   assert(runtimeEvidence.version === "1.0.0", "browser runtime evidence version mismatch");
@@ -462,21 +496,21 @@ if (pixelEvidence) {
 }
 
 if (standardCaptureEvidence) {
-  assert(standardCaptureEvidence.version === "1.0.0", "Standard capture evidence version mismatch");
+  assert(standardCaptureEvidence.version === "1.1.0", "Standard capture evidence version mismatch");
   assert(
     standardCaptureEvidence.evidenceType === "node31-standard-capture-browser-runtime",
     "Standard capture evidenceType mismatch",
   );
   assert(standardCaptureEvidence.status === "PASS", "Standard capture evidence must PASS");
-  assert(standardCaptureEvidence.ci?.runNumber === 825, "Standard capture must identify CI #825");
-  assert(standardCaptureEvidence.ci?.runId === 32913639837, "Standard capture run id mismatch");
-  assert(standardCaptureEvidence.ci?.jobId === 98012597167, "Standard capture job id mismatch");
+  assert(standardCaptureEvidence.ci?.runNumber === 847, "Standard capture must identify CI #847");
+  assert(standardCaptureEvidence.ci?.runId === 33049035729, "Standard capture run id mismatch");
+  assert(standardCaptureEvidence.ci?.jobId === 98439753613, "Standard capture job id mismatch");
   assert(
-    standardCaptureEvidence.ci?.branchHead === "739629071978778ef9110477002fd53c7387e61f",
+    standardCaptureEvidence.ci?.branchHead === "a563cf2046b613d64ba7402034979c70e567bd7a",
     "Standard capture branch head mismatch",
   );
   assert(
-    standardCaptureEvidence.ci?.mergeRef === "19181cbd3819f784e43b8d5f2e201a87415f1d9a",
+    standardCaptureEvidence.ci?.mergeRef === "778f68f85c9b4032b39dc8053c7496a743fe5322",
     "Standard capture merge ref mismatch",
   );
   assert(
@@ -495,6 +529,7 @@ if (standardCaptureEvidence) {
       "build",
       "browserRuntime",
       "standardCaptureRuntime",
+      "pluginUiChooseFileRuntime",
       "format",
     ],
     "Standard capture evidence",
@@ -515,12 +550,12 @@ if (standardCaptureEvidence) {
   );
   assertArrayEquals(
     standardCaptureEvidence.fixtureArtifacts,
-    [shadowFixturePath, iframeFixturePath],
+    [shadowFixturePath, iframeFixturePath, p0StandardFixturePath],
     "Standard capture fixture set mismatch",
   );
   assertIncludesAll(
     standardCaptureEvidence.supportingSourceArtifacts,
-    [standardCaptureSourcePath, corpusValidatorPath],
+    [standardCaptureSourcePath, standardCaptureTestPath, corpusValidatorPath],
     "Standard capture source",
   );
   assert(
@@ -541,24 +576,105 @@ if (standardCaptureEvidence) {
   );
   assert(
     standardCaptureEvidence.suiteEvidence?.standardCaptureAdapter?.testFiles === 2 &&
-      standardCaptureEvidence.suiteEvidence?.standardCaptureAdapter?.testCount === 6 &&
+      standardCaptureEvidence.suiteEvidence?.standardCaptureAdapter?.testCount === 7 &&
       standardCaptureEvidence.suiteEvidence?.standardCaptureAdapter?.status === "PASS",
     "Standard capture adapter suite mismatch",
   );
   assertArrayEquals(
     standardCaptureEvidence.provesP0Items,
-    ["open-shadow-dom-slot-composed-tree", "same-origin-iframe"],
-    "Standard capture must prove exactly Shadow DOM and same-origin iframe",
+    [
+      "current-document-deterministic-online",
+      "region-intersections-and-structural-ancestors",
+      "document-and-primary-app-scroll-root-semantics",
+      "open-shadow-dom-slot-composed-tree",
+      "same-origin-iframe",
+      "inaccessible-cross-origin-frame-diagnostic",
+    ],
+    "Standard capture proven P0 set mismatch",
   );
   assertIncludesAll(
     standardCaptureEvidence.notProvenByThisArtifact,
-    [
-      ...expectedBlockingIds,
-      "finally-scroll-focus-temporary-style-restore",
-      "profile-required-pixel-ground-truth-end-to-end",
-      ...releaseBoundaries,
-    ],
+    [...expectedBlockingIds, "choose-file-path", ...releaseBoundaries],
     "Standard capture not-proven boundary",
+  );
+}
+
+if (pluginUiEvidence) {
+  assert(pluginUiEvidence.version === "1.0.0", "Plugin UI evidence version mismatch");
+  assert(
+    pluginUiEvidence.evidenceType === "node31-plugin-ui-choose-file-runtime",
+    "Plugin UI evidenceType mismatch",
+  );
+  assert(pluginUiEvidence.status === "PASS", "Plugin UI evidence must PASS");
+  assert(pluginUiEvidence.ci?.runNumber === 847, "Plugin UI evidence must identify CI #847");
+  assert(pluginUiEvidence.ci?.runId === 33049035729, "Plugin UI run id mismatch");
+  assert(pluginUiEvidence.ci?.jobId === 98439753613, "Plugin UI job id mismatch");
+  assert(
+    pluginUiEvidence.ci?.branchHead === "a563cf2046b613d64ba7402034979c70e567bd7a",
+    "Plugin UI branch head mismatch",
+  );
+  assert(
+    pluginUiEvidence.ci?.mergeRef === "778f68f85c9b4032b39dc8053c7496a743fe5322",
+    "Plugin UI merge ref mismatch",
+  );
+  assert(
+    pluginUiEvidence.ci?.base === "28b52dc3e0d3074bf76205c8deb324a06dfe9e23",
+    "Plugin UI base mismatch",
+  );
+  assertQualityChecks(
+    pluginUiEvidence,
+    [
+      "node31Validator",
+      "node31CorpusValidator",
+      "node31P0Validator",
+      "lint",
+      "typecheck",
+      "tests",
+      "build",
+      "browserRuntime",
+      "standardCaptureRuntime",
+      "pluginUiChooseFileRuntime",
+      "format",
+    ],
+    "Plugin UI evidence",
+  );
+  assert(
+    pluginUiEvidence.environment?.chrome === "Chrome/151.0.7922.137",
+    "Plugin UI Chrome mismatch",
+  );
+  assert(pluginUiEvidence.harnessArtifact === pluginUiHarnessPath, "Plugin UI harness mismatch");
+  assert(
+    pluginUiEvidence.loadedBuiltArtifact === "apps/figma-plugin/dist/ui.html",
+    "Plugin UI built artifact mismatch",
+  );
+  assert(
+    pluginUiEvidence.fixtureProducer === "packages/wtf-packager/dist/index.js",
+    "Plugin UI fixture producer mismatch",
+  );
+  assert(
+    pluginUiEvidence.fixtureArchiveSha256 ===
+      "ab7f99170edd51a1d89536303977fb14c2635c6c181a217b2f537d3ab91ac97c",
+    "Plugin UI fixture archive hash mismatch",
+  );
+  assertIncludesAll(
+    pluginUiEvidence.productSourceArtifacts,
+    [pluginUiStaticPath, pluginUiSourcePath, pluginUiIntakePath],
+    "Plugin UI source",
+  );
+  assertArrayEquals(
+    pluginUiEvidence.assertions,
+    expectedPluginUiAssertions,
+    "Plugin UI assertion set mismatch",
+  );
+  assertArrayEquals(
+    pluginUiEvidence.provesP0Items,
+    ["choose-file-path"],
+    "Plugin UI proven P0 set mismatch",
+  );
+  assertIncludesAll(
+    pluginUiEvidence.notProvenByThisArtifact,
+    [...expectedBlockingIds, ...releaseBoundaries],
+    "Plugin UI not-proven boundary",
   );
 }
 
@@ -567,12 +683,21 @@ if (audit) {
   assert(audit.evidenceType === "node31-p0-audit", "P0 audit evidenceType mismatch");
   assert(audit.contract === "docs/ACCEPTANCE_CONTRACT_V2.md", "P0 audit contract mismatch");
   assert(
-    audit.auditedAgainstBranchHead === "739629071978778ef9110477002fd53c7387e61f",
-    "P0 audit must stay anchored to exact-head CI #825",
+    audit.auditedAgainstBranchHead === "a563cf2046b613d64ba7402034979c70e567bd7a",
+    "P0 audit must stay anchored to exact-head CI #847",
   );
-  assert(audit.ci?.runNumber === 825, "P0 audit must identify CI #825");
-  assert(audit.ci?.runId === 32913639837, "P0 audit run id mismatch");
-  assert(audit.ci?.jobId === 98012597167, "P0 audit job id mismatch");
+  assert(audit.ci?.runNumber === 847, "P0 audit must identify CI #847");
+  assert(audit.ci?.runId === 33049035729, "P0 audit run id mismatch");
+  assert(audit.ci?.jobId === 98439753613, "P0 audit job id mismatch");
+  assert(
+    audit.ci?.branchHead === "a563cf2046b613d64ba7402034979c70e567bd7a",
+    "P0 audit branch head mismatch",
+  );
+  assert(
+    audit.ci?.mergeRef === "778f68f85c9b4032b39dc8053c7496a743fe5322",
+    "P0 audit merge ref mismatch",
+  );
+  assert(audit.ci?.base === "28b52dc3e0d3074bf76205c8deb324a06dfe9e23", "P0 audit base mismatch");
   assert(audit.ci?.conclusion === "PASS", "P0 audit CI must PASS");
   assertQualityChecks(
     audit,
@@ -586,6 +711,7 @@ if (audit) {
       "build",
       "browserRuntime",
       "standardCaptureRuntime",
+      "pluginUiChooseFileRuntime",
       "format",
     ],
     "P0 audit",
@@ -602,6 +728,13 @@ if (audit) {
   }
   const byId = new Map(allItems.map((entry) => [entry.id, entry]));
 
+  const standardP0RuntimeProvenance = [
+    standardCaptureSourcePath,
+    standardCaptureTestPath,
+    p0StandardFixturePath,
+    standardCaptureHarnessPath,
+    standardCaptureEvidencePath,
+  ];
   const requiredPassProvenance = new Map([
     [
       "finally-scroll-focus-temporary-style-restore",
@@ -635,6 +768,9 @@ if (audit) {
         pixelEvidencePath,
       ],
     ],
+    ["current-document-deterministic-online", standardP0RuntimeProvenance],
+    ["region-intersections-and-structural-ancestors", standardP0RuntimeProvenance],
+    ["document-and-primary-app-scroll-root-semantics", standardP0RuntimeProvenance],
     [
       "open-shadow-dom-slot-composed-tree",
       [
@@ -655,6 +791,17 @@ if (audit) {
         standardCaptureEvidencePath,
       ],
     ],
+    ["inaccessible-cross-origin-frame-diagnostic", standardP0RuntimeProvenance],
+    [
+      "choose-file-path",
+      [
+        pluginUiStaticPath,
+        pluginUiSourcePath,
+        pluginUiIntakePath,
+        pluginUiHarnessPath,
+        pluginUiEvidencePath,
+      ],
+    ],
   ]);
 
   for (const [id, artifacts] of requiredPassProvenance) {
@@ -673,12 +820,12 @@ if (audit) {
     expectedBlockingIds,
     "P0 declared blocker set mismatch",
   );
-  assert(audit.blockingUnavailableCount === 10, "P0 audit must retain exactly 10 blockers");
+  assert(audit.blockingUnavailableCount === 5, "P0 audit must retain exactly 5 blockers");
 
   if (manifest) {
     assert(manifest.p0?.status === "UNAVAILABLE", "manifest P0 must remain UNAVAILABLE");
     assert(manifest.p0?.evidenceArtifact === auditPath, "manifest P0 evidenceArtifact mismatch");
-    assert(manifest.p0?.blockingUnavailableCount === 10, "manifest P0 blocker count must be 10");
+    assert(manifest.p0?.blockingUnavailableCount === 5, "manifest P0 blocker count must be 5");
   }
 }
 

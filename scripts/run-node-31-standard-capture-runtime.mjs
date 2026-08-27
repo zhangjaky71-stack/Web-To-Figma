@@ -213,7 +213,7 @@ async function startCrossOriginServer() {
       "cache-control": "no-store",
     });
     response.end(
-      "<!doctype html><html><body><main data-node31-role=\"cross-origin-child\">Cross-origin child must stay inaccessible to Standard capture.</main></body></html>",
+      '<!doctype html><html><body><main data-node31-role="cross-origin-child">Cross-origin child must stay inaccessible to Standard capture.</main></body></html>',
     );
   });
   return { server, baseUrl: await listen(server) };
@@ -250,7 +250,11 @@ function findNode(snapshot, predicate, label) {
 }
 
 function findNodeByRole(snapshot, role, label) {
-  return findNode(snapshot, (node) => node.source?.attributes?.["data-node31-role"] === role, label);
+  return findNode(
+    snapshot,
+    (node) => node.source?.attributes?.["data-node31-role"] === role,
+    label,
+  );
 }
 
 function normalizeSnapshot(snapshot) {
@@ -344,11 +348,15 @@ function assertIframeSnapshot(snapshot) {
 
 function assertDocumentAndCrossOriginSnapshot(snapshot, expectedState, crossOriginUrl) {
   assert(snapshot?.adapter === "standard", "P0 fixture did not use the Standard adapter");
-  assert(snapshot.captureTarget?.type === "document", "P0 current-document capture target mismatch");
+  assert(
+    snapshot.captureTarget?.type === "document",
+    "P0 current-document capture target mismatch",
+  );
   assert(snapshot.url.startsWith("http://127.0.0.1:"), "P0 fixture was not captured from HTTP");
 
   const documentScrollRoot = snapshot.scrollContainers.find(
-    (item) => item.isDocumentScrollRoot === true && item.sourceNodeId === snapshot.rootCaptureNodeId,
+    (item) =>
+      item.isDocumentScrollRoot === true && item.sourceNodeId === snapshot.rootCaptureNodeId,
   );
   assert(documentScrollRoot, "Document scroll root record was not captured");
   assert(
@@ -388,7 +396,9 @@ function assertDocumentAndCrossOriginSnapshot(snapshot, expectedState, crossOrig
     "Cross-origin frame record did not preserve the iframe URL",
   );
   assert(
-    !snapshot.nodes.some((node) => node.frameContext?.frameId === inaccessibleFrame.context.frameId),
+    !snapshot.nodes.some(
+      (node) => node.frameContext?.frameId === inaccessibleFrame.context.frameId,
+    ),
     "Cross-origin iframe fabricated an editable child-document subtree",
   );
   const diagnostic = snapshot.diagnostics.find(
@@ -417,7 +427,10 @@ function assertRegionSnapshot(snapshot, bounds) {
     "geometry-free structural wrapper",
   );
   const ancestor = findNodeByRole(snapshot, "region-ancestor", "region structural ancestor");
-  assert(wrapper.geometry === undefined, "Structural wrapper unexpectedly gained geometry evidence");
+  assert(
+    wrapper.geometry === undefined,
+    "Structural wrapper unexpectedly gained geometry evidence",
+  );
   assert(
     target.relationships?.sourceParentId === wrapper.captureNodeId,
     "Region target lost its source structural parent",
@@ -446,10 +459,16 @@ function assertRegionSnapshot(snapshot, bounds) {
       node.relationships?.assignedSlotId,
       node.relationships?.shadowHostId,
     ]) {
-      assert(!relation || retainedIds.has(relation), `Region relationship points outside retained set: ${relation}`);
+      assert(
+        !relation || retainedIds.has(relation),
+        `Region relationship points outside retained set: ${relation}`,
+      );
     }
     for (const childId of node.childCaptureNodeIds) {
-      assert(retainedIds.has(childId), `Region childCaptureNodeIds points outside retained set: ${childId}`);
+      assert(
+        retainedIds.has(childId),
+        `Region childCaptureNodeIds points outside retained set: ${childId}`,
+      );
     }
   }
 }

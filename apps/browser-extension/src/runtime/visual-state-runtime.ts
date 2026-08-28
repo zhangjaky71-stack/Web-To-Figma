@@ -253,20 +253,34 @@ async function executeVisualStateAction(
   transactionId: string,
 ): Promise<unknown> {
   if (action === "freeze") {
-    const results = await chrome.scripting.executeScript({
+    const injection = {
       target: { tabId },
       world: "MAIN",
       func: freezeVisualStateInPage,
-      args: [transactionId],
-    });
+      args: [transactionId] as [string],
+    } as const;
+    const results = await chrome.scripting.executeScript(
+      injection as unknown as {
+        target: { tabId: number };
+        func: typeof freezeVisualStateInPage;
+        args: [string];
+      },
+    );
     return results[0]?.result;
   }
-  const results = await chrome.scripting.executeScript({
+  const injection = {
     target: { tabId },
     world: "MAIN",
     func: restoreVisualStateInPage,
-    args: [transactionId],
-  });
+    args: [transactionId] as [string],
+  } as const;
+  const results = await chrome.scripting.executeScript(
+    injection as unknown as {
+      target: { tabId: number };
+      func: typeof restoreVisualStateInPage;
+      args: [string];
+    },
+  );
   return results[0]?.result;
 }
 

@@ -205,9 +205,9 @@
   },
   "p0": {
     "status": "UNAVAILABLE",
-    "evidenceArtifact": "docs/qa/results/NODE-31_P0_AUDIT_861.json",
-    "blockingUnavailableCount": 4,
-    "note": "P0 audit remains fail-closed. CI #861 preserves the previously proven browser/capture/choose-file paths and adds exact-head Canvas-drop integration proof using the final built plugin main bundle, a narrow simulated Figma host boundary, the final UI in real Chrome, secure parsing, destination preservation, and trusted-pointer render handoff. Four items remain UNAVAILABLE: explicit file:// permission capture, visual-state freeze/restore, geometry-preserving correction policy, and raster-text policy justification."
+    "evidenceArtifact": "docs/qa/results/NODE-31_P0_AUDIT_882.json",
+    "blockingUnavailableCount": 3,
+    "note": "P0 audit remains fail-closed. CI #882 adds exact-head real-Chrome proof that the final visual-state runtime freezes CSS/WAAPI animations and ShadowRoot media during capture and restores them without permanent page mutation. Three items remain UNAVAILABLE: explicit file:// permission capture, geometry-preserving font correction policy, and raster-text policy justification."
   },
   "determinism": {
     "status": "UNAVAILABLE",

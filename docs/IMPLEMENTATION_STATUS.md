@@ -4,7 +4,7 @@
 **Portable package:** `.wtf`  
 **MIME:** `application/x-wtf`  
 **Architecture:** FROZEN FOR IMPLEMENTATION  
-**Updated:** 2026-08-25
+**Updated:** 2026-08-28
 
 ## Roadmap
 
@@ -41,7 +41,7 @@
 | 28 | Hybrid Native / Raster Renderer | DONE | Exact-head CI #685 PASS | PR #33 merged as `ec880c4f` |
 | 29 | Visual / Structure / Editability QA | DONE | Core CI #697 + closure CI #704 PASS | PR #35 + PR #36, merge `4f5c0ed3` |
 | 30 | Responsive / Determinism / Performance QA | DONE | Exact-head CI #715 PASS | PR #37 merged as `28b52dc3` |
-| 31 | Real-world Compatibility & Release Candidate | IMPLEMENTING | Candidate CI pending | `node-31-real-world-compatibility-release-candidate` |
+| 31 | Real-world Compatibility & Release Candidate | IMPLEMENTING | P0 audit: 3 blockers remain; exact-head read-only CI #886 PASS | `node-31-real-world-compatibility-release-candidate` |
 
 ## Current Node
 
@@ -103,6 +103,18 @@ The node must preserve:
 - editable native output for supported text/vector/layout/image content;
 - explicit reporting of unsupported/degraded features instead of hiding them as PASS.
 
+## NODE-31 Current Closure Status
+
+The fail-closed P0 audit is anchored to real-browser evidence and remains `UNAVAILABLE` overall. Exact-head read-only CI #886 validates the current repository state with all permanent validators, lint, typecheck, full tests, build/package checks, five NODE-31 runtime gates and format checks passing.
+
+`visual-state-freeze-and-restore` is now PASS based on the final built visual-state runtime executing in real Chrome and proving CSS/WAAPI animations plus open-ShadowRoot media freeze during capture and restore afterward without permanent DOM/inline-state mutation.
+
+Three P0 blockers remain and must not be treated as PASS until direct evidence exists:
+
+1. `file-protocol-explicit-permission`;
+2. `geometry-preserving-correction-policy`;
+3. `raster-text-only-when-policy-justifies`.
+
 ## Next
 
-Freeze the exact NODE-31 acceptance scope from repository contracts, build the real-world compatibility/Release Candidate evidence harness, add a permanent NODE-31 validator, and merge only after exact-head CI and final release acceptance are green.
+Close the remaining three P0 blockers without weakening the frozen acceptance contract, beginning with real unpacked-extension `file://` permission/capture evidence, then finish the font geometry-correction and raster-text justification policies. Merge only after the final exact-head Release Candidate gates are green.

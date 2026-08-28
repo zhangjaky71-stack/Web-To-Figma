@@ -279,7 +279,10 @@ try {
   const frozenA = await readVisualState(client);
   await delay(350);
   const frozenB = await readVisualState(client);
-  assert(frozenA.freezeGlobalPresent && frozenB.freezeGlobalPresent, "Freeze transaction was not held");
+  assert(
+    frozenA.freezeGlobalPresent && frozenB.freezeGlobalPresent,
+    "Freeze transaction was not held",
+  );
   assert(
     frozenA.animationStates.every((state) => state === "paused") &&
       frozenB.animationStates.every((state) => state === "paused"),
@@ -292,7 +295,10 @@ try {
   assert(delta(frozenA.cssX, frozenB.cssX) <= 1, "CSS animated geometry changed while frozen");
   assert(delta(frozenA.waapiX, frozenB.waapiX) <= 1, "WAAPI geometry changed while frozen");
   assert(frozenA.mediaPaused && frozenB.mediaPaused, "Playing media was not paused during freeze");
-  assert(delta(frozenA.mediaTime, frozenB.mediaTime) <= 0.03, "Media timeline advanced while frozen");
+  assert(
+    delta(frozenA.mediaTime, frozenB.mediaTime) <= 0.03,
+    "Media timeline advanced while frozen",
+  );
   assert(
     frozenB.domSignature === originalDomSignature,
     "Freeze permanently mutated fixture DOM or inline state",
@@ -317,7 +323,10 @@ try {
   const restoredA = await readVisualState(client);
   await delay(300);
   const restoredB = await readVisualState(client);
-  assert(!restoredA.freezeGlobalPresent && !restoredB.freezeGlobalPresent, "Freeze global survived restore");
+  assert(
+    !restoredA.freezeGlobalPresent && !restoredB.freezeGlobalPresent,
+    "Freeze global survived restore",
+  );
   assert(
     animationProgressed(restoredA.animationTimes, restoredB.animationTimes),
     "Animations did not advance after restore",
@@ -326,10 +335,7 @@ try {
     delta(restoredA.cssX, restoredB.cssX) >= 3 || delta(restoredA.waapiX, restoredB.waapiX) >= 3,
     "Animated geometry did not advance after restore",
   );
-  assert(
-    restoredB.mediaTime - restoredA.mediaTime >= 0.08,
-    "Media did not advance after restore",
-  );
+  assert(restoredB.mediaTime - restoredA.mediaTime >= 0.08, "Media did not advance after restore");
   assert(
     restoredB.domSignature === originalDomSignature,
     "Restore left a permanent DOM or inline-state mutation",

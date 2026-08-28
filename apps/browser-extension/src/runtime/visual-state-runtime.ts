@@ -161,7 +161,9 @@ export async function restoreVisualStateInPage(
     throw new Error("Visual state is not frozen");
   }
   if (state.transactionId !== transactionId) {
-    throw new Error(`Visual state belongs to transaction ${state.transactionId}, not ${transactionId}`);
+    throw new Error(
+      `Visual state belongs to transaction ${state.transactionId}, not ${transactionId}`,
+    );
   }
 
   delete pageGlobal.__W2F_VISUAL_STATE_FREEZE_V1__;
@@ -235,7 +237,10 @@ function isFreezeReceipt(value: unknown, transactionId: string): value is Visual
   );
 }
 
-function isRestoreReceipt(value: unknown, transactionId: string): value is VisualStateRestoreReceipt {
+function isRestoreReceipt(
+  value: unknown,
+  transactionId: string,
+): value is VisualStateRestoreReceipt {
   return (
     isRecord(value) &&
     value.version === "1.0.0" &&

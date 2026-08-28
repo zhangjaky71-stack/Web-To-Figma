@@ -10,11 +10,13 @@ const manifestPath = join(extensionRoot, "manifest.json");
 const fixturePath = resolve("qa/corpus/node31/p0/file-protocol-runtime.html");
 const fixtureUrl = pathToFileURL(fixturePath).href;
 const chromeCandidates = [
+  process.env.W2F_EXTENSION_TEST_CHROME_BIN,
+  process.env.CHROMIUM_BIN,
+  "/usr/bin/chromium",
+  "/usr/bin/chromium-browser",
   process.env.CHROME_BIN,
   "/usr/bin/google-chrome",
   "/usr/bin/google-chrome-stable",
-  "/usr/bin/chromium",
-  "/usr/bin/chromium-browser",
 ].filter(Boolean);
 
 function assert(condition, message) {
@@ -27,7 +29,7 @@ async function findChrome() {
       await access(candidate);
       return candidate;
     } catch {
-      // Try the next runner-supported Chrome path.
+      // Try the next runner-supported Chrome/Chromium path.
     }
   }
   throw new Error(`Chrome executable not found. Checked: ${chromeCandidates.join(", ")}`);
@@ -263,7 +265,10 @@ try {
       );
     })`,
   );
-  assert(extensionInfo?.id, "Loaded unpacked Web-To-Figma extension was not found");
+  assert(
+    extensionInfo?.id,
+    `Loaded unpacked Web-To-Figma extension was not found with ${chromePath}`,
+  );
   const extensionId = extensionInfo.id;
   const extensionPageUrl = `chrome-extension://${extensionId}/options.html`;
 
@@ -381,6 +386,7 @@ try {
         evidenceType: "node31-file-protocol-browser-runtime",
         status: "PASS",
         chrome: browserVersion.product,
+        browserExecutable: chromePath,
         extensionArtifact: "apps/browser-extension/dist",
         sourceRuntimeArtifact: "apps/browser-extension/dist/runtime/source-runtime.js",
         captureArtifact:

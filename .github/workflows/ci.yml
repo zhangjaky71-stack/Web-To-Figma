@@ -73,6 +73,9 @@ jobs:
       - name: NODE-31 Standard capture runtime P0
         run: node scripts/run-node-31-standard-capture-runtime.mjs
 
+      - name: NODE-31 Visual-state freeze P0
+        run: node scripts/run-node-31-visual-state-runtime.mjs
+
       - name: NODE-31 Plugin UI choose-file P0
         run: node scripts/run-node-31-plugin-ui-runtime.mjs
 

@@ -6,7 +6,7 @@ on:
   pull_request:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   quality:
@@ -55,39 +55,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Materialize visual-state capture integration candidate
-        if: github.event_name == 'pull_request' && github.head_ref == 'node-31-real-world-compatibility-release-candidate'
-        run: |
-          node <<'NODE'
-          const fs = require('node:fs');
-          const path = 'apps/browser-extension/src/runtime/service-worker.ts';
-          let source = fs.readFileSync(path, 'utf8');
-
-          const importNeedle = 'import { resolveActiveTabSource } from "./source-runtime.js";\n';
-          const importReplacement = importNeedle + 'import { withFrozenVisualState } from "./visual-state-runtime.js";\n';
-          if (!source.includes(importNeedle)) throw new Error('visual-state import anchor missing');
-          if (!source.includes('withFrozenVisualState')) {
-            source = source.replace(importNeedle, importReplacement);
-          }
-
-          const shellNeedle = `    const { snapshot, receipt } = await capturePreferredDom(\n      tabId,\n      jobId,\n      captureTarget,\n      tab.url,\n      tab.title,\n    );`;
-          const shellReplacement = `    const { snapshot, receipt } = await withFrozenVisualState(tabId, () =>\n      capturePreferredDom(tabId, jobId, captureTarget, tab.url, tab.title),\n    );`;
-          if (!source.includes(shellNeedle) && !source.includes(shellReplacement)) {
-            throw new Error('single-capture integration anchor missing');
-          }
-          source = source.replace(shellNeedle, shellReplacement);
-
-          const responsiveNeedle = `      const artifactId = responsiveArtifactId(jobId, plan.id);\n      const captureOperation = () =>\n        captureCdpDom(tabId, artifactId, { type: "document" }, tab.url, tab.title, false);\n      const result =\n        plan.source === "synthetic"\n          ? await withHighFidelityViewportOverride(tabId, plan, captureOperation)\n          : await capturePreferredDom(tabId, artifactId, { type: "document" }, tab.url, tab.title);`;
-          const responsiveReplacement = `      const artifactId = responsiveArtifactId(jobId, plan.id);\n      const captureOperation = () =>\n        withFrozenVisualState(tabId, () =>\n          captureCdpDom(tabId, artifactId, { type: "document" }, tab.url, tab.title, false),\n        );\n      const result =\n        plan.source === "synthetic"\n          ? await withHighFidelityViewportOverride(tabId, plan, captureOperation)\n          : await withFrozenVisualState(tabId, () =>\n              capturePreferredDom(\n                tabId,\n                artifactId,\n                { type: "document" },\n                tab.url,\n                tab.title,\n              ),\n            );`;
-          if (!source.includes(responsiveNeedle) && !source.includes(responsiveReplacement)) {
-            throw new Error('responsive integration anchor missing');
-          }
-          source = source.replace(responsiveNeedle, responsiveReplacement);
-
-          fs.writeFileSync(path, source);
-          NODE
-          pnpm exec prettier apps/browser-extension/src/runtime/service-worker.ts --write
-
       - name: Lint
         run: pnpm lint
 
@@ -114,28 +81,3 @@ jobs:
 
       - name: Format check
         run: pnpm format:check
-
-      - name: Commit validated visual-state capture integration
-        if: github.event_name == 'pull_request' && github.head_ref == 'node-31-real-world-compatibility-release-candidate'
-        env:
-          HEAD_REF: ${{ github.head_ref }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          target="apps/browser-extension/src/runtime/service-worker.ts"
-          cp "$target" /tmp/service-worker.ts
-          git fetch origin "$HEAD_REF"
-          if [ "$(git rev-parse "origin/$HEAD_REF")" != "$HEAD_SHA" ]; then
-            echo "Branch head moved during validation; refusing to materialize stale capture integration."
-            exit 1
-          fi
-          git checkout -B "$HEAD_REF" "origin/$HEAD_REF"
-          cp /tmp/service-worker.ts "$target"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "$target"
-          if git diff --cached --quiet; then
-            echo "Visual-state capture integration is already materialized."
-            exit 0
-          fi
-          git commit -m "feat(node-31): freeze visual state during capture"
-          git push origin HEAD:"$HEAD_REF"

@@ -96,6 +96,7 @@ import {
   writeReferenceScreenshot,
 } from "./snapshot-store.js";
 import { resolveActiveTabSource } from "./source-runtime.js";
+import { withFrozenVisualState } from "./visual-state-runtime.js";
 import { persistWtfExport } from "./wtf-export-runtime.js";
 import { deleteWtfPackage } from "./wtf-package-store.js";
 
@@ -684,12 +685,8 @@ async function startShellJob(
     const captureTarget: RawCaptureTarget = region
       ? regionCaptureTarget(region)
       : { type: "document" };
-    const { snapshot, receipt } = await capturePreferredDom(
-      tabId,
-      jobId,
-      captureTarget,
-      tab.url,
-      tab.title,
+    const { snapshot, receipt } = await withFrozenVisualState(tabId, () =>
+      capturePreferredDom(tabId, jobId, captureTarget, tab.url, tab.title),
     );
 
     const cancelled = await wasJobCancelled(jobId);
@@ -843,11 +840,15 @@ async function startResponsiveJob(request: ResponsiveCaptureRequest): Promise<Ca
 
       const artifactId = responsiveArtifactId(jobId, plan.id);
       const captureOperation = () =>
-        captureCdpDom(tabId, artifactId, { type: "document" }, tab.url, tab.title, false);
+        withFrozenVisualState(tabId, () =>
+          captureCdpDom(tabId, artifactId, { type: "document" }, tab.url, tab.title, false),
+        );
       const result =
         plan.source === "synthetic"
           ? await withHighFidelityViewportOverride(tabId, plan, captureOperation)
-          : await capturePreferredDom(tabId, artifactId, { type: "document" }, tab.url, tab.title);
+          : await withFrozenVisualState(tabId, () =>
+              capturePreferredDom(tabId, artifactId, { type: "document" }, tab.url, tab.title),
+            );
       assertSnapshotMatchesResponsivePlan(result.snapshot, plan);
       const stableNodes = await buildResponsiveStableNodeEvidence(result.snapshot);
       snapshots.push(

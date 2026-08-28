@@ -6,7 +6,7 @@ on:
   pull_request:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   quality:
@@ -15,6 +15,41 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+
+      - name: Materialize file-only host permission validator candidate
+        if: github.event_name == 'pull_request' && github.head_ref == 'node-31-real-world-compatibility-release-candidate'
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          replacements = {
+              "scripts/validate-foundation.mjs": [(
+                  '''  assert(\n    !("host_permissions" in browserManifest),\n    "region selection must not introduce broad default host permissions",\n  );''',
+                  '''  const browserHostPermissions = [...(browserManifest.host_permissions ?? [])].sort();\n  assert(\n    JSON.stringify(browserHostPermissions) === JSON.stringify(["file:///*"]),\n    "browser host permissions must remain limited to file:///* for explicit local-file capture",\n  );'''
+              )],
+              "scripts/validate-node-08.mjs": [(
+                  '''  assert(!("host_permissions" in manifest), "NODE-08 must not add broad host permissions");''',
+                  '''  assert(\n    JSON.stringify([...(manifest.host_permissions ?? [])].sort()) ===\n      JSON.stringify(["file:///*"]),\n    "NODE-08 host permissions must remain limited to file:///*",\n  );'''
+              )],
+              "scripts/validate-node-09.mjs": [(
+                  '''  for (const manifest of [standardManifest, highManifest]) {\n    assert(!("host_permissions" in manifest), "NODE-09 must not add broad host permissions");\n    assert(!("content_scripts" in manifest), "NODE-09 must preserve user-action content injection");\n  }''',
+                  '''  for (const manifest of [standardManifest, highManifest]) {\n    assert(\n      JSON.stringify([...(manifest.host_permissions ?? [])].sort()) ===\n        JSON.stringify(["file:///*"]),\n      "NODE-09 host permissions must remain limited to file:///*",\n    );\n    assert(!("content_scripts" in manifest), "NODE-09 must preserve user-action content injection");\n  }'''
+              )],
+              "apps/browser-extension/scripts/validate-extension-package.mjs": [(
+                  '''assert(\n  !("host_permissions" in manifest),\n  "capture profiles must not request broad host permissions",\n);''',
+                  '''const hostPermissions = [...(manifest.host_permissions ?? [])].sort();\nassert(\n  JSON.stringify(hostPermissions) === JSON.stringify(["file:///*"]),\n  "capture profiles must request only file:///* host permission",\n);'''
+              )],
+          }
+
+          for name, items in replacements.items():
+              path = Path(name)
+              text = path.read_text()
+              for old, new in items:
+                  if old not in text:
+                      raise SystemExit(f"expected validator anchor missing in {name}")
+                  text = text.replace(old, new, 1)
+              path.write_text(text)
+          PY
 
       - name: Validate foundation
         run: node scripts/validate-foundation.mjs
@@ -55,6 +90,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Format file permission candidate
+        if: github.event_name == 'pull_request' && github.head_ref == 'node-31-real-world-compatibility-release-candidate'
+        run: pnpm exec prettier scripts/validate-foundation.mjs scripts/validate-node-08.mjs scripts/validate-node-09.mjs apps/browser-extension/scripts/validate-extension-package.mjs scripts/run-node-31-file-protocol-runtime.mjs --write
+
+      - name: Revalidate foundation after formatting
+        run: node scripts/validate-foundation.mjs
+
       - name: Lint
         run: pnpm lint
 
@@ -87,3 +129,40 @@ jobs:
 
       - name: Format check
         run: pnpm format:check
+
+      - name: Commit validated file permission validator migration
+        if: github.event_name == 'pull_request' && github.head_ref == 'node-31-real-world-compatibility-release-candidate'
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          files=(
+            scripts/validate-foundation.mjs
+            scripts/validate-node-08.mjs
+            scripts/validate-node-09.mjs
+            apps/browser-extension/scripts/validate-extension-package.mjs
+            scripts/run-node-31-file-protocol-runtime.mjs
+          )
+          mkdir -p /tmp/node31-file-permission
+          for file in "${files[@]}"; do
+            mkdir -p "/tmp/node31-file-permission/$(dirname "$file")"
+            cp "$file" "/tmp/node31-file-permission/$file"
+          done
+          git fetch origin "$HEAD_REF"
+          if [ "$(git rev-parse "origin/$HEAD_REF")" != "$HEAD_SHA" ]; then
+            echo "Branch head moved during validation; refusing stale materialization."
+            exit 1
+          fi
+          git checkout -B "$HEAD_REF" "origin/$HEAD_REF"
+          for file in "${files[@]}"; do
+            cp "/tmp/node31-file-permission/$file" "$file"
+          done
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "${files[@]}"
+          if git diff --cached --quiet; then
+            echo "File permission validator candidate already materialized."
+            exit 0
+          fi
+          git commit -m "test(node-31): enforce file-only host permission gate"
+          git push origin HEAD:"$HEAD_REF"

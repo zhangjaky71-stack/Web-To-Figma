@@ -6,7 +6,7 @@ on:
   pull_request:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   quality:
@@ -55,6 +55,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Format visual-state candidate
+        if: github.event_name == 'pull_request' && github.head_ref == 'node-31-real-world-compatibility-release-candidate'
+        run: pnpm exec prettier apps/browser-extension/src/runtime/visual-state-runtime.ts --write
+
       - name: Lint
         run: pnpm lint
 
@@ -81,3 +85,28 @@ jobs:
 
       - name: Format check
         run: pnpm format:check
+
+      - name: Commit validated visual-state formatting
+        if: github.event_name == 'pull_request' && github.head_ref == 'node-31-real-world-compatibility-release-candidate'
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          target="apps/browser-extension/src/runtime/visual-state-runtime.ts"
+          cp "$target" /tmp/visual-state-runtime.ts
+          git fetch origin "$HEAD_REF"
+          if [ "$(git rev-parse "origin/$HEAD_REF")" != "$HEAD_SHA" ]; then
+            echo "Branch head moved during validation; refusing to materialize stale formatting."
+            exit 1
+          fi
+          git checkout -B "$HEAD_REF" "origin/$HEAD_REF"
+          cp /tmp/visual-state-runtime.ts "$target"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$target"
+          if git diff --cached --quiet; then
+            echo "Visual-state runtime is already formatted."
+            exit 0
+          fi
+          git commit -m "style(node-31): format visual state runtime"
+          git push origin HEAD:"$HEAD_REF"

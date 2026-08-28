@@ -74,6 +74,18 @@ Every P0 checklist item must be either:
 
 A missing P0 item or an `approved-adr` disposition without an ADR id fails the gate.
 
+### Current P0 closure status
+
+The fail-closed audit `docs/qa/results/NODE-31_P0_AUDIT_882.json` now records `visual-state-freeze-and-restore` as PASS. CI #882 executes the final built visual-state runtime in real Chrome and proves CSS/WAAPI animations plus playing media inside an open ShadowRoot freeze during capture, then resume after restore with zero resume failures and no permanent DOM or inline-state mutation. Permanent read-only exact-head CI #886 then revalidates the repository with the 3-blocker P0 validator, full quality gates and all five NODE-31 runtime gates passing.
+
+NODE-31 remains `UNAVAILABLE` overall and is not Release Candidate ready. The remaining P0 blockers are exactly:
+
+1. `file-protocol-explicit-permission`;
+2. `geometry-preserving-correction-policy`;
+3. `raster-text-only-when-policy-justifies`.
+
+These items remain blockers until direct repository evidence plus an exact-head CI run proves the declared behavior; implementation presence alone is insufficient.
+
 ## 6. Security gate
 
 Release requires zero known critical/high security blockers and PASS evidence for all security fixture classes required by the contract:

@@ -32,9 +32,8 @@ function restoreReceipt(transactionId: string): VisualStateRestoreReceipt {
 
 describe("visual-state capture transaction", () => {
   it("freezes before capture and restores after success", async () => {
-    const executor = vi.fn<VisualStateActionExecutor>(
-      async (action, _tabId, transactionId) =>
-        action === "freeze" ? freezeReceipt(transactionId) : restoreReceipt(transactionId),
+    const executor = vi.fn<VisualStateActionExecutor>(async (action, _tabId, transactionId) =>
+      action === "freeze" ? freezeReceipt(transactionId) : restoreReceipt(transactionId),
     );
     const operation = vi.fn(async () => "captured");
 
@@ -47,9 +46,8 @@ describe("visual-state capture transaction", () => {
   });
 
   it("restores visual state when capture throws", async () => {
-    const executor = vi.fn<VisualStateActionExecutor>(
-      async (action, _tabId, transactionId) =>
-        action === "freeze" ? freezeReceipt(transactionId) : restoreReceipt(transactionId),
+    const executor = vi.fn<VisualStateActionExecutor>(async (action, _tabId, transactionId) =>
+      action === "freeze" ? freezeReceipt(transactionId) : restoreReceipt(transactionId),
     );
 
     await expect(

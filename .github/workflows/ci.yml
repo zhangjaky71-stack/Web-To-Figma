@@ -51,6 +51,86 @@ jobs:
               path.write_text(text)
           PY
 
+      - name: Materialize service-worker file permission runtime candidate
+        if: github.event_name == 'pull_request' && github.head_ref == 'node-31-real-world-compatibility-release-candidate'
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("scripts/run-node-31-file-protocol-runtime.mjs")
+          text = path.read_text()
+
+          helper_marker = "async function evaluate(client, expression) {"
+          if helper_marker not in text:
+              raise SystemExit("file runtime evaluate anchor missing")
+          helper = '''async function connectExtensionWorker(port, extensionId) {
+            const workerTarget = await waitForTarget(
+              port,
+              (target) =>
+                target.type === "service_worker" &&
+                target.url.startsWith(`chrome-extension://${extensionId}/`),
+              "Web-To-Figma MV3 service worker did not become debuggable",
+            );
+            const client = await CdpClient.connect(workerTarget.webSocketDebuggerUrl);
+            await client.send("Runtime.enable");
+            await waitFor(
+              client,
+              `typeof chrome?.extension?.isAllowedFileSchemeAccess === "function"`,
+              "MV3 service worker does not expose isAllowedFileSchemeAccess",
+            );
+            return client;
+          }
+
+          '''
+          if "async function connectExtensionWorker(" not in text:
+              text = text.replace(helper_marker, helper + helper_marker, 1)
+
+          start_marker = "  const extensionPageUrl = `chrome-extension://${extensionId}/options.html`;"
+          active_marker = "  const activeTabUrl = await evaluate("
+          start = text.find(start_marker)
+          active = text.find(active_marker, start)
+          if start < 0 or active < 0:
+              raise SystemExit("file runtime options-page block anchors missing")
+
+          replacement = '''  await updateFileAccess(primaryClient, extensionId, false);
+          extensionClient = await connectExtensionWorker(port, extensionId);
+          const disabledAccess = await evaluate(
+            extensionClient,
+            `chrome.extension.isAllowedFileSchemeAccess()`,
+          );
+          assert(disabledAccess === false, "Explicit file URL access disable did not take effect");
+          extensionClient.close();
+          extensionClient = undefined;
+
+          await waitFor(
+            primaryClient,
+            `typeof chrome?.developerPrivate?.updateExtensionConfiguration === "function"`,
+            "chrome.developerPrivate is unavailable before enabling file access",
+          );
+          await updateFileAccess(primaryClient, extensionId, true);
+          extensionClient = await connectExtensionWorker(port, extensionId);
+          const enabledAccess = await evaluate(
+            extensionClient,
+            `chrome.extension.isAllowedFileSchemeAccess()`,
+          );
+          assert(enabledAccess === true, "Explicit file URL access enable did not take effect");
+
+          await navigate(primaryClient, fixtureUrl, "file protocol fixture");
+          assert(
+            await evaluate(
+              primaryClient,
+              `document.querySelector('[data-node31-role="file-protocol-proof"]')?.textContent?.includes("NODE-31 explicit file URL permission runtime proof") === true`,
+            ),
+            "File protocol fixture content did not load",
+          );
+          await browserClient.send("Target.activateTarget", { targetId: primaryTarget.id });
+          await delay(100);
+
+          '''
+          text = text[:start] + replacement + text[active:]
+          path.write_text(text)
+          PY
+
       - name: Validate foundation
         run: node scripts/validate-foundation.mjs
 

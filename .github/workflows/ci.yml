@@ -54,6 +54,68 @@ jobs:
               path.write_text(text)
           PY
 
+      - name: Materialize file-access reload reactivation candidate
+        if: github.event_name == 'pull_request' && github.head_ref == 'node-31-real-world-compatibility-release-candidate'
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("scripts/run-node-31-file-protocol-runtime.mjs")
+          text = path.read_text()
+
+          helper_marker = "async function waitForProcessExit"
+          helper = '''async function reactivateUnpackedExtension(browserClient, expectedExtensionId, label) {
+            await delay(50);
+            try {
+              const loaded = await browserClient.send("Extensions.loadUnpacked", {
+                path: extensionRoot,
+                enableInIncognito: false,
+              });
+              assert(
+                loaded.id === expectedExtensionId,
+                `${label} changed extension identity: ${loaded.id ?? "missing"} !== ${expectedExtensionId}`,
+              );
+            } catch (error) {
+              const listedAfterError = await browserClient.send("Extensions.getExtensions");
+              assert(
+                listedAfterError.extensions?.some((extension) => extension.id === expectedExtensionId),
+                `${label} failed to reactivate the unpacked extension: ${String(error)}`,
+              );
+            }
+            const listed = await browserClient.send("Extensions.getExtensions");
+            assert(
+              listed.extensions?.some((extension) => extension.id === expectedExtensionId),
+              `${label} did not leave the unpacked extension active`,
+            );
+          }
+
+          '''
+          if "async function reactivateUnpackedExtension" not in text:
+              if helper_marker not in text:
+                  raise SystemExit("reactivation helper insertion marker missing")
+              text = text.replace(helper_marker, helper + helper_marker, 1)
+
+          replacements = [
+              (
+                  '''  await updateFileAccess(primaryClient, extensionId, false);\n  await navigate(primaryClient, extensionPageUrl, "extension options with file access disabled");''',
+                  '''  await updateFileAccess(primaryClient, extensionId, false);\n  await reactivateUnpackedExtension(\n    browserClient,\n    extensionId,\n    "file access disable reload",\n  );\n  await navigate(primaryClient, extensionPageUrl, "extension options with file access disabled");''',
+              ),
+              (
+                  '''  await updateFileAccess(primaryClient, extensionId, true);\n  await navigate(primaryClient, extensionPageUrl, "extension options with file access enabled");''',
+                  '''  await updateFileAccess(primaryClient, extensionId, true);\n  await reactivateUnpackedExtension(\n    browserClient,\n    extensionId,\n    "file access enable reload",\n  );\n  await navigate(primaryClient, extensionPageUrl, "extension options with file access enabled");''',
+              ),
+          ]
+          for old, new in replacements:
+              if old in text:
+                  text = text.replace(old, new, 1)
+              elif new in text:
+                  continue
+              else:
+                  raise SystemExit("file-access reactivation call anchor missing")
+
+          path.write_text(text)
+          PY
+
       - name: Validate foundation
         run: node scripts/validate-foundation.mjs
 

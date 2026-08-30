@@ -51,6 +51,37 @@ jobs:
               path.write_text(text)
           PY
 
+      - name: Materialize file runtime Chrome preference candidate
+        if: github.event_name == 'pull_request' && github.head_ref == 'node-31-real-world-compatibility-release-candidate'
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("scripts/run-node-31-file-protocol-runtime.mjs")
+          text = path.read_text()
+          old = '''const chromeCandidates = [
+            process.env.W2F_EXTENSION_TEST_CHROME_BIN,
+            process.env.CHROMIUM_BIN,
+            "/usr/bin/chromium",
+            "/usr/bin/chromium-browser",
+            process.env.CHROME_BIN,
+            "/usr/bin/google-chrome",
+            "/usr/bin/google-chrome-stable",
+          ].filter(Boolean);'''
+          new = '''const chromeCandidates = [
+            process.env.W2F_EXTENSION_TEST_CHROME_BIN,
+            process.env.CHROME_BIN,
+            "/usr/bin/google-chrome",
+            "/usr/bin/google-chrome-stable",
+            process.env.CHROMIUM_BIN,
+            "/usr/bin/chromium",
+            "/usr/bin/chromium-browser",
+          ].filter(Boolean);'''
+          if old not in text:
+              raise SystemExit("file runtime Chrome candidate anchor missing")
+          path.write_text(text.replace(old, new, 1))
+          PY
+
       - name: Validate foundation
         run: node scripts/validate-foundation.mjs
 

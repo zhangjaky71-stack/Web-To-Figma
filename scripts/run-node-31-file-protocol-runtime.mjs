@@ -1,6 +1,6 @@
 import { access, mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { spawn } from "node:child_process";
 import { setTimeout as delay } from "node:timers/promises";
@@ -11,12 +11,12 @@ const fixturePath = resolve("qa/corpus/node31/p0/file-protocol-runtime.html");
 const fixtureUrl = pathToFileURL(fixturePath).href;
 const chromeCandidates = [
   process.env.W2F_EXTENSION_TEST_CHROME_BIN,
-  process.env.CHROMIUM_BIN,
-  "/usr/bin/chromium",
-  "/usr/bin/chromium-browser",
   process.env.CHROME_BIN,
   "/usr/bin/google-chrome",
   "/usr/bin/google-chrome-stable",
+  process.env.CHROMIUM_BIN,
+  "/usr/bin/chromium",
+  "/usr/bin/chromium-browser",
 ].filter(Boolean);
 
 function assert(condition, message) {
@@ -35,90 +35,72 @@ async function findChrome() {
   throw new Error(`Chrome executable not found. Checked: ${chromeCandidates.join(", ")}`);
 }
 
-class CdpClient {
-  constructor(socket) {
-    this.socket = socket;
+class PipeCdpClient {
+  constructor(input, output, stderr) {
+    this.input = input;
+    this.output = output;
+    this.stderr = stderr;
     this.nextId = 1;
     this.pending = new Map();
-    socket.addEventListener("message", (event) => {
-      const message = JSON.parse(String(event.data));
-      if (typeof message.id !== "number") return;
-      const pending = this.pending.get(message.id);
-      if (!pending) return;
-      this.pending.delete(message.id);
-      if (message.error) {
-        pending.reject(new Error(`${message.error.code}: ${message.error.message}`));
-      } else {
-        pending.resolve(message.result ?? {});
+    this.buffer = "";
+
+    output.setEncoding("utf8");
+    output.on("data", (chunk) => {
+      this.buffer += chunk;
+      for (;;) {
+        const boundary = this.buffer.indexOf("\0");
+        if (boundary < 0) break;
+        const payload = this.buffer.slice(0, boundary);
+        this.buffer = this.buffer.slice(boundary + 1);
+        if (!payload) continue;
+
+        const message = JSON.parse(payload);
+        if (typeof message.id !== "number") continue;
+        const pending = this.pending.get(message.id);
+        if (!pending) continue;
+        this.pending.delete(message.id);
+        clearTimeout(pending.timeout);
+        if (message.error) {
+          pending.reject(new Error(`${message.error.code}: ${message.error.message}`));
+        } else {
+          pending.resolve(message.result ?? {});
+        }
       }
     });
-    socket.addEventListener("close", () => {
+
+    output.on("close", () => {
       for (const pending of this.pending.values()) {
-        pending.reject(new Error("CDP socket closed before response"));
+        clearTimeout(pending.timeout);
+        pending.reject(new Error(`CDP pipe closed before response.\n${this.stderr()}`));
       }
       this.pending.clear();
     });
   }
 
-  static async connect(url) {
-    assert(typeof WebSocket === "function", "Node.js WebSocket client is unavailable");
-    const socket = new WebSocket(url);
-    await new Promise((resolvePromise, reject) => {
-      socket.addEventListener("open", resolvePromise, { once: true });
-      socket.addEventListener("error", () => reject(new Error("Unable to open CDP WebSocket")), {
-        once: true,
-      });
-    });
-    return new CdpClient(socket);
-  }
-
-  send(method, params = {}) {
+  send(method, params = {}, sessionId) {
     const id = this.nextId++;
     return new Promise((resolvePromise, reject) => {
-      this.pending.set(id, { resolve: resolvePromise, reject });
-      this.socket.send(JSON.stringify({ id, method, params }));
+      const timeout = setTimeout(() => {
+        this.pending.delete(id);
+        reject(new Error(`Timed out waiting for CDP pipe response: ${method}.\n${this.stderr()}`));
+      }, 10000);
+      this.pending.set(id, { resolve: resolvePromise, reject, timeout });
+      this.input.write(
+        `${JSON.stringify({ id, method, params, ...(sessionId ? { sessionId } : {}) })}\0`,
+      );
     });
+  }
+
+  session(sessionId) {
+    return {
+      send: (method, params = {}) => this.send(method, params, sessionId),
+    };
   }
 
   close() {
-    this.socket.close();
+    this.input.end();
+    this.output.destroy();
   }
-}
-
-async function waitForDevToolsPort(profileDir, chromeProcess, stderr) {
-  const activePortPath = join(profileDir, "DevToolsActivePort");
-  for (let attempt = 0; attempt < 600; attempt += 1) {
-    if (chromeProcess.exitCode !== null) {
-      throw new Error(
-        `Chrome exited before CDP was ready (${chromeProcess.exitCode}).\n${stderr()}`,
-      );
-    }
-    try {
-      const [portLine] = (await readFile(activePortPath, "utf8")).trim().split("\n");
-      const port = Number.parseInt(portLine, 10);
-      if (Number.isInteger(port) && port > 0) return port;
-    } catch {
-      // DevToolsActivePort is created asynchronously by Chrome.
-    }
-    await delay(50);
-  }
-  throw new Error(`Timed out waiting for Chrome DevToolsActivePort.\n${stderr()}`);
-}
-
-async function listTargets(port) {
-  return fetch(`http://127.0.0.1:${port}/json/list`).then((response) => {
-    if (!response.ok) throw new Error(`Unable to query Chrome targets: HTTP ${response.status}`);
-    return response.json();
-  });
-}
-
-async function waitForTarget(port, predicate, message) {
-  for (let attempt = 0; attempt < 160; attempt += 1) {
-    const target = (await listTargets(port)).find(predicate);
-    if (target?.webSocketDebuggerUrl) return target;
-    await delay(50);
-  }
-  throw new Error(message);
 }
 
 async function evaluate(client, expression) {
@@ -134,7 +116,7 @@ async function evaluate(client, expression) {
 }
 
 async function waitFor(client, expression, message) {
-  for (let attempt = 0; attempt < 160; attempt += 1) {
+  for (let attempt = 0; attempt < 200; attempt += 1) {
     if (await evaluate(client, expression)) return;
     await delay(25);
   }
@@ -142,8 +124,26 @@ async function waitFor(client, expression, message) {
 }
 
 async function navigate(client, url, label) {
-  await client.send("Page.navigate", { url });
+  const response = await client.send("Page.navigate", { url });
+  if (response.errorText) {
+    throw new Error(`${label} navigation failed: ${response.errorText}`);
+  }
   await waitFor(client, `document.readyState === "complete"`, `${label} did not finish loading`);
+}
+
+async function createPageSession(browserClient, url, label) {
+  const created = await browserClient.send("Target.createTarget", { url });
+  assert(created.targetId, `Unable to create ${label} target`);
+  const attached = await browserClient.send("Target.attachToTarget", {
+    targetId: created.targetId,
+    flatten: true,
+  });
+  assert(attached.sessionId, `Unable to attach to ${label} target`);
+  const client = browserClient.session(attached.sessionId);
+  await client.send("Page.enable");
+  await client.send("Runtime.enable");
+  await waitFor(client, `document.readyState === "complete"`, `${label} did not finish loading`);
+  return { targetId: created.targetId, client };
 }
 
 async function updateFileAccess(client, extensionId, enabled) {
@@ -203,8 +203,6 @@ const profileDir = await mkdtemp(join(tmpdir(), "w2f-node31-file-protocol-"));
 const chromePath = await findChrome();
 let chromeProcess;
 let browserClient;
-let primaryClient;
-let extensionClient;
 let chromeStderr = "";
 
 try {
@@ -215,62 +213,58 @@ try {
       "--no-sandbox",
       "--disable-dev-shm-usage",
       "--disable-gpu",
-      "--remote-debugging-address=127.0.0.1",
-      "--remote-debugging-port=0",
+      "--remote-debugging-pipe",
+      "--enable-unsafe-extension-debugging",
       `--user-data-dir=${profileDir}`,
-      `--disable-extensions-except=${extensionRoot}`,
-      `--load-extension=${extensionRoot}`,
       "about:blank",
     ],
-    { stdio: ["ignore", "ignore", "pipe"] },
+    { stdio: ["ignore", "ignore", "pipe", "pipe", "pipe"] },
   );
   chromeProcess.stderr.setEncoding("utf8");
   chromeProcess.stderr.on("data", (chunk) => {
     chromeStderr = `${chromeStderr}${chunk}`.slice(-20000);
   });
 
-  const port = await waitForDevToolsPort(profileDir, chromeProcess, () => chromeStderr);
-  const version = await fetch(`http://127.0.0.1:${port}/json/version`).then((response) => {
-    if (!response.ok) throw new Error(`Unable to query Chrome version: HTTP ${response.status}`);
-    return response.json();
+  const pipeInput = chromeProcess.stdio[3];
+  const pipeOutput = chromeProcess.stdio[4];
+  assert(pipeInput && pipeOutput, "Chrome remote debugging pipe was not created");
+  browserClient = new PipeCdpClient(pipeInput, pipeOutput, () => chromeStderr);
+
+  const browserVersion = await browserClient.send("Browser.getVersion");
+  const loaded = await browserClient.send("Extensions.loadUnpacked", {
+    path: extensionRoot,
+    enableInIncognito: false,
   });
-  assert(version.webSocketDebuggerUrl, "Chrome did not expose a browser CDP target");
-  browserClient = await CdpClient.connect(version.webSocketDebuggerUrl);
-
-  const primaryTarget = await waitForTarget(
-    port,
-    (target) => target.type === "page" && target.url === "about:blank",
-    "Chrome did not expose the primary page target",
+  assert(loaded.id, `Extensions.loadUnpacked did not return an extension id.\n${chromeStderr}`);
+  const extensionId = loaded.id;
+  const listed = await browserClient.send("Extensions.getExtensions");
+  assert(
+    listed.extensions?.some((extension) => extension.id === extensionId),
+    `CDP did not list the newly loaded unpacked extension.\n${chromeStderr}`,
   );
-  primaryClient = await CdpClient.connect(primaryTarget.webSocketDebuggerUrl);
-  await primaryClient.send("Page.enable");
-  await primaryClient.send("Runtime.enable");
-  const browserVersion = await primaryClient.send("Browser.getVersion");
+  const extensionPageUrl = `chrome-extension://${extensionId}/options.html`;
 
-  await navigate(primaryClient, "chrome://extensions/", "chrome://extensions");
+  const primary = await createPageSession(
+    browserClient,
+    "chrome://extensions/",
+    "chrome://extensions",
+  );
+  const primaryClient = primary.client;
   await waitFor(
     primaryClient,
     `typeof chrome?.developerPrivate?.getExtensionsInfo === "function"`,
     "chrome.developerPrivate is unavailable on chrome://extensions",
   );
-
-  const extensionInfo = await evaluate(
+  await waitFor(
     primaryClient,
-    `new Promise((resolvePromise, reject) => {
+    `new Promise((resolvePromise) => {
       chrome.developerPrivate.getExtensionsInfo(
         { includeDisabled: true, includeTerminated: true },
-        (items) => chrome.runtime.lastError
-          ? reject(new Error(chrome.runtime.lastError.message))
-          : resolvePromise(items.find((item) => item.name.startsWith("Web-To-Figma Capture")) ?? null),
+        (items) => resolvePromise(items.some((item) => item.id === ${JSON.stringify(extensionId)})),
       );
     })`,
+    `CDP-loaded unpacked Web-To-Figma extension was not visible in chrome://extensions with ${chromePath}`,
   );
-  assert(
-    extensionInfo?.id,
-    `Loaded unpacked Web-To-Figma extension was not found with ${chromePath}`,
-  );
-  const extensionId = extensionInfo.id;
-  const extensionPageUrl = `chrome-extension://${extensionId}/options.html`;
 
   await updateFileAccess(primaryClient, extensionId, false);
   await navigate(primaryClient, extensionPageUrl, "extension options with file access disabled");
@@ -303,22 +297,9 @@ try {
     "File protocol fixture content did not load",
   );
 
-  const created = await browserClient.send("Target.createTarget", { url: extensionPageUrl });
-  assert(created.targetId, "Unable to create extension helper target");
-  const helperTarget = await waitForTarget(
-    port,
-    (target) => target.id === created.targetId || target.targetId === created.targetId,
-    "Extension helper target did not become debuggable",
-  );
-  extensionClient = await CdpClient.connect(helperTarget.webSocketDebuggerUrl);
-  await extensionClient.send("Page.enable");
-  await extensionClient.send("Runtime.enable");
-  await waitFor(
-    extensionClient,
-    `document.readyState === "complete"`,
-    "Extension helper page did not finish loading",
-  );
-  await browserClient.send("Target.activateTarget", { targetId: primaryTarget.id });
+  const helper = await createPageSession(browserClient, extensionPageUrl, "extension helper");
+  const extensionClient = helper.client;
+  await browserClient.send("Target.activateTarget", { targetId: primary.targetId });
   await delay(100);
 
   const activeTabUrl = await evaluate(
@@ -382,7 +363,7 @@ try {
   console.log(
     JSON.stringify(
       {
-        version: "1.0.0",
+        version: "1.1.0",
         evidenceType: "node31-file-protocol-browser-runtime",
         status: "PASS",
         chrome: browserVersion.product,
@@ -394,7 +375,7 @@ try {
         fixtureArtifact: "qa/corpus/node31/p0/file-protocol-runtime.html",
         assertions: [
           "built-manifest-declares-file-scheme-host-permission",
-          "unpacked-extension-loaded-in-real-chrome",
+          "unpacked-extension-loaded-through-modern-cdp-in-real-chrome",
           "chrome-user-setting-explicitly-disables-file-access",
           "public-extension-api-reports-file-access-disabled",
           "chrome-user-setting-explicitly-enables-file-access",
@@ -418,8 +399,6 @@ try {
     ),
   );
 } finally {
-  extensionClient?.close();
-  primaryClient?.close();
   browserClient?.close();
   await stopChrome(chromeProcess);
   await removeProfileDir(profileDir);

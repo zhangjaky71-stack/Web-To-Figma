@@ -96,18 +96,8 @@ jobs:
           path = Path("scripts/run-node-31-file-protocol-runtime.mjs")
           text = path.read_text()
 
-          class_anchor = '''  close() {
-            this.socket.close();
-          }
-          }
-
-          async function waitForDevToolsPort'''
-          class_replacement = '''  close() {
-            this.socket.close();
-          }
-          }
-
-          class PipeCdpClient {
+          marker = "async function waitForDevToolsPort"
+          insertion = '''class PipeCdpClient {
             constructor(input, output) {
               this.input = input;
               this.output = output;
@@ -212,11 +202,11 @@ jobs:
             }
           }
 
-          async function waitForDevToolsPort'''
-          if class_anchor in text:
-              text = text.replace(class_anchor, class_replacement, 1)
-          elif "class PipeCdpClient" not in text or "installUnpackedExtension" not in text:
-              raise SystemExit("modern extension loader class anchor missing")
+          '''
+          if "class PipeCdpClient" not in text:
+              if marker not in text:
+                  raise SystemExit("modern extension loader insertion marker missing")
+              text = text.replace(marker, insertion + marker, 1)
 
           try_anchor = '''try {
             chromeProcess = spawn('''

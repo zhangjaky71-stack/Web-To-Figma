@@ -33,12 +33,19 @@ jobs:
           elif management_new not in text:
               raise SystemExit("reactivation management-context anchor missing")
 
-          wake_old = '''  const extensionClient = await createExtensionWorkerSession(browserClient, extensionId);'''
-          wake_new = '''  console.log("NODE-31 file protocol: firing final unpacked extension reload through developerPrivate");\n  await waitFor(\n    primaryClient,\n    `typeof chrome?.developerPrivate?.reload === "function"`,\n    "chrome.developerPrivate.reload is unavailable on chrome://extensions",\n  );\n  await evaluate(\n    primaryClient,\n    `(() => {\n      chrome.developerPrivate.reload(\n        ${JSON.stringify(extensionId)},\n        { failQuietly: true, populateErrorForUnpacked: true },\n      );\n      return true;\n    })()`,\n  );\n  const extensionClient = await createExtensionWorkerSession(browserClient, extensionId);'''
-          if wake_old in text:
-              text = text.replace(wake_old, wake_new, 1)
-          elif wake_new not in text:
-              raise SystemExit("developerPrivate reload worker wake anchor missing")
+          listeners_anchor = '''    this.pending = new Map();\n    this.buffer = "";'''
+          listeners_replacement = '''    this.pending = new Map();\n    this.listeners = new Map();\n    this.buffer = "";'''
+          if listeners_anchor in text:
+              text = text.replace(listeners_anchor, listeners_replacement, 1)
+          elif listeners_replacement not in text:
+              raise SystemExit("CDP listener state anchor missing")
+
+          event_anchor = '''        const message = JSON.parse(payload);\n        if (typeof message.id !== "number") continue;\n        const pending = this.pending.get(message.id);'''
+          event_replacement = '''        const message = JSON.parse(payload);\n        if (typeof message.id !== "number") {\n          const listeners = this.listeners.get(message.method);\n          if (listeners) {\n            for (const listener of [...listeners]) listener(message.params ?? {});\n          }\n          continue;\n        }\n        const pending = this.pending.get(message.id);'''
+          if event_anchor in text:
+              text = text.replace(event_anchor, event_replacement, 1)
+          elif event_replacement not in text:
+              raise SystemExit("CDP event dispatch anchor missing")
 
           send_old = '''  send(method, params = {}, sessionId) {'''
           send_new = '''  send(method, params = {}, sessionId, timeoutMs = 10000) {'''
@@ -47,12 +54,33 @@ jobs:
           elif send_new not in text:
               raise SystemExit("CDP send timeout signature anchor missing")
 
+          on_anchor = '''  send(method, params = {}, sessionId, timeoutMs = 10000) {'''
+          on_replacement = '''  on(method, listener) {\n    const listeners = this.listeners.get(method) ?? new Set();\n    listeners.add(listener);\n    this.listeners.set(method, listeners);\n    return () => {\n      listeners.delete(listener);\n      if (listeners.size === 0) this.listeners.delete(method);\n    };\n  }\n\n  send(method, params = {}, sessionId, timeoutMs = 10000) {'''
+          if '  on(method, listener) {' not in text:
+              if on_anchor not in text:
+                  raise SystemExit("CDP event listener method anchor missing")
+              text = text.replace(on_anchor, on_replacement, 1)
+
           timeout_old = '''        reject(new Error(`Timed out waiting for CDP pipe response: ${method}.\\n${this.stderr()}`));\n      }, 10000);'''
           timeout_new = '''        reject(new Error(`Timed out waiting for CDP pipe response: ${method}.\\n${this.stderr()}`));\n      }, timeoutMs);'''
           if timeout_old in text:
               text = text.replace(timeout_old, timeout_new, 1)
           elif timeout_new not in text:
               raise SystemExit("CDP send timeout body anchor missing")
+
+          worker_old = '''async function createExtensionWorkerSession(browserClient, extensionId) {\n  const expectedUrl = `chrome-extension://${extensionId}/runtime/service-worker.js`;\n  for (let attempt = 0; attempt < 200; attempt += 1) {\n    const targets = await browserClient.send("Target.getTargets");\n    const worker = targets.targetInfos?.find(\n      (target) => target.type === "service_worker" && target.url === expectedUrl,\n    );\n    if (worker?.targetId) {\n      const attached = await browserClient.send("Target.attachToTarget", {\n        targetId: worker.targetId,\n        flatten: true,\n      });\n      assert(attached.sessionId, "Unable to attach to final extension service worker");\n      const client = browserClient.session(attached.sessionId);\n      await client.send("Runtime.enable");\n      await client.send("Runtime.runIfWaitingForDebugger");\n      const workerUrl = await evaluate(client, "self.location.href");\n      assert(workerUrl === expectedUrl, `Attached worker URL mismatch: ${workerUrl}`);\n      return client;\n    }\n    await delay(25);\n  }\n  const targets = await browserClient.send("Target.getTargets");\n  const summary = (targets.targetInfos ?? []).map((target) => ({\n    type: target.type,\n    url: target.url,\n  }));\n  throw new Error(`Final extension service worker target not found after unpacked reactivation. Targets: ${JSON.stringify(summary)}`);\n}\n'''
+          worker_new = '''async function armExtensionWorkerAutoAttach(browserClient, extensionId) {\n  const expectedUrl = `chrome-extension://${extensionId}/runtime/service-worker.js`;\n  let settled = false;\n  let resolveWorker;\n  let rejectWorker;\n  const workerPromise = new Promise((resolvePromise, rejectPromise) => {\n    resolveWorker = resolvePromise;\n    rejectWorker = rejectPromise;\n  });\n  const timeout = setTimeout(async () => {\n    if (settled) return;\n    settled = true;\n    unsubscribe();\n    const targets = await browserClient.send("Target.getTargets").catch(() => ({ targetInfos: [] }));\n    const summary = (targets.targetInfos ?? []).map((target) => ({\n      type: target.type,\n      url: target.url,\n    }));\n    rejectWorker(\n      new Error(\n        `Final extension service worker auto-attach event not observed. Targets: ${JSON.stringify(summary)}`,\n      ),\n    );\n  }, 8000);\n  const unsubscribe = browserClient.on("Target.attachedToTarget", (params) => {\n    const target = params.targetInfo;\n    if (\n      settled ||\n      target?.type !== "service_worker" ||\n      target.url !== expectedUrl ||\n      !params.sessionId\n    ) {\n      return;\n    }\n    settled = true;\n    clearTimeout(timeout);\n    unsubscribe();\n    resolveWorker({ sessionId: params.sessionId, expectedUrl });\n  });\n\n  await browserClient.send("Target.setDiscoverTargets", { discover: true });\n  await browserClient.send("Target.setAutoAttach", {\n    autoAttach: true,\n    waitForDebuggerOnStart: true,\n    flatten: true,\n  });\n\n  return async () => {\n    const worker = await workerPromise;\n    const client = browserClient.session(worker.sessionId);\n    await client.send("Runtime.enable");\n    await client.send("Runtime.runIfWaitingForDebugger");\n    const workerUrl = await evaluate(client, "self.location.href");\n    assert(workerUrl === worker.expectedUrl, `Attached worker URL mismatch: ${workerUrl}`);\n    await browserClient.send("Target.setAutoAttach", {\n      autoAttach: false,\n      waitForDebuggerOnStart: false,\n      flatten: true,\n    });\n    return client;\n  };\n}\n'''
+          if worker_old in text:
+              text = text.replace(worker_old, worker_new, 1)
+          elif worker_new not in text:
+              raise SystemExit("ephemeral worker helper anchor missing")
+
+          wake_old = '''  const extensionClient = await createExtensionWorkerSession(browserClient, extensionId);'''
+          wake_new = '''  const waitForExtensionWorker = await armExtensionWorkerAutoAttach(\n    browserClient,\n    extensionId,\n  );\n  console.log("NODE-31 file protocol: firing final unpacked extension reload through developerPrivate");\n  await waitFor(\n    primaryClient,\n    `typeof chrome?.developerPrivate?.reload === "function"`,\n    "chrome.developerPrivate.reload is unavailable on chrome://extensions",\n  );\n  await evaluate(\n    primaryClient,\n    `(() => {\n      chrome.developerPrivate.reload(\n        ${JSON.stringify(extensionId)},\n        { failQuietly: true, populateErrorForUnpacked: true },\n      );\n      return true;\n    })()`,\n  );\n  const extensionClient = await waitForExtensionWorker();'''
+          if wake_old in text:
+              text = text.replace(wake_old, wake_new, 1)
+          elif wake_new not in text:
+              raise SystemExit("auto-attach worker wake anchor missing")
 
           bootstrap_old = '''  const browserVersion = await browserClient.send("Browser.getVersion");'''
           bootstrap_new = '''  const browserVersion = await browserClient.send(\n    "Browser.getVersion",\n    {},\n    undefined,\n    60000,\n  );'''

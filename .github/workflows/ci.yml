@@ -18,7 +18,22 @@ jobs:
 
       - name: Materialize NODE-31 file permission candidate
         if: github.event_name == 'pull_request' && github.head_ref == 'node-31-real-world-compatibility-release-candidate'
-        run: python3 scripts/materialize-node31-file-permission-candidate.py
+        run: |
+          python3 scripts/materialize-node31-file-permission-candidate.py
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("scripts/run-node-31-file-protocol-runtime.mjs")
+          text = path.read_text()
+          old = '''  await reactivateUnpackedExtension(browserClient, extensionRoot, extensionId);\n  await waitFor(\n    primaryClient,\n    `new Promise((resolvePromise, reject) => {'''
+          new = '''  await reactivateUnpackedExtension(browserClient, extensionRoot, extensionId);\n  await navigate(\n    primaryClient,\n    "chrome://extensions/",\n    "chrome://extensions after unpacked reactivation",\n  );\n  await waitFor(\n    primaryClient,\n    `typeof chrome?.developerPrivate?.getExtensionInfo === "function"`,\n    "chrome.developerPrivate did not recover after unpacked reactivation",\n  );\n  await waitFor(\n    primaryClient,\n    `new Promise((resolvePromise, reject) => {'''
+          if old not in text:
+              if new not in text:
+                  raise SystemExit("reactivation management-context anchor missing")
+          else:
+              text = text.replace(old, new, 1)
+          path.write_text(text)
+          PY
 
       - name: Validate foundation
         run: node scripts/validate-foundation.mjs

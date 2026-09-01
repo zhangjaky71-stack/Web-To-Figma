@@ -3,6 +3,20 @@ from pathlib import Path
 path = Path("scripts/run-node-31-file-protocol-runtime.mjs")
 text = path.read_text()
 
+send_old = '''  send(method, params = {}, sessionId) {'''
+send_new = '''  send(method, params = {}, sessionId, timeoutMs = 10000) {'''
+if send_old in text:
+    text = text.replace(send_old, send_new, 1)
+elif send_new not in text:
+    raise SystemExit("CDP send timeout signature anchor missing")
+
+timeout_old = '''        reject(new Error(`Timed out waiting for CDP pipe response: ${method}.\\n${this.stderr()}`));\n      }, 10000);'''
+timeout_new = '''        reject(new Error(`Timed out waiting for CDP pipe response: ${method}.\\n${this.stderr()}`));\n      }, timeoutMs);'''
+if timeout_old in text:
+    text = text.replace(timeout_old, timeout_new, 1)
+elif timeout_new not in text:
+    raise SystemExit("CDP send timeout body anchor missing")
+
 session_old = '''  session(sessionId) {\n    return {\n      send: (method, params = {}) => this.send(method, params, sessionId),\n    };\n  }'''
 session_new = '''  session(sessionId) {\n    return {\n      send: (method, params = {}, timeoutMs = 10000) =>\n        this.send(method, params, sessionId, timeoutMs),\n    };\n  }'''
 if session_old in text:
@@ -16,6 +30,13 @@ if evaluate_old in text:
     text = text.replace(evaluate_old, evaluate_new, 1)
 elif evaluate_new not in text:
     raise SystemExit("Runtime.evaluate timeout anchor missing")
+
+bootstrap_old = '''  const browserVersion = await browserClient.send("Browser.getVersion");'''
+bootstrap_new = '''  const browserVersion = await browserClient.send(\n    "Browser.getVersion",\n    {},\n    undefined,\n    60000,\n  );'''
+if bootstrap_old in text:
+    text = text.replace(bootstrap_old, bootstrap_new, 1)
+elif bootstrap_new not in text:
+    raise SystemExit("Browser.getVersion bootstrap anchor missing")
 
 start_marker = '  console.log("NODE-31 file protocol: reactivating final unpacked extension after permission change");'
 end_marker = '  console.log(\n    JSON.stringify('

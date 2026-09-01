@@ -2,7 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - node-31-real-world-compatibility-release-candidate
   pull_request:
 
 permissions:
@@ -17,7 +19,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Materialize NODE-31 file permission candidate
-        if: github.event_name == 'pull_request' && github.head_ref == 'node-31-real-world-compatibility-release-candidate'
+        if: (github.event_name == 'pull_request' && github.head_ref == 'node-31-real-world-compatibility-release-candidate') || (github.event_name == 'push' && github.ref_name == 'node-31-real-world-compatibility-release-candidate')
         run: |
           python3 scripts/materialize-node31-file-permission-candidate.py
           python3 scripts/materialize-node31-file-popup-path-candidate.py
@@ -66,7 +68,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Format file permission candidate
-        if: github.event_name == 'pull_request' && github.head_ref == 'node-31-real-world-compatibility-release-candidate'
+        if: (github.event_name == 'pull_request' && github.head_ref == 'node-31-real-world-compatibility-release-candidate') || (github.event_name == 'push' && github.ref_name == 'node-31-real-world-compatibility-release-candidate')
         run: pnpm exec prettier scripts/validate-foundation.mjs scripts/validate-node-08.mjs scripts/validate-node-09.mjs apps/browser-extension/scripts/validate-extension-package.mjs scripts/run-node-31-file-protocol-runtime.mjs --write
 
       - name: Revalidate foundation after formatting
@@ -106,10 +108,10 @@ jobs:
         run: pnpm format:check
 
       - name: Commit validated file permission candidate
-        if: github.event_name == 'pull_request' && github.head_ref == 'node-31-real-world-compatibility-release-candidate'
+        if: (github.event_name == 'pull_request' && github.head_ref == 'node-31-real-world-compatibility-release-candidate') || (github.event_name == 'push' && github.ref_name == 'node-31-real-world-compatibility-release-candidate')
         env:
-          HEAD_REF: ${{ github.head_ref }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          HEAD_REF: ${{ github.head_ref || github.ref_name }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           files=(
             scripts/validate-foundation.mjs

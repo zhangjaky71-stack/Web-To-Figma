@@ -54,7 +54,7 @@ jobs:
               path.write_text(text)
           PY
 
-      - name: Materialize file-access reload reactivation candidate
+      - name: Materialize file-access management-state runtime candidate
         if: github.event_name == 'pull_request' && github.head_ref == 'node-31-real-world-compatibility-release-candidate'
         run: |
           python3 - <<'PY'
@@ -63,56 +63,24 @@ jobs:
           path = Path("scripts/run-node-31-file-protocol-runtime.mjs")
           text = path.read_text()
 
-          helper_marker = "async function waitForProcessExit"
-          helper = '''async function reactivateUnpackedExtension(browserClient, expectedExtensionId, label) {
-            await delay(50);
-            try {
-              const loaded = await browserClient.send("Extensions.loadUnpacked", {
-                path: extensionRoot,
-                enableInIncognito: false,
-              });
-              assert(
-                loaded.id === expectedExtensionId,
-                `${label} changed extension identity: ${loaded.id ?? "missing"} !== ${expectedExtensionId}`,
-              );
-            } catch (error) {
-              const listedAfterError = await browserClient.send("Extensions.getExtensions");
-              assert(
-                listedAfterError.extensions?.some((extension) => extension.id === expectedExtensionId),
-                `${label} failed to reactivate the unpacked extension: ${String(error)}`,
-              );
-            }
-            const listed = await browserClient.send("Extensions.getExtensions");
-            assert(
-              listed.extensions?.some((extension) => extension.id === expectedExtensionId),
-              `${label} did not leave the unpacked extension active`,
-            );
-          }
+          old = '''  await updateFileAccess(primaryClient, extensionId, false);\n  await navigate(primaryClient, extensionPageUrl, "extension options with file access disabled");\n  const disabledAccess = await evaluate(\n    primaryClient,\n    `chrome.extension.isAllowedFileSchemeAccess()`,\n  );\n  assert(disabledAccess === false, "Explicit file URL access disable did not take effect");\n\n  await navigate(primaryClient, "chrome://extensions/", "chrome://extensions after disable");\n  await waitFor(\n    primaryClient,\n    `typeof chrome?.developerPrivate?.updateExtensionConfiguration === "function"`,\n    "chrome.developerPrivate did not recover after extension reload",\n  );\n  await updateFileAccess(primaryClient, extensionId, true);\n  await navigate(primaryClient, extensionPageUrl, "extension options with file access enabled");\n  const enabledAccess = await evaluate(\n    primaryClient,\n    `chrome.extension.isAllowedFileSchemeAccess()`,\n  );\n  assert(enabledAccess === true, "Explicit file URL access enable did not take effect");'''
 
-          '''
-          if "async function reactivateUnpackedExtension" not in text:
-              if helper_marker not in text:
-                  raise SystemExit("reactivation helper insertion marker missing")
-              text = text.replace(helper_marker, helper + helper_marker, 1)
+          new = '''  console.log("NODE-31 file protocol: disabling explicit file access");\n  await updateFileAccess(primaryClient, extensionId, false);\n  await waitFor(\n    primaryClient,\n    `new Promise((resolvePromise, reject) => {\n      chrome.developerPrivate.getExtensionInfo(\n        ${JSON.stringify(extensionId)},\n        (info) => chrome.runtime.lastError\n          ? reject(new Error(chrome.runtime.lastError.message))\n          : resolvePromise(info.fileAccess?.isEnabled === true && info.fileAccess?.isActive === false),\n      );\n    })`,\n    "Chrome extension management state did not report file access disabled",\n  );\n  const disabledAccess = await evaluate(\n    primaryClient,\n    `new Promise((resolvePromise, reject) => {\n      chrome.developerPrivate.getExtensionInfo(\n        ${JSON.stringify(extensionId)},\n        (info) => chrome.runtime.lastError\n          ? reject(new Error(chrome.runtime.lastError.message))\n          : resolvePromise(info.fileAccess ?? null),\n      );\n    })`,\n  );\n  assert(disabledAccess?.isEnabled === true, "File access permission toggle is unavailable");\n  assert(disabledAccess?.isActive === false, "Explicit file URL access disable did not take effect");\n\n  console.log("NODE-31 file protocol: enabling explicit file access");\n  await updateFileAccess(primaryClient, extensionId, true);\n  await waitFor(\n    primaryClient,\n    `new Promise((resolvePromise, reject) => {\n      chrome.developerPrivate.getExtensionInfo(\n        ${JSON.stringify(extensionId)},\n        (info) => chrome.runtime.lastError\n          ? reject(new Error(chrome.runtime.lastError.message))\n          : resolvePromise(info.fileAccess?.isEnabled === true && info.fileAccess?.isActive === true),\n      );\n    })`,\n    "Chrome extension management state did not report file access enabled",\n  );\n  const enabledAccess = await evaluate(\n    primaryClient,\n    `new Promise((resolvePromise, reject) => {\n      chrome.developerPrivate.getExtensionInfo(\n        ${JSON.stringify(extensionId)},\n        (info) => chrome.runtime.lastError\n          ? reject(new Error(chrome.runtime.lastError.message))\n          : resolvePromise(info.fileAccess ?? null),\n      );\n    })`,\n  );\n  assert(enabledAccess?.isEnabled === true, "File access permission toggle became unavailable");\n  assert(enabledAccess?.isActive === true, "Explicit file URL access enable did not take effect");'''
 
-          replacements = [
-              (
-                  '''  await updateFileAccess(primaryClient, extensionId, false);\n  await navigate(primaryClient, extensionPageUrl, "extension options with file access disabled");''',
-                  '''  await updateFileAccess(primaryClient, extensionId, false);\n  await reactivateUnpackedExtension(\n    browserClient,\n    extensionId,\n    "file access disable reload",\n  );\n  await navigate(primaryClient, extensionPageUrl, "extension options with file access disabled");''',
-              ),
-              (
-                  '''  await updateFileAccess(primaryClient, extensionId, true);\n  await navigate(primaryClient, extensionPageUrl, "extension options with file access enabled");''',
-                  '''  await updateFileAccess(primaryClient, extensionId, true);\n  await reactivateUnpackedExtension(\n    browserClient,\n    extensionId,\n    "file access enable reload",\n  );\n  await navigate(primaryClient, extensionPageUrl, "extension options with file access enabled");''',
-              ),
-          ]
-          for old, new in replacements:
-              if old in text:
-                  text = text.replace(old, new, 1)
-              elif new in text:
-                  continue
-              else:
-                  raise SystemExit("file-access reactivation call anchor missing")
-
+          if old not in text:
+              raise SystemExit("file-access state transition anchor missing")
+          text = text.replace(old, new, 1)
+          text = text.replace('version: "1.1.0"', 'version: "1.2.0"', 1)
+          text = text.replace(
+              '"public-extension-api-reports-file-access-disabled",',
+              '"chrome-management-state-reports-file-access-disabled",',
+              1,
+          )
+          text = text.replace(
+              '"public-extension-api-reports-file-access-enabled",',
+              '"chrome-management-state-reports-file-access-enabled",\n          "public-extension-api-reports-file-access-enabled",',
+              1,
+          )
           path.write_text(text)
           PY
 
@@ -229,5 +197,5 @@ jobs:
             echo "File permission validator candidate already materialized."
             exit 0
           fi
-          git commit -m "test(node-31): enforce file-only host permission gate"
+          git commit -m "test(node-31): enforce explicit file access runtime gate"
           git push origin HEAD:"$HEAD_REF"

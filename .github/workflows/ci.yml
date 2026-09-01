@@ -34,11 +34,11 @@ jobs:
               raise SystemExit("reactivation management-context anchor missing")
 
           wake_old = '''  const extensionClient = await createExtensionWorkerSession(browserClient, extensionId);'''
-          wake_new = '''  console.log("NODE-31 file protocol: probing page-session ServiceWorker domain");\n  const pageDomains = await primaryClient.send("Schema.getDomains");\n  const pageDomainNames = (pageDomains.domains ?? []).map((domain) => domain.name).sort();\n  console.log(`NODE-31 file protocol: page-session domains ${JSON.stringify(pageDomainNames)}`);\n  assert(\n    pageDomainNames.includes("ServiceWorker"),\n    `Page target session does not expose ServiceWorker domain: ${JSON.stringify(pageDomainNames)}`,\n  );\n  await primaryClient.send("ServiceWorker.enable");\n  await primaryClient.send("ServiceWorker.startWorker", {\n    scopeURL: `chrome-extension://${extensionId}/`,\n  });\n  const extensionClient = await createExtensionWorkerSession(browserClient, extensionId);'''
+          wake_new = '''  console.log("NODE-31 file protocol: reloading final unpacked extension through developerPrivate");\n  await waitFor(\n    primaryClient,\n    `typeof chrome?.developerPrivate?.reload === "function"`,\n    "chrome.developerPrivate.reload is unavailable on chrome://extensions",\n  );\n  await evaluate(\n    primaryClient,\n    `new Promise((resolvePromise, reject) => {\n      chrome.developerPrivate.reload(\n        ${JSON.stringify(extensionId)},\n        { failQuietly: true, populateErrorForUnpacked: true },\n        () => chrome.runtime.lastError\n          ? reject(new Error(chrome.runtime.lastError.message))\n          : resolvePromise(true),\n      );\n    })`,\n  );\n  const extensionClient = await createExtensionWorkerSession(browserClient, extensionId);'''
           if wake_old in text:
               text = text.replace(wake_old, wake_new, 1)
           elif wake_new not in text:
-              raise SystemExit("page-session worker wake anchor missing")
+              raise SystemExit("developerPrivate reload worker wake anchor missing")
 
           send_old = '''  send(method, params = {}, sessionId) {'''
           send_new = '''  send(method, params = {}, sessionId, timeoutMs = 10000) {'''

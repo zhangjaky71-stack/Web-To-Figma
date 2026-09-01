@@ -23,6 +23,7 @@ jobs:
           python3 scripts/materialize-node31-file-action-candidate.py
           python3 scripts/materialize-node31-file-tab-target-candidate.py
           python3 scripts/materialize-node31-file-cleanup-candidate.py
+          python3 scripts/materialize-node31-file-xvfb-candidate.py
 
       - name: Validate foundation
         run: node scripts/validate-foundation.mjs
@@ -83,7 +84,9 @@ jobs:
         run: pnpm build
 
       - name: NODE-31 File protocol P0
-        run: node scripts/run-node-31-file-protocol-runtime.mjs
+        run: |
+          command -v xvfb-run
+          xvfb-run -a node scripts/run-node-31-file-protocol-runtime.mjs
 
       - name: NODE-31 Browser runtime P0
         run: node scripts/run-node-31-browser-runtime.mjs

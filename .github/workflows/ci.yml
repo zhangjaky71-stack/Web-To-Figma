@@ -25,13 +25,21 @@ jobs:
 
           path = Path("scripts/run-node-31-file-protocol-runtime.mjs")
           text = path.read_text()
-          old = '''  await reactivateUnpackedExtension(browserClient, extensionRoot, extensionId);\n  await waitFor(\n    primaryClient,\n    `new Promise((resolvePromise, reject) => {'''
-          new = '''  await reactivateUnpackedExtension(browserClient, extensionRoot, extensionId);\n  await navigate(\n    primaryClient,\n    "chrome://extensions/",\n    "chrome://extensions after unpacked reactivation",\n  );\n  await waitFor(\n    primaryClient,\n    `typeof chrome?.developerPrivate?.getExtensionInfo === "function"`,\n    "chrome.developerPrivate did not recover after unpacked reactivation",\n  );\n  await waitFor(\n    primaryClient,\n    `new Promise((resolvePromise, reject) => {'''
-          if old not in text:
-              if new not in text:
-                  raise SystemExit("reactivation management-context anchor missing")
-          else:
-              text = text.replace(old, new, 1)
+
+          management_old = '''  await reactivateUnpackedExtension(browserClient, extensionRoot, extensionId);\n  await waitFor(\n    primaryClient,\n    `new Promise((resolvePromise, reject) => {'''
+          management_new = '''  await reactivateUnpackedExtension(browserClient, extensionRoot, extensionId);\n  await navigate(\n    primaryClient,\n    "chrome://extensions/",\n    "chrome://extensions after unpacked reactivation",\n  );\n  await waitFor(\n    primaryClient,\n    `typeof chrome?.developerPrivate?.getExtensionInfo === "function"`,\n    "chrome.developerPrivate did not recover after unpacked reactivation",\n  );\n  await waitFor(\n    primaryClient,\n    `new Promise((resolvePromise, reject) => {'''
+          if management_old in text:
+              text = text.replace(management_old, management_new, 1)
+          elif management_new not in text:
+              raise SystemExit("reactivation management-context anchor missing")
+
+          wake_old = '''  const extensionClient = await createExtensionWorkerSession(browserClient, extensionId);'''
+          wake_new = '''  console.log("NODE-31 file protocol: probing page-session ServiceWorker domain");\n  const pageDomains = await primaryClient.send("Schema.getDomains");\n  const pageDomainNames = (pageDomains.domains ?? []).map((domain) => domain.name).sort();\n  console.log(`NODE-31 file protocol: page-session domains ${JSON.stringify(pageDomainNames)}`);\n  assert(\n    pageDomainNames.includes("ServiceWorker"),\n    `Page target session does not expose ServiceWorker domain: ${JSON.stringify(pageDomainNames)}`,\n  );\n  await primaryClient.send("ServiceWorker.enable");\n  await primaryClient.send("ServiceWorker.startWorker", {\n    scopeURL: `chrome-extension://${extensionId}/`,\n  });\n  const extensionClient = await createExtensionWorkerSession(browserClient, extensionId);'''
+          if wake_old in text:
+              text = text.replace(wake_old, wake_new, 1)
+          elif wake_new not in text:
+              raise SystemExit("page-session worker wake anchor missing")
+
           path.write_text(text)
           PY
 
@@ -93,6 +101,9 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: NODE-31 File protocol P0
+        run: node scripts/run-node-31-file-protocol-runtime.mjs
+
       - name: NODE-31 Browser runtime P0
         run: node scripts/run-node-31-browser-runtime.mjs
 
@@ -101,9 +112,6 @@ jobs:
 
       - name: NODE-31 Visual-state freeze P0
         run: node scripts/run-node-31-visual-state-runtime.mjs
-
-      - name: NODE-31 File protocol P0
-        run: node scripts/run-node-31-file-protocol-runtime.mjs
 
       - name: NODE-31 Plugin UI choose-file P0
         run: node scripts/run-node-31-plugin-ui-runtime.mjs

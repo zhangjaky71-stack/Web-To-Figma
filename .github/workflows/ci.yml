@@ -25,6 +25,7 @@ jobs:
           python3 scripts/materialize-node31-file-popup-path-candidate.py
           python3 scripts/materialize-node31-file-popup-options-url-candidate.py
           python3 scripts/materialize-node31-file-worker-message-candidate.py
+          python3 scripts/materialize-node31-file-open-devtools-candidate.py
           python3 scripts/materialize-node31-file-bootstrap-candidate.py
           python3 scripts/materialize-node31-file-cleanup-candidate.py
 

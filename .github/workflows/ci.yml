@@ -22,6 +22,7 @@ jobs:
           python3 scripts/materialize-node31-file-permission-candidate.py
           python3 scripts/materialize-node31-file-popup-path-candidate.py
           python3 scripts/materialize-node31-file-popup-options-url-candidate.py
+          python3 scripts/materialize-node31-file-worker-message-candidate.py
           python3 scripts/materialize-node31-file-cleanup-candidate.py
 
       - name: Validate foundation
@@ -137,5 +138,5 @@ jobs:
             echo "File permission candidate already materialized."
             exit 0
           fi
-          git commit -m "test(node-31): enforce packaged popup file runtime gate"
+          git commit -m "test(node-31): enforce worker-routed file runtime gate"
           git push origin HEAD:"$HEAD_REF"

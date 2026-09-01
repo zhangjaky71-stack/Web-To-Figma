@@ -40,6 +40,27 @@ jobs:
           elif wake_new not in text:
               raise SystemExit("page-session worker wake anchor missing")
 
+          send_old = '''  send(method, params = {}, sessionId) {'''
+          send_new = '''  send(method, params = {}, sessionId, timeoutMs = 10000) {'''
+          if send_old in text:
+              text = text.replace(send_old, send_new, 1)
+          elif send_new not in text:
+              raise SystemExit("CDP send timeout signature anchor missing")
+
+          timeout_old = '''        reject(new Error(`Timed out waiting for CDP pipe response: ${method}.\\n${this.stderr()}`));\n      }, 10000);'''
+          timeout_new = '''        reject(new Error(`Timed out waiting for CDP pipe response: ${method}.\\n${this.stderr()}`));\n      }, timeoutMs);'''
+          if timeout_old in text:
+              text = text.replace(timeout_old, timeout_new, 1)
+          elif timeout_new not in text:
+              raise SystemExit("CDP send timeout body anchor missing")
+
+          bootstrap_old = '''  const browserVersion = await browserClient.send("Browser.getVersion");'''
+          bootstrap_new = '''  const browserVersion = await browserClient.send(\n    "Browser.getVersion",\n    {},\n    undefined,\n    60000,\n  );'''
+          if bootstrap_old in text:
+              text = text.replace(bootstrap_old, bootstrap_new, 1)
+          elif bootstrap_new not in text:
+              raise SystemExit("Browser.getVersion bootstrap anchor missing")
+
           path.write_text(text)
           PY
 

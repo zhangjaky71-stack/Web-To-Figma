@@ -85,8 +85,9 @@ jobs:
 
       - name: NODE-31 File protocol P0
         run: |
+          command -v dbus-run-session
           command -v xvfb-run
-          xvfb-run -a node scripts/run-node-31-file-protocol-runtime.mjs
+          dbus-run-session -- xvfb-run -a node scripts/run-node-31-file-protocol-runtime.mjs
 
       - name: NODE-31 Browser runtime P0
         run: node scripts/run-node-31-browser-runtime.mjs

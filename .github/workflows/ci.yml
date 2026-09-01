@@ -21,6 +21,7 @@ jobs:
         run: |
           python3 scripts/materialize-node31-file-permission-candidate.py
           python3 scripts/materialize-node31-file-popup-path-candidate.py
+          python3 scripts/materialize-node31-file-popup-options-url-candidate.py
           python3 scripts/materialize-node31-file-cleanup-candidate.py
 
       - name: Validate foundation

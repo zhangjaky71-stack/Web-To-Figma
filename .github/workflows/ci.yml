@@ -21,6 +21,7 @@ jobs:
         run: |
           python3 scripts/materialize-node31-file-permission-candidate.py
           python3 scripts/materialize-node31-file-action-candidate.py
+          python3 scripts/materialize-node31-file-tab-target-candidate.py
 
       - name: Validate foundation
         run: node scripts/validate-foundation.mjs

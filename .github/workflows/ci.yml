@@ -20,10 +20,8 @@ jobs:
         if: github.event_name == 'pull_request' && github.head_ref == 'node-31-real-world-compatibility-release-candidate'
         run: |
           python3 scripts/materialize-node31-file-permission-candidate.py
-          python3 scripts/materialize-node31-file-action-candidate.py
-          python3 scripts/materialize-node31-file-tab-target-candidate.py
+          python3 scripts/materialize-node31-file-popup-path-candidate.py
           python3 scripts/materialize-node31-file-cleanup-candidate.py
-          python3 scripts/materialize-node31-file-xvfb-candidate.py
 
       - name: Validate foundation
         run: node scripts/validate-foundation.mjs
@@ -84,10 +82,7 @@ jobs:
         run: pnpm build
 
       - name: NODE-31 File protocol P0
-        run: |
-          command -v dbus-run-session
-          command -v xvfb-run
-          dbus-run-session -- xvfb-run -a node scripts/run-node-31-file-protocol-runtime.mjs
+        run: node scripts/run-node-31-file-protocol-runtime.mjs
 
       - name: NODE-31 Browser runtime P0
         run: node scripts/run-node-31-browser-runtime.mjs
@@ -141,5 +136,5 @@ jobs:
             echo "File permission candidate already materialized."
             exit 0
           fi
-          git commit -m "test(node-31): enforce explicit file action runtime gate"
+          git commit -m "test(node-31): enforce packaged popup file runtime gate"
           git push origin HEAD:"$HEAD_REF"

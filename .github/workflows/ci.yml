@@ -7,7 +7,7 @@ on:
   pull_request:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   quality:
@@ -16,12 +16,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-
-      - name: Materialize NODE-31 font geometry promotion candidate
-        if: github.event_name == 'pull_request' && github.head_ref == 'node-31-real-world-compatibility-release-candidate'
-        run: |
-          python3 scripts/materialize-node31-font-geometry-promotion.py
-          python3 scripts/materialize-node31-font-geometry-audit-anchor-fix.py
 
       - name: Validate foundation
         run: node scripts/validate-foundation.mjs
@@ -62,13 +56,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Format font geometry promotion candidate
-        if: github.event_name == 'pull_request' && github.head_ref == 'node-31-real-world-compatibility-release-candidate'
-        run: pnpm exec prettier scripts/validate-node-31-p0.mjs docs/qa/NODE-31_RC_EVIDENCE_V1.json docs/qa/results/NODE-31_P0_AUDIT_1034.json --write
-
-      - name: Revalidate NODE-31 P0 audit after formatting
-        run: node scripts/validate-node-31-p0.mjs
-
       - name: Lint
         run: pnpm lint
 
@@ -104,38 +91,3 @@ jobs:
 
       - name: Format check
         run: pnpm format:check
-
-      - name: Commit validated font geometry promotion
-        if: github.event_name == 'pull_request' && github.head_ref == 'node-31-real-world-compatibility-release-candidate'
-        env:
-          HEAD_REF: ${{ github.head_ref }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          files=(
-            docs/qa/results/NODE-31_P0_AUDIT_1034.json
-            docs/qa/NODE-31_RC_EVIDENCE_V1.json
-            scripts/validate-node-31-p0.mjs
-          )
-          mkdir -p /tmp/node31-font-geometry-promotion
-          for file in "${files[@]}"; do
-            mkdir -p "/tmp/node31-font-geometry-promotion/$(dirname "$file")"
-            cp "$file" "/tmp/node31-font-geometry-promotion/$file"
-          done
-          git fetch origin "$HEAD_REF"
-          if [ "$(git rev-parse "origin/$HEAD_REF")" != "$HEAD_SHA" ]; then
-            echo "Branch head moved during validation; refusing stale materialization."
-            exit 1
-          fi
-          git checkout -B "$HEAD_REF" "origin/$HEAD_REF"
-          for file in "${files[@]}"; do
-            cp "/tmp/node31-font-geometry-promotion/$file" "$file"
-          done
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "${files[@]}"
-          if git diff --cached --quiet; then
-            echo "Font geometry promotion already materialized."
-            exit 0
-          fi
-          git commit -m "docs(node-31): promote font geometry P0 evidence"
-          git push origin HEAD:"$HEAD_REF"

@@ -78,7 +78,7 @@ jobs:
 
       - name: Format file permission candidate
         if: (github.event_name == 'pull_request' && github.head_ref == 'node-31-real-world-compatibility-release-candidate') || (github.event_name == 'push' && github.ref_name == 'node-31-real-world-compatibility-release-candidate')
-        run: pnpm exec prettier scripts/validate-foundation.mjs scripts/validate-node-08.mjs scripts/validate-node-09.mjs apps/browser-extension/scripts/validate-extension-package.mjs apps/browser-extension/src/runtime/service-worker.ts scripts/run-node-31-file-protocol-runtime.mjs --write
+        run: pnpm exec prettier scripts/validate-foundation.mjs scripts/validate-node-08.mjs scripts/validate-node-09.mjs apps/browser-extension/scripts/validate-extension-package.mjs apps/browser-extension/src/runtime/service-worker.ts apps/browser-extension/src/runtime/source-runtime.ts scripts/run-node-31-file-protocol-runtime.mjs --write
 
       - name: Revalidate foundation after formatting
         run: node scripts/validate-foundation.mjs
@@ -128,6 +128,7 @@ jobs:
             scripts/validate-node-09.mjs
             apps/browser-extension/scripts/validate-extension-package.mjs
             apps/browser-extension/src/runtime/service-worker.ts
+            apps/browser-extension/src/runtime/source-runtime.ts
             scripts/run-node-31-file-protocol-runtime.mjs
           )
           mkdir -p /tmp/node31-file-permission

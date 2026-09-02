@@ -1,0 +1,105 @@
+{
+  "version": "1.0.0",
+  "evidenceType": "node31-p0-closure",
+  "contract": "docs/ACCEPTANCE_CONTRACT_V2.md",
+  "historicalAudit": "docs/qa/results/NODE-31_P0_AUDIT_1034.json",
+  "auditedFunctionalHead": "ed8416058bcc1eaf1332ffec2fca06bbac0d3a65",
+  "ci": {
+    "runNumber": 1053,
+    "runId": 33621614377,
+    "jobId": 100219671800,
+    "pullRequest": 38,
+    "branch": "node-31-real-world-compatibility-release-candidate",
+    "branchHead": "ed8416058bcc1eaf1332ffec2fca06bbac0d3a65",
+    "base": "28b52dc3e0d3074bf76205c8deb324a06dfe9e23",
+    "conclusion": "PASS",
+    "qualityChecks": {
+      "node31Validator": "PASS",
+      "node31CorpusValidator": "PASS",
+      "node31P0HistoricalValidator": "PASS",
+      "lint": "PASS",
+      "typecheck": "PASS",
+      "tests": "PASS",
+      "build": "PASS",
+      "fileProtocolRuntime": "PASS",
+      "browserRuntime": "PASS",
+      "standardCaptureRuntime": "PASS",
+      "visualStateRuntime": "PASS",
+      "pluginUiChooseFileRuntime": "PASS",
+      "pluginCanvasDropRuntime": "PASS",
+      "fontGeometryRuntime": "PASS",
+      "format": "PASS"
+    }
+  },
+  "closedBlocker": {
+    "id": "raster-text-only-when-policy-justifies",
+    "status": "PASS",
+    "sourceArtifacts": [
+      "apps/figma-plugin/src/raster-text-policy.ts",
+      "apps/figma-plugin/test/raster-text-policy.test.ts",
+      "apps/figma-plugin/src/figma-hybrid-renderer.ts",
+      "apps/figma-plugin/test/hybrid-raster.test.ts"
+    ],
+    "reason": "Exact-head CI #1053 runs the permanent raster-text authorization unit and hybrid integration tests together with lint, strict typecheck, full tests and build. The production policy preserves ordinary text natively when raster fallback reasons are only font, typography, geometry, text-quality, pixel-similarity or QA-score related; design-friendly always preserves ordinary text; balanced/high-fidelity authorize raster text only when the raster boundary carries an explicit visual/compositing dependency. Hybrid planning applies the same decision before stripping text/assets or creating a raster surface, so a font/substitution mismatch cannot silently become screenshot text."
+  },
+  "assertions": [
+    {
+      "id": "policy-version-is-1.0.0",
+      "status": "PASS"
+    },
+    {
+      "id": "design-friendly-preserves-ordinary-text",
+      "status": "PASS"
+    },
+    {
+      "id": "balanced-high-fidelity-require-visual-justification",
+      "status": "PASS"
+    },
+    {
+      "id": "font-only-reason-does-not-authorize-raster-text",
+      "status": "PASS"
+    },
+    {
+      "id": "geometry-only-reason-does-not-authorize-raster-text",
+      "status": "PASS"
+    },
+    {
+      "id": "pixel-score-only-reason-does-not-authorize-raster-text",
+      "status": "PASS"
+    },
+    {
+      "id": "mixed-visual-and-font-reasons-authorize-from-visual-cause-only",
+      "status": "PASS"
+    },
+    {
+      "id": "native-pass-preserves-text-when-policy-denies-raster",
+      "status": "PASS"
+    },
+    {
+      "id": "hybrid-plan-omits-raster-surface-when-policy-denies-raster",
+      "status": "PASS"
+    },
+    {
+      "id": "hybrid-plan-rasterizes-text-only-when-policy-authorizes",
+      "status": "PASS"
+    },
+    {
+      "id": "exact-head-ci-tests-typecheck-build-pass",
+      "status": "PASS"
+    }
+  ],
+  "policy": {
+    "historicalBlockingUnavailableCount": 1,
+    "currentBlockingUnavailableCount": 0,
+    "p0Status": "PASS",
+    "unavailableIsPass": false
+  },
+  "notProvenByThisArtifact": [
+    "zero-known-critical-security-blockers",
+    "zero-known-high-security-blockers",
+    "known-limitations-currentness",
+    "Class-A-visual-geometry-text-asset-structure-measurements",
+    "Class-B-browser-to-wtf-to-Figma-measurements",
+    "final-release-readiness"
+  ]
+}

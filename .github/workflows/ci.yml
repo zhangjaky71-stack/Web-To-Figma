@@ -41,6 +41,9 @@ jobs:
       - name: Validate NODE-31 P0 audit
         run: node scripts/validate-node-31-p0.mjs
 
+      - name: Validate NODE-31 P0 closure
+        run: node scripts/validate-node-31-p0-closure.mjs
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:

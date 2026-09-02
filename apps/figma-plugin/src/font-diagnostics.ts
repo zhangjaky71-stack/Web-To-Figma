@@ -14,10 +14,7 @@ export interface W2fFontSubstitutionDiagnostic {
 }
 
 export type W2fFontGeometryCorrectionStatus =
-  | "within-tolerance"
-  | "corrected"
-  | "attempted-unvalidated"
-  | "skipped-invalid-geometry";
+  "within-tolerance" | "corrected" | "attempted-unvalidated" | "skipped-invalid-geometry";
 
 export interface W2fFontGeometryCorrectionDiagnostic {
   version: typeof W2F_FONT_GEOMETRY_CORRECTION_VERSION;
@@ -61,20 +58,14 @@ function clamp(value: number, minimum: number, maximum: number): number {
 }
 
 export function fontGeometryErrorRatio(targetHeight: number, measuredHeight: number): number {
-  if (!finitePositive(targetHeight) || !Number.isFinite(measuredHeight)) return Number.POSITIVE_INFINITY;
+  if (!finitePositive(targetHeight) || !Number.isFinite(measuredHeight))
+    return Number.POSITIVE_INFINITY;
   return Math.abs(measuredHeight - targetHeight) / targetHeight;
 }
 
-export function fontGeometryCorrectionScale(
-  targetHeight: number,
-  measuredHeight: number,
-): number {
+export function fontGeometryCorrectionScale(targetHeight: number, measuredHeight: number): number {
   if (!finitePositive(targetHeight) || !finitePositive(measuredHeight)) return 1;
-  return clamp(
-    targetHeight / measuredHeight,
-    MIN_FONT_GEOMETRY_SCALE,
-    MAX_FONT_GEOMETRY_SCALE,
-  );
+  return clamp(targetHeight / measuredHeight, MIN_FONT_GEOMETRY_SCALE, MAX_FONT_GEOMETRY_SCALE);
 }
 
 function isFontGeometryTextNode(root: PluginDataWriter): root is FontGeometryTextNode {

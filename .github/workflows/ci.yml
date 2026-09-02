@@ -29,6 +29,7 @@ jobs:
           python3 scripts/materialize-node31-file-ui-inspect-candidate.py
           python3 scripts/materialize-node31-file-worker-permission-check-candidate.py
           python3 scripts/materialize-node31-file-window-focus-candidate.py
+          python3 scripts/materialize-node31-sender-tab-routing-candidate.py
           python3 scripts/materialize-node31-file-bootstrap-candidate.py
           python3 scripts/materialize-node31-file-cleanup-candidate.py
 
@@ -73,7 +74,7 @@ jobs:
 
       - name: Format file permission candidate
         if: (github.event_name == 'pull_request' && github.head_ref == 'node-31-real-world-compatibility-release-candidate') || (github.event_name == 'push' && github.ref_name == 'node-31-real-world-compatibility-release-candidate')
-        run: pnpm exec prettier scripts/validate-foundation.mjs scripts/validate-node-08.mjs scripts/validate-node-09.mjs apps/browser-extension/scripts/validate-extension-package.mjs scripts/run-node-31-file-protocol-runtime.mjs --write
+        run: pnpm exec prettier scripts/validate-foundation.mjs scripts/validate-node-08.mjs scripts/validate-node-09.mjs apps/browser-extension/scripts/validate-extension-package.mjs apps/browser-extension/src/runtime/service-worker.ts scripts/run-node-31-file-protocol-runtime.mjs --write
 
       - name: Revalidate foundation after formatting
         run: node scripts/validate-foundation.mjs
@@ -122,6 +123,7 @@ jobs:
             scripts/validate-node-08.mjs
             scripts/validate-node-09.mjs
             apps/browser-extension/scripts/validate-extension-package.mjs
+            apps/browser-extension/src/runtime/service-worker.ts
             scripts/run-node-31-file-protocol-runtime.mjs
           )
           mkdir -p /tmp/node31-file-permission
@@ -145,5 +147,5 @@ jobs:
             echo "File permission candidate already materialized."
             exit 0
           fi
-          git commit -m "test(node-31): enforce worker-routed file runtime gate"
+          git commit -m "test(node-31): enforce sender-routed file runtime gate"
           git push origin HEAD:"$HEAD_REF"

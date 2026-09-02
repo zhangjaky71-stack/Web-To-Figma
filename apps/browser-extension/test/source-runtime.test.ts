@@ -2,21 +2,12 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { resolveActiveTabSource } from "../src/runtime/source-runtime.js";
 
 const fileUrl = "file:///tmp/node31-file-source.html";
-const fileTab: chrome.tabs.Tab = {
+const fileTab = {
   id: 31,
   url: fileUrl,
   title: "NODE-31 File Source",
-  active: true,
   windowId: 7,
-  index: 0,
-  pinned: false,
-  highlighted: true,
-  incognito: false,
-  selected: true,
-  discarded: false,
-  autoDiscardable: true,
-  groupId: -1,
-};
+} as unknown as chrome.tabs.Tab;
 
 function installChromeMock(fileSchemeAccess: boolean) {
   const query = vi.fn().mockResolvedValue([fileTab]);

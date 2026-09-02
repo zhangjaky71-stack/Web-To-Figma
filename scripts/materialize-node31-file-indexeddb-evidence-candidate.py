@@ -24,7 +24,7 @@ new = '''  const snapshot = await evaluate(
         const value = await new Promise((resolve, reject) => {
           const transaction = database.transaction("rawSnapshots", "readonly");
           const request = transaction.objectStore("rawSnapshots").get(
-            ${JSON.stringify(f"raw-snapshot:{job.jobId}")},
+            ${JSON.stringify(`raw-snapshot:${job.jobId}`)},
           );
           request.onerror = () => reject(request.error ?? new Error("failed to read RawSnapshot"));
           request.onsuccess = () => resolve(request.result ?? null);

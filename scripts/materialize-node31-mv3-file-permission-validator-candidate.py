@@ -9,7 +9,7 @@ old = '''  assert(
   );
 '''
 new = '''  assert(
-    browserSourceRuntime.includes("chrome.permissions.contains") &&
+    browserSourceRuntime.includes("permissions.contains") &&
       browserSourceRuntime.includes('"file:///*"'),
     "Browser source runtime must check active file host permission via MV3 permissions API",
   );

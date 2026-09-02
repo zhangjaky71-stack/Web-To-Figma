@@ -4,11 +4,10 @@ on:
   push:
     branches:
       - main
-      - node-31-real-world-compatibility-release-candidate
   pull_request:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   quality:
@@ -17,25 +16,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-
-      - name: Materialize NODE-31 file permission candidate
-        if: (github.event_name == 'pull_request' && github.head_ref == 'node-31-real-world-compatibility-release-candidate') || (github.event_name == 'push' && github.ref_name == 'node-31-real-world-compatibility-release-candidate')
-        run: |
-          python3 scripts/materialize-node31-file-permission-candidate.py
-          python3 scripts/materialize-node31-mv3-file-permission-validator-candidate.py
-          python3 scripts/materialize-node31-file-popup-path-candidate.py
-          python3 scripts/materialize-node31-file-popup-options-url-candidate.py
-          python3 scripts/materialize-node31-file-worker-message-candidate.py
-          python3 scripts/materialize-node31-file-ui-inspect-candidate.py
-          python3 scripts/materialize-node31-file-worker-readiness-candidate.py
-          python3 scripts/materialize-node31-file-worker-permission-check-candidate.py
-          python3 scripts/materialize-node31-file-window-focus-candidate.py
-          python3 scripts/materialize-node31-sender-tab-routing-candidate.py
-          python3 scripts/materialize-node31-file-high-fidelity-profile-candidate.py
-          python3 scripts/materialize-node31-file-indexeddb-evidence-candidate.py
-          python3 scripts/materialize-node31-file-editable-text-evidence-candidate.py
-          python3 scripts/materialize-node31-file-bootstrap-candidate.py
-          python3 scripts/materialize-node31-file-cleanup-candidate.py
 
       - name: Validate foundation
         run: node scripts/validate-foundation.mjs
@@ -76,13 +56,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Format file permission candidate
-        if: (github.event_name == 'pull_request' && github.head_ref == 'node-31-real-world-compatibility-release-candidate') || (github.event_name == 'push' && github.ref_name == 'node-31-real-world-compatibility-release-candidate')
-        run: pnpm exec prettier scripts/validate-foundation.mjs scripts/validate-node-08.mjs scripts/validate-node-09.mjs apps/browser-extension/scripts/validate-extension-package.mjs apps/browser-extension/src/runtime/service-worker.ts apps/browser-extension/src/runtime/source-runtime.ts scripts/run-node-31-file-protocol-runtime.mjs --write
-
-      - name: Revalidate foundation after formatting
-        run: node scripts/validate-foundation.mjs
-
       - name: Lint
         run: pnpm lint
 
@@ -115,42 +88,3 @@ jobs:
 
       - name: Format check
         run: pnpm format:check
-
-      - name: Commit validated file permission candidate
-        if: (github.event_name == 'pull_request' && github.head_ref == 'node-31-real-world-compatibility-release-candidate') || (github.event_name == 'push' && github.ref_name == 'node-31-real-world-compatibility-release-candidate')
-        env:
-          HEAD_REF: ${{ github.head_ref || github.ref_name }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-        run: |
-          files=(
-            scripts/validate-foundation.mjs
-            scripts/validate-node-08.mjs
-            scripts/validate-node-09.mjs
-            apps/browser-extension/scripts/validate-extension-package.mjs
-            apps/browser-extension/src/runtime/service-worker.ts
-            apps/browser-extension/src/runtime/source-runtime.ts
-            scripts/run-node-31-file-protocol-runtime.mjs
-          )
-          mkdir -p /tmp/node31-file-permission
-          for file in "${files[@]}"; do
-            mkdir -p "/tmp/node31-file-permission/$(dirname "$file")"
-            cp "$file" "/tmp/node31-file-permission/$file"
-          done
-          git fetch origin "$HEAD_REF"
-          if [ "$(git rev-parse "origin/$HEAD_REF")" != "$HEAD_SHA" ]; then
-            echo "Branch head moved during validation; refusing stale materialization."
-            exit 1
-          fi
-          git checkout -B "$HEAD_REF" "origin/$HEAD_REF"
-          for file in "${files[@]}"; do
-            cp "/tmp/node31-file-permission/$file" "$file"
-          done
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "${files[@]}"
-          if git diff --cached --quiet; then
-            echo "File permission candidate already materialized."
-            exit 0
-          fi
-          git commit -m "test(node-31): enforce sender-routed high-fidelity file runtime gate"
-          git push origin HEAD:"$HEAD_REF"

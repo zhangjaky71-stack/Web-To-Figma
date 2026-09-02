@@ -1,0 +1,15 @@
+from pathlib import Path
+
+path = Path('apps/figma-plugin/test/hybrid-raster.test.ts')
+text = path.read_text()
+
+old = '''  it("strips text/assets from raster nodes during the native visual pass", () => {\n    const source = tree();\n    const fallback = source.nodes.find((item) => item.id === "fallback")!;\n    fallback.text = { value: "unsafe", runs: [], fragments: [] };\n    const nativePass = renderTreeForNativePass(source);\n    const sanitized = nativePass.nodes.find((item) => item.id === "fallback")!;\n    expect(sanitized.text).toBeUndefined();\n    expect(sanitized.assetRefs).toEqual([]);\n    expect(source.nodes.find((item) => item.id === "fallback")?.assetRefs).toEqual([\n      "asset-fallback",\n    ]);\n  });\n'''
+new = '''  it("strips text/assets only when a balanced raster boundary has an explicit visual dependency", () => {\n    const source = tree();\n    const fallback = source.nodes.find((item) => item.id === "fallback")!;\n    fallback.text = { value: "unsafe", runs: [], fragments: [] };\n    fallback.renderDecision.reasons = [\n      "mix-blend-mode depends on sibling/ancestor backdrop pixels",\n    ];\n    const nativePass = renderTreeForNativePass(source, "balanced");\n    const sanitized = nativePass.nodes.find((item) => item.id === "fallback")!;\n    expect(sanitized.text).toBeUndefined();\n    expect(sanitized.assetRefs).toEqual([]);\n    expect(source.nodes.find((item) => item.id === "fallback")?.assetRefs).toEqual([\n      "asset-fallback",\n    ]);\n  });\n\n  it("preserves text natively and omits the raster surface when only text-quality reasons exist", () => {\n    const source = tree();\n    const fallback = source.nodes.find((item) => item.id === "fallback")!;\n    fallback.text = { value: "editable", runs: [], fragments: [] };\n    fallback.renderDecision.reasons = [\n      "font substitution mismatch",\n      "pixel similarity score improved by raster",\n    ];\n\n    const nativePass = renderTreeForNativePass(source, "high-fidelity");\n    const preserved = nativePass.nodes.find((item) => item.id === "fallback")!;\n    expect(preserved.text?.value).toBe("editable");\n    expect(preserved.renderStrategy).toBe("native");\n    expect(preserved.assetRefs).toEqual(["asset-fallback"]);\n\n    const plan = createHybridRasterPlan(\n      source,\n      ["root", "fallback"],\n      {\n        references: [reference()],\n        tilePayloadsByPath: { "references/tiles/tile-1.png": new Uint8Array([1, 2, 3]) },\n      },\n      "high-fidelity",\n    );\n    expect(plan.surfaces).toEqual([]);\n    expect(plan.nativePreserved).toHaveLength(1);\n    expect(plan.nativePreserved[0]).toMatchObject({\n      boundaryRenderNodeId: "fallback",\n      status: "native-preserved",\n      profile: "high-fidelity",\n    });\n  });\n'''
+
+if old in text:
+    text = text.replace(old, new, 1)
+elif new not in text:
+    raise SystemExit('hybrid raster historical test anchor missing')
+
+path.write_text(text)
+print('NODE-31 hybrid raster policy integration tests materialized.')

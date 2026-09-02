@@ -5,7 +5,7 @@ const root = process.cwd();
 const failures = [];
 
 const manifestPath = "docs/qa/NODE-31_RC_EVIDENCE_V1.json";
-const auditPath = "docs/qa/results/NODE-31_P0_AUDIT_882.json";
+const auditPath = "docs/qa/results/NODE-31_P0_AUDIT_1017.json";
 const runtimeEvidencePath = "docs/qa/results/NODE-31_BROWSER_RUNTIME_EVIDENCE_764.json";
 const fontEvidencePath = "docs/qa/results/NODE-31_FONT_EVIDENCE_781.json";
 const pixelEvidencePath = "docs/qa/results/NODE-31_PIXEL_GROUND_TRUTH_EVIDENCE_798.json";
@@ -14,6 +14,7 @@ const standardCaptureEvidencePath =
 const pluginUiEvidencePath = "docs/qa/results/NODE-31_PLUGIN_UI_EVIDENCE_847.json";
 const pluginCanvasEvidencePath = "docs/qa/results/NODE-31_PLUGIN_CANVAS_DROP_EVIDENCE_861.json";
 const visualStateEvidencePath = "docs/qa/results/NODE-31_VISUAL_STATE_RUNTIME_EVIDENCE_882.json";
+const fileProtocolEvidencePath = "docs/qa/results/NODE-31_FILE_PROTOCOL_RUNTIME_EVIDENCE_1017.json";
 
 const runtimeHarnessPath = "scripts/run-node-31-browser-runtime.mjs";
 const runtimeProductSourcePath = "apps/browser-extension/src/runtime/content-script.ts";
@@ -56,6 +57,14 @@ const visualStateServiceWorkerPath = "apps/browser-extension/src/runtime/service
 const visualStateTestPath = "apps/browser-extension/test/visual-state-runtime.test.ts";
 const visualStateFixturePath = "qa/corpus/node31/p0/visual-state-runtime.html";
 const visualStateBuiltArtifactPath = "apps/browser-extension/dist/runtime/visual-state-runtime.js";
+const fileProtocolHarnessPath = "scripts/run-node-31-file-protocol-runtime.mjs";
+const fileProtocolFixturePath = "qa/corpus/node31/p0/file-protocol-runtime.html";
+const fileProtocolManifestPath = "apps/browser-extension/static/manifest.json";
+const fileProtocolHighFidelityManifestPath =
+  "apps/browser-extension/static/manifest.high-fidelity.json";
+const fileProtocolSourceRuntimePath = "apps/browser-extension/src/runtime/source-runtime.ts";
+const fileProtocolServiceWorkerPath = "apps/browser-extension/src/runtime/service-worker.ts";
+const fileProtocolSnapshotStorePath = "apps/browser-extension/src/runtime/snapshot-store.ts";
 
 const requiredIds = {
   capture: [
@@ -96,7 +105,6 @@ const requiredIds = {
 };
 
 const expectedBlockingIds = [
-  "file-protocol-explicit-permission",
   "geometry-preserving-correction-policy",
   "raster-text-only-when-policy-justifies",
 ].sort();
@@ -168,6 +176,27 @@ const expectedPluginCanvasAssertions = [
   "canvas-drop-destination-preserved-to-render-request",
   "canvas-drop-parsed-render-tree-handoff-preserved",
   "canvas-drop-parsed-source-graph-handoff-preserved",
+].sort();
+
+const expectedFileProtocolAssertions = [
+  "built-manifest-declares-file-scheme-host-permission",
+  "unpacked-extension-loaded-through-modern-cdp-in-real-chrome",
+  "chrome-management-state-explicitly-disables-file-access",
+  "chrome-management-state-explicitly-enables-file-access",
+  "real-file-url-fixture-loads-after-explicit-permission",
+  "trusted-chrome-extensions-ui-inspect-click-starts-inactive-extension-service-worker",
+  "inspected-high-fidelity-worker-resumes-and-exposes-required-extension-apis",
+  "final-service-worker-resolves-real-file-tab-for-message-injection",
+  "production-message-injection-targets-prevalidated-file-tab-id",
+  "file-tab-extension-world-dispatches-production-runtime-messages",
+  "production-source-capability-resolves-active-file-tab-ready",
+  "production-full-page-job-completes-on-file-url",
+  "completed-job-preserves-file-source-and-page-url",
+  "completed-job-uses-high-fidelity-cdp-capture-adapter",
+  "completed-job-persists-raw-snapshot",
+  "service-worker-origin-indexeddb-exposes-persisted-raw-snapshot",
+  "persisted-raw-snapshot-preserves-file-url-and-title",
+  "persisted-raw-snapshot-preserves-editable-text-structure",
 ].sort();
 
 const expectedVisualStateAssertions = [
@@ -280,6 +309,14 @@ requireFiles([
   pluginUiEvidencePath,
   pluginCanvasEvidencePath,
   visualStateEvidencePath,
+  fileProtocolEvidencePath,
+  fileProtocolHarnessPath,
+  fileProtocolFixturePath,
+  fileProtocolManifestPath,
+  fileProtocolHighFidelityManifestPath,
+  fileProtocolSourceRuntimePath,
+  fileProtocolServiceWorkerPath,
+  fileProtocolSnapshotStorePath,
   runtimeHarnessPath,
   runtimeProductSourcePath,
   fontResolutionPath,
@@ -324,6 +361,7 @@ const standardCaptureEvidence = readJson(standardCaptureEvidencePath);
 const pluginUiEvidence = readJson(pluginUiEvidencePath);
 const pluginCanvasEvidence = readJson(pluginCanvasEvidencePath);
 const visualStateEvidence = readJson(visualStateEvidencePath);
+const fileProtocolEvidence = readJson(fileProtocolEvidencePath);
 
 if (runtimeEvidence) {
   assert(runtimeEvidence.version === "1.0.0", "browser runtime evidence version mismatch");
@@ -730,8 +768,109 @@ if (visualStateEvidence) {
   );
   assertArrayEquals(
     visualStateEvidence.notProvenByThisArtifact,
-    expectedBlockingIds,
+    ["file-protocol-explicit-permission", ...expectedBlockingIds],
     "Visual-state not-proven boundary mismatch",
+  );
+}
+
+if (fileProtocolEvidence) {
+  assert(fileProtocolEvidence.version === "1.0.0", "File protocol evidence version mismatch");
+  assert(
+    fileProtocolEvidence.evidenceType === "node31-file-protocol-runtime-evidence",
+    "File protocol evidenceType mismatch",
+  );
+  assert(fileProtocolEvidence.status === "PASS", "File protocol evidence must PASS");
+  assert(
+    fileProtocolEvidence.ci?.runNumber === 1017,
+    "File protocol evidence must identify CI #1017",
+  );
+  assert(fileProtocolEvidence.ci?.runId === 33609522169, "File protocol run id mismatch");
+  assert(fileProtocolEvidence.ci?.jobId === 100181125296, "File protocol job id mismatch");
+  assert(
+    fileProtocolEvidence.ci?.branchHead === "0d569a8c57649fe7385eda2c5a780534491aa51d",
+    "File protocol branch head mismatch",
+  );
+  assert(
+    fileProtocolEvidence.ci?.mergeRef === "ec8fa8a141bc7fb9ae8c63b24ad161d452501805",
+    "File protocol merge ref mismatch",
+  );
+  assert(
+    fileProtocolEvidence.ci?.base === "28b52dc3e0d3074bf76205c8deb324a06dfe9e23",
+    "File protocol base mismatch",
+  );
+  assert(
+    fileProtocolEvidence.ci?.tokenPermissions?.contents === "read",
+    "File protocol evidence must come from read-only CI",
+  );
+  assertQualityChecks(
+    fileProtocolEvidence,
+    [
+      "node31Validator",
+      "node31CorpusValidator",
+      "node31P0Validator",
+      "lint",
+      "typecheck",
+      "tests",
+      "build",
+      "fileProtocolRuntime",
+      "browserRuntime",
+      "standardCaptureRuntime",
+      "visualStateRuntime",
+      "pluginUiChooseFileRuntime",
+      "pluginCanvasDropRuntime",
+      "format",
+    ],
+    "File protocol evidence",
+  );
+  assert(
+    fileProtocolEvidence.environment?.chrome === "Chrome/151.0.7922.173",
+    "File protocol Chrome mismatch",
+  );
+  assert(fileProtocolEvidence.environment?.node === "v24.19.0", "File protocol Node mismatch");
+  assert(fileProtocolEvidence.environment?.pnpm === "11.22.0", "File protocol pnpm mismatch");
+  assert(
+    fileProtocolEvidence.harnessArtifact === fileProtocolHarnessPath,
+    "File protocol harness mismatch",
+  );
+  assertIncludesAll(
+    fileProtocolEvidence.sourceArtifacts,
+    [
+      fileProtocolManifestPath,
+      fileProtocolHighFidelityManifestPath,
+      fileProtocolSourceRuntimePath,
+      fileProtocolServiceWorkerPath,
+      fileProtocolSnapshotStorePath,
+      fileProtocolFixturePath,
+    ],
+    "File protocol source",
+  );
+  assert(
+    fileProtocolEvidence.runtimeResult?.version === "1.9.0",
+    "File protocol runtime version mismatch",
+  );
+  assert(
+    fileProtocolEvidence.runtimeResult?.captureProfile === "high-fidelity",
+    "File protocol capture profile mismatch",
+  );
+  assertArrayEquals(
+    fileProtocolEvidence.runtimeResult?.assertions,
+    expectedFileProtocolAssertions,
+    "File protocol assertion set mismatch",
+  );
+  assertArrayEquals(
+    fileProtocolEvidence.provesP0Items,
+    ["file-protocol-explicit-permission"],
+    "File protocol proven P0 set mismatch",
+  );
+  assertArrayEquals(
+    fileProtocolEvidence.notProvenByThisArtifact,
+    expectedBlockingIds,
+    "File protocol not-proven boundary mismatch",
+  );
+  assertArrayEquals(
+    fileProtocolEvidence.prohibitedShortcutFlags,
+    ["--allow-file-access-from-files"],
+    "File protocol prohibited shortcut mismatch",
   );
 }
 
@@ -934,18 +1073,18 @@ if (audit) {
   assert(audit.evidenceType === "node31-p0-audit", "P0 audit evidenceType mismatch");
   assert(audit.contract === "docs/ACCEPTANCE_CONTRACT_V2.md", "P0 audit contract mismatch");
   assert(
-    audit.auditedAgainstBranchHead === "913373bc7afd1d4add7165c693c2e69f10342181",
-    "P0 audit must stay anchored to exact-head CI #882",
+    audit.auditedAgainstBranchHead === "0d569a8c57649fe7385eda2c5a780534491aa51d",
+    "P0 audit must stay anchored to exact-head CI #1017",
   );
-  assert(audit.ci?.runNumber === 882, "P0 audit must identify CI #882");
-  assert(audit.ci?.runId === 33160065371, "P0 audit run id mismatch");
-  assert(audit.ci?.jobId === 98812093098, "P0 audit job id mismatch");
+  assert(audit.ci?.runNumber === 1017, "P0 audit must identify CI #1017");
+  assert(audit.ci?.runId === 33609522169, "P0 audit run id mismatch");
+  assert(audit.ci?.jobId === 100181125296, "P0 audit job id mismatch");
   assert(
-    audit.ci?.branchHead === "913373bc7afd1d4add7165c693c2e69f10342181",
+    audit.ci?.branchHead === "0d569a8c57649fe7385eda2c5a780534491aa51d",
     "P0 audit branch head mismatch",
   );
   assert(
-    audit.ci?.mergeRef === "44f486945309acd3ab488c4418fc5eee3ec2519e",
+    audit.ci?.mergeRef === "ec8fa8a141bc7fb9ae8c63b24ad161d452501805",
     "P0 audit merge ref mismatch",
   );
   assert(audit.ci?.base === "28b52dc3e0d3074bf76205c8deb324a06dfe9e23", "P0 audit base mismatch");
@@ -960,6 +1099,7 @@ if (audit) {
       "typecheck",
       "tests",
       "build",
+      "fileProtocolRuntime",
       "browserRuntime",
       "standardCaptureRuntime",
       "visualStateRuntime",
@@ -989,6 +1129,19 @@ if (audit) {
     standardCaptureEvidencePath,
   ];
   const requiredPassProvenance = new Map([
+    [
+      "file-protocol-explicit-permission",
+      [
+        fileProtocolManifestPath,
+        fileProtocolHighFidelityManifestPath,
+        fileProtocolSourceRuntimePath,
+        fileProtocolServiceWorkerPath,
+        fileProtocolSnapshotStorePath,
+        fileProtocolFixturePath,
+        fileProtocolHarnessPath,
+        fileProtocolEvidencePath,
+      ],
+    ],
     [
       "visual-state-freeze-and-restore",
       [
@@ -1094,12 +1247,12 @@ if (audit) {
     expectedBlockingIds,
     "P0 declared blocker set mismatch",
   );
-  assert(audit.blockingUnavailableCount === 3, "P0 audit must retain exactly 3 blockers");
+  assert(audit.blockingUnavailableCount === 2, "P0 audit must retain exactly 2 blockers");
 
   if (manifest) {
     assert(manifest.p0?.status === "UNAVAILABLE", "manifest P0 must remain UNAVAILABLE");
     assert(manifest.p0?.evidenceArtifact === auditPath, "manifest P0 evidenceArtifact mismatch");
-    assert(manifest.p0?.blockingUnavailableCount === 3, "manifest P0 blocker count must be 3");
+    assert(manifest.p0?.blockingUnavailableCount === 2, "manifest P0 blocker count must be 2");
   }
 }
 

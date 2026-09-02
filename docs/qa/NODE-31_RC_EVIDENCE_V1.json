@@ -205,9 +205,9 @@
   },
   "p0": {
     "status": "UNAVAILABLE",
-    "evidenceArtifact": "docs/qa/results/NODE-31_P0_AUDIT_882.json",
-    "blockingUnavailableCount": 3,
-    "note": "P0 audit remains fail-closed. CI #882 adds exact-head real-Chrome proof that the final visual-state runtime freezes CSS/WAAPI animations and ShadowRoot media during capture and restores them without permanent page mutation. Three items remain UNAVAILABLE: explicit file:// permission capture, geometry-preserving font correction policy, and raster-text policy justification."
+    "evidenceArtifact": "docs/qa/results/NODE-31_P0_AUDIT_1017.json",
+    "blockingUnavailableCount": 2,
+    "note": "P0 audit remains fail-closed. Permanent read-only exact-head CI #1017 directly proves successful production file:// capture after explicit Chrome extension file-access permission, including the final High Fidelity worker/source routing, production capture adapter, service-worker-origin IndexedDB persistence, and editable RawSnapshot text structure. Two font-policy items remain UNAVAILABLE: geometry-preserving font correction policy and raster-text policy justification."
   },
   "determinism": {
     "status": "UNAVAILABLE",

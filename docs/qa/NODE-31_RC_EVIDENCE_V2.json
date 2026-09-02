@@ -204,10 +204,10 @@
     "status": "UNAVAILABLE"
   },
   "p0": {
-    "status": "UNAVAILABLE",
-    "evidenceArtifact": "docs/qa/results/NODE-31_P0_AUDIT_1034.json",
-    "blockingUnavailableCount": 1,
-    "note": "P0 audit remains fail-closed. Permanent read-only exact-head CI #1017 proves explicit file:// permission and production capture, and permanent read-only exact-head CI #1034 proves the bounded geometry-preserving font correction policy against a deterministic narrow TextNode metric simulator plus final plugin bundle markers. Only raster-text policy justification remains UNAVAILABLE."
+    "status": "PASS",
+    "evidenceArtifact": "docs/qa/results/NODE-31_P0_CLOSURE_1053.json",
+    "blockingUnavailableCount": 0,
+    "note": "P0 is complete. The immutable CI #1034 audit preserves the last historical UNAVAILABLE raster-text blocker; exact-head CI #1053 then validates the production raster-text authorization policy and hybrid integration tests that preserve ordinary text for font/geometry/text-quality/pixel-score reasons and authorize raster text only for explicit visual/compositing dependencies under the selected profile. The closure evidence records zero remaining P0 blockers without treating UNAVAILABLE as PASS."
   },
   "determinism": {
     "status": "UNAVAILABLE",

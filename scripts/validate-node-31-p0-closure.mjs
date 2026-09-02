@@ -6,7 +6,7 @@ const failures = [];
 
 const historicalAuditPath = "docs/qa/results/NODE-31_P0_AUDIT_1034.json";
 const closureEvidencePath = "docs/qa/results/NODE-31_P0_CLOSURE_1053.json";
-const manifestPath = "docs/qa/NODE-31_RC_EVIDENCE_V1.json";
+const manifestPath = "docs/qa/NODE-31_RC_EVIDENCE_V2.json";
 const policyPath = "apps/figma-plugin/src/raster-text-policy.ts";
 const policyTestPath = "apps/figma-plugin/test/raster-text-policy.test.ts";
 const hybridPath = "apps/figma-plugin/src/figma-hybrid-renderer.ts";

@@ -210,8 +210,9 @@
     "note": "P0 is complete. The immutable CI #1034 audit preserves the last historical UNAVAILABLE raster-text blocker; exact-head CI #1053 then validates the production raster-text authorization policy and hybrid integration tests that preserve ordinary text for font/geometry/text-quality/pixel-score reasons and authorize raster text only for explicit visual/compositing dependencies under the selected profile. The closure evidence records zero remaining P0 blockers without treating UNAVAILABLE as PASS."
   },
   "determinism": {
-    "status": "UNAVAILABLE",
-    "source": "NODE-30 exact-head evidence"
+    "status": "PASS",
+    "source": "NODE-30 exact-head CI #715 versioned W2F IR ten-run determinism evidence",
+    "evidenceArtifact": "docs/qa/results/NODE-31_NODE30_DETERMINISM_EVIDENCE_715.json"
   },
   "scale": {
     "status": "PASS",

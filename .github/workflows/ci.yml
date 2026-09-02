@@ -32,6 +32,7 @@ jobs:
           python3 scripts/materialize-node31-file-window-focus-candidate.py
           python3 scripts/materialize-node31-sender-tab-routing-candidate.py
           python3 scripts/materialize-node31-file-high-fidelity-profile-candidate.py
+          python3 scripts/materialize-node31-file-indexeddb-evidence-candidate.py
           python3 scripts/materialize-node31-file-bootstrap-candidate.py
           python3 scripts/materialize-node31-file-cleanup-candidate.py
 

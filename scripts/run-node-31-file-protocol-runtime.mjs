@@ -5,7 +5,7 @@ import { pathToFileURL } from "node:url";
 import { spawn } from "node:child_process";
 import { setTimeout as delay } from "node:timers/promises";
 
-const extensionRoot = resolve("apps/browser-extension/dist");
+const extensionRoot = resolve("apps/browser-extension/dist-high-fidelity");
 const manifestPath = join(extensionRoot, "manifest.json");
 const fixturePath = resolve("qa/corpus/node31/p0/file-protocol-runtime.html");
 const fixtureUrl = pathToFileURL(fixturePath).href;
@@ -77,13 +77,13 @@ class PipeCdpClient {
     });
   }
 
-  send(method, params = {}, sessionId) {
+  send(method, params = {}, sessionId, timeoutMs = 10000) {
     const id = this.nextId++;
     return new Promise((resolvePromise, reject) => {
       const timeout = setTimeout(() => {
         this.pending.delete(id);
         reject(new Error(`Timed out waiting for CDP pipe response: ${method}.\n${this.stderr()}`));
-      }, 10000);
+      }, timeoutMs);
       this.pending.set(id, { resolve: resolvePromise, reject, timeout });
       this.input.write(
         `${JSON.stringify({ id, method, params, ...(sessionId ? { sessionId } : {}) })}\0`,
@@ -146,6 +146,50 @@ async function createPageSession(browserClient, url, label) {
   return { targetId: created.targetId, client };
 }
 
+async function reactivateUnpackedExtension(browserClient, extensionPath, extensionId) {
+  const reactivated = await browserClient.send("Extensions.loadUnpacked", {
+    path: extensionPath,
+    enableInIncognito: false,
+  });
+  assert(reactivated.id, "Extensions.loadUnpacked did not return an id during reactivation");
+  assert(
+    reactivated.id === extensionId,
+    `Unpacked extension id changed during reactivation: ${reactivated.id}`,
+  );
+}
+
+async function createExtensionWorkerSession(browserClient, extensionId) {
+  const expectedUrl = `chrome-extension://${extensionId}/runtime/service-worker.js`;
+  for (let attempt = 0; attempt < 200; attempt += 1) {
+    const targets = await browserClient.send("Target.getTargets");
+    const worker = targets.targetInfos?.find(
+      (target) => target.type === "service_worker" && target.url === expectedUrl,
+    );
+    if (worker?.targetId) {
+      const attached = await browserClient.send("Target.attachToTarget", {
+        targetId: worker.targetId,
+        flatten: true,
+      });
+      assert(attached.sessionId, "Unable to attach to final extension service worker");
+      const client = browserClient.session(attached.sessionId);
+      await client.send("Runtime.enable");
+      await client.send("Runtime.runIfWaitingForDebugger");
+      const workerUrl = await evaluate(client, "self.location.href");
+      assert(workerUrl === expectedUrl, `Attached worker URL mismatch: ${workerUrl}`);
+      return client;
+    }
+    await delay(25);
+  }
+  const targets = await browserClient.send("Target.getTargets");
+  const summary = (targets.targetInfos ?? []).map((target) => ({
+    type: target.type,
+    url: target.url,
+  }));
+  throw new Error(
+    `Final extension service worker target not found after unpacked reactivation. Targets: ${JSON.stringify(summary)}`,
+  );
+}
+
 async function updateFileAccess(client, extensionId, enabled) {
   await evaluate(
     client,
@@ -204,6 +248,7 @@ const chromePath = await findChrome();
 let chromeProcess;
 let browserClient;
 let chromeStderr = "";
+let runError;
 
 try {
   chromeProcess = spawn(
@@ -230,7 +275,7 @@ try {
   assert(pipeInput && pipeOutput, "Chrome remote debugging pipe was not created");
   browserClient = new PipeCdpClient(pipeInput, pipeOutput, () => chromeStderr);
 
-  const browserVersion = await browserClient.send("Browser.getVersion");
+  const browserVersion = await browserClient.send("Browser.getVersion", {}, undefined, 60000);
   const loaded = await browserClient.send("Extensions.loadUnpacked", {
     path: extensionRoot,
     enableInIncognito: false,
@@ -242,7 +287,6 @@ try {
     listed.extensions?.some((extension) => extension.id === extensionId),
     `CDP did not list the newly loaded unpacked extension.\n${chromeStderr}`,
   );
-  const extensionPageUrl = `chrome-extension://${extensionId}/options.html`;
 
   const primary = await createPageSession(
     browserClient,
@@ -266,27 +310,64 @@ try {
     `CDP-loaded unpacked Web-To-Figma extension was not visible in chrome://extensions with ${chromePath}`,
   );
 
+  console.log("NODE-31 file protocol: disabling explicit file access");
   await updateFileAccess(primaryClient, extensionId, false);
-  await navigate(primaryClient, extensionPageUrl, "extension options with file access disabled");
-  const disabledAccess = await evaluate(
-    primaryClient,
-    `chrome.extension.isAllowedFileSchemeAccess()`,
-  );
-  assert(disabledAccess === false, "Explicit file URL access disable did not take effect");
-
-  await navigate(primaryClient, "chrome://extensions/", "chrome://extensions after disable");
   await waitFor(
     primaryClient,
-    `typeof chrome?.developerPrivate?.updateExtensionConfiguration === "function"`,
-    "chrome.developerPrivate did not recover after extension reload",
+    `new Promise((resolvePromise, reject) => {
+      chrome.developerPrivate.getExtensionInfo(
+        ${JSON.stringify(extensionId)},
+        (info) => chrome.runtime.lastError
+          ? reject(new Error(chrome.runtime.lastError.message))
+          : resolvePromise(info.fileAccess?.isEnabled === true && info.fileAccess?.isActive === false),
+      );
+    })`,
+    "Chrome extension management state did not report file access disabled",
   );
+  const disabledAccess = await evaluate(
+    primaryClient,
+    `new Promise((resolvePromise, reject) => {
+      chrome.developerPrivate.getExtensionInfo(
+        ${JSON.stringify(extensionId)},
+        (info) => chrome.runtime.lastError
+          ? reject(new Error(chrome.runtime.lastError.message))
+          : resolvePromise(info.fileAccess ?? null),
+      );
+    })`,
+  );
+  assert(disabledAccess?.isEnabled === true, "File access permission toggle is unavailable");
+  assert(
+    disabledAccess?.isActive === false,
+    "Explicit file URL access disable did not take effect",
+  );
+
+  console.log("NODE-31 file protocol: enabling explicit file access");
   await updateFileAccess(primaryClient, extensionId, true);
-  await navigate(primaryClient, extensionPageUrl, "extension options with file access enabled");
+  await waitFor(
+    primaryClient,
+    `new Promise((resolvePromise, reject) => {
+      chrome.developerPrivate.getExtensionInfo(
+        ${JSON.stringify(extensionId)},
+        (info) => chrome.runtime.lastError
+          ? reject(new Error(chrome.runtime.lastError.message))
+          : resolvePromise(info.fileAccess?.isEnabled === true && info.fileAccess?.isActive === true),
+      );
+    })`,
+    "Chrome extension management state did not report file access enabled",
+  );
   const enabledAccess = await evaluate(
     primaryClient,
-    `chrome.extension.isAllowedFileSchemeAccess()`,
+    `new Promise((resolvePromise, reject) => {
+      chrome.developerPrivate.getExtensionInfo(
+        ${JSON.stringify(extensionId)},
+        (info) => chrome.runtime.lastError
+          ? reject(new Error(chrome.runtime.lastError.message))
+          : resolvePromise(info.fileAccess ?? null),
+      );
+    })`,
   );
-  assert(enabledAccess === true, "Explicit file URL access enable did not take effect");
+  assert(enabledAccess?.isEnabled === true, "File access permission toggle became unavailable");
+  assert(enabledAccess?.isActive === true, "Explicit file URL access enable did not take effect");
 
   await navigate(primaryClient, fixtureUrl, "file protocol fixture");
   assert(
@@ -297,95 +378,363 @@ try {
     "File protocol fixture content did not load",
   );
 
-  const helper = await createPageSession(browserClient, extensionPageUrl, "extension helper");
-  const extensionClient = helper.client;
+  console.log("NODE-31 file protocol: loading real file fixture before production message capture");
+  await navigate(
+    primaryClient,
+    fixtureUrl,
+    "file protocol fixture before production message capture",
+  );
   await browserClient.send("Target.activateTarget", { targetId: primary.targetId });
   await delay(100);
-
-  const activeTabUrl = await evaluate(
-    extensionClient,
-    `chrome.tabs.query({ active: true, currentWindow: true }).then((tabs) => tabs[0]?.url ?? null)`,
-  );
-  assert(activeTabUrl === fixtureUrl, `Active extension-visible tab mismatch: ${activeTabUrl}`);
   assert(
-    (await evaluate(extensionClient, `chrome.extension.isAllowedFileSchemeAccess()`)) === true,
-    "Extension helper did not retain enabled file access",
+    await evaluate(
+      primaryClient,
+      `document.querySelector('[data-node31-role="file-protocol-proof"]')?.textContent?.includes("NODE-31 explicit file URL permission runtime proof") === true`,
+    ),
+    "File protocol fixture content did not load after explicit permission enable",
   );
 
-  const sourceResolution = await evaluate(
-    extensionClient,
-    `(async () => {
-      const module = await import(chrome.runtime.getURL("runtime/source-runtime.js"));
-      const result = await module.resolveActiveTabSource();
+  const extensionScopeUrl = `chrome-extension://${extensionId}/`;
+  const extensionWorkerUrl = `${extensionScopeUrl}runtime/service-worker.js`;
+  console.log(
+    "NODE-31 file protocol: reusing trusted Chrome extensions UI for real inspect-view interaction",
+  );
+  await navigate(
+    primaryClient,
+    "chrome://extensions/",
+    "trusted Chrome extensions manager for worker inspection",
+  );
+  const managementClient = primaryClient;
+  await waitFor(
+    managementClient,
+    `document.querySelector("extensions-manager") !== null`,
+    "Chrome extensions manager custom element did not initialize",
+  );
+
+  const deepElementExpression = `(() => {
+    const visit = (root, result = []) => {
+      for (const element of root.querySelectorAll("*")) {
+        result.push(element);
+        if (element.shadowRoot) visit(element.shadowRoot, result);
+      }
+      return result;
+    };
+    return visit(document);
+  })()`;
+
+  const devModeEnabled = await evaluate(
+    managementClient,
+    `(() => {
+      const elements = ${deepElementExpression};
+      const toolbar = elements.find((element) => element.tagName === "EXTENSIONS-TOOLBAR");
+      if (!toolbar) return { ready: false, reason: "toolbar-missing" };
+      if (toolbar.inDevMode === true) return { ready: true, changed: false };
+      const toggle = toolbar.shadowRoot?.querySelector("#devMode");
+      if (!toggle) return { ready: false, reason: "dev-mode-toggle-missing" };
+      toggle.click();
+      return { ready: true, changed: true };
+    })()`,
+  );
+  assert(
+    devModeEnabled?.ready === true,
+    `Unable to enable Chrome extensions developer mode: ${devModeEnabled?.reason}`,
+  );
+
+  await waitFor(
+    managementClient,
+    `(() => {
+      const elements = ${deepElementExpression};
+      const toolbar = elements.find((element) => element.tagName === "EXTENSIONS-TOOLBAR");
+      return toolbar?.inDevMode === true;
+    })()`,
+    "Chrome extensions UI did not enter developer mode",
+  );
+
+  await waitFor(
+    managementClient,
+    `(() => {
+      const elements = ${deepElementExpression};
+      const item = elements.find(
+        (element) => element.tagName === "EXTENSIONS-ITEM" && element.data?.id === ${JSON.stringify(extensionId)},
+      );
+      if (!item) return false;
+      const views = item.data?.views ?? [];
+      const hasWorker = views.some(
+        (view) => view.type === "EXTENSION_SERVICE_WORKER_BACKGROUND" ||
+          String(view.url ?? "").endsWith("/runtime/service-worker.js"),
+      );
+      return hasWorker && !!item.shadowRoot?.querySelector("#inspect-views a");
+    })()`,
+    "Chrome extensions UI did not expose the inactive Web-To-Figma service-worker inspect view",
+  );
+
+  const inspectClick = await evaluate(
+    managementClient,
+    `(() => {
+      const elements = ${deepElementExpression};
+      const item = elements.find(
+        (element) => element.tagName === "EXTENSIONS-ITEM" && element.data?.id === ${JSON.stringify(extensionId)},
+      );
+      if (!item) return { clicked: false, reason: "extension-item-missing" };
+      const views = item.data?.views ?? [];
+      const workerView = views.find(
+        (view) => view.type === "EXTENSION_SERVICE_WORKER_BACKGROUND" ||
+          String(view.url ?? "").endsWith("/runtime/service-worker.js"),
+      );
+      const link = item.shadowRoot?.querySelector("#inspect-views a");
+      if (!workerView || !link) {
+        return { clicked: false, reason: "inspect-link-missing", views };
+      }
+      link.click();
       return {
-        tabId: result.tabId,
-        capability: result.capability,
-        descriptor: result.descriptor ?? null,
+        clicked: true,
+        view: {
+          url: workerView.url,
+          type: workerView.type,
+          renderProcessId: workerView.renderProcessId,
+          renderViewId: workerView.renderViewId,
+        },
       };
     })()`,
   );
-  assert(sourceResolution?.capability?.provider === "file-tab", "File source provider mismatch");
-  assert(sourceResolution?.capability?.supported === true, "File source is not marked supported");
-  assert(sourceResolution?.capability?.available === true, "File source is not marked available");
-  assert(sourceResolution?.capability?.code === "ready", "File source capability is not ready");
-  assert(sourceResolution?.descriptor?.sourceType === "file", "File source descriptor type mismatch");
-  assert(sourceResolution?.descriptor?.sourceUrl === fixtureUrl, "File source URL was not preserved");
-  assert(sourceResolution?.descriptor?.offline === true, "File source descriptor lost offline=true");
+  assert(
+    inspectClick?.clicked === true,
+    `Chrome extensions UI worker inspect click failed: ${inspectClick?.reason ?? "unknown"}`,
+  );
 
+  let workerTarget = null;
+  for (let attempt = 0; attempt < 400; attempt += 1) {
+    const targets = await browserClient.send("Target.getTargets");
+    workerTarget =
+      (targets.targetInfos ?? []).find(
+        (target) => target.type === "service_worker" && target.url === extensionWorkerUrl,
+      ) ?? null;
+    if (workerTarget?.targetId) break;
+    await delay(25);
+  }
+  if (!workerTarget?.targetId) {
+    const targets = await browserClient.send("Target.getTargets");
+    const summary = (targets.targetInfos ?? []).map((target) => ({
+      type: target.type,
+      url: target.url,
+    }));
+    throw new Error(
+      `Final extension service worker did not start after Chrome extensions UI inspect click. Targets: ${JSON.stringify(summary)}`,
+    );
+  }
+
+  const workerAttached = await browserClient.send("Target.attachToTarget", {
+    targetId: workerTarget.targetId,
+    flatten: true,
+  });
+  assert(workerAttached.sessionId, "Unable to attach to final extension service worker");
+  const extensionClient = browserClient.session(workerAttached.sessionId);
+  await extensionClient.send("Runtime.enable");
+  await extensionClient.send("Runtime.runIfWaitingForDebugger").catch(() => undefined);
+  await waitFor(
+    extensionClient,
+    `typeof chrome?.runtime?.id === "string" &&
+      typeof chrome?.tabs?.query === "function" &&
+      typeof chrome?.scripting?.executeScript === "function" &&
+      typeof chrome?.debugger?.attach === "function"`,
+    "Final High Fidelity MV3 worker extension APIs did not become ready after inspect start",
+  );
+  const workerUrl = await evaluate(extensionClient, `self.location.href`);
+  assert(workerUrl === extensionWorkerUrl, `Attached worker URL mismatch: ${workerUrl}`);
+
+  await navigate(
+    primaryClient,
+    fixtureUrl,
+    "file protocol fixture after Chrome extensions UI inspect",
+  );
+  await browserClient.send("Target.activateTarget", { targetId: primary.targetId });
+  await delay(100);
+
+  const activeTab = await evaluate(
+    extensionClient,
+    `(async () => {
+      const tabs = await chrome.tabs.query({});
+      const fileTab = tabs.find((candidate) => candidate.url === ${JSON.stringify(fixtureUrl)});
+      return fileTab && typeof fileTab.id === "number"
+        ? { id: fileTab.id, url: fileTab.url, windowId: fileTab.windowId }
+        : null;
+    })()`,
+  );
+  assert(activeTab?.url === fixtureUrl, `Final worker file tab lookup mismatch: ${activeTab?.url}`);
+  assert(typeof activeTab?.id === "number", "Final worker could not resolve file tab id");
+
+  console.log(
+    "NODE-31 file protocol: dispatching production messages from file-tab extension world",
+  );
+  const productionResponses = await evaluate(
+    extensionClient,
+    `(async () => {
+      const tabId = ${JSON.stringify(activeTab.id)};
+      const [injection] = await chrome.scripting.executeScript({
+        target: { tabId },
+        func: async () => {
+          const capability = await chrome.runtime.sendMessage({
+            type: "W2F_GET_SOURCE_CAPABILITY",
+          });
+          const job = await chrome.runtime.sendMessage({
+            type: "W2F_START_JOB",
+            mode: "full-page",
+          });
+          return { capability, job };
+        },
+      });
+      return injection?.result ?? null;
+    })()`,
+    120000,
+  );
+  assert(productionResponses, "Production message injection returned no result");
+
+  const capabilityResponse = productionResponses.capability;
+  assert(capabilityResponse?.ok === true, "Production source-capability request failed");
+  assert(
+    capabilityResponse?.requestType === "W2F_GET_SOURCE_CAPABILITY",
+    "Production source-capability response type mismatch",
+  );
+  const capability = capabilityResponse?.data;
+  assert(capability?.provider === "file-tab", "File source provider mismatch");
+  assert(capability?.supported === true, "File source is not marked supported");
+  assert(capability?.available === true, "File source is not marked available");
+  assert(capability?.code === "ready", "File source capability is not ready");
+
+  const startJobResponse = productionResponses.job;
+  assert(
+    startJobResponse?.ok === true,
+    `Production W2F_START_JOB request failed: ${startJobResponse?.error ?? "unknown"}`,
+  );
+  assert(
+    startJobResponse?.requestType === "W2F_START_JOB",
+    "Production capture response type mismatch",
+  );
+  const job = startJobResponse?.data;
+  assert(job?.mode === "full-page", "Production capture job mode mismatch");
+  assert(
+    job?.status === "completed",
+    `Production file capture job is not completed: ${job?.error ?? job?.status}`,
+  );
+  assert(job?.source?.provider === "file-tab", "Completed job lost file-tab source provider");
+  assert(job?.source?.sourceType === "file", "Completed job lost file source type");
+  assert(job?.source?.sourceUrl === fixtureUrl, "Completed job lost the real file URL");
+  assert(job?.source?.offline === true, "Completed job lost offline file semantics");
+  assert(job?.page?.url === fixtureUrl, "Completed job page URL mismatch");
+  assert(
+    job?.capture?.adapter === "cdp",
+    `High Fidelity file capture did not use the production CDP adapter: ${job?.capture?.adapter}`,
+  );
+  assert((job?.capture?.nodeCount ?? 0) > 0, "Completed file capture contains no nodes");
+  assert(
+    typeof job?.capture?.storageKey === "string" && job.capture.storageKey.length > 0,
+    "Completed file capture did not persist a RawSnapshot",
+  );
+
+  console.log(
+    "NODE-31 file protocol: reading persisted RawSnapshot from production snapshot store",
+  );
   const snapshot = await evaluate(
     extensionClient,
     `(async () => {
-      const sourceModule = await import(chrome.runtime.getURL("runtime/source-runtime.js"));
-      const captureModule = await import(
-        chrome.runtime.getURL("runtime/standard-capture-adapter/capture.js")
-      );
-      const source = await sourceModule.resolveActiveTabSource();
-      const [injection] = await chrome.scripting.executeScript({
-        target: { tabId: source.tabId },
-        func: captureModule.captureStandardSnapshotInPage,
-        args: [{ captureTarget: { type: "document" }, maxNodes: 100000, includeComments: false }],
+      const database = await new Promise((resolve, reject) => {
+        const request = indexedDB.open("w2f-capture-snapshots", 2);
+        request.onerror = () => reject(request.error ?? new Error("failed to open snapshot database"));
+        request.onsuccess = () => resolve(request.result);
       });
-      return injection?.result?.snapshot ?? null;
+      try {
+        const value = await new Promise((resolve, reject) => {
+          const transaction = database.transaction("rawSnapshots", "readonly");
+          const request = transaction.objectStore("rawSnapshots").get(
+            ${JSON.stringify(`raw-snapshot:${job.jobId}`)},
+          );
+          request.onerror = () => reject(request.error ?? new Error("failed to read RawSnapshot"));
+          request.onsuccess = () => resolve(request.result ?? null);
+        });
+        return value;
+      } finally {
+        database.close();
+      }
     })()`,
+    30000,
   );
-  assert(snapshot?.adapter === "standard", "File page did not use the final Standard capture adapter");
-  assert(snapshot?.url === fixtureUrl, "Captured file URL mismatch");
-  assert(snapshot?.title === "NODE-31 File Protocol Runtime", "Captured file title mismatch");
+  assert(snapshot, "Production snapshot store did not return the completed RawSnapshot");
+  assert(snapshot?.url === fixtureUrl, "Persisted file snapshot URL mismatch");
   assert(
-    snapshot?.nodes?.some(
-      (node) =>
-        node.source?.attributes?.["data-node31-role"] === "file-protocol-proof" &&
-        node.textContent?.includes("NODE-31 explicit file URL permission runtime proof"),
-    ),
-    "Captured file snapshot is missing editable fixture text",
+    snapshot?.title === "NODE-31 File Protocol Runtime",
+    "Persisted file snapshot title mismatch",
+  );
+  const snapshotNodeById = new Map(
+    (snapshot?.nodes ?? []).map((node) => [node.captureNodeId, node]),
+  );
+  const proofElement = (snapshot?.nodes ?? []).find(
+    (node) =>
+      node.kind === "element" &&
+      node.source?.attributes?.["data-node31-role"] === "file-protocol-proof",
+  );
+  assert(proofElement, "Persisted file snapshot is missing the proof element node");
+
+  const descendantIds = [...(proofElement.childCaptureNodeIds ?? [])];
+  let editableTextNode = null;
+  while (descendantIds.length > 0) {
+    const descendantId = descendantIds.shift();
+    const descendant = snapshotNodeById.get(descendantId);
+    if (!descendant) continue;
+    if (
+      descendant.kind === "text" &&
+      (descendant.textContent?.includes("NODE-31 explicit file URL permission runtime proof") ||
+        descendant.text?.value?.includes("NODE-31 explicit file URL permission runtime proof"))
+    ) {
+      editableTextNode = descendant;
+      break;
+    }
+    descendantIds.push(...(descendant.childCaptureNodeIds ?? []));
+  }
+  assert(
+    editableTextNode,
+    "Persisted file snapshot proof element is missing its editable descendant text node",
   );
 
   console.log(
     JSON.stringify(
       {
-        version: "1.1.0",
+        version: "1.9.0",
         evidenceType: "node31-file-protocol-browser-runtime",
         status: "PASS",
         chrome: browserVersion.product,
         browserExecutable: chromePath,
-        extensionArtifact: "apps/browser-extension/dist",
+        extensionArtifact: "apps/browser-extension/dist-high-fidelity",
+        captureProfile: "high-fidelity",
+        serviceWorkerArtifact:
+          "apps/browser-extension/dist-high-fidelity/runtime/service-worker.js",
+        sourceRuntimeArtifact:
+          "apps/browser-extension/dist-high-fidelity/runtime/source-runtime.js",
+        snapshotStoreArtifact:
+          "apps/browser-extension/dist-high-fidelity/runtime/snapshot-store.js",
+        serviceWorkerArtifact: "apps/browser-extension/dist/runtime/service-worker.js",
+        snapshotStoreArtifact: "apps/browser-extension/dist/runtime/snapshot-store.js",
         sourceRuntimeArtifact: "apps/browser-extension/dist/runtime/source-runtime.js",
-        captureArtifact:
-          "apps/browser-extension/dist/runtime/standard-capture-adapter/capture.js",
+        captureArtifact: "apps/browser-extension/dist/runtime/standard-capture-adapter/capture.js",
         fixtureArtifact: "qa/corpus/node31/p0/file-protocol-runtime.html",
         assertions: [
           "built-manifest-declares-file-scheme-host-permission",
           "unpacked-extension-loaded-through-modern-cdp-in-real-chrome",
-          "chrome-user-setting-explicitly-disables-file-access",
-          "public-extension-api-reports-file-access-disabled",
-          "chrome-user-setting-explicitly-enables-file-access",
-          "public-extension-api-reports-file-access-enabled",
-          "real-file-url-fixture-loads-in-active-tab",
-          "enabled-extension-can-observe-active-file-url",
-          "final-source-runtime-resolves-file-tab-ready",
-          "file-source-descriptor-preserves-offline-file-url",
-          "final-standard-adapter-captures-real-file-tab",
-          "file-capture-preserves-editable-text-structure",
+          "chrome-management-state-explicitly-disables-file-access",
+          "chrome-management-state-explicitly-enables-file-access",
+          "real-file-url-fixture-loads-after-explicit-permission",
+          "trusted-chrome-extensions-ui-inspect-click-starts-inactive-extension-service-worker",
+          "inspected-high-fidelity-worker-resumes-and-exposes-required-extension-apis",
+          "final-service-worker-resolves-real-file-tab-for-message-injection",
+          "production-message-injection-targets-prevalidated-file-tab-id",
+          "file-tab-extension-world-dispatches-production-runtime-messages",
+          "production-source-capability-resolves-active-file-tab-ready",
+          "production-full-page-job-completes-on-file-url",
+          "completed-job-preserves-file-source-and-page-url",
+          "completed-job-uses-high-fidelity-cdp-capture-adapter",
+          "completed-job-persists-raw-snapshot",
+          "service-worker-origin-indexeddb-exposes-persisted-raw-snapshot",
+          "persisted-raw-snapshot-preserves-file-url-and-title",
+          "persisted-raw-snapshot-preserves-editable-text-structure",
         ],
         provesP0Items: ["file-protocol-explicit-permission"],
         notProvenByThisArtifact: [
@@ -398,8 +747,17 @@ try {
       2,
     ),
   );
+} catch (error) {
+  runError = error;
+  throw error;
 } finally {
   browserClient?.close();
-  await stopChrome(chromeProcess);
-  await removeProfileDir(profileDir);
+  try {
+    await stopChrome(chromeProcess);
+  } catch (cleanupError) {
+    if (!runError) throw cleanupError;
+    console.warn(`NODE-31 Chrome cleanup warning after primary failure: ${String(cleanupError)}`);
+  } finally {
+    await removeProfileDir(profileDir);
+  }
 }

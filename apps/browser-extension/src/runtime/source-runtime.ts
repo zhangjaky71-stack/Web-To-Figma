@@ -47,9 +47,7 @@ export async function resolveActiveTabSource(
     throw new Error("No active browser tab with a source URL is available");
   }
 
-  const fileSchemeAccess = tab.url.startsWith("file:")
-    ? await hasActiveFileSchemeAccess()
-    : false;
+  const fileSchemeAccess = tab.url.startsWith("file:") ? await hasActiveFileSchemeAccess() : false;
   const resolved = resolveTabSource({
     url: tab.url,
     fileSchemeAccess,

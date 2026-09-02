@@ -632,13 +632,14 @@ async function wasJobCancelled(jobId: string): Promise<CaptureJobState | null> {
 
 async function startShellJob(
   mode: Exclude<CaptureJobMode, "responsive">,
+  preferredTab?: chrome.tabs.Tab,
 ): Promise<CaptureJobState> {
   const jobId = crypto.randomUUID();
   let job = createCaptureJob(mode, jobId);
   await writeJobState(job);
 
   try {
-    const sourceResolution = await resolveActiveTabSource();
+    const sourceResolution = await resolveActiveTabSource(preferredTab);
     const { capability, descriptor, tabId, tab } = sourceResolution;
     if (!capability.available || !descriptor) {
       const action = capability.requiredUserAction
@@ -782,14 +783,17 @@ function responsiveReceipt(
   };
 }
 
-async function startResponsiveJob(request: ResponsiveCaptureRequest): Promise<CaptureJobState> {
+async function startResponsiveJob(
+  request: ResponsiveCaptureRequest,
+  preferredTab?: chrome.tabs.Tab,
+): Promise<CaptureJobState> {
   const jobId = crypto.randomUUID();
   let job = createCaptureJob("responsive", jobId);
   let plans: ResponsiveViewportPlan[] = [];
   await writeJobState(job);
 
   try {
-    const sourceResolution = await resolveActiveTabSource();
+    const sourceResolution = await resolveActiveTabSource(preferredTab);
     const { capability, descriptor, tabId, tab } = sourceResolution;
     if (!capability.available || !descriptor) {
       const action = capability.requiredUserAction
@@ -930,18 +934,21 @@ async function cancelShellJob(jobId: string): Promise<CaptureJobState | null> {
   return cancelled;
 }
 
-async function handleShellRequest(request: W2fShellRequest): Promise<W2fShellResponse> {
+async function handleShellRequest(
+  request: W2fShellRequest,
+  preferredTab?: chrome.tabs.Tab,
+): Promise<W2fShellResponse> {
   switch (request.type) {
     case "W2F_GET_SHELL_INFO":
       return shellSuccess(request.type, shellInfo());
     case "W2F_GET_SOURCE_CAPABILITY":
-      return shellSuccess(request.type, (await resolveActiveTabSource()).capability);
+      return shellSuccess(request.type, (await resolveActiveTabSource(preferredTab)).capability);
     case "W2F_GET_JOB_STATE":
       return shellSuccess(request.type, await readJobState());
     case "W2F_START_JOB":
-      return shellSuccess(request.type, await startShellJob(request.mode));
+      return shellSuccess(request.type, await startShellJob(request.mode, preferredTab));
     case "W2F_START_RESPONSIVE_JOB":
-      return shellSuccess(request.type, await startResponsiveJob(request.capture));
+      return shellSuccess(request.type, await startResponsiveJob(request.capture, preferredTab));
     case "W2F_CANCEL_JOB":
       return shellSuccess(request.type, await cancelShellJob(request.jobId));
     case "W2F_EXPORT_WTF": {
@@ -961,9 +968,9 @@ chrome.runtime.onInstalled.addListener(() => {
   void readJobState().catch(() => undefined);
 });
 
-chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (!isW2fShellRequest(message)) return false;
-  void handleShellRequest(message)
+  void handleShellRequest(message, sender.tab)
     .then(sendResponse)
     .catch((error: unknown) => sendResponse(shellFailure(message.type, error)));
   return true;

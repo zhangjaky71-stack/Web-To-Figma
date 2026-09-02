@@ -213,7 +213,10 @@ if (failures.length === 0) {
       JSON.stringify(["activeTab", "downloads", "scripting", "storage"].sort()),
     "NODE-08 must preserve activeTab+downloads+scripting+storage without host expansion",
   );
-  assert(!("host_permissions" in manifest), "NODE-08 must not add broad host permissions");
+  assert(
+    JSON.stringify([...(manifest.host_permissions ?? [])].sort()) === JSON.stringify(["file:///*"]),
+    "NODE-08 host permissions must remain limited to file:///*",
+  );
   assert(!("content_scripts" in manifest), "NODE-08 must keep user-action injection");
 }
 

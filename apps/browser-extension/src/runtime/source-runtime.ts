@@ -11,8 +11,14 @@ export interface ActiveTabSourceResolution {
   descriptor?: SourceDescriptor;
 }
 
+type ChromeWithPermissions = typeof chrome & {
+  permissions: {
+    contains(permissions: { origins?: string[] }): Promise<boolean>;
+  };
+};
+
 async function hasActiveFileSchemeAccess(): Promise<boolean> {
-  return chrome.permissions.contains({ origins: ["file:///*"] });
+  return (chrome as ChromeWithPermissions).permissions.contains({ origins: ["file:///*"] });
 }
 
 export async function resolveActiveTabSource(): Promise<ActiveTabSourceResolution> {

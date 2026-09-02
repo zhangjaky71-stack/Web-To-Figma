@@ -22,6 +22,7 @@ jobs:
         if: (github.event_name == 'pull_request' && github.head_ref == 'node-31-real-world-compatibility-release-candidate') || (github.event_name == 'push' && github.ref_name == 'node-31-real-world-compatibility-release-candidate')
         run: |
           python3 scripts/materialize-node31-file-permission-candidate.py
+          python3 scripts/materialize-node31-mv3-file-permission-validator-candidate.py
           python3 scripts/materialize-node31-file-popup-path-candidate.py
           python3 scripts/materialize-node31-file-popup-options-url-candidate.py
           python3 scripts/materialize-node31-file-worker-message-candidate.py

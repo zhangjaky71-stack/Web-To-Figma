@@ -19,7 +19,9 @@ jobs:
 
       - name: Materialize NODE-31 raster text integration candidate
         if: github.event_name == 'pull_request' && github.head_ref == 'node-31-real-world-compatibility-release-candidate'
-        run: python3 scripts/materialize-node31-raster-text-integration.py
+        run: |
+          python3 scripts/materialize-node31-raster-text-integration.py
+          python3 scripts/materialize-node31-raster-text-hybrid-test.py
 
       - name: Validate foundation
         run: node scripts/validate-foundation.mjs
@@ -62,7 +64,7 @@ jobs:
 
       - name: Format raster text integration candidate
         if: github.event_name == 'pull_request' && github.head_ref == 'node-31-real-world-compatibility-release-candidate'
-        run: pnpm exec prettier apps/figma-plugin/src/raster-text-policy.ts apps/figma-plugin/test/raster-text-policy.test.ts apps/figma-plugin/src/figma-hybrid-renderer.ts apps/figma-plugin/src/main.ts --write
+        run: pnpm exec prettier apps/figma-plugin/src/raster-text-policy.ts apps/figma-plugin/test/raster-text-policy.test.ts apps/figma-plugin/test/hybrid-raster.test.ts apps/figma-plugin/src/figma-hybrid-renderer.ts apps/figma-plugin/src/main.ts --write
 
       - name: Lint
         run: pnpm lint
@@ -109,6 +111,7 @@ jobs:
           files=(
             apps/figma-plugin/src/raster-text-policy.ts
             apps/figma-plugin/test/raster-text-policy.test.ts
+            apps/figma-plugin/test/hybrid-raster.test.ts
             apps/figma-plugin/src/figma-hybrid-renderer.ts
             apps/figma-plugin/src/main.ts
           )

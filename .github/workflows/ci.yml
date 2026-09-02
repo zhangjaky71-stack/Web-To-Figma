@@ -27,6 +27,7 @@ jobs:
           python3 scripts/materialize-node31-file-worker-message-candidate.py
           python3 scripts/materialize-node31-file-ui-inspect-candidate.py
           python3 scripts/materialize-node31-file-worker-permission-check-candidate.py
+          python3 scripts/materialize-node31-file-window-focus-candidate.py
           python3 scripts/materialize-node31-file-bootstrap-candidate.py
           python3 scripts/materialize-node31-file-cleanup-candidate.py
 

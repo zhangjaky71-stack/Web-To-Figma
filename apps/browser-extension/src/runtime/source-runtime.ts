@@ -17,6 +17,11 @@ type ChromeWithPermissions = typeof chrome & {
   };
 };
 
+type TabsQueryWithLastFocusedWindow = (queryInfo: {
+  active?: boolean;
+  lastFocusedWindow?: boolean;
+}) => Promise<chrome.tabs.Tab[]>;
+
 async function hasActiveFileSchemeAccess(): Promise<boolean> {
   return (chrome as ChromeWithPermissions).permissions.contains({ origins: ["file:///*"] });
 }
@@ -29,7 +34,8 @@ function isUsableSourceTab(tab: chrome.tabs.Tab | undefined): tab is chrome.tabs
 }
 
 async function resolveFallbackSourceTab(): Promise<chrome.tabs.Tab | undefined> {
-  const tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+  const queryTabs = chrome.tabs.query as unknown as TabsQueryWithLastFocusedWindow;
+  const tabs = await queryTabs({ active: true, lastFocusedWindow: true });
   return tabs[0];
 }
 

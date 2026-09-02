@@ -21,10 +21,23 @@ async function hasActiveFileSchemeAccess(): Promise<boolean> {
   return (chrome as ChromeWithPermissions).permissions.contains({ origins: ["file:///*"] });
 }
 
-export async function resolveActiveTabSource(): Promise<ActiveTabSourceResolution> {
-  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-  const tab = tabs[0];
-  if (!tab || typeof tab.id !== "number" || !tab.url) {
+function isUsableSourceTab(tab: chrome.tabs.Tab | undefined): tab is chrome.tabs.Tab & {
+  id: number;
+  url: string;
+} {
+  return Boolean(tab && typeof tab.id === "number" && tab.url);
+}
+
+async function resolveFallbackSourceTab(): Promise<chrome.tabs.Tab | undefined> {
+  const tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+  return tabs[0];
+}
+
+export async function resolveActiveTabSource(
+  preferredTab?: chrome.tabs.Tab,
+): Promise<ActiveTabSourceResolution> {
+  const tab = isUsableSourceTab(preferredTab) ? preferredTab : await resolveFallbackSourceTab();
+  if (!isUsableSourceTab(tab)) {
     throw new Error("No active browser tab with a source URL is available");
   }
 

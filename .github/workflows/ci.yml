@@ -7,7 +7,7 @@ on:
   pull_request:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   quality:
@@ -16,12 +16,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-
-      - name: Materialize NODE-31 raster text integration candidate
-        if: github.event_name == 'pull_request' && github.head_ref == 'node-31-real-world-compatibility-release-candidate'
-        run: |
-          python3 scripts/materialize-node31-raster-text-integration.py
-          python3 scripts/materialize-node31-raster-text-hybrid-test.py
 
       - name: Validate foundation
         run: node scripts/validate-foundation.mjs
@@ -62,10 +56,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Format raster text integration candidate
-        if: github.event_name == 'pull_request' && github.head_ref == 'node-31-real-world-compatibility-release-candidate'
-        run: pnpm exec prettier apps/figma-plugin/src/raster-text-policy.ts apps/figma-plugin/test/raster-text-policy.test.ts apps/figma-plugin/test/hybrid-raster.test.ts apps/figma-plugin/src/figma-hybrid-renderer.ts apps/figma-plugin/src/main.ts --write
-
       - name: Lint
         run: pnpm lint
 
@@ -101,40 +91,3 @@ jobs:
 
       - name: Format check
         run: pnpm format:check
-
-      - name: Commit validated raster text integration
-        if: github.event_name == 'pull_request' && github.head_ref == 'node-31-real-world-compatibility-release-candidate'
-        env:
-          HEAD_REF: ${{ github.head_ref }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          files=(
-            apps/figma-plugin/src/raster-text-policy.ts
-            apps/figma-plugin/test/raster-text-policy.test.ts
-            apps/figma-plugin/test/hybrid-raster.test.ts
-            apps/figma-plugin/src/figma-hybrid-renderer.ts
-            apps/figma-plugin/src/main.ts
-          )
-          mkdir -p /tmp/node31-raster-text
-          for file in "${files[@]}"; do
-            mkdir -p "/tmp/node31-raster-text/$(dirname "$file")"
-            cp "$file" "/tmp/node31-raster-text/$file"
-          done
-          git fetch origin "$HEAD_REF"
-          if [ "$(git rev-parse "origin/$HEAD_REF")" != "$HEAD_SHA" ]; then
-            echo "Branch head moved during validation; refusing stale materialization."
-            exit 1
-          fi
-          git checkout -B "$HEAD_REF" "origin/$HEAD_REF"
-          for file in "${files[@]}"; do
-            cp "/tmp/node31-raster-text/$file" "$file"
-          done
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "${files[@]}"
-          if git diff --cached --quiet; then
-            echo "Raster text integration already materialized."
-            exit 0
-          fi
-          git commit -m "feat(node-31): enforce raster text authorization policy"
-          git push origin HEAD:"$HEAD_REF"

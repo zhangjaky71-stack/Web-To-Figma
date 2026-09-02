@@ -60,7 +60,6 @@ describe("resolveActiveTabSource file permission", () => {
       sourceType: "file",
       sourceUrl: fileUrl,
       offline: true,
-      title: "NODE-31 File Source",
     });
   });
 });

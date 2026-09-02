@@ -2,17 +2,24 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { resolveActiveTabSource } from "../src/runtime/source-runtime.js";
 
 const fileUrl = "file:///tmp/node31-file-source.html";
+const fileTab: chrome.tabs.Tab = {
+  id: 31,
+  url: fileUrl,
+  title: "NODE-31 File Source",
+  active: true,
+  windowId: 7,
+  index: 0,
+  pinned: false,
+  highlighted: true,
+  incognito: false,
+  selected: true,
+  discarded: false,
+  autoDiscardable: true,
+  groupId: -1,
+};
 
 function installChromeMock(fileSchemeAccess: boolean) {
-  const query = vi.fn().mockResolvedValue([
-    {
-      id: 31,
-      url: fileUrl,
-      title: "NODE-31 File Source",
-      active: true,
-      windowId: 7,
-    },
-  ]);
+  const query = vi.fn().mockResolvedValue([fileTab]);
   const contains = vi.fn().mockResolvedValue(fileSchemeAccess);
 
   vi.stubGlobal("chrome", {
@@ -29,10 +36,11 @@ afterEach(() => {
 
 describe("resolveActiveTabSource file permission", () => {
   it("fails closed when the active file host permission is disabled", async () => {
-    const { contains } = installChromeMock(false);
+    const { query, contains } = installChromeMock(false);
 
     const result = await resolveActiveTabSource();
 
+    expect(query).toHaveBeenCalledWith({ active: true, lastFocusedWindow: true });
     expect(contains).toHaveBeenCalledWith({ origins: ["file:///*"] });
     expect(result.capability).toMatchObject({
       provider: "file-tab",
@@ -60,6 +68,22 @@ describe("resolveActiveTabSource file permission", () => {
       sourceType: "file",
       sourceUrl: fileUrl,
       offline: true,
+    });
+  });
+
+  it("uses the sender tab directly without consulting window focus", async () => {
+    const { query, contains } = installChromeMock(true);
+
+    const result = await resolveActiveTabSource(fileTab);
+
+    expect(query).not.toHaveBeenCalled();
+    expect(contains).toHaveBeenCalledWith({ origins: ["file:///*"] });
+    expect(result.tabId).toBe(31);
+    expect(result.tab.url).toBe(fileUrl);
+    expect(result.capability).toMatchObject({
+      provider: "file-tab",
+      available: true,
+      code: "ready",
     });
   });
 });

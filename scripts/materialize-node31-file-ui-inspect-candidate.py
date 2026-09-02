@@ -125,9 +125,6 @@ active_anchor = '''  assert(
     "Final MV3 service worker did not retain explicitly enabled file access",
   );
 
-  await browserClient.send("Target.activateTarget", { targetId: primary.targetId });
-  await delay(100);
-
   const activeTab = await evaluate('''
 active_replacement = '''  assert(
     (await evaluate(extensionClient, `chrome.extension.isAllowedFileSchemeAccess()`)) === true,

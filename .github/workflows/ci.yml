@@ -19,7 +19,9 @@ jobs:
 
       - name: Materialize NODE-31 font geometry promotion candidate
         if: github.event_name == 'pull_request' && github.head_ref == 'node-31-real-world-compatibility-release-candidate'
-        run: python3 scripts/materialize-node31-font-geometry-promotion.py
+        run: |
+          python3 scripts/materialize-node31-font-geometry-promotion.py
+          python3 scripts/materialize-node31-font-geometry-audit-anchor-fix.py
 
       - name: Validate foundation
         run: node scripts/validate-foundation.mjs

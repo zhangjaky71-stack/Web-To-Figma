@@ -13,10 +13,7 @@ export const W2F_RASTER_TEXT_POLICY_PLUGIN_DATA_KEYS = {
   reason: "w2f.rasterTextPolicy.reason",
 } as const;
 
-export type W2fRasterTextPolicyStatus =
-  | "not-applicable"
-  | "raster-authorized"
-  | "native-preserved";
+export type W2fRasterTextPolicyStatus = "not-applicable" | "raster-authorized" | "native-preserved";
 
 export interface W2fRasterTextPolicyDecision {
   version: typeof W2F_RASTER_TEXT_POLICY_VERSION;

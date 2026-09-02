@@ -6,13 +6,13 @@ text = path.read_text()
 old = '''  console.log("NODE-31 file protocol: starting final MV3 worker from registered extension root scope");
   await browserClient.send("ServiceWorker.enable");
   await browserClient.send("ServiceWorker.startWorker", { scopeURL: extensionScopeUrl });'''
-new = '''  console.log("NODE-31 file protocol: opening Chrome extensions UI for real inspect-view interaction");
-  const management = await createPageSession(
-    browserClient,
+new = '''  console.log("NODE-31 file protocol: reusing trusted Chrome extensions UI for real inspect-view interaction");
+  await navigate(
+    primaryClient,
     "chrome://extensions/",
-    "Chrome extensions manager for worker inspection",
+    "trusted Chrome extensions manager for worker inspection",
   );
-  const managementClient = management.client;
+  const managementClient = primaryClient;
   await waitFor(
     managementClient,
     `document.querySelector("extensions-manager") !== null`,
@@ -43,7 +43,10 @@ new = '''  console.log("NODE-31 file protocol: opening Chrome extensions UI for 
       return { ready: true, changed: true };
     })()`,
   );
-  assert(devModeEnabled?.ready === true, `Unable to enable Chrome extensions developer mode: ${devModeEnabled?.reason}`);
+  assert(
+    devModeEnabled?.ready === true,
+    `Unable to enable Chrome extensions developer mode: ${devModeEnabled?.reason}`,
+  );
 
   await waitFor(
     managementClient,
@@ -122,12 +125,20 @@ active_anchor = '''  assert(
     "Final MV3 service worker did not retain explicitly enabled file access",
   );
 
+  await browserClient.send("Target.activateTarget", { targetId: primary.targetId });
+  await delay(100);
+
   const activeTab = await evaluate('''
 active_replacement = '''  assert(
     (await evaluate(extensionClient, `chrome.extension.isAllowedFileSchemeAccess()`)) === true,
     "Final MV3 service worker did not retain explicitly enabled file access",
   );
 
+  await navigate(
+    primaryClient,
+    fixtureUrl,
+    "file protocol fixture after Chrome extensions UI inspect",
+  );
   await browserClient.send("Target.activateTarget", { targetId: primary.targetId });
   await delay(100);
 
@@ -139,14 +150,19 @@ elif active_replacement not in text:
 
 text = text.replace(
     '          "extension-service-worker-starts-from-registered-root-scope",',
-    '          "chrome-extensions-ui-inspect-click-starts-inactive-extension-service-worker",',
+    '          "trusted-chrome-extensions-ui-inspect-click-starts-inactive-extension-service-worker",',
     1,
 )
 text = text.replace(
     '          "chrome-management-open-devtools-starts-inactive-extension-service-worker",',
+    '          "trusted-chrome-extensions-ui-inspect-click-starts-inactive-extension-service-worker",',
+    1,
+)
+text = text.replace(
     '          "chrome-extensions-ui-inspect-click-starts-inactive-extension-service-worker",',
+    '          "trusted-chrome-extensions-ui-inspect-click-starts-inactive-extension-service-worker",',
     1,
 )
 
 path.write_text(text)
-print("NODE-31 Chrome extensions UI service-worker inspect candidate materialized in working tree.")
+print("NODE-31 trusted Chrome extensions UI service-worker inspect candidate materialized in working tree.")

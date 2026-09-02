@@ -30,6 +30,7 @@ jobs:
           python3 scripts/materialize-node31-file-worker-permission-check-candidate.py
           python3 scripts/materialize-node31-file-window-focus-candidate.py
           python3 scripts/materialize-node31-sender-tab-routing-candidate.py
+          python3 scripts/materialize-node31-file-high-fidelity-profile-candidate.py
           python3 scripts/materialize-node31-file-bootstrap-candidate.py
           python3 scripts/materialize-node31-file-cleanup-candidate.py
 
@@ -147,5 +148,5 @@ jobs:
             echo "File permission candidate already materialized."
             exit 0
           fi
-          git commit -m "test(node-31): enforce sender-routed file runtime gate"
+          git commit -m "test(node-31): enforce sender-routed high-fidelity file runtime gate"
           git push origin HEAD:"$HEAD_REF"

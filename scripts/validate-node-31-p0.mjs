@@ -5,7 +5,7 @@ const root = process.cwd();
 const failures = [];
 
 const manifestPath = "docs/qa/NODE-31_RC_EVIDENCE_V1.json";
-const auditPath = "docs/qa/results/NODE-31_P0_AUDIT_1017.json";
+const auditPath = "docs/qa/results/NODE-31_P0_AUDIT_1034.json";
 const runtimeEvidencePath = "docs/qa/results/NODE-31_BROWSER_RUNTIME_EVIDENCE_764.json";
 const fontEvidencePath = "docs/qa/results/NODE-31_FONT_EVIDENCE_781.json";
 const pixelEvidencePath = "docs/qa/results/NODE-31_PIXEL_GROUND_TRUTH_EVIDENCE_798.json";
@@ -15,6 +15,7 @@ const pluginUiEvidencePath = "docs/qa/results/NODE-31_PLUGIN_UI_EVIDENCE_847.jso
 const pluginCanvasEvidencePath = "docs/qa/results/NODE-31_PLUGIN_CANVAS_DROP_EVIDENCE_861.json";
 const visualStateEvidencePath = "docs/qa/results/NODE-31_VISUAL_STATE_RUNTIME_EVIDENCE_882.json";
 const fileProtocolEvidencePath = "docs/qa/results/NODE-31_FILE_PROTOCOL_RUNTIME_EVIDENCE_1017.json";
+const fontGeometryEvidencePath = "docs/qa/results/NODE-31_FONT_GEOMETRY_RUNTIME_EVIDENCE_1034.json";
 
 const runtimeHarnessPath = "scripts/run-node-31-browser-runtime.mjs";
 const runtimeProductSourcePath = "apps/browser-extension/src/runtime/content-script.ts";
@@ -104,7 +105,8 @@ const requiredIds = {
   ],
 };
 
-const expectedBlockingIds = [
+const expectedBlockingIds = ["raster-text-only-when-policy-justifies"].sort();
+const historicalFontPolicyNotProvenIds = [
   "geometry-preserving-correction-policy",
   "raster-text-only-when-policy-justifies",
 ].sort();
@@ -197,6 +199,21 @@ const expectedFileProtocolAssertions = [
   "service-worker-origin-indexeddb-exposes-persisted-raw-snapshot",
   "persisted-raw-snapshot-preserves-file-url-and-title",
   "persisted-raw-snapshot-preserves-editable-text-structure",
+].sort();
+
+const expectedFontGeometryAssertions = [
+  "production-policy-version-is-1.0.0",
+  "final-plugin-bundle-contains-geometry-policy-markers",
+  "fallback-natural-height-measured-before-correction",
+  "drift-over-two-percent-triggers-correction",
+  "correction-scale-bounded-between-0.85-and-1.15",
+  "only-substituted-range-font-size-adjusted",
+  "successful-correction-remeasured-within-two-percent",
+  "successful-correction-restores-exact-fixed-bounds",
+  "uncorrectable-drift-emits-attempted-unvalidated",
+  "uncorrectable-drift-restores-exact-fixed-bounds",
+  "geometry-failure-does-not-authorize-raster-text",
+  "within-tolerance-drift-does-not-rescale-text",
 ].sort();
 
 const expectedVisualStateAssertions = [
@@ -310,6 +327,7 @@ requireFiles([
   pluginCanvasEvidencePath,
   visualStateEvidencePath,
   fileProtocolEvidencePath,
+  fontGeometryEvidencePath,
   fileProtocolHarnessPath,
   fileProtocolFixturePath,
   fileProtocolManifestPath,
@@ -362,6 +380,7 @@ const pluginUiEvidence = readJson(pluginUiEvidencePath);
 const pluginCanvasEvidence = readJson(pluginCanvasEvidencePath);
 const visualStateEvidence = readJson(visualStateEvidencePath);
 const fileProtocolEvidence = readJson(fileProtocolEvidencePath);
+const fontGeometryEvidence = readJson(fontGeometryEvidencePath);
 
 if (runtimeEvidence) {
   assert(runtimeEvidence.version === "1.0.0", "browser runtime evidence version mismatch");
@@ -768,7 +787,7 @@ if (visualStateEvidence) {
   );
   assertArrayEquals(
     visualStateEvidence.notProvenByThisArtifact,
-    ["file-protocol-explicit-permission", ...expectedBlockingIds],
+    ["file-protocol-explicit-permission", ...historicalFontPolicyNotProvenIds],
     "Visual-state not-proven boundary mismatch",
   );
 }
@@ -864,7 +883,7 @@ if (fileProtocolEvidence) {
   );
   assertArrayEquals(
     fileProtocolEvidence.notProvenByThisArtifact,
-    expectedBlockingIds,
+    historicalFontPolicyNotProvenIds,
     "File protocol not-proven boundary mismatch",
   );
   assertArrayEquals(
@@ -1068,23 +1087,106 @@ if (pluginCanvasEvidence) {
   );
 }
 
+if (fontGeometryEvidence) {
+  assert(fontGeometryEvidence.version === "1.0.0", "Font geometry evidence version mismatch");
+  assert(
+    fontGeometryEvidence.evidenceType === "node31-font-geometry-policy-runtime-evidence",
+    "Font geometry evidenceType mismatch",
+  );
+  assert(fontGeometryEvidence.status === "PASS", "Font geometry evidence must PASS");
+  assert(
+    fontGeometryEvidence.ci?.runNumber === 1034,
+    "Font geometry evidence must identify CI #1034",
+  );
+  assert(fontGeometryEvidence.ci?.runId === 33618824110, "Font geometry run id mismatch");
+  assert(fontGeometryEvidence.ci?.jobId === 100210838008, "Font geometry job id mismatch");
+  assert(
+    fontGeometryEvidence.ci?.branchHead === "5bb72a8e34f0ab2b78dea4dbf12bc2d7f85192dc",
+    "Font geometry branch head mismatch",
+  );
+  assert(
+    fontGeometryEvidence.ci?.mergeRef === "5c32e4076c8c5c68cc11e4adbc20d554193552c0",
+    "Font geometry merge ref mismatch",
+  );
+  assert(
+    fontGeometryEvidence.ci?.base === "28b52dc3e0d3074bf76205c8deb324a06dfe9e23",
+    "Font geometry base mismatch",
+  );
+  assert(
+    fontGeometryEvidence.ci?.tokenPermissions?.contents === "read",
+    "Font geometry evidence must come from read-only CI",
+  );
+  assertQualityChecks(
+    fontGeometryEvidence,
+    [
+      "node31Validator",
+      "node31CorpusValidator",
+      "node31P0Validator",
+      "lint",
+      "typecheck",
+      "tests",
+      "build",
+      "fileProtocolRuntime",
+      "browserRuntime",
+      "standardCaptureRuntime",
+      "visualStateRuntime",
+      "pluginUiChooseFileRuntime",
+      "pluginCanvasDropRuntime",
+      "fontGeometryRuntime",
+      "format",
+    ],
+    "Font geometry evidence",
+  );
+  assert(
+    fontGeometryEvidence.productionSource === fontDiagnosticsPath,
+    "Font geometry production source mismatch",
+  );
+  assert(
+    fontGeometryEvidence.runtimeHarness === "scripts/run-node-31-font-geometry-runtime.mjs",
+    "Font geometry runtime harness mismatch",
+  );
+  assert(
+    fontGeometryEvidence.hostBoundary?.figmaApi === "simulated-text-metrics",
+    "Font geometry host boundary mismatch",
+  );
+  assert(
+    String(fontGeometryEvidence.hostBoundary?.note ?? "").includes("does not claim Figma Desktop"),
+    "Font geometry evidence must retain its Figma Desktop claim boundary",
+  );
+  assertArrayEquals(
+    fontGeometryEvidence.assertions,
+    expectedFontGeometryAssertions,
+    "Font geometry assertion set mismatch",
+  );
+  assertArrayEquals(
+    fontGeometryEvidence.provesP0Items,
+    ["geometry-preserving-correction-policy"],
+    "Font geometry proven P0 set mismatch",
+  );
+  assertArrayEquals(
+    fontGeometryEvidence.notProvenByThisArtifact,
+    ["raster-text-only-when-policy-justifies"],
+    "Font geometry not-proven boundary mismatch",
+  );
+}
+
 if (audit) {
   assert(audit.version === "1.0.0", "P0 audit version mismatch");
   assert(audit.evidenceType === "node31-p0-audit", "P0 audit evidenceType mismatch");
   assert(audit.contract === "docs/ACCEPTANCE_CONTRACT_V2.md", "P0 audit contract mismatch");
   assert(
-    audit.auditedAgainstBranchHead === "0d569a8c57649fe7385eda2c5a780534491aa51d",
-    "P0 audit must stay anchored to exact-head CI #1017",
+    audit.auditedAgainstBranchHead === "5bb72a8e34f0ab2b78dea4dbf12bc2d7f85192dc",
+    "P0 audit must stay anchored to exact-head CI #1034",
   );
-  assert(audit.ci?.runNumber === 1017, "P0 audit must identify CI #1017");
-  assert(audit.ci?.runId === 33609522169, "P0 audit run id mismatch");
-  assert(audit.ci?.jobId === 100181125296, "P0 audit job id mismatch");
+  assert(audit.ci?.runNumber === 1034, "P0 audit must identify CI #1034");
+  assert(audit.ci?.runId === 33618824110, "P0 audit run id mismatch");
+  assert(audit.ci?.jobId === 100210838008, "P0 audit job id mismatch");
   assert(
-    audit.ci?.branchHead === "0d569a8c57649fe7385eda2c5a780534491aa51d",
+    audit.ci?.branchHead === "5bb72a8e34f0ab2b78dea4dbf12bc2d7f85192dc",
     "P0 audit branch head mismatch",
   );
   assert(
-    audit.ci?.mergeRef === "ec8fa8a141bc7fb9ae8c63b24ad161d452501805",
+    audit.ci?.mergeRef === "5c32e4076c8c5c68cc11e4adbc20d554193552c0",
     "P0 audit merge ref mismatch",
   );
   assert(audit.ci?.base === "28b52dc3e0d3074bf76205c8deb324a06dfe9e23", "P0 audit base mismatch");
@@ -1247,12 +1349,12 @@ if (audit) {
     expectedBlockingIds,
     "P0 declared blocker set mismatch",
   );
-  assert(audit.blockingUnavailableCount === 2, "P0 audit must retain exactly 2 blockers");
+  assert(audit.blockingUnavailableCount === 1, "P0 audit must retain exactly 1 blocker");
 
   if (manifest) {
     assert(manifest.p0?.status === "UNAVAILABLE", "manifest P0 must remain UNAVAILABLE");
     assert(manifest.p0?.evidenceArtifact === auditPath, "manifest P0 evidenceArtifact mismatch");
-    assert(manifest.p0?.blockingUnavailableCount === 2, "manifest P0 blocker count must be 2");
+    assert(manifest.p0?.blockingUnavailableCount === 1, "manifest P0 blocker count must be 1");
   }
 }
 

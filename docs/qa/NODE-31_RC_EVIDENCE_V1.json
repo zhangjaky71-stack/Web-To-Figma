@@ -205,9 +205,9 @@
   },
   "p0": {
     "status": "UNAVAILABLE",
-    "evidenceArtifact": "docs/qa/results/NODE-31_P0_AUDIT_1017.json",
-    "blockingUnavailableCount": 2,
-    "note": "P0 audit remains fail-closed. Permanent read-only exact-head CI #1017 directly proves successful production file:// capture after explicit Chrome extension file-access permission, including the final High Fidelity worker/source routing, production capture adapter, service-worker-origin IndexedDB persistence, and editable RawSnapshot text structure. Two font-policy items remain UNAVAILABLE: geometry-preserving font correction policy and raster-text policy justification."
+    "evidenceArtifact": "docs/qa/results/NODE-31_P0_AUDIT_1034.json",
+    "blockingUnavailableCount": 1,
+    "note": "P0 audit remains fail-closed. Permanent read-only exact-head CI #1017 proves explicit file:// permission and production capture, and permanent read-only exact-head CI #1034 proves the bounded geometry-preserving font correction policy against a deterministic narrow TextNode metric simulator plus final plugin bundle markers. Only raster-text policy justification remains UNAVAILABLE."
   },
   "determinism": {
     "status": "UNAVAILABLE",

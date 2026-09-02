@@ -86,5 +86,8 @@ jobs:
       - name: NODE-31 Plugin canvas-drop P0
         run: node scripts/run-node-31-plugin-canvas-drop-runtime.mjs
 
+      - name: NODE-31 Font geometry P0
+        run: node scripts/run-node-31-font-geometry-runtime.mjs
+
       - name: Format check
         run: pnpm format:check

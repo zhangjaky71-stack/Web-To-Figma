@@ -11,6 +11,10 @@ export interface ActiveTabSourceResolution {
   descriptor?: SourceDescriptor;
 }
 
+async function hasActiveFileSchemeAccess(): Promise<boolean> {
+  return chrome.permissions.contains({ origins: ["file:///*"] });
+}
+
 export async function resolveActiveTabSource(): Promise<ActiveTabSourceResolution> {
   const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
   const tab = tabs[0];
@@ -19,7 +23,7 @@ export async function resolveActiveTabSource(): Promise<ActiveTabSourceResolutio
   }
 
   const fileSchemeAccess = tab.url.startsWith("file:")
-    ? await chrome.extension.isAllowedFileSchemeAccess()
+    ? await hasActiveFileSchemeAccess()
     : false;
   const resolved = resolveTabSource({
     url: tab.url,

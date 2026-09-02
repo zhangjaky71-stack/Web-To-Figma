@@ -102,7 +102,10 @@ try {
     "w2f.font.geometryCorrectionStatus",
     "w2f.font.geometryCorrection",
   ]) {
-    assert(finalBundle.includes(marker), `Final plugin bundle is missing geometry marker: ${marker}`);
+    assert(
+      finalBundle.includes(marker),
+      `Final plugin bundle is missing geometry marker: ${marker}`,
+    );
   }
 
   const policy = await import(`${pathToFileURL(compiledPath).href}?node31=${Date.now()}`);
@@ -120,12 +123,21 @@ try {
   assert(success.status === "corrected", `Expected corrected status, received ${success.status}`);
   assert(success.attempted === true, "Geometry drift did not trigger correction");
   assert(success.adjustedRangeCount === 1, "Exactly one substituted range must be corrected");
-  assert(Math.abs(success.measuredHeightBefore - 22) < 1e-6, "Pre-correction height was not measured");
+  assert(
+    Math.abs(success.measuredHeightBefore - 22) < 1e-6,
+    "Pre-correction height was not measured",
+  );
   assert(Math.abs(success.measuredHeightAfter - 20) < 1e-6, "Corrected height was not remeasured");
   assert(success.errorRatioAfter <= 0.02, "Corrected geometry exceeds the 2% tolerance");
   assert(success.scale >= 0.85 && success.scale <= 1.15, "Correction scale escaped policy bounds");
-  assert(successNode.width === 120 && successNode.height === 20, "Successful correction changed fixed bounds");
-  assert(successNode.textAutoResize === "NONE", "Successful correction did not restore fixed text sizing");
+  assert(
+    successNode.width === 120 && successNode.height === 20,
+    "Successful correction changed fixed bounds",
+  );
+  assert(
+    successNode.textAutoResize === "NONE",
+    "Successful correction did not restore fixed text sizing",
+  );
   assert(
     successNode.fontSizeWrites.length === 1 &&
       successNode.fontSizeWrites[0].start === 0 &&
@@ -165,9 +177,7 @@ try {
     naturalHeight: (fontSize) => fontSize * 2,
   });
   policy.persistFontSubstitutionDiagnostics(toleranceNode, [substitutionDiagnostic()]);
-  const tolerance = JSON.parse(
-    toleranceNode.pluginData.get("w2f.font.geometryCorrection") ?? "{}",
-  );
+  const tolerance = JSON.parse(toleranceNode.pluginData.get("w2f.font.geometryCorrection") ?? "{}");
   assert(
     tolerance.status === "within-tolerance",
     `Small geometry drift should remain within tolerance, received ${tolerance.status}`,

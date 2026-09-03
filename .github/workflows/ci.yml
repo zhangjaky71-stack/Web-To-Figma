@@ -65,6 +65,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: NODE-31 Dependency security audit
+        run: pnpm audit --audit-level high
+
       - name: Lint
         run: pnpm lint
 

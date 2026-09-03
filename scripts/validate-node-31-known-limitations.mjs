@@ -80,7 +80,10 @@ if (evidence) {
   );
   assert(evidence.status === "PASS", "Known limitations evidence must PASS");
   assert(evidence.sourceDocument === limitationsPath, "Known limitations source document mismatch");
-  assert(evidence.sourceDocumentStatus === "ACTIVE PRODUCT CONTRACT", "Source document status mismatch");
+  assert(
+    evidence.sourceDocumentStatus === "ACTIVE PRODUCT CONTRACT",
+    "Source document status mismatch",
+  );
   assert(evidence.sectionCount === 37, "Known limitations evidence section count must be 37");
   assert(
     JSON.stringify(evidence.sectionIds) === JSON.stringify(expectedSectionIds),
@@ -163,7 +166,10 @@ for (const marker of [
 }
 
 for (const marker of ['"ambiguous"', "confidence: number;"]) {
-  assert(stableIdentityTypes.includes(marker), `Stable identity limitation anchor missing ${marker}`);
+  assert(
+    stableIdentityTypes.includes(marker),
+    `Stable identity limitation anchor missing ${marker}`,
+  );
 }
 
 if (manifest) {
@@ -183,9 +189,15 @@ if (manifest) {
   const canvas = (manifest.classB ?? []).find((item) => item.category === "canvas");
   const webgl = (manifest.classB ?? []).find((item) => item.category === "webgl");
   assert(canvas?.supportClass === "expected-fallback", "Canvas must remain expected-fallback");
-  assert(canvas?.fallbackContract === `${limitationsPath}#14-canvas`, "Canvas fallback contract mismatch");
+  assert(
+    canvas?.fallbackContract === `${limitationsPath}#14-canvas`,
+    "Canvas fallback contract mismatch",
+  );
   assert(webgl?.supportClass === "expected-fallback", "WebGL must remain expected-fallback");
-  assert(webgl?.fallbackContract === `${limitationsPath}#15-webgl`, "WebGL fallback contract mismatch");
+  assert(
+    webgl?.fallbackContract === `${limitationsPath}#15-webgl`,
+    "WebGL fallback contract mismatch",
+  );
   for (const item of manifest.classA ?? []) {
     assert(
       item.measurementStatus === "UNAVAILABLE",

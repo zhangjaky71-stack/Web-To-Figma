@@ -71,7 +71,10 @@ if (evidence) {
   );
   assert(evidence.inventory?.knownCriticalBlockers === 0, "Known critical blocker count must be 0");
   assert(evidence.inventory?.knownHighBlockers === 0, "Known high blocker count must be 0");
-  assert(evidence.inventory?.openGitHubIssuesObserved === 0, "Open GitHub issue observation must be 0");
+  assert(
+    evidence.inventory?.openGitHubIssuesObserved === 0,
+    "Open GitHub issue observation must be 0",
+  );
   assert(
     evidence.inventory?.hostileFixtureEvidence === historicalEvidencePath,
     "Hostile fixture evidence path mismatch",
@@ -101,7 +104,10 @@ if (evidence) {
     "does-not-claim-private-security-reporting-channels-were-audited",
     "future-audit-or-hostile-fixture-failures-must-block-release-readiness",
   ]) {
-    assert(evidence.scopeBoundaries?.includes(boundary), `Security scope boundary missing ${boundary}`);
+    assert(
+      evidence.scopeBoundaries?.includes(boundary),
+      `Security scope boundary missing ${boundary}`,
+    );
   }
   for (const boundary of [
     "Class-A-fidelity-measurements",

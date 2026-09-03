@@ -147,6 +147,43 @@ describe("NODE-31 Release Candidate evaluator", () => {
     expect(report.failures.join("\n")).toContain("text: Required metric evidence is missing");
   });
 
+  it("does not silently skip one deterministic sample with missing metric evidence", () => {
+    const input = passingInput();
+    input.corpus = [deterministicSample("deterministic-secondary"), ...input.corpus].map((sample) => {
+      if (sample.id !== "deterministic-secondary") return sample;
+      const copy = { ...sample };
+      delete copy.textFidelity;
+      return copy;
+    });
+    const report = evaluateNode31ReleaseCandidate(input);
+    expect(report.status).toBe("UNAVAILABLE");
+    expect(report.releaseReady).toBe(false);
+    expect(report.failures.join("\n")).toContain(
+      "text: Required metric evidence is missing for samples: deterministic-secondary",
+    );
+  });
+
+  it("requires complete native Class B editable and raster evidence before computing medians", () => {
+    const input = passingInput();
+    input.corpus = input.corpus.map((sample) => {
+      if (sample.category !== "ecommerce") return sample;
+      const copy = { ...sample };
+      delete copy.editableAreaRatio;
+      delete copy.rasterAreaRatio;
+      return copy;
+    });
+    const report = evaluateNode31ReleaseCandidate(input);
+    expect(report.status).toBe("UNAVAILABLE");
+    expect(report.releaseReady).toBe(false);
+    const failures = report.failures.join("\n");
+    expect(failures).toContain(
+      "editable-area-median: Required metric evidence is missing for samples: realistic-ecommerce",
+    );
+    expect(failures).toContain(
+      "raster-area-median: Required metric evidence is missing for samples: realistic-ecommerce",
+    );
+  });
+
   it("keeps Class C live-site drift as a warning signal rather than the sole regression baseline", () => {
     const input = passingInput();
     input.corpus = [

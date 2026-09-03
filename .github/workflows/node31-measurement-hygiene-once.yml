@@ -1,0 +1,116 @@
+name: NODE-31 Measurement Hygiene Once
+
+on:
+  push:
+    paths:
+      - ".github/workflows/node31-measurement-hygiene-once.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  hygiene:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v6
+        with:
+          ref: node-31-real-world-compatibility-release-candidate
+
+      - name: Bind measurement evidence to branch head
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          collector = Path("scripts/run-node-31-measurement-input-level1.mjs")
+          text = collector.read_text()
+          old = '''function checkoutRevision() {
+            if (process.env.GITHUB_HEAD_SHA && /^[a-f0-9]{40}$/.test(process.env.GITHUB_HEAD_SHA)) {
+              return process.env.GITHUB_HEAD_SHA;
+            }
+            if (process.env.GITHUB_EVENT_NAME === "pull_request") {
+              try {
+                const parent = execFileSync("git", ["rev-parse", "HEAD^2"], { encoding: "utf8" }).trim();
+                if (/^[a-f0-9]{40}$/.test(parent)) return parent;
+              } catch {
+                // Fall back to the checked-out revision below.
+              }
+            }
+            const githubSha = process.env.GITHUB_SHA;
+            if (githubSha && /^[a-f0-9]{40}$/.test(githubSha)) return githubSha;
+            return execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+          }'''
+          new = '''function checkoutRevision() {
+            const explicitBranchHead = process.env.W2F_NODE31_BRANCH_HEAD;
+            if (explicitBranchHead && /^[a-f0-9]{40}$/.test(explicitBranchHead)) {
+              return explicitBranchHead;
+            }
+            const githubSha = process.env.GITHUB_SHA;
+            if (githubSha && /^[a-f0-9]{40}$/.test(githubSha)) return githubSha;
+            return execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+          }'''
+          if old not in text:
+              raise SystemExit("collector checkoutRevision block did not match expected source")
+          collector.write_text(text.replace(old, new))
+
+          workflow = Path(".github/workflows/ci.yml")
+          text = workflow.read_text()
+          old = '''      - name: NODE-31 Level-1 measurement input
+                run: node scripts/run-node-31-measurement-input-level1.mjs
+          '''
+          new = '''      - name: NODE-31 Level-1 measurement input
+                env:
+                  W2F_NODE31_BRANCH_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+                run: node scripts/run-node-31-measurement-input-level1.mjs
+          '''
+          if old not in text:
+              raise SystemExit("CI Level-1 measurement step did not match expected source")
+          workflow.write_text(text.replace(old, new))
+          PY
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.22.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Format measurement sources
+        run: >-
+          pnpm exec prettier --write
+          packages/figma-renderer/src/qa/measurement-artifact.ts
+          packages/figma-renderer/test/node31-release-candidate.test.ts
+          scripts/run-node-31-measurement-input-level1.mjs
+          scripts/run-node-31-measurement-provenance.mjs
+          .github/workflows/ci.yml
+          .gitignore
+          .prettierignore
+
+      - name: Commit hygiene changes
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            packages/figma-renderer/src/qa/measurement-artifact.ts \
+            packages/figma-renderer/test/node31-release-candidate.test.ts \
+            scripts/run-node-31-measurement-input-level1.mjs \
+            scripts/run-node-31-measurement-provenance.mjs \
+            .github/workflows/ci.yml \
+            .gitignore \
+            .prettierignore
+          if git diff --cached --quiet; then
+            echo "No hygiene changes required."
+            exit 0
+          fi
+          git commit -m "chore(node-31): bind and format measurement evidence"
+          git push origin HEAD:node-31-real-world-compatibility-release-candidate

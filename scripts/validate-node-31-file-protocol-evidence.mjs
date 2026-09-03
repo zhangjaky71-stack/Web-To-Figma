@@ -81,7 +81,10 @@ if (evidence) {
     "fontGeometryRuntime",
     "format",
   ]) {
-    assert(evidence.ci?.qualityChecks?.[check] === "PASS", `File protocol evidence missing PASS ${check}`);
+    assert(
+      evidence.ci?.qualityChecks?.[check] === "PASS",
+      `File protocol evidence missing PASS ${check}`,
+    );
   }
 
   assert(evidence.runtime?.status === "PASS", "File protocol runtime must PASS");
@@ -201,14 +204,17 @@ if (manifest) {
     manifest.host_permissions?.includes("file:///*"),
     "High Fidelity manifest must declare file:///* host permission",
   );
-  assert(manifest.permissions?.includes("debugger"), "High Fidelity manifest must declare debugger permission");
+  assert(
+    manifest.permissions?.includes("debugger"),
+    "High Fidelity manifest must declare debugger permission",
+  );
 }
 
 for (const marker of [
   'version: "18.0.0"',
   'captureProfile: "high-fidelity"',
   'job?.capture?.adapter === "cdp"',
-  'job?.capture?.fallbackFromCdp !== true',
+  "job?.capture?.fallbackFromCdp !== true",
   'rawSnapshot.adapter === "cdp"',
   'reference.kind === "viewport"',
   'reference.kind === "full-page"',

@@ -420,17 +420,22 @@ async function proveProductionCapture(chromePath) {
     );
 
     const fileTarget = await createUnattachedFileTarget(harness.browser);
-    const fileTab = await evaluate(
-      options.client,
-      `(async () => {
-        const tabs = await chrome.tabs.query({});
-        const tab = tabs.find((candidate) => candidate.url === ${JSON.stringify(fixtureUrl)});
-        return tab && typeof tab.id === "number"
-          ? { id: tab.id, url: tab.url, windowId: tab.windowId, active: tab.active }
-          : null;
-      })()`,
-      30000,
-    );
+    let fileTab = null;
+    for (let attempt = 0; attempt < 400; attempt += 1) {
+      fileTab = await evaluate(
+        options.client,
+        `(async () => {
+          const tabs = await chrome.tabs.query({});
+          const tab = tabs.find((candidate) => candidate.url === ${JSON.stringify(fixtureUrl)});
+          return tab && typeof tab.id === "number"
+            ? { id: tab.id, url: tab.url, windowId: tab.windowId, active: tab.active }
+            : null;
+        })()`,
+        30000,
+      );
+      if (fileTab?.url === fixtureUrl && typeof fileTab.id === "number") break;
+      await delay(25);
+    }
     assert(
       fileTab?.url === fixtureUrl,
       `Extension could not resolve real file tab: ${JSON.stringify(fileTab)}`,

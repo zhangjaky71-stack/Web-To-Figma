@@ -1,15 +1,16 @@
 import { createHash } from "node:crypto";
 import { execFileSync, spawn } from "node:child_process";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
+import { pathToFileURL } from "node:url";
 import { evaluateNode31MeasurementArtifact } from "../packages/figma-renderer/dist/index.js";
 import { parseWtfPackage } from "../packages/wtf-parser/dist/index.js";
 
 const sourceArtifact = "qa/corpus/node31/class-a/level1-core.html";
 const sourcePath = resolve(sourceArtifact);
+const fixtureUrl = pathToFileURL(sourcePath).href;
 const extensionRoot = resolve("apps/browser-extension/dist-high-fidelity");
 const outputDir = resolve(
   process.env.W2F_NODE31_MEASUREMENT_OUTPUT_DIR ?? "artifacts/node31-measurement-input",
@@ -224,16 +225,46 @@ async function loadExtension(browser) {
     30000,
   );
   assert(loaded.id, "Extensions.loadUnpacked did not return an extension id");
+  const listed = await browser.send("Extensions.getExtensions");
+  assert(
+    listed.extensions?.some((extension) => extension.id === loaded.id),
+    "Extensions.getExtensions did not list the loaded Web-To-Figma extension",
+  );
   return loaded.id;
+}
+
+async function extensionInfo(managementClient, extensionId) {
+  return evaluate(
+    managementClient,
+    `new Promise((resolvePromise, reject) => {
+      chrome.developerPrivate.getExtensionInfo(
+        ${JSON.stringify(extensionId)},
+        (info) => chrome.runtime.lastError
+          ? reject(new Error(chrome.runtime.lastError.message))
+          : resolvePromise({
+              id: info.id,
+              state: info.state,
+              fileAccess: info.fileAccess ?? null,
+              optionsPage: info.optionsPage ?? null
+            })
+      );
+    })`,
+  );
 }
 
 async function openOptions(browser, extensionId) {
   const management = await createPage(browser, "chrome://extensions/", "chrome://extensions");
   await waitFor(
     management.client,
-    `typeof chrome?.developerPrivate?.showOptions === "function"`,
-    "chrome.developerPrivate.showOptions is unavailable",
+    `typeof chrome?.developerPrivate?.getExtensionInfo === "function" &&
+     typeof chrome?.developerPrivate?.showOptions === "function"`,
+    "chrome.developerPrivate extension management APIs are unavailable",
   );
+  const info = await extensionInfo(management.client, extensionId);
+  assert(info?.state === "ENABLED", `Fresh High Fidelity extension is not enabled: ${info?.state}`);
+  assert(info?.fileAccess?.isEnabled === true, "High Fidelity file-access toggle is unavailable");
+  assert(info?.fileAccess?.isActive === true, "Fresh High Fidelity extension lacks active file access");
+
   await evaluate(
     management.client,
     `Promise.resolve(chrome.developerPrivate.showOptions(${JSON.stringify(extensionId)})).then(() => true)`,
@@ -248,44 +279,64 @@ async function openOptions(browser, extensionId) {
       const client = await attachPage(browser, target.targetId, "extension options");
       await waitFor(
         client,
-        `typeof chrome?.tabs?.query === "function" && typeof chrome?.scripting?.executeScript === "function"`,
+        `typeof chrome?.tabs?.query === "function" &&
+         typeof chrome?.scripting?.executeScript === "function" &&
+         typeof chrome?.debugger?.getTargets === "function"`,
         "Chrome-opened extension options page lacks production extension APIs",
       );
-      return client;
+      return { client, fileAccess: info.fileAccess };
     }
     await delay(25);
   }
   throw new Error("Chrome-opened extension options target not found");
 }
 
-async function createFixtureTab(browser, optionsClient, fixtureUrl) {
+async function createFixtureTab(browser, optionsClient) {
   const created = await browser.send("Target.createTarget", { url: fixtureUrl });
-  assert(created.targetId, "Unable to create Class A Level-1 target");
-  await browser.send("Target.activateTarget", { targetId: created.targetId });
+  assert(created.targetId, "Unable to create Class A Level-1 file target");
+  let targetInfo = null;
   for (let attempt = 0; attempt < 400; attempt += 1) {
-    const tab = await evaluate(
+    const result = await browser.send("Target.getTargetInfo", { targetId: created.targetId });
+    targetInfo = result.targetInfo ?? null;
+    if (targetInfo?.url === fixtureUrl) break;
+    await delay(25);
+  }
+  assert(targetInfo?.url === fixtureUrl, `Level-1 file target URL mismatch: ${targetInfo?.url}`);
+  await browser.send("Target.activateTarget", { targetId: created.targetId });
+
+  let last = null;
+  for (let attempt = 0; attempt < 400; attempt += 1) {
+    last = await evaluate(
       optionsClient,
       `(async () => {
         const tabs = await chrome.tabs.query({});
         const tab = tabs.find((item) => item.url === ${JSON.stringify(fixtureUrl)});
-        if (!tab?.id) return null;
+        if (!tab?.id) return { tab: null, probe: null, error: "tab-not-found" };
         try {
           const [probe] = await chrome.scripting.executeScript({
             target: { tabId: tab.id },
             func: () => ({ readyState: document.readyState, title: document.title })
           });
-          return probe?.result?.readyState === "complete"
-            ? { id: tab.id, title: probe.result.title, url: tab.url }
-            : null;
-        } catch {
-          return null;
+          return {
+            tab: { id: tab.id, title: tab.title, url: tab.url, active: tab.active },
+            probe: probe?.result ?? null,
+            error: null
+          };
+        } catch (error) {
+          return {
+            tab: { id: tab.id, title: tab.title, url: tab.url, active: tab.active },
+            probe: null,
+            error: String(error?.message ?? error)
+          };
         }
       })()`,
     );
-    if (tab?.id) return tab;
+    if (last?.tab?.id && last?.probe?.readyState === "complete") {
+      return { ...last.tab, targetId: created.targetId };
+    }
     await delay(25);
   }
-  throw new Error("Class A Level-1 fixture tab did not become production-injectable");
+  throw new Error(`Class A Level-1 file tab did not become production-injectable: ${JSON.stringify(last)}`);
 }
 
 async function readIndexedDb(optionsClient, databaseName, version, storeName, key, mapper) {
@@ -313,48 +364,31 @@ async function readIndexedDb(optionsClient, databaseName, version, storeName, ke
   );
 }
 
-async function startFixtureServer(sourceBytes) {
-  const server = createServer((request, response) => {
-    if (request.url === "/level1-core.html") {
-      response.writeHead(200, {
-        "content-type": "text/html; charset=utf-8",
-        "cache-control": "no-store",
-      });
-      response.end(sourceBytes);
-      return;
-    }
-    response.writeHead(request.url === "/favicon.ico" ? 204 : 404);
-    response.end();
-  });
-  await new Promise((resolvePromise, reject) => {
-    server.once("error", reject);
-    server.listen(0, "127.0.0.1", resolvePromise);
-  });
-  const address = server.address();
-  assert(address && typeof address === "object", "Fixture server did not expose a TCP address");
-  return {
-    url: `http://127.0.0.1:${address.port}/level1-core.html`,
-    async close() {
-      await new Promise((resolvePromise, reject) =>
-        server.close((error) => (error ? reject(error) : resolvePromise())),
-      );
-    },
-  };
-}
-
 const sourceBytes = await readFile(sourcePath);
 const sourceSha256 = sha256(sourceBytes);
-const fixtureServer = await startFixtureServer(sourceBytes);
 const chromePath = await findChrome();
 const chrome = await startChrome(chromePath);
 
 try {
   const extensionId = await loadExtension(chrome.browser);
-  const optionsClient = await openOptions(chrome.browser, extensionId);
-  const fixtureTab = await createFixtureTab(chrome.browser, optionsClient, fixtureServer.url);
+  const options = await openOptions(chrome.browser, extensionId);
+  const fixtureTab = await createFixtureTab(chrome.browser, options.client);
+
+  const debuggerState = await evaluate(
+    options.client,
+    `(async () => {
+      const targets = await chrome.debugger.getTargets();
+      const target = targets.find((item) => item.tabId === ${JSON.stringify(fixtureTab.id)});
+      return target
+        ? { id: target.id, tabId: target.tabId ?? null, attached: target.attached, url: target.url }
+        : null;
+    })()`,
+  );
+  assert(debuggerState, "Production chrome.debugger target for Level-1 file tab was not found");
+  assert(debuggerState.attached === false, "Harness unexpectedly attached Level-1 file target before capture");
 
   const production = await evaluate(
-    optionsClient,
+    options.client,
     `(async () => {
       const [injection] = await chrome.scripting.executeScript({
         target: { tabId: ${JSON.stringify(fixtureTab.id)} },
@@ -375,27 +409,55 @@ try {
   );
 
   assert(production?.capability?.ok === true, "Production source capability failed");
-  assert(production?.job?.ok === true, `Production capture failed: ${production?.job?.error ?? "unknown"}`);
+  assert(production?.capability?.data?.provider === "file-tab", "Level-1 capability provider is not file-tab");
+  assert(production?.capability?.data?.supported === true, "Level-1 file source is unsupported");
+  assert(production?.capability?.data?.available === true, "Level-1 file source is unavailable");
+  assert(production?.capability?.data?.code === "ready", "Level-1 file source is not ready");
+  assert(
+    production?.job?.ok === true,
+    `Production capture failed: ${production?.job?.error ?? "unknown"}`,
+  );
   const job = production.job.data;
   assert(job?.status === "completed", `Production capture is ${job?.status ?? "missing"}`);
+  assert(job?.mode === "full-page", "Class A Level-1 capture mode mismatch");
+  assert(job?.source?.provider === "file-tab", "Class A Level-1 job lost file-tab provider");
+  assert(job?.source?.sourceType === "file", "Class A Level-1 job lost file source type");
+  assert(job?.source?.sourceUrl === fixtureUrl, "Class A Level-1 job lost exact file URL");
+  assert(job?.source?.offline === true, "Class A Level-1 job lost offline file semantics");
+  assert(job?.page?.url === fixtureUrl, "Class A Level-1 page URL mismatch");
   assert(job?.capture?.adapter === "cdp", "Class A Level-1 capture did not use high-fidelity CDP");
+  assert(job?.capture?.fallbackFromCdp !== true, "Class A Level-1 capture unexpectedly fell back from CDP");
   assert(production?.exported?.ok === true, `Production WTF export failed: ${production?.exported?.error ?? "unknown"}`);
   const exportReceipt = production.exported.data;
   assert(exportReceipt?.archiveSha256, "Production WTF export did not return archive SHA-256");
 
   const rawSnapshot = await readIndexedDb(
-    optionsClient,
+    options.client,
     "w2f-capture-snapshots",
     2,
     "rawSnapshots",
     `raw-snapshot:${job.jobId}`,
     `(value) => value`,
   );
-  assert(rawSnapshot?.url === fixtureServer.url, "Persisted RawSnapshot URL mismatch");
+  assert(rawSnapshot?.url === fixtureUrl, "Persisted RawSnapshot URL mismatch");
+  assert(rawSnapshot?.adapter === "cdp", "Persisted RawSnapshot adapter is not CDP");
   assert(rawSnapshot?.nodes?.length > 0, "Persisted RawSnapshot contains no nodes");
+  assert(
+    !(rawSnapshot?.diagnostics ?? []).some((item) => item.code === "CDP_CAPTURE_FALLBACK_STANDARD"),
+    "Persisted RawSnapshot recorded an unexpected Standard fallback",
+  );
+  assert(
+    (rawSnapshot?.nodes ?? []).some(
+      (node) =>
+        node.kind === "text" &&
+        (node.textContent?.includes("Editable structure with deterministic visual evidence") ||
+          node.text?.value?.includes("Editable structure with deterministic visual evidence")),
+    ),
+    "Persisted Level-1 RawSnapshot is missing deterministic editable text",
+  );
 
   const storedPackage = await readIndexedDb(
-    optionsClient,
+    options.client,
     "w2f-wtf-packages",
     1,
     "packages",
@@ -460,7 +522,7 @@ try {
     provenance: {
       branchHead: checkoutRevision(),
       generatedAt: new Date().toISOString(),
-      environmentFingerprint: `${process.platform}-${process.arch}-node-${process.versions.node}-${chrome.version.product}-high-fidelity`,
+      environmentFingerprint: `${process.platform}-${process.arch}-node-${process.versions.node}-${chrome.version.product}-high-fidelity-file`,
       ...(process.env.GITHUB_RUN_ID && Number.isSafeInteger(Number(process.env.GITHUB_RUN_ID))
         ? { ciRunId: Number(process.env.GITHUB_RUN_ID) }
         : {}),
@@ -505,7 +567,8 @@ try {
     },
     antiCheatingViolations: [],
     notes: [
-      "Production High Fidelity browser capture and production WTF export were exercised without a synthetic screenshot shortcut.",
+      "Production High Fidelity browser capture and production WTF export ran against the explicitly permitted file:// source path without synthetic activeTab grants.",
+      "The harness never attached the Level-1 fixture target before production capture, leaving chrome.debugger uncontended for the production CDP path.",
       "Production parseWtfPackage accepted the emitted archive through secure ZIP, checksum, schema, media-policy and W2F IR validation.",
       "This partial artifact intentionally remains UNAVAILABLE until real Figma Desktop render/export evidence exists.",
     ],
@@ -520,11 +583,14 @@ try {
   console.log(
     JSON.stringify(
       {
-        version: "1.0.0",
+        version: "1.1.0",
         evidenceType: "node31-measurement-input-runtime",
         status: "PASS",
         sampleId: base,
         chrome: chrome.version.product,
+        sourceProtocol: "file",
+        explicitFileAccess: options.fileAccess,
+        preCaptureDebuggerAttached: debuggerState.attached,
         captureAdapter: job.capture.adapter,
         sourceArtifact,
         sourceSha256,
@@ -544,5 +610,4 @@ try {
   );
 } finally {
   await chrome.cleanup().catch(() => undefined);
-  await fixtureServer.close().catch(() => undefined);
 }

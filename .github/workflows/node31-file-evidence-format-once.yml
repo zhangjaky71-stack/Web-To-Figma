@@ -1,0 +1,50 @@
+name: NODE-31 file evidence format
+
+on:
+  push:
+    branches:
+      - node-31-real-world-compatibility-release-candidate
+    paths:
+      - .github/workflows/node31-file-evidence-format-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v6
+        with:
+          ref: node-31-real-world-compatibility-release-candidate
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.22.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Format validator
+        run: |
+          pnpm exec prettier --write scripts/validate-node-31-file-protocol-evidence.mjs
+          pnpm exec prettier --check scripts/validate-node-31-file-protocol-evidence.mjs
+          git diff --check
+
+      - name: Commit validator formatting
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/validate-node-31-file-protocol-evidence.mjs
+          git diff --cached --check
+          git commit -m "style(node-31): format file protocol evidence validator"
+          git push origin HEAD:node-31-real-world-compatibility-release-candidate

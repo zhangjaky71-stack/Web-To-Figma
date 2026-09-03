@@ -76,6 +76,44 @@ async function dispatchCapability(sessionBase, fixtureUrl) {
   );
 }
 
+async function readDebuggerTargetState(sessionBase, fixtureUrl) {
+  return executeAsync(
+    sessionBase,
+    `const fixtureUrl = arguments[0];
+     const done = arguments[arguments.length - 1];
+     (async () => {
+       try {
+         const tabs = await chrome.tabs.query({});
+         const fileTab = tabs.find((candidate) => candidate.url === fixtureUrl);
+         if (!fileTab || typeof fileTab.id !== "number") {
+           done({ ok: false, error: "file-tab-not-found" });
+           return;
+         }
+         chrome.debugger.getTargets((targets) => {
+           if (chrome.runtime.lastError) {
+             done({ ok: false, error: chrome.runtime.lastError.message, fileTabId: fileTab.id });
+             return;
+           }
+           const matches = (targets ?? [])
+             .filter((target) => target.tabId === fileTab.id || target.url === fixtureUrl)
+             .map((target) => ({
+               id: target.id,
+               tabId: target.tabId ?? null,
+               type: target.type,
+               attached: target.attached,
+               title: target.title,
+               url: target.url
+             }));
+           done({ ok: true, fileTabId: fileTab.id, matches });
+         });
+       } catch (error) {
+         done({ ok: false, error: String(error?.stack ?? error) });
+       }
+     })();`,
+    [fixtureUrl],
+  );
+}
+
 async function launchStartJob(sessionBase, fixtureUrl) {
   await executeAsync(
     sessionBase,
@@ -190,8 +228,6 @@ async function waitForProductionResponse(sessionBase, timeoutMs = 120000) {
     }
 
     if (["completed", "failed", "cancelled"].includes(lastJob?.status)) {
-      // The message response is written immediately after the service worker resolves.
-      // Give the content-world promise callback a short grace window to persist the exact response.
       for (let grace = 0; grace < 40; grace += 1) {
         await delay(25);
         const after = await readStoredProgress(sessionBase);
@@ -230,6 +266,11 @@ async function handleProductionDispatch(sessionId, fixtureUrl) {
   }
   console.log(
     `NODE-31 file protocol v15: source capability response ${JSON.stringify(capability.response)}`,
+  );
+
+  const debuggerState = await readDebuggerTargetState(sessionBase, fixtureUrl);
+  console.log(
+    `NODE-31 file protocol v15: debugger target ownership ${JSON.stringify(debuggerState)}`,
   );
 
   console.log("NODE-31 file protocol v15: launching production full-page job without blocking WebDriver");

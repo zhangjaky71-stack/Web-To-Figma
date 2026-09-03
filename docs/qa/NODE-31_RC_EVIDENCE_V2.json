@@ -120,8 +120,10 @@
   ],
   "classC": [],
   "security": {
-    "knownCriticalBlockers": null,
-    "knownHighBlockers": null,
+    "knownCriticalBlockers": 0,
+    "knownHighBlockers": 0,
+    "evidenceArtifact": "docs/qa/results/NODE-31_SECURITY_EVIDENCE_1125.json",
+    "note": "Scoped known/tracked blocker inventory only: exact-head CI #1125 dependency audit reported no known vulnerabilities, the hosted open GitHub issue inventory observed zero open issues, and all declared hostile parser/SVG fixtures remain PASS. This does not prove absence of undiscovered vulnerabilities or constitute an independent penetration test.",
     "fixtures": [
       {
         "id": "malformed-archive",

@@ -1,0 +1,67 @@
+name: NODE-31 Level-2 Diagnostic Once
+
+on:
+  push:
+    paths:
+      - ".github/workflows/node31-level2-diagnostic-once.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v6
+        with:
+          ref: node-31-real-world-compatibility-release-candidate
+
+      - name: Improve Level-2 failure diagnostics
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("scripts/run-node-31-measurement-input-level2.mjs")
+          text = path.read_text()
+          old = 'assert(job?.status === "completed", `Responsive production job status is ${job?.status}`);'
+          new = '''assert(
+            job?.status === "completed",
+            `Responsive production job status is ${job?.status}; phase=${job?.phase}; error=${job?.error ?? "none"}; plan=${JSON.stringify(job?.responsivePlan ?? [])}`,
+          );'''
+          if old not in text:
+              raise SystemExit("expected Level-2 status assertion not found")
+          path.write_text(text.replace(old, new, 1))
+          PY
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.22.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Format and syntax check
+        run: |
+          pnpm exec prettier --write scripts/run-node-31-measurement-input-level2.mjs
+          pnpm exec prettier --check scripts/run-node-31-measurement-input-level2.mjs
+          node --check scripts/run-node-31-measurement-input-level2.mjs
+          git diff --check
+
+      - name: Commit diagnostic enhancement
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/run-node-31-measurement-input-level2.mjs
+          git commit -m "test(node-31): expose Level-2 responsive runtime failure"
+          git push origin HEAD:node-31-real-world-compatibility-release-candidate

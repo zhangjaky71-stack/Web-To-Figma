@@ -86,6 +86,9 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: NODE-31 Measurement provenance
+        run: node scripts/run-node-31-measurement-provenance.mjs
+
       - name: NODE-31 File protocol P0
         run: node scripts/run-node-31-file-protocol-runtime-v18.mjs
 

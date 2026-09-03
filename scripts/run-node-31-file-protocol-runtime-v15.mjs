@@ -76,6 +76,64 @@ async function dispatchCapability(sessionBase, fixtureUrl) {
   );
 }
 
+async function probeActionActiveTabGrant(sessionBase, fixtureUrl) {
+  return executeAsync(
+    sessionBase,
+    `const fixtureUrl = arguments[0];
+     const done = arguments[arguments.length - 1];
+     (async () => {
+       try {
+         const tabs = await chrome.tabs.query({});
+         const fileTab = tabs.find((candidate) => candidate.url === fixtureUrl);
+         if (!fileTab || typeof fileTab.id !== "number" || typeof fileTab.windowId !== "number") {
+           done({ ok: false, stage: "resolve-file-tab", error: "file-tab-not-found" });
+           return;
+         }
+         await chrome.tabs.update(fileTab.id, { active: true });
+         await chrome.windows.update(fileTab.windowId, { focused: true }).catch(() => undefined);
+         const activeBefore = await chrome.tabs.query({ active: true, windowId: fileTab.windowId });
+         let popupOpened = false;
+         let popupError = null;
+         try {
+           await chrome.action.openPopup({ windowId: fileTab.windowId });
+           popupOpened = true;
+         } catch (error) {
+           popupError = String(error?.stack ?? error);
+         }
+         await new Promise((resolvePromise) => setTimeout(resolvePromise, 250));
+         try {
+           const dataUrl = await chrome.tabs.captureVisibleTab(fileTab.windowId, { format: "png" });
+           done({
+             ok: true,
+             fileTabId: fileTab.id,
+             windowId: fileTab.windowId,
+             activeBefore: activeBefore.map((tab) => ({ id: tab.id, url: tab.url })),
+             popupOpened,
+             popupError,
+             captureVisibleTabGranted: typeof dataUrl === "string" && dataUrl.startsWith("data:image/png"),
+             captureByteHint: typeof dataUrl === "string" ? dataUrl.length : 0
+           });
+         } catch (error) {
+           done({
+             ok: false,
+             stage: "capture-visible-tab",
+             fileTabId: fileTab.id,
+             windowId: fileTab.windowId,
+             activeBefore: activeBefore.map((tab) => ({ id: tab.id, url: tab.url })),
+             popupOpened,
+             popupError,
+             captureVisibleTabGranted: false,
+             error: String(error?.message ?? error)
+           });
+         }
+       } catch (error) {
+         done({ ok: false, stage: "action-probe", error: String(error?.stack ?? error) });
+       }
+     })();`,
+    [fixtureUrl],
+  );
+}
+
 async function readDebuggerTargetState(sessionBase, fixtureUrl) {
   return executeAsync(
     sessionBase,
@@ -267,6 +325,15 @@ async function handleProductionDispatch(sessionId, fixtureUrl) {
   console.log(
     `NODE-31 file protocol v15: source capability response ${JSON.stringify(capability.response)}`,
   );
+
+  console.log("NODE-31 file protocol v15: probing real action activeTab grant on the file tab");
+  const actionGrant = await probeActionActiveTabGrant(sessionBase, fixtureUrl);
+  console.log(`NODE-31 file protocol v15: action activeTab probe ${JSON.stringify(actionGrant)}`);
+  if (actionGrant?.ok !== true || actionGrant.captureVisibleTabGranted !== true) {
+    throw new Error(
+      `NODE-31 V15 action invocation did not grant captureVisibleTab permission: ${JSON.stringify(actionGrant)}`,
+    );
+  }
 
   const debuggerState = await readDebuggerTargetState(sessionBase, fixtureUrl);
   console.log(

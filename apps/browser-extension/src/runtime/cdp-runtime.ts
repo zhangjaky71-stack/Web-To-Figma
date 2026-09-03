@@ -19,9 +19,19 @@ interface ChromeDebuggee {
   sessionId?: string;
 }
 
+interface ChromeDebuggerTarget {
+  id: string;
+  type: string;
+  title: string;
+  url: string;
+  attached: boolean;
+  tabId?: number;
+}
+
 interface ChromeDebuggerApi {
   attach(target: ChromeDebuggee, requiredVersion: string): Promise<void>;
   detach(target: ChromeDebuggee): Promise<void>;
+  getTargets?(): Promise<ChromeDebuggerTarget[]>;
   sendCommand(
     target: ChromeDebuggee,
     method: string,
@@ -111,6 +121,16 @@ async function command<T>(
   return (await api.sendCommand(target, method, params)) as T;
 }
 
+async function assertDebuggerTargetAvailable(api: ChromeDebuggerApi, tabId: number): Promise<void> {
+  if (!api.getTargets) return;
+  const targets = await api.getTargets();
+  const target = targets.find((candidate) => candidate.tabId === tabId);
+  if (!target?.attached) return;
+  throw new Error(
+    `High Fidelity debugger transport is unavailable because tab ${tabId} already has an attached debugger. Close DevTools or the other debugger and retry.`,
+  );
+}
+
 async function withCdpSession<T>(
   tabId: number,
   operation: (session: ActiveCdpSession) => Promise<T>,
@@ -124,6 +144,7 @@ async function withCdpSession<T>(
   const target: ChromeDebuggee = { tabId };
   let attached = false;
   try {
+    await assertDebuggerTargetAvailable(api, tabId);
     await api.attach(target, CDP_REQUIRED_PROTOCOL_VERSION);
     attached = true;
     const session = { api, target } satisfies ActiveCdpSession;

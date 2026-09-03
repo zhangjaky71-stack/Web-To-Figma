@@ -255,7 +255,10 @@ async function openOptions(browser, extensionId) {
   const info = await extensionInfo(management.client, extensionId);
   assert(info?.state === "ENABLED", `Fresh High Fidelity extension is not enabled: ${info?.state}`);
   assert(info?.fileAccess?.isEnabled === true, "High Fidelity file-access toggle is unavailable");
-  assert(info?.fileAccess?.isActive === true, "Fresh High Fidelity extension lacks active file access");
+  assert(
+    info?.fileAccess?.isActive === true,
+    "Fresh High Fidelity extension lacks active file access",
+  );
 
   await evaluate(
     management.client,
@@ -379,7 +382,10 @@ try {
     })()`,
   );
   assert(debuggerState, "Production chrome.debugger target for Level-2 file tab was not found");
-  assert(debuggerState.attached === false, "Harness unexpectedly attached Level-2 file target before capture");
+  assert(
+    debuggerState.attached === false,
+    "Harness unexpectedly attached Level-2 file target before capture",
+  );
 
   const production = await evaluate(
     options.client,
@@ -408,20 +414,49 @@ try {
   );
 
   assert(production?.capability?.ok === true, "Production source capability request failed");
-  assert(production.capability.data?.available === true, "Level-2 file source capability is unavailable");
-  assert(production.capability.data?.protocol === "file", "Level-2 source capability is not file://");
-  assert(production?.job?.ok === true, `Responsive production job failed: ${production?.job?.error ?? "unknown"}`);
+  assert(
+    production?.capability?.data?.provider === "file-tab",
+    "Level-2 capability provider is not file-tab",
+  );
+  assert(production?.capability?.data?.supported === true, "Level-2 file source is unsupported");
+  assert(production?.capability?.data?.available === true, "Level-2 file source is unavailable");
+  assert(production?.capability?.data?.code === "ready", "Level-2 file source is not ready");
+
+  assert(
+    production?.job?.ok === true,
+    `Responsive production job failed: ${production?.job?.error ?? "unknown"}`,
+  );
   const job = production.job.data;
   assert(job?.status === "completed", `Responsive production job status is ${job?.status}`);
   assert(job?.mode === "responsive", `Responsive production job mode is ${job?.mode}`);
-  assert(job?.phase === "responsive-capture-complete", `Unexpected responsive phase: ${job?.phase}`);
-  assert(job?.source?.provider === "file-tab", "Level-2 job did not use the file-tab source provider");
+  assert(
+    job?.phase === "responsive-capture-complete",
+    `Unexpected responsive phase: ${job?.phase}`,
+  );
+  assert(
+    job?.source?.provider === "file-tab",
+    "Level-2 job did not use the file-tab source provider",
+  );
+  assert(job?.source?.sourceType === "file", "Level-2 job lost file source type");
+  assert(job?.source?.sourceUrl === fixtureUrl, "Level-2 job lost exact file URL");
   assert(job?.source?.offline === true, "Level-2 job lost offline file semantics");
   assert(job?.page?.url === fixtureUrl, "Level-2 job page URL mismatch");
-  assert(job?.responsive?.mode === "common", "Level-2 job did not use the product common responsive plan");
-  assert(job?.responsive?.plannedViewportCount === 3, "Level-2 did not plan exactly three viewports");
-  assert(job?.responsive?.capturedSnapshotCount === 3, "Level-2 did not capture exactly three viewports");
-  assert(job?.responsive?.diagnosticCount === 0, "Level-2 responsive capture emitted capture diagnostics");
+  assert(
+    job?.responsive?.mode === "common",
+    "Level-2 job did not use the product common responsive plan",
+  );
+  assert(
+    job?.responsive?.plannedViewportCount === 3,
+    "Level-2 did not plan exactly three viewports",
+  );
+  assert(
+    job?.responsive?.capturedSnapshotCount === 3,
+    "Level-2 did not capture exactly three viewports",
+  );
+  assert(
+    job?.responsive?.diagnosticCount === 0,
+    "Level-2 responsive capture emitted capture diagnostics",
+  );
   assert(
     JSON.stringify(job.responsive.viewportWidths) === JSON.stringify(expectedWidths),
     `Level-2 responsive widths mismatch: ${JSON.stringify(job.responsive.viewportWidths)}`,
@@ -450,10 +485,19 @@ try {
     `responsive:${job.jobId}`,
     `(value) => value`,
   );
-  assert(responsiveCapture?.version === "1.0.0", "Persisted ResponsiveCapture is missing or invalid");
+  assert(
+    responsiveCapture?.version === "1.0.0",
+    "Persisted ResponsiveCapture is missing or invalid",
+  );
   assert(responsiveCapture?.mode === "common", "Persisted ResponsiveCapture mode mismatch");
-  assert(responsiveCapture?.snapshots?.length === 3, "Persisted ResponsiveCapture snapshot count mismatch");
-  assert(responsiveCapture?.diagnostics?.length === 0, "Persisted ResponsiveCapture has diagnostics");
+  assert(
+    responsiveCapture?.snapshots?.length === 3,
+    "Persisted ResponsiveCapture snapshot count mismatch",
+  );
+  assert(
+    responsiveCapture?.diagnostics?.length === 0,
+    "Persisted ResponsiveCapture has diagnostics",
+  );
 
   const snapshots = [];
   for (const snapshot of responsiveCapture.snapshots) {
@@ -518,7 +562,10 @@ try {
     computedWtfSha === exportReceipt.archiveSha256,
     "Responsive export receipt SHA-256 disagrees with WTF bytes",
   );
-  assert(computedWtfSha === storedPackage.sha256, "Stored responsive WTF SHA-256 disagrees with WTF bytes");
+  assert(
+    computedWtfSha === storedPackage.sha256,
+    "Stored responsive WTF SHA-256 disagrees with WTF bytes",
+  );
 
   const parsed = await parseWtfPackage(wtfBytes);
   const parsedResponsiveWidths = parsed.ir.responsive.snapshots
@@ -532,7 +579,10 @@ try {
     parsed.manifest.compatibility.capabilities.includes("responsive-snapshots"),
     "Responsive WTF package omitted responsive-snapshots capability",
   );
-  assert(parsed.ir.responsive.snapshots.length === 3, "Parsed WTF responsive snapshot count mismatch");
+  assert(
+    parsed.ir.responsive.snapshots.length === 3,
+    "Parsed WTF responsive snapshot count mismatch",
+  );
   assert(parsed.ir.sourceGraph.nodes.length > 0, "Parsed responsive WTF source graph is empty");
   assert(parsed.ir.renderTree.nodes.length > 0, "Parsed responsive WTF render tree is empty");
 
@@ -633,8 +683,14 @@ try {
   };
 
   const report = evaluateNode31MeasurementArtifact(measurementArtifact);
-  assert(report.status === "UNAVAILABLE", `Partial Level-2 measurement must remain UNAVAILABLE, got ${report.status}`);
-  assert(report.releaseEligible === false, "Partial Level-2 measurement must not be release eligible");
+  assert(
+    report.status === "UNAVAILABLE",
+    `Partial Level-2 measurement must remain UNAVAILABLE, got ${report.status}`,
+  );
+  assert(
+    report.releaseEligible === false,
+    "Partial Level-2 measurement must not be release eligible",
+  );
   const measurementBytes = Buffer.from(JSON.stringify(measurementArtifact, null, 2));
   await writeFile(measurementPath, measurementBytes);
 
@@ -648,7 +704,7 @@ try {
         sourceSha256,
         branchHead: measurementArtifact.provenance.branchHead,
         chrome: chrome.version.product,
-        sourceProtocol: production.capability.data.protocol,
+        sourceProtocol: job.source.sourceType,
         explicitFileAccess: options.fileAccess,
         preCaptureDebuggerAttached: debuggerState.attached,
         responsiveMode: job.responsive.mode,

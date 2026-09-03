@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { evaluateNode31MeasurementArtifact } from "../packages/figma-renderer/dist/index.js";
@@ -12,6 +13,10 @@ function assert(condition, message) {
   if (!condition) failures.push(message);
 }
 
+function sha256File(path) {
+  return createHash("sha256").update(readFileSync(resolve(root, path))).digest("hex");
+}
+
 function loadArtifact(path) {
   try {
     return JSON.parse(readFileSync(resolve(root, path), "utf8"));
@@ -22,9 +27,26 @@ function loadArtifact(path) {
 }
 
 function validateEntry(entry, expectedClass) {
+  const sourceArtifact = entry.sourceArtifact;
+  assert(
+    typeof sourceArtifact === "string" && sourceArtifact.trim().length > 0,
+    `${entry.id} must name a sourceArtifact`,
+  );
+  if (typeof sourceArtifact !== "string" || !sourceArtifact.trim()) return;
+  const sourceExists = existsSync(resolve(root, sourceArtifact));
+  assert(sourceExists, `${entry.id} sourceArtifact does not exist: ${sourceArtifact}`);
+  if (!sourceExists) return;
+  const sourceSha256 = sha256File(sourceArtifact);
+
   const measurementArtifact = entry.measurementArtifact;
   if (entry.measurementStatus === "UNAVAILABLE" && !measurementArtifact) {
-    reports.push({ id: entry.id, status: "UNAVAILABLE", artifact: null });
+    reports.push({
+      id: entry.id,
+      status: "UNAVAILABLE",
+      sourceArtifact,
+      sourceSha256,
+      artifact: null,
+    });
     return;
   }
 
@@ -46,15 +68,24 @@ function validateEntry(entry, expectedClass) {
     id: entry.id,
     status: report.status,
     releaseEligible: report.releaseEligible,
+    sourceArtifact,
+    sourceSha256,
     artifact: measurementArtifact,
   });
 
   assert(artifact.sample?.id === entry.id, `${entry.id} artifact sample id mismatch`);
   assert(artifact.sample?.testClass === expectedClass, `${entry.id} artifact testClass mismatch`);
   assert(
-    artifact.sample?.sourceArtifact === entry.sourceArtifact,
+    artifact.sample?.sourceArtifact === sourceArtifact,
     `${entry.id} artifact sourceArtifact mismatch`,
   );
+  assert(
+    artifact.sample?.sourceSha256 === sourceSha256,
+    `${entry.id} artifact sourceSha256 does not match current source bytes`,
+  );
+  if (expectedClass === "A") {
+    assert(artifact.sample?.level === entry.level, `${entry.id} artifact level mismatch`);
+  }
   if (expectedClass === "B") {
     assert(artifact.sample?.category === entry.category, `${entry.id} artifact category mismatch`);
     assert(
@@ -107,16 +138,17 @@ if (failures.length > 0) {
   console.log(
     JSON.stringify(
       {
-        version: "1.0.0",
+        version: "1.1.0",
         evidenceType: "node31-measurement-provenance-validation",
         status: unavailableCount > 0 ? "UNAVAILABLE" : failCount > 0 ? "FAIL" : "PASS",
         manifest: manifestPath,
+        sourceInputCount: reports.length,
         passCount,
         unavailableCount,
         failCount,
         reports,
         antiCheatingBoundary:
-          "manifest PASS requires a release-eligible artifact produced through the Figma Desktop measurement contract; synthetic simulator scores remain UNAVAILABLE",
+          "manifest PASS requires a release-eligible artifact produced through the Figma Desktop measurement contract; synthetic simulator scores remain UNAVAILABLE; every source input is existence-checked and source-byte SHA-256 is bound into any measurement artifact",
       },
       null,
       2,

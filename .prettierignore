@@ -2,6 +2,7 @@ node_modules
 dist
 dist-high-fidelity
 coverage
+artifacts
 pnpm-lock.yaml
 docs
 qa/corpus/node31

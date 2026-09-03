@@ -39,19 +39,42 @@ function unavailableGate(
 function metricValues(
   samples: readonly W2fNode31CorpusSample[],
   extractor: MetricExtractor,
-): { values: number[]; invalidSampleIds: string[] } {
+): { values: number[]; invalidSampleIds: string[]; missingSampleIds: string[] } {
   const values: number[] = [];
   const invalidSampleIds: string[] = [];
+  const missingSampleIds: string[] = [];
   for (const sample of samples) {
     const value = extractor(sample);
-    if (value === undefined) continue;
+    if (value === undefined) {
+      missingSampleIds.push(sample.id);
+      continue;
+    }
     if (!Number.isFinite(value) || value < 0 || value > 1) {
       invalidSampleIds.push(sample.id);
       continue;
     }
     values.push(value);
   }
-  return { values, invalidSampleIds };
+  return { values, invalidSampleIds, missingSampleIds };
+}
+
+function missingMetricGate(
+  id: string,
+  samples: readonly W2fNode31CorpusSample[],
+  missingSampleIds: readonly string[],
+  target: number,
+): W2fNode31GateResult | null {
+  if (samples.length === 0) {
+    return unavailableGate(id, "Required metric evidence is missing", target);
+  }
+  if (missingSampleIds.length > 0) {
+    return unavailableGate(
+      id,
+      `Required metric evidence is missing for samples: ${missingSampleIds.join(", ")}`,
+      target,
+    );
+  }
+  return null;
 }
 
 function allAtLeastGate(
@@ -60,7 +83,7 @@ function allAtLeastGate(
   extractor: MetricExtractor,
   target: number,
 ): W2fNode31GateResult {
-  const { values, invalidSampleIds } = metricValues(samples, extractor);
+  const { values, invalidSampleIds, missingSampleIds } = metricValues(samples, extractor);
   if (invalidSampleIds.length > 0) {
     return {
       id,
@@ -69,8 +92,8 @@ function allAtLeastGate(
       target,
     };
   }
-  if (values.length === 0)
-    return unavailableGate(id, "Required metric evidence is missing", target);
+  const missing = missingMetricGate(id, samples, missingSampleIds, target);
+  if (missing) return missing;
   const observed = Math.min(...values);
   return {
     id,
@@ -90,7 +113,7 @@ function medianAtLeastGate(
   extractor: MetricExtractor,
   target: number,
 ): W2fNode31GateResult {
-  const { values, invalidSampleIds } = metricValues(samples, extractor);
+  const { values, invalidSampleIds, missingSampleIds } = metricValues(samples, extractor);
   if (invalidSampleIds.length > 0) {
     return {
       id,
@@ -99,6 +122,8 @@ function medianAtLeastGate(
       target,
     };
   }
+  const missing = missingMetricGate(id, samples, missingSampleIds, target);
+  if (missing) return missing;
   const observed = median(values);
   if (observed === null) return unavailableGate(id, "Required median evidence is missing", target);
   return {
@@ -116,7 +141,7 @@ function medianAtMostGate(
   extractor: MetricExtractor,
   target: number,
 ): W2fNode31GateResult {
-  const { values, invalidSampleIds } = metricValues(samples, extractor);
+  const { values, invalidSampleIds, missingSampleIds } = metricValues(samples, extractor);
   if (invalidSampleIds.length > 0) {
     return {
       id,
@@ -125,6 +150,8 @@ function medianAtMostGate(
       target,
     };
   }
+  const missing = missingMetricGate(id, samples, missingSampleIds, target);
+  if (missing) return missing;
   const observed = median(values);
   if (observed === null) return unavailableGate(id, "Required median evidence is missing", target);
   return {

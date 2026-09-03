@@ -2,10 +2,8 @@ name: NODE-31 Class B input refactor once
 
 on:
   push:
-    branches:
-      - node-31-real-world-compatibility-release-candidate
-    paths:
-      - .github/workflows/node31-classb-input-refactor-once.yml
+    branches: [node-31-real-world-compatibility-release-candidate]
+    paths: [.github/workflows/node31-classb-input-refactor-once.yml]
 
 permissions:
   contents: write
@@ -26,164 +24,77 @@ jobs:
           node-version: 24
           package-manager-cache: false
       - run: pnpm install --frozen-lockfile
-      - name: Generalize measurement input runner
-        shell: bash
+      - name: Generalize production measurement input runner
         run: |
           python - <<'PY'
           from pathlib import Path
-          p = Path('scripts/run-node-31-measurement-input-level1.mjs')
-          s = p.read_text()
-          old = 'const sourceArtifact = "qa/corpus/node31/class-a/level1-core.html";\nconst sourcePath = resolve(sourceArtifact);'
-          new = '''const testClass = process.env.W2F_NODE31_TEST_CLASS ?? "A";
-          if (testClass !== "A" && testClass !== "B") {
-            throw new TypeError(`Unsupported NODE-31 test class: ${testClass}`);
-          }
-          const sourceArtifact =
-            process.env.W2F_NODE31_SOURCE_ARTIFACT ?? "qa/corpus/node31/class-a/level1-core.html";
+          p=Path('scripts/run-node-31-measurement-input-level1.mjs'); s=p.read_text()
+          a='const sourceArtifact = "qa/corpus/node31/class-a/level1-core.html";\nconst sourcePath = resolve(sourceArtifact);'
+          b='''const testClass = process.env.W2F_NODE31_TEST_CLASS ?? "A";
+          if (testClass !== "A" && testClass !== "B") throw new TypeError(`Unsupported NODE-31 test class: ${testClass}`);
+          const sourceArtifact = process.env.W2F_NODE31_SOURCE_ARTIFACT ?? "qa/corpus/node31/class-a/level1-core.html";
           const sampleId = process.env.W2F_NODE31_SAMPLE_ID ?? "deterministic-level1-core";
-          const sampleCategory =
-            process.env.W2F_NODE31_CATEGORY ??
-            (testClass === "A" ? "deterministic-standard" : "unspecified");
+          const sampleCategory = process.env.W2F_NODE31_CATEGORY ?? (testClass === "A" ? "deterministic-standard" : "unspecified");
           const sampleSupportClass = process.env.W2F_NODE31_SUPPORT_CLASS ?? "native-supported";
           const sampleStandardHtmlCss = process.env.W2F_NODE31_STANDARD_HTML_CSS !== "false";
-          const requiredEditableText =
-            process.env.W2F_NODE31_REQUIRED_EDITABLE_TEXT ??
-            (testClass === "A" ? "Editable structure with deterministic visual evidence" : "");
+          const requiredEditableText = process.env.W2F_NODE31_REQUIRED_EDITABLE_TEXT ?? (testClass === "A" ? "Editable structure with deterministic visual evidence" : "");
           const sourcePath = resolve(sourceArtifact);'''
-          assert old in s
-          s = s.replace(old, new, 1)
-          old = '''  assert(
-            (rawSnapshot?.nodes ?? []).some(
-              (node) =>
-                node.kind === "text" &&
-                (node.textContent?.includes("Editable structure with deterministic visual evidence") ||
-                  node.text?.value?.includes("Editable structure with deterministic visual evidence")),
-            ),
-            "Persisted Level-1 RawSnapshot is missing deterministic editable text",
-          );'''
-          new = '''  if (requiredEditableText) {
+          assert a in s; s=s.replace(a,b,1)
+          start=s.index('  assert(\n    (rawSnapshot?.nodes ?? []).some(')
+          marker='    "Persisted Level-1 RawSnapshot is missing deterministic editable text",\n  );'
+          end=s.index(marker,start)+len(marker)
+          repl='''  if (requiredEditableText) {
             assert(
               (rawSnapshot?.nodes ?? []).some(
-                (node) =>
-                  node.kind === "text" &&
-                  (node.textContent?.includes(requiredEditableText) ||
-                    node.text?.value?.includes(requiredEditableText)),
+                (node) => node.kind === "text" && (node.textContent?.includes(requiredEditableText) || node.text?.value?.includes(requiredEditableText)),
               ),
               `Persisted measurement RawSnapshot is missing required editable text: ${requiredEditableText}`,
             );
           }'''
-          assert old in s
-          s = s.replace(old, new, 1)
-          old = '  const base = "deterministic-level1-core";'
-          assert old in s
-          s = s.replace(old, '  const base = sampleId;', 1)
-          old = '''      id: base,
-                testClass: "A",
-                category: "deterministic-standard",
-                supportClass: "native-supported",
-                standardHtmlCss: true,
-                level: 1,
-                sourceArtifact,
-                sourceSha256,'''
-          new = '''      id: base,
-                testClass,
-                category: sampleCategory,
-                supportClass: sampleSupportClass,
-                standardHtmlCss: sampleStandardHtmlCss,
-                ...(testClass === "A" ? { level: 1 } : {}),
-                sourceArtifact,
-                sourceSha256,'''
-          assert old in s
-          s = s.replace(old, new, 1)
+          s=s[:start]+repl+s[end:]
+          a='  const base = "deterministic-level1-core";'; assert a in s; s=s.replace(a,'  const base = sampleId;',1)
+          a='      testClass: "A",\n      category: "deterministic-standard",\n      supportClass: "native-supported",\n      standardHtmlCss: true,\n      level: 1,'
+          b='      testClass,\n      category: sampleCategory,\n      supportClass: sampleSupportClass,\n      standardHtmlCss: sampleStandardHtmlCss,\n      ...(testClass === "A" ? { level: 1 } : {}),'
+          assert a in s; s=s.replace(a,b,1)
           p.write_text(s)
           PY
       - name: Add Class B orchestrator
-        shell: bash
         run: |
           cat > scripts/run-node-31-measurement-input-classb.mjs <<'EOF'
           import { spawnSync } from "node:child_process";
           import { existsSync, readFileSync } from "node:fs";
           import { resolve } from "node:path";
 
-          const manifest = JSON.parse(
-            readFileSync(resolve("docs/qa/NODE-31_RC_EVIDENCE_V2.json"), "utf8"),
-          );
-          const outputDir =
-            process.env.W2F_NODE31_CLASSB_OUTPUT_DIR ?? "artifacts/node31-measurement-input-classb";
+          const manifest = JSON.parse(readFileSync(resolve("docs/qa/NODE-31_RC_EVIDENCE_V2.json"), "utf8"));
+          const outputDir = process.env.W2F_NODE31_CLASSB_OUTPUT_DIR ?? "artifacts/node31-measurement-input-classb";
           const entries = manifest.classB ?? [];
-          if (entries.length === 0) throw new Error("NODE-31 Class B manifest contains no samples");
-
+          if (entries.length !== 12) throw new Error(`Expected 12 Class B samples, got ${entries.length}`);
           const reports = [];
           for (const entry of entries) {
             const result = spawnSync(process.execPath, ["scripts/run-node-31-measurement-input-level1.mjs"], {
-              cwd: process.cwd(),
-              stdio: "inherit",
-              env: {
-                ...process.env,
-                W2F_NODE31_TEST_CLASS: "B",
-                W2F_NODE31_SAMPLE_ID: entry.id,
-                W2F_NODE31_SOURCE_ARTIFACT: entry.sourceArtifact,
-                W2F_NODE31_CATEGORY: entry.category,
-                W2F_NODE31_SUPPORT_CLASS: entry.supportClass,
-                W2F_NODE31_STANDARD_HTML_CSS: String(entry.standardHtmlCss),
-                W2F_NODE31_REQUIRED_EDITABLE_TEXT: "",
-                W2F_NODE31_MEASUREMENT_OUTPUT_DIR: outputDir,
-              },
+              cwd: process.cwd(), stdio: "inherit",
+              env: { ...process.env, W2F_NODE31_TEST_CLASS: "B", W2F_NODE31_SAMPLE_ID: entry.id,
+                W2F_NODE31_SOURCE_ARTIFACT: entry.sourceArtifact, W2F_NODE31_CATEGORY: entry.category,
+                W2F_NODE31_SUPPORT_CLASS: entry.supportClass, W2F_NODE31_STANDARD_HTML_CSS: String(entry.standardHtmlCss),
+                W2F_NODE31_REQUIRED_EDITABLE_TEXT: "", W2F_NODE31_MEASUREMENT_OUTPUT_DIR: outputDir },
             });
-            if (result.status !== 0) {
-              throw new Error(`Class B measurement input failed for ${entry.id} with exit ${result.status}`);
-            }
-            const measurementPath = resolve(outputDir, `${entry.id}.measurement.json`);
-            if (!existsSync(measurementPath)) {
-              throw new Error(`Class B measurement artifact missing for ${entry.id}`);
-            }
-            const artifact = JSON.parse(readFileSync(measurementPath, "utf8"));
-            if (
-              artifact.sample?.id !== entry.id ||
-              artifact.sample?.testClass !== "B" ||
-              artifact.sample?.category !== entry.category ||
-              artifact.sample?.supportClass !== entry.supportClass ||
-              artifact.sample?.standardHtmlCss !== entry.standardHtmlCss ||
-              artifact.sample?.sourceArtifact !== entry.sourceArtifact
-            ) {
-              throw new Error(`Class B measurement provenance mismatch for ${entry.id}`);
-            }
-            if (
-              artifact.pipeline?.browserCapture?.status !== "PASS" ||
-              artifact.pipeline?.wtfPackage?.status !== "PASS" ||
-              artifact.pipeline?.secureParse?.status !== "PASS" ||
-              artifact.pipeline?.figmaRender?.status !== "UNAVAILABLE"
-            ) {
-              throw new Error(`Class B pipeline boundary mismatch for ${entry.id}`);
-            }
-            reports.push({
-              id: entry.id,
-              category: entry.category,
-              supportClass: entry.supportClass,
-              standardHtmlCss: entry.standardHtmlCss,
-              browserCapture: artifact.pipeline.browserCapture.status,
-              wtfPackage: artifact.pipeline.wtfPackage.status,
-              secureParse: artifact.pipeline.secureParse.status,
-              figmaRender: artifact.pipeline.figmaRender.status,
-            });
+            if (result.status !== 0) throw new Error(`Class B input failed for ${entry.id}: ${result.status}`);
+            const path = resolve(outputDir, `${entry.id}.measurement.json`);
+            if (!existsSync(path)) throw new Error(`Missing Class B artifact: ${entry.id}`);
+            const artifact = JSON.parse(readFileSync(path, "utf8"));
+            const sample = artifact.sample ?? {};
+            if (sample.id !== entry.id || sample.testClass !== "B" || sample.category !== entry.category ||
+                sample.supportClass !== entry.supportClass || sample.standardHtmlCss !== entry.standardHtmlCss || sample.sourceArtifact !== entry.sourceArtifact)
+              throw new Error(`Class B provenance mismatch: ${entry.id}`);
+            if (artifact.pipeline?.browserCapture?.status !== "PASS" || artifact.pipeline?.wtfPackage?.status !== "PASS" ||
+                artifact.pipeline?.secureParse?.status !== "PASS" || artifact.pipeline?.figmaRender?.status !== "UNAVAILABLE")
+              throw new Error(`Class B pipeline boundary mismatch: ${entry.id}`);
+            reports.push({ id: entry.id, category: entry.category, supportClass: entry.supportClass,
+              standardHtmlCss: entry.standardHtmlCss, browserCapture: "PASS", wtfPackage: "PASS", secureParse: "PASS", figmaRender: "UNAVAILABLE" });
           }
-
-          console.log(
-            JSON.stringify(
-              {
-                version: "1.0.0",
-                evidenceType: "node31-classb-measurement-input-runtime",
-                status: "PASS",
-                sampleCount: reports.length,
-                measurementStatus: "UNAVAILABLE",
-                releaseEligible: false,
-                reports,
-                remainingBoundary: "real Figma Desktop render/export and fidelity comparison",
-              },
-              null,
-              2,
-            ),
-          );
+          console.log(JSON.stringify({ version: "1.0.0", evidenceType: "node31-classb-measurement-input-runtime",
+            status: "PASS", sampleCount: reports.length, measurementStatus: "UNAVAILABLE", releaseEligible: false, reports,
+            remainingBoundary: "real Figma Desktop render/export and fidelity comparison" }, null, 2));
           EOF
       - name: Format and commit
         run: |

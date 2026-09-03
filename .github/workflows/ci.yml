@@ -53,6 +53,9 @@ jobs:
       - name: Validate NODE-31 security evidence
         run: node scripts/validate-node-31-security-evidence.mjs
 
+      - name: Validate NODE-31 known limitations
+        run: node scripts/validate-node-31-known-limitations.mjs
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:

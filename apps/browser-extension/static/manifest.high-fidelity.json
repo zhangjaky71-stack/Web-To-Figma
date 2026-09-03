@@ -7,6 +7,14 @@
     "default_title": "Web-To-Figma Capture — High Fidelity",
     "default_popup": "popup.html"
   },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Y",
+        "mac": "Command+Shift+Y"
+      }
+    }
+  },
   "background": {
     "service_worker": "runtime/service-worker.js",
     "type": "module"

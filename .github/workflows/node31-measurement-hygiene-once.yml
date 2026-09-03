@@ -25,23 +25,9 @@ jobs:
 
           collector = Path("scripts/run-node-31-measurement-input-level1.mjs")
           text = collector.read_text()
-          old = '''function checkoutRevision() {
-            if (process.env.GITHUB_HEAD_SHA && /^[a-f0-9]{40}$/.test(process.env.GITHUB_HEAD_SHA)) {
-              return process.env.GITHUB_HEAD_SHA;
-            }
-            if (process.env.GITHUB_EVENT_NAME === "pull_request") {
-              try {
-                const parent = execFileSync("git", ["rev-parse", "HEAD^2"], { encoding: "utf8" }).trim();
-                if (/^[a-f0-9]{40}$/.test(parent)) return parent;
-              } catch {
-                // Fall back to the checked-out revision below.
-              }
-            }
-            const githubSha = process.env.GITHUB_SHA;
-            if (githubSha && /^[a-f0-9]{40}$/.test(githubSha)) return githubSha;
-            return execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
-          }'''
-          new = '''function checkoutRevision() {
+          start = text.index("function checkoutRevision() {")
+          end = text.index("\n\nasync function findChrome()", start)
+          replacement = '''function checkoutRevision() {
             const explicitBranchHead = process.env.W2F_NODE31_BRANCH_HEAD;
             if (explicitBranchHead && /^[a-f0-9]{40}$/.test(explicitBranchHead)) {
               return explicitBranchHead;
@@ -50,23 +36,21 @@ jobs:
             if (githubSha && /^[a-f0-9]{40}$/.test(githubSha)) return githubSha;
             return execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
           }'''
-          if old not in text:
-              raise SystemExit("collector checkoutRevision block did not match expected source")
-          collector.write_text(text.replace(old, new))
+          collector.write_text(text[:start] + replacement + text[end:])
 
           workflow = Path(".github/workflows/ci.yml")
           text = workflow.read_text()
-          old = '''      - name: NODE-31 Level-1 measurement input
-                run: node scripts/run-node-31-measurement-input-level1.mjs
-          '''
-          new = '''      - name: NODE-31 Level-1 measurement input
-                env:
-                  W2F_NODE31_BRANCH_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
-                run: node scripts/run-node-31-measurement-input-level1.mjs
-          '''
-          if old not in text:
-              raise SystemExit("CI Level-1 measurement step did not match expected source")
-          workflow.write_text(text.replace(old, new))
+          marker = "      - name: NODE-31 Level-1 measurement input\n"
+          start = text.index(marker)
+          end = text.index("\n      - name: Upload NODE-31 Level-1 measurement input", start)
+          expression = "$" + "{{ github.event.pull_request.head.sha || github.sha }}"
+          replacement = (
+              marker
+              + "        env:\n"
+              + f"          W2F_NODE31_BRANCH_HEAD: {expression}\n"
+              + "        run: node scripts/run-node-31-measurement-input-level1.mjs\n"
+          )
+          workflow.write_text(text[:start] + replacement + text[end:])
           PY
 
       - name: Setup pnpm

@@ -1,10 +1,6 @@
 import type { RawSnapshot } from "@w2f/capture-core";
 import type { ResponsiveInferenceResult } from "@w2f/responsive-inference";
-import type {
-  WtfDocumentPayload,
-  WtfResponsivePayload,
-  WtfSourceGraph,
-} from "@w2f/w2f-ir";
+import type { WtfDocumentPayload, WtfResponsivePayload, WtfSourceGraph } from "@w2f/w2f-ir";
 import { describe, expect, it } from "vitest";
 import { buildResponsiveStableNodeEvidence } from "../src/runtime/responsive-capture-runtime.js";
 import {
@@ -184,10 +180,7 @@ function evidence(raw: RawSnapshot, stableNodeId: string): WtfPackageEvidence {
   } as unknown as WtfPackageEvidence;
 }
 
-function jsonPayload<T>(
-  input: Awaited<ReturnType<typeof buildWtfPackageInput>>,
-  role: string,
-): T {
+function jsonPayload<T>(input: Awaited<ReturnType<typeof buildWtfPackageInput>>, role: string): T {
   const payload = input.payloads.find((item) => item.role === role);
   expect(payload).toBeDefined();
   if (!payload || !("json" in payload)) throw new Error(`missing JSON payload: ${role}`);

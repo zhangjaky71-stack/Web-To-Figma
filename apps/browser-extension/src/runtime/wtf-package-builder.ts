@@ -187,16 +187,13 @@ function documentEnvironments(
   const environments = new Map<string, WtfCaptureEnvironment>([[primary.id, primary]]);
   for (const snapshot of responsive.snapshots) {
     if (environments.has(snapshot.environmentRef)) continue;
-    environments.set(
-      snapshot.environmentRef,
-      {
-        ...primary,
-        id: snapshot.environmentRef,
-        viewportWidth: snapshot.viewport.width,
-        viewportHeight: snapshot.viewport.height,
-        dpr: snapshot.viewport.dpr,
-      },
-    );
+    environments.set(snapshot.environmentRef, {
+      ...primary,
+      id: snapshot.environmentRef,
+      viewportWidth: snapshot.viewport.width,
+      viewportHeight: snapshot.viewport.height,
+      dpr: snapshot.viewport.dpr,
+    });
   }
   const responsiveEnvironments = [...environments.values()]
     .filter((environment) => environment.id !== primary.id)

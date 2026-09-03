@@ -216,9 +216,7 @@ export function evaluateNode31MeasurementArtifact(
   }
 
   if (artifact.antiCheatingViolations.length > 0) {
-    failures.push(
-      `anti-cheating violations: ${artifact.antiCheatingViolations.join("; ")}`,
-    );
+    failures.push(`anti-cheating violations: ${artifact.antiCheatingViolations.join("; ")}`);
   }
 
   const measuredValues = new Map<W2fNode31MeasurementMetricId, number>();
@@ -233,40 +231,35 @@ export function evaluateNode31MeasurementArtifact(
 
   let corpusSample: W2fNode31CorpusSample | undefined;
   if (releaseEligible) {
-    corpusSample = {
+    const sample: W2fNode31CorpusSample = {
       id: artifact.sample.id,
       testClass: artifact.sample.testClass,
       category: artifact.sample.category,
       supportClass: artifact.sample.supportClass,
       standardHtmlCss: artifact.sample.standardHtmlCss,
-      ...(artifact.sample.level === undefined ? {} : { level: artifact.sample.level }),
       behaviorStatus: "PASS",
-      ...(measuredValues.get("visualSimilarity") === undefined
-        ? {}
-        : { visualSimilarity: measuredValues.get("visualSimilarity") }),
-      ...(measuredValues.get("geometryFidelity") === undefined
-        ? {}
-        : { geometryFidelity: measuredValues.get("geometryFidelity") }),
-      ...(measuredValues.get("textFidelity") === undefined
-        ? {}
-        : { textFidelity: measuredValues.get("textFidelity") }),
-      ...(measuredValues.get("assetFidelity") === undefined
-        ? {}
-        : { assetFidelity: measuredValues.get("assetFidelity") }),
-      ...(measuredValues.get("structureFidelity") === undefined
-        ? {}
-        : { structureFidelity: measuredValues.get("structureFidelity") }),
-      ...(measuredValues.get("editableAreaRatio") === undefined
-        ? {}
-        : { editableAreaRatio: measuredValues.get("editableAreaRatio") }),
-      ...(measuredValues.get("responsiveFidelity") === undefined
-        ? {}
-        : { responsiveFidelity: measuredValues.get("responsiveFidelity") }),
-      ...(measuredValues.get("rasterAreaRatio") === undefined
-        ? {}
-        : { rasterAreaRatio: measuredValues.get("rasterAreaRatio") }),
       antiCheatingViolations: [],
     };
+    if (artifact.sample.level !== undefined) sample.level = artifact.sample.level;
+
+    const visualSimilarity = measuredValues.get("visualSimilarity");
+    if (visualSimilarity !== undefined) sample.visualSimilarity = visualSimilarity;
+    const geometryFidelity = measuredValues.get("geometryFidelity");
+    if (geometryFidelity !== undefined) sample.geometryFidelity = geometryFidelity;
+    const textFidelity = measuredValues.get("textFidelity");
+    if (textFidelity !== undefined) sample.textFidelity = textFidelity;
+    const assetFidelity = measuredValues.get("assetFidelity");
+    if (assetFidelity !== undefined) sample.assetFidelity = assetFidelity;
+    const structureFidelity = measuredValues.get("structureFidelity");
+    if (structureFidelity !== undefined) sample.structureFidelity = structureFidelity;
+    const editableAreaRatio = measuredValues.get("editableAreaRatio");
+    if (editableAreaRatio !== undefined) sample.editableAreaRatio = editableAreaRatio;
+    const responsiveFidelity = measuredValues.get("responsiveFidelity");
+    if (responsiveFidelity !== undefined) sample.responsiveFidelity = responsiveFidelity;
+    const rasterAreaRatio = measuredValues.get("rasterAreaRatio");
+    if (rasterAreaRatio !== undefined) sample.rasterAreaRatio = rasterAreaRatio;
+
+    corpusSample = sample;
   }
 
   return {

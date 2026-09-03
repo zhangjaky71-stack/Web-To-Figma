@@ -197,11 +197,13 @@ export async function withHighFidelityViewportOverride<T>(
   });
 }
 
-function readDevicePixelRatio(value: Record<string, unknown>): number {
+function readPositiveRuntimeNumber(value: Record<string, unknown>): number | undefined {
   const result = value.result;
-  if (typeof result !== "object" || result === null || Array.isArray(result)) return 1;
+  if (typeof result !== "object" || result === null || Array.isArray(result)) return undefined;
   const observed = (result as Record<string, unknown>).value;
-  return typeof observed === "number" && Number.isFinite(observed) && observed > 0 ? observed : 1;
+  return typeof observed === "number" && Number.isFinite(observed) && observed > 0
+    ? observed
+    : undefined;
 }
 
 function decodeBase64Bytes(value: string): number[] {
@@ -338,7 +340,15 @@ export async function captureHighFidelityWithCdp(
       command(api, target, "DOMSnapshot.enable"),
     ]);
 
-    const [domSnapshot, layoutMetrics, frameTree, dprEvaluation, screenshot] = await Promise.all([
+    const [
+      domSnapshot,
+      layoutMetrics,
+      frameTree,
+      dprEvaluation,
+      widthEvaluation,
+      heightEvaluation,
+      screenshot,
+    ] = await Promise.all([
       command<CdpDomSnapshotResponse>(api, target, "DOMSnapshot.captureSnapshot", {
         computedStyles: [...CDP_COMPUTED_STYLE_PROPERTIES],
         includePaintOrder: true,
@@ -350,6 +360,16 @@ export async function captureHighFidelityWithCdp(
       command<CdpFrameTreeResponse>(api, target, "Page.getFrameTree"),
       command<Record<string, unknown>>(api, target, "Runtime.evaluate", {
         expression: "window.devicePixelRatio",
+        returnByValue: true,
+        silent: true,
+      }),
+      command<Record<string, unknown>>(api, target, "Runtime.evaluate", {
+        expression: "window.innerWidth",
+        returnByValue: true,
+        silent: true,
+      }),
+      command<Record<string, unknown>>(api, target, "Runtime.evaluate", {
+        expression: "window.innerHeight",
         returnByValue: true,
         silent: true,
       }),
@@ -380,7 +400,17 @@ export async function captureHighFidelityWithCdp(
         layoutMetrics,
         frameTree,
         screenshot,
-        devicePixelRatio: readDevicePixelRatio(dprEvaluation),
+        viewportWidth:
+          readPositiveRuntimeNumber(widthEvaluation) ??
+          layoutMetrics.cssVisualViewport?.clientWidth ??
+          layoutMetrics.cssLayoutViewport?.clientWidth ??
+          0,
+        viewportHeight:
+          readPositiveRuntimeNumber(heightEvaluation) ??
+          layoutMetrics.cssVisualViewport?.clientHeight ??
+          layoutMetrics.cssLayoutViewport?.clientHeight ??
+          0,
+        devicePixelRatio: readPositiveRuntimeNumber(dprEvaluation) ?? 1,
       },
       ...(fallbackUrl === undefined ? {} : { fallbackUrl }),
       ...(fallbackTitle === undefined ? {} : { fallbackTitle }),

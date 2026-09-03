@@ -745,9 +745,18 @@ export function normalizeCdpCapture(input: CdpCaptureInput): CdpCaptureResult {
     rootCaptureNodeId,
     captureTarget: input.captureTarget,
     environment: {
-      viewportWidth: cssVisual?.clientWidth ?? cssLayout?.clientWidth ?? contentSize?.width ?? 0,
+      viewportWidth:
+        input.evidence.viewportWidth ??
+        cssVisual?.clientWidth ??
+        cssLayout?.clientWidth ??
+        contentSize?.width ??
+        0,
       viewportHeight:
-        cssVisual?.clientHeight ?? cssLayout?.clientHeight ?? contentSize?.height ?? 0,
+        input.evidence.viewportHeight ??
+        cssVisual?.clientHeight ??
+        cssLayout?.clientHeight ??
+        contentSize?.height ??
+        0,
       scale: {
         context: {
           devicePixelRatio: input.evidence.devicePixelRatio,

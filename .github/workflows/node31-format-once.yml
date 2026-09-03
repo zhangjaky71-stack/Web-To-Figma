@@ -40,12 +40,17 @@ jobs:
             apps/browser-extension/test/responsive-cdp-runtime.test.ts \
             scripts/run-node-31-file-protocol-runtime-v18.mjs
 
-      - name: Remove one-shot workflow and commit
+      - name: Print formatted CI workflow
         run: |
-          git rm .github/workflows/node31-format-once.yml
+          echo '---NODE31-CI-FORMATTED-BEGIN---'
+          cat .github/workflows/ci.yml
+          echo '---NODE31-CI-FORMATTED-END---'
+
+      - name: Commit non-workflow formatted files
+        run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .github/workflows/ci.yml \
+          git add \
             apps/browser-extension/src/runtime/cdp-runtime.ts \
             apps/browser-extension/test/responsive-cdp-runtime.test.ts \
             scripts/run-node-31-file-protocol-runtime-v18.mjs

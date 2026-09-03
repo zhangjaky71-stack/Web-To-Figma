@@ -427,7 +427,10 @@ try {
     `Responsive production job failed: ${production?.job?.error ?? "unknown"}`,
   );
   const job = production.job.data;
-  assert(job?.status === "completed", `Responsive production job status is ${job?.status}`);
+  assert(
+    job?.status === "completed",
+    `Responsive production job status is ${job?.status}; phase=${job?.phase}; error=${job?.error ?? "none"}; plan=${JSON.stringify(job?.responsivePlan ?? [])}`,
+  );
   assert(job?.mode === "responsive", `Responsive production job mode is ${job?.mode}`);
   assert(
     job?.phase === "responsive-capture-complete",

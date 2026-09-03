@@ -8,7 +8,19 @@ import { pathToFileURL } from "node:url";
 import { evaluateNode31MeasurementArtifact } from "../packages/figma-renderer/dist/index.js";
 import { parseWtfPackage } from "../packages/wtf-parser/dist/index.js";
 
-const sourceArtifact = "qa/corpus/node31/class-a/level1-core.html";
+const testClass = process.env.W2F_NODE31_TEST_CLASS ?? "A";
+if (testClass !== "A" && testClass !== "B")
+  throw new TypeError(`Unsupported NODE-31 test class: ${testClass}`);
+const sourceArtifact =
+  process.env.W2F_NODE31_SOURCE_ARTIFACT ?? "qa/corpus/node31/class-a/level1-core.html";
+const sampleId = process.env.W2F_NODE31_SAMPLE_ID ?? "deterministic-level1-core";
+const sampleCategory =
+  process.env.W2F_NODE31_CATEGORY ?? (testClass === "A" ? "deterministic-standard" : "unspecified");
+const sampleSupportClass = process.env.W2F_NODE31_SUPPORT_CLASS ?? "native-supported";
+const sampleStandardHtmlCss = process.env.W2F_NODE31_STANDARD_HTML_CSS !== "false";
+const requiredEditableText =
+  process.env.W2F_NODE31_REQUIRED_EDITABLE_TEXT ??
+  (testClass === "A" ? "Editable structure with deterministic visual evidence" : "");
 const sourcePath = resolve(sourceArtifact);
 const fixtureUrl = pathToFileURL(sourcePath).href;
 const extensionRoot = resolve("apps/browser-extension/dist-high-fidelity");
@@ -456,15 +468,17 @@ try {
     !(rawSnapshot?.diagnostics ?? []).some((item) => item.code === "CDP_CAPTURE_FALLBACK_STANDARD"),
     "Persisted RawSnapshot recorded an unexpected Standard fallback",
   );
-  assert(
-    (rawSnapshot?.nodes ?? []).some(
-      (node) =>
-        node.kind === "text" &&
-        (node.textContent?.includes("Editable structure with deterministic visual evidence") ||
-          node.text?.value?.includes("Editable structure with deterministic visual evidence")),
-    ),
-    "Persisted Level-1 RawSnapshot is missing deterministic editable text",
-  );
+  if (requiredEditableText) {
+    assert(
+      (rawSnapshot?.nodes ?? []).some(
+        (node) =>
+          node.kind === "text" &&
+          (node.textContent?.includes(requiredEditableText) ||
+            node.text?.value?.includes(requiredEditableText)),
+      ),
+      `Persisted measurement RawSnapshot is missing required editable text: ${requiredEditableText}`,
+    );
+  }
 
   const storedPackage = await readIndexedDb(
     options.client,
@@ -496,7 +510,7 @@ try {
   assert(parsed.ir.sourceGraph.nodes.length > 0, "Secure parser returned an empty source graph");
 
   await mkdir(outputDir, { recursive: true });
-  const base = "deterministic-level1-core";
+  const base = sampleId;
   const rawPath = join(outputDir, `${base}.raw-snapshot.json`);
   const wtfPath = join(outputDir, `${base}.wtf`);
   const parsedPath = join(outputDir, `${base}.parsed-summary.json`);
@@ -524,11 +538,11 @@ try {
     evidenceType: "node31-fidelity-measurement",
     sample: {
       id: base,
-      testClass: "A",
-      category: "deterministic-standard",
-      supportClass: "native-supported",
-      standardHtmlCss: true,
-      level: 1,
+      testClass,
+      category: sampleCategory,
+      supportClass: sampleSupportClass,
+      standardHtmlCss: sampleStandardHtmlCss,
+      ...(testClass === "A" ? { level: 1 } : {}),
       sourceArtifact,
       sourceSha256,
     },

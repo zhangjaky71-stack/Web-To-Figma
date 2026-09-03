@@ -89,6 +89,18 @@ jobs:
       - name: NODE-31 Measurement provenance
         run: node scripts/run-node-31-measurement-provenance.mjs
 
+      - name: NODE-31 Level-1 measurement input
+        run: node scripts/run-node-31-measurement-input-level1.mjs
+
+      - name: Upload NODE-31 Level-1 measurement input
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: node31-level1-measurement-input
+          path: artifacts/node31-measurement-input/
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: NODE-31 File protocol P0
         run: node scripts/run-node-31-file-protocol-runtime-v18.mjs
 

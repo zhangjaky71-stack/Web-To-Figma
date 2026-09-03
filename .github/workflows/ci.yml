@@ -2,7 +2,8 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   pull_request:
 
 permissions:
@@ -11,7 +12,7 @@ permissions:
 jobs:
   quality:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -31,6 +32,30 @@ jobs:
       - name: Validate NODE-30 responsive determinism performance QA
         run: node scripts/validate-node-30.mjs
 
+      - name: Validate NODE-31 release candidate
+        run: node scripts/validate-node-31.mjs
+
+      - name: Validate NODE-31 Class B corpus
+        run: node scripts/validate-node-31-corpus.mjs
+
+      - name: Validate NODE-31 P0 audit
+        run: node scripts/validate-node-31-p0.mjs
+
+      - name: Validate NODE-31 P0 closure
+        run: node scripts/validate-node-31-p0-closure.mjs
+
+      - name: Validate NODE-31 NODE-30 evidence
+        run: node scripts/validate-node-31-node30-evidence.mjs
+
+      - name: Validate NODE-31 file protocol evidence
+        run: node scripts/validate-node-31-file-protocol-evidence.mjs
+
+      - name: Validate NODE-31 security evidence
+        run: node scripts/validate-node-31-security-evidence.mjs
+
+      - name: Validate NODE-31 known limitations
+        run: node scripts/validate-node-31-known-limitations.mjs
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -43,13 +68,11 @@ jobs:
           node-version: 24
           package-manager-cache: false
 
-      - name: Verify toolchain
-        run: |
-          node --version
-          pnpm --version
-
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: NODE-31 Dependency security audit
+        run: pnpm audit --audit-level high
 
       - name: Lint
         run: pnpm lint
@@ -62,6 +85,72 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      - name: NODE-31 Measurement provenance
+        run: node scripts/run-node-31-measurement-provenance.mjs
+
+      - name: NODE-31 Level-1 measurement input
+        env:
+          W2F_NODE31_BRANCH_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: node scripts/run-node-31-measurement-input-level1.mjs
+
+      - name: Upload NODE-31 Level-1 measurement input
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: node31-level1-measurement-input
+          path: artifacts/node31-measurement-input/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: NODE-31 Level-2 responsive measurement input
+        env:
+          W2F_NODE31_BRANCH_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: node scripts/run-node-31-measurement-input-level2.mjs
+
+      - name: Upload NODE-31 Level-2 responsive measurement input
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: node31-level2-measurement-input
+          path: artifacts/node31-measurement-input-level2/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: NODE-31 Class B measurement inputs
+        env:
+          W2F_NODE31_BRANCH_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: node scripts/run-node-31-measurement-input-classb.mjs
+
+      - name: Upload NODE-31 Class B measurement inputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: node31-classb-measurement-inputs
+          path: artifacts/node31-measurement-input-classb/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: NODE-31 File protocol P0
+        run: node scripts/run-node-31-file-protocol-runtime-v18.mjs
+
+      - name: NODE-31 Browser runtime P0
+        run: node scripts/run-node-31-browser-runtime.mjs
+
+      - name: NODE-31 Standard capture runtime P0
+        run: node scripts/run-node-31-standard-capture-runtime.mjs
+
+      - name: NODE-31 Visual-state freeze P0
+        run: node scripts/run-node-31-visual-state-runtime.mjs
+
+      - name: NODE-31 Plugin UI choose-file P0
+        run: node scripts/run-node-31-plugin-ui-runtime.mjs
+
+      - name: NODE-31 Plugin canvas-drop P0
+        run: node scripts/run-node-31-plugin-canvas-drop-runtime.mjs
+
+      - name: NODE-31 Font geometry P0
+        run: node scripts/run-node-31-font-geometry-runtime.mjs
 
       - name: Format check
         run: pnpm format:check

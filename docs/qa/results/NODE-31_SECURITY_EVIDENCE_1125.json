@@ -1,0 +1,56 @@
+{
+  "version": "1.0.0",
+  "evidenceType": "node31-known-security-blocker-inventory",
+  "contract": "docs/ACCEPTANCE_CONTRACT_V2.md",
+  "status": "PASS",
+  "ci": {
+    "runNumber": 1125,
+    "runId": 33740760898,
+    "jobId": 100601847724,
+    "branch": "node-31-real-world-compatibility-release-candidate",
+    "branchHead": "4ef870e2a963155c4b0119bfbd72fda4b0af902b",
+    "conclusion": "PASS",
+    "runnerOs": "Ubuntu 24.04.4 LTS",
+    "node": "24.19.0",
+    "pnpm": "11.22.0",
+    "dependencyAuditCommand": "pnpm audit --audit-level high",
+    "dependencyAuditResult": "No known vulnerabilities found"
+  },
+  "inventory": {
+    "knownCriticalBlockers": 0,
+    "knownHighBlockers": 0,
+    "openGitHubIssuesObserved": 0,
+    "dependencyAuditScope": "pnpm workspace lockfile and installed dependency graph at the recorded branch head",
+    "issueInventoryScope": "open GitHub issues in zhangjaky71-stack/Web-To-Figma observed on 2026-09-03",
+    "hostileFixtureEvidence": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json",
+    "hostileFixtures": [
+      "malformed-archive",
+      "path-traversal",
+      "oversized-expansion",
+      "invalid-checksum",
+      "malformed-schema",
+      "hostile-svg"
+    ]
+  },
+  "permanentGate": {
+    "workflow": ".github/workflows/ci.yml",
+    "command": "pnpm audit --audit-level high",
+    "registryErrorsIgnored": false,
+    "advisoriesWithoutFixIgnored": false
+  },
+  "scopeBoundaries": [
+    "zero-known-tracked-critical-high-blockers-in-the-recorded-dependency-audit-open-issue-inventory-and-declared-hostile-fixtures",
+    "does-not-prove-absence-of-undiscovered-vulnerabilities",
+    "does-not-claim-independent-penetration-testing",
+    "does-not-claim-private-security-reporting-channels-were-audited",
+    "future-audit-or-hostile-fixture-failures-must-block-release-readiness"
+  ],
+  "notProvenByThisArtifact": [
+    "Class-A-fidelity-measurements",
+    "Class-B-fidelity-measurements",
+    "known-limitations-currentness",
+    "absence-of-undiscovered-vulnerabilities",
+    "independent-penetration-test",
+    "final-release-readiness"
+  ]
+}

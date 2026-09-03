@@ -1,0 +1,83 @@
+{
+  "version": "1.0.0",
+  "evidenceType": "node31-plugin-canvas-drop-integration-runtime",
+  "status": "PASS",
+  "contract": "docs/ACCEPTANCE_CONTRACT_V2.md",
+  "ci": {
+    "runNumber": 861,
+    "runId": 33074321682,
+    "jobId": 98524433660,
+    "branchHead": "6195def8a960843c2ea2883638c84386e2ef733a",
+    "mergeRef": "0b1bd9b0278471c1621d4c502c5579bef05e185c",
+    "base": "28b52dc3e0d3074bf76205c8deb324a06dfe9e23",
+    "conclusion": "PASS",
+    "qualityChecks": {
+      "node31Validator": "PASS",
+      "node31CorpusValidator": "PASS",
+      "node31P0Validator": "PASS",
+      "lint": "PASS",
+      "typecheck": "PASS",
+      "tests": "PASS",
+      "build": "PASS",
+      "browserRuntime": "PASS",
+      "standardCaptureRuntime": "PASS",
+      "pluginUiChooseFileRuntime": "PASS",
+      "pluginCanvasDropRuntime": "PASS",
+      "format": "PASS"
+    }
+  },
+  "environment": {
+    "runner": "ubuntu-24.04",
+    "os": "Ubuntu 24.04.4",
+    "node": "24.19.0",
+    "pnpm": "11.22.0",
+    "chrome": "Chrome/151.0.7922.137"
+  },
+  "harnessArtifact": "scripts/run-node-31-plugin-canvas-drop-runtime.mjs",
+  "productSourceArtifacts": [
+    "apps/figma-plugin/src/main.ts",
+    "apps/figma-plugin/src/ui.ts",
+    "apps/figma-plugin/src/intake-state.ts"
+  ],
+  "mainBundleArtifact": "apps/figma-plugin/dist/code.js",
+  "uiBundleArtifact": "apps/figma-plugin/dist/ui.html",
+  "mainBundleSha256": "a4a4ccd413f3830542ddd0d96ed669a9c3883ffdbb601c2f9b669bf662822711",
+  "uiBundleSha256": "d71609a9fd4041ad34060d74b64163163d4fc44b8f07f46ed980bb9382137147",
+  "fixtureProducer": "packages/wtf-packager/dist/index.js",
+  "fixtureArchiveSha256": "9e02cd0d1b6ae6369d1c7553f395c5cd020f4dcfcea63decccf05bebf38b9cb6",
+  "hostBoundary": {
+    "figmaApi": "simulated",
+    "note": "The final built plugin main bundle executes unchanged against a narrow Figma host API simulator for showUI/ui.postMessage/figma.on(drop). The final built UI, secure parser, DOM, pointer import action and .wtf bytes run in real Chrome. This is not a claim of Figma Desktop execution."
+  },
+  "assertions": [
+    "final-main-registers-figma-canvas-drop-handler",
+    "non-wtf-canvas-drop-passes-through-without-byte-read",
+    "wtf-canvas-drop-consumed-by-plugin",
+    "canvas-drop-file-bytes-read-once",
+    "canvas-drop-bytes-forwarded-main-to-final-ui",
+    "canvas-drop-source-preserved",
+    "canvas-drop-absolute-point-preserved-in-intake-metadata",
+    "canvas-drop-byte-length-preserved",
+    "canvas-drop-secure-parser-reaches-preview-ready",
+    "canvas-drop-import-disabled-until-secure-parse-completes",
+    "canvas-drop-source-and-rounded-point-visible-in-ui",
+    "trusted-import-pointer-emits-render-request",
+    "canvas-drop-intake-identity-preserved-to-render-request",
+    "canvas-drop-destination-preserved-to-render-request",
+    "canvas-drop-parsed-render-tree-handoff-preserved",
+    "canvas-drop-parsed-source-graph-handoff-preserved"
+  ],
+  "provesP0Items": [
+    "drop-on-canvas-path"
+  ],
+  "notProvenByThisArtifact": [
+    "file-protocol-explicit-permission",
+    "visual-state-freeze-and-restore",
+    "geometry-preserving-correction-policy",
+    "raster-text-only-when-policy-justifies",
+    "zero-known-critical-security-blockers",
+    "zero-known-high-security-blockers",
+    "class-a-visual-geometry-text-asset-structure-measurements",
+    "class-b-browser-to-wtf-to-figma-measurements"
+  ]
+}

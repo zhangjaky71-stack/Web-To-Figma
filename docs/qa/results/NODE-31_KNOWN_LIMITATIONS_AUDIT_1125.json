@@ -1,0 +1,160 @@
+{
+  "version": "1.0.0",
+  "evidenceType": "node31-known-limitations-currentness-audit",
+  "contract": "docs/ACCEPTANCE_CONTRACT_V2.md",
+  "status": "PASS",
+  "sourceDocument": "docs/KNOWN_LIMITATIONS.md",
+  "sourceDocumentStatus": "ACTIVE PRODUCT CONTRACT",
+  "sectionCount": 37,
+  "sectionIds": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37
+  ],
+  "ciAnchor": {
+    "runNumber": 1125,
+    "runId": 33740760898,
+    "jobId": 100601847724,
+    "branchHead": "4ef870e2a963155c4b0119bfbd72fda4b0af902b",
+    "conclusion": "PASS",
+    "chrome": "Chrome/151.0.7922.173",
+    "node": "24.19.0",
+    "pnpm": "11.22.0"
+  },
+  "auditGroups": [
+    {
+      "id": "capture-boundaries",
+      "sections": [3, 5, 6, 7, 18, 19, 20, 21, 22, 24, 25, 35],
+      "sourceArtifacts": [
+        "packages/standard-capture-adapter/src/capture.ts",
+        "scripts/run-node-31-standard-capture-runtime.mjs",
+        "scripts/run-node-31-file-protocol-runtime-v18.mjs",
+        "scripts/run-node-31-browser-runtime.mjs"
+      ],
+      "observedContract": "Current-document and bounded-region capture preserve scroll-root, open-shadow and same-origin-frame structure; inaccessible cross-origin frames are diagnosed without fabricated editable children; file capture respects explicit browser file access."
+    },
+    {
+      "id": "font-text-and-editability",
+      "sections": [8, 9, 30],
+      "sourceArtifacts": [
+        "apps/figma-plugin/src/font-diagnostics.ts",
+        "apps/figma-plugin/src/raster-text-policy.ts",
+        "apps/figma-plugin/test/font-diagnostics.test.ts",
+        "apps/figma-plugin/test/raster-text-policy.test.ts",
+        "apps/figma-plugin/test/hybrid-raster.test.ts"
+      ],
+      "observedContract": "Font substitution is diagnosed, geometry correction is bounded and remeasured, and ordinary text is not raster-authorized solely for font, geometry, text-quality or pixel-score reasons."
+    },
+    {
+      "id": "responsive-layout-and-runtime",
+      "sections": [10, 11, 17, 23, 24, 25, 36],
+      "sourceArtifacts": [
+        "packages/responsive-capture/src/index.ts",
+        "packages/responsive-inference/src/index.ts",
+        "packages/layout-analyzer/src/index.ts",
+        "scripts/run-node-31-visual-state-runtime.mjs",
+        "docs/qa/results/NODE-31_NODE30_DETERMINISM_EVIDENCE_715.json"
+      ],
+      "observedContract": "Responsive evidence and layout semantics are captured without claiming Figma executes the browser CSS runtime; animation/media capture is frozen and restored as a defined visual state."
+    },
+    {
+      "id": "visual-fallback-boundaries",
+      "sections": [12, 13, 14, 15, 16, 30],
+      "sourceArtifacts": [
+        "apps/figma-plugin/src/raster-text-policy.ts",
+        "packages/compositing-engine/src/index.ts",
+        "qa/corpus/node31/class-b/canvas.html",
+        "qa/corpus/node31/class-b/webgl.html",
+        "docs/qa/NODE-31_RC_EVIDENCE_V2.json"
+      ],
+      "observedContract": "Canvas and WebGL remain declared expected-fallback cases; standard HTML/CSS corpus entries remain native-supported and are not silently reclassified as raster fallback."
+    },
+    {
+      "id": "assets-packaging-and-security",
+      "sections": [26, 27, 28, 37],
+      "sourceArtifacts": [
+        "packages/wtf-packager/src/packager.ts",
+        "packages/asset-resolver/src/index.ts",
+        "packages/wtf-parser/test/parser.test.ts",
+        "packages/wtf-parser/test/zip-reader.test.ts",
+        "packages/wtf-parser/test/svg-sanitize.test.ts",
+        "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json"
+      ],
+      "observedContract": "Packaging enforces hard entry/archive/path/checksum limits and parser hostile fixtures remain explicit; failures must be diagnosed rather than silently dropped. Licensing remains a user/content-rights boundary rather than a technical support claim."
+    },
+    {
+      "id": "scale-identity-and-non-p0-scope",
+      "sections": [29, 31, 32, 33, 34],
+      "sourceArtifacts": [
+        "packages/stable-identity/src/types.ts",
+        "packages/stable-identity/test/identity.test.ts",
+        "packages/stable-identity/test/mapping.test.ts",
+        "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json",
+        "docs/qa/results/NODE-31_NODE30_DETERMINISM_EVIDENCE_715.json"
+      ],
+      "observedContract": "Stable identity exposes ambiguous mappings and confidence, 10k renderer scale evidence remains bounded, and incremental update/component/variable automation remains outside V2 P0 rather than being silently claimed complete."
+    },
+    {
+      "id": "architectural-and-product-boundaries",
+      "sections": [1, 2, 4],
+      "sourceArtifacts": [
+        "docs/ACCEPTANCE_CONTRACT_V2.md",
+        "scripts/run-node-31-plugin-ui-runtime.mjs",
+        "scripts/run-node-31-plugin-canvas-drop-runtime.mjs"
+      ],
+      "observedContract": "Browser and Figma are distinct render/runtime systems; arbitrary site JavaScript is not transferred; choose-file and active-plugin canvas-drop paths are supported without claiming OS-level plugin auto-launch."
+    }
+  ],
+  "supportClassificationAudit": {
+    "standardHtmlCssEntriesMustRemainNativeSupported": true,
+    "expectedFallbackCategories": ["canvas", "webgl"],
+    "fallbackContracts": [
+      "docs/KNOWN_LIMITATIONS.md#14-canvas",
+      "docs/KNOWN_LIMITATIONS.md#15-webgl"
+    ],
+    "silentDataLossAcceptable": false
+  },
+  "conclusion": "The 37-section known-limitations document is current with the audited implementation, runtime evidence and declared NODE-31 support classes at the recorded evidence boundary. PASS here means documentation currentness and absence of identified contradiction, not universal browser compatibility or fidelity acceptance.",
+  "notProvenByThisArtifact": [
+    "exhaustive-absence-of-undocumented-limitations",
+    "Class-A-visual-geometry-text-asset-structure-thresholds",
+    "Class-B-browser-to-wtf-to-Figma-thresholds",
+    "Figma-Desktop-host-parity-for-simulated-runtime-evidence",
+    "universal-browser-compatibility",
+    "final-release-readiness"
+  ]
+}

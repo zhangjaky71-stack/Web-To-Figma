@@ -22,6 +22,12 @@ describe("Standard capture adapter contract", () => {
     }
   });
 
+  it("does not double-register the document scrolling element as an app scroll root", () => {
+    const source = captureStandardSnapshotInPage.toString();
+    expect(source).toContain("element === doc.scrollingElement");
+    expect(source).toContain("element === doc.documentElement");
+  });
+
   it("does not read protected browser storage/cookie APIs", () => {
     const source = captureStandardSnapshotInPage.toString();
     expect(source).not.toContain("document.cookie");

@@ -1,0 +1,85 @@
+{
+  "version": "1.0.0",
+  "evidenceType": "node31-font-policy",
+  "status": "PASS",
+  "contract": "docs/ACCEPTANCE_CONTRACT_V2.md",
+  "ci": {
+    "runNumber": 781,
+    "runId": 32833779725,
+    "jobId": 97758035952,
+    "conclusion": "PASS",
+    "branchHead": "50d234bf977741a31b99b53f5bf579698c5d64c5",
+    "mergeRef": "c2210996b4a40317102d3967275544db738f3baa",
+    "base": "28b52dc3e0d3074bf76205c8deb324a06dfe9e23",
+    "qualityChecks": {
+      "node31Validator": "PASS",
+      "node31P0Validator": "PASS",
+      "lint": "PASS",
+      "typecheck": "PASS",
+      "tests": "PASS",
+      "build": "PASS",
+      "figmaPluginPackage": "PASS",
+      "browserRuntime": "PASS",
+      "format": "PASS"
+    }
+  },
+  "environment": {
+    "os": "Ubuntu 24.04.4 LTS",
+    "node": "24.19.0",
+    "pnpm": "11.22.0",
+    "chrome": "Chrome/151.0.7922.137"
+  },
+  "sourceArtifacts": [
+    "apps/figma-plugin/src/font-resolution.ts",
+    "apps/figma-plugin/src/font-diagnostics.ts",
+    "apps/figma-plugin/src/figma-visual-renderer.ts"
+  ],
+  "testArtifacts": [
+    {
+      "path": "apps/figma-plugin/test/font-resolution.test.ts",
+      "testCount": 5,
+      "status": "PASS"
+    },
+    {
+      "path": "apps/figma-plugin/test/font-diagnostics.test.ts",
+      "testCount": 2,
+      "status": "PASS"
+    }
+  ],
+  "figmaPluginSuite": {
+    "testFiles": 6,
+    "testCount": 25,
+    "status": "PASS"
+  },
+  "provenBehavior": [
+    "Available requested family/style is selected case-insensitively as an exact match without fallback.",
+    "Missing requested styles prefer same-family Regular, then another same-family face, before default or first-available fallback.",
+    "Missing families are never reported as exact matches.",
+    "Each actual editable TextNode persists substitution count, requested family/style, chosen family/style and resolution reason in pluginData.",
+    "Persisted substitution detail is capped at 64 entries while retaining the full count and an explicit truncation flag.",
+    "fontFallbackCount is derived from structured substitution diagnostics rather than maintained as an independent counter."
+  ],
+  "provesP0Items": [
+    "exact-available-font-preferred",
+    "nearest-mapping-with-diagnostic"
+  ],
+  "notProvenByThisArtifact": [
+    "geometry-preserving-correction-policy",
+    "raster-text-only-when-policy-justifies",
+    "current-document-deterministic-online",
+    "file-protocol-explicit-permission",
+    "region-intersections-and-structural-ancestors",
+    "document-and-primary-app-scroll-root-semantics",
+    "open-shadow-dom-slot-composed-tree",
+    "same-origin-iframe",
+    "inaccessible-cross-origin-frame-diagnostic",
+    "visual-state-freeze-and-restore",
+    "profile-required-pixel-ground-truth-end-to-end",
+    "choose-file-path",
+    "drop-on-canvas-path",
+    "zero-known-critical-security-blockers",
+    "zero-known-high-security-blockers",
+    "class-a-visual-geometry-text-asset-structure-measurements",
+    "class-b-browser-to-wtf-to-figma-measurements"
+  ]
+}

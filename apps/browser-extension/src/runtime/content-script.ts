@@ -104,6 +104,10 @@
   function openRegionSelector(jobId: string, sendResponse: (response: unknown) => void): void {
     activeSession?.cancel();
 
+    const initialScroll = { x: window.scrollX, y: window.scrollY };
+    const initialActiveElement =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
     const host = document.createElement("div");
     host.dataset.w2fRegionSelector = jobId;
     host.style.position = "fixed";
@@ -428,11 +432,35 @@
       };
     }
 
+    function restorePageState(): void {
+      if (initialActiveElement?.isConnected) {
+        try {
+          initialActiveElement.focus({ preventScroll: true });
+        } catch {
+          // Best-effort focus restoration must not block selector cleanup.
+        }
+      }
+
+      if (window.scrollX === initialScroll.x && window.scrollY === initialScroll.y) return;
+      const scrollingElement =
+        document.scrollingElement instanceof HTMLElement
+          ? document.scrollingElement
+          : document.documentElement;
+      const previousScrollBehavior = scrollingElement.style.scrollBehavior;
+      try {
+        scrollingElement.style.scrollBehavior = "auto";
+        window.scrollTo(initialScroll.x, initialScroll.y);
+      } finally {
+        scrollingElement.style.scrollBehavior = previousScrollBehavior;
+      }
+    }
+
     function cleanup(): void {
       stopAutoScroll();
       window.removeEventListener("scroll", render);
       document.removeEventListener("keydown", onKeyDown, true);
       host.remove();
+      restorePageState();
       if (activeSession?.jobId === jobId) activeSession = null;
     }
 

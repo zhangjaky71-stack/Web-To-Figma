@@ -103,7 +103,11 @@ if (failures.length === 0) {
     "High Fidelity manifest may add debugger and NODE-21 downloads, with nothing broader",
   );
   for (const manifest of [standardManifest, highManifest]) {
-    assert(!("host_permissions" in manifest), "NODE-09 must not add broad host permissions");
+    assert(
+      JSON.stringify([...(manifest.host_permissions ?? [])].sort()) ===
+        JSON.stringify(["file:///*"]),
+      "NODE-09 host permissions must remain limited to file:///*",
+    );
     assert(!("content_scripts" in manifest), "NODE-09 must preserve user-action content injection");
   }
 

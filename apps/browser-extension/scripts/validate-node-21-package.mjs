@@ -19,6 +19,8 @@ function text(relativePath) {
 
 for (const path of [
   "runtime/wtf-package-builder.js",
+  "runtime/profile-compliant-wtf-package.js",
+  "runtime/pixel-ground-truth-contract.js",
   "runtime/wtf-package-store.js",
   "runtime/wtf-export-runtime.js",
   "runtime/wtf-packager/index.js",
@@ -79,6 +81,33 @@ for (const evidence of [
   assert(builder.includes(evidence), `packaged WTF payload builder missing ${evidence}`);
 }
 
+const profileCompliantBuilder = text("runtime/profile-compliant-wtf-package.js");
+for (const evidence of [
+  "assertProfileRequiredPixelGroundTruth",
+  "buildWtfPackage",
+  "buildProfileCompliantWtfPackage",
+]) {
+  assert(
+    profileCompliantBuilder.includes(evidence),
+    `packaged profile-compliant WTF builder missing ${evidence}`,
+  );
+}
+
+const pixelContract = text("runtime/pixel-ground-truth-contract.js");
+for (const evidence of [
+  "assertProfileRequiredPixelGroundTruth",
+  "planRasterTiles",
+  "viewport:current",
+  "full-page:current",
+  "RASTER_TILE_MISSING",
+  "unreferenced tile resource",
+]) {
+  assert(
+    pixelContract.includes(evidence),
+    `packaged profile Pixel Ground Truth contract missing ${evidence}`,
+  );
+}
+
 const ir = text("runtime/w2f-ir/index.js");
 assert(
   ir.includes("./types.js"),
@@ -129,12 +158,17 @@ const exportRuntime = text("runtime/wtf-export-runtime.js");
 for (const evidence of [
   "readResponsiveCapture",
   "readResponsiveInference",
-  "buildWtfPackage",
+  "readPixelGroundTruth",
+  "buildProfileCompliantWtfPackage",
   "writeWtfPackage",
   "persistWtfExport",
 ]) {
   assert(exportRuntime.includes(evidence), `packaged WTF export runtime missing ${evidence}`);
 }
+assert(
+  !exportRuntime.includes("buildWtfPackage("),
+  "packaged WTF export runtime must not bypass the profile-compliant builder",
+);
 
 const worker = text("runtime/service-worker.js");
 for (const evidence of ["W2F_EXPORT_WTF", "persistWtfExport", "deleteWtfPackage"]) {

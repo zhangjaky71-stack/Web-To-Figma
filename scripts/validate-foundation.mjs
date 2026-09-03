@@ -252,9 +252,10 @@ if (failures.length === 0) {
       JSON.stringify(["activeTab", "downloads", "scripting", "storage"].sort()),
     "browser permissions must remain least-privilege activeTab+downloads+scripting+storage",
   );
+  const browserHostPermissions = [...(browserManifest.host_permissions ?? [])].sort();
   assert(
-    !("host_permissions" in browserManifest),
-    "region selection must not introduce broad default host permissions",
+    JSON.stringify(browserHostPermissions) === JSON.stringify(["file:///*"]),
+    "browser host permissions must remain limited to file:///* for explicit local-file capture",
   );
   assert(
     !("content_scripts" in browserManifest),
@@ -268,8 +269,9 @@ if (failures.length === 0) {
   );
   const browserSourceRuntime = readText("apps/browser-extension/src/runtime/source-runtime.ts");
   assert(
-    browserSourceRuntime.includes("isAllowedFileSchemeAccess"),
-    "Browser source runtime must check Chrome file-scheme access explicitly",
+    browserSourceRuntime.includes("permissions.contains") &&
+      browserSourceRuntime.includes('"file:///*"'),
+    "Browser source runtime must check active file host permission via MV3 permissions API",
   );
   assert(
     browserSourceRuntime.includes("resolveTabSource"),

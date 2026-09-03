@@ -35,6 +35,7 @@ import {
   type WtfPackageResult,
   type WtfPackagerInput,
 } from "@w2f/wtf-packager";
+import { buildResponsiveStableNodeEvidence } from "./responsive-capture-runtime.js";
 
 export interface WtfPackageEvidence {
   jobId: string;
@@ -64,8 +65,10 @@ function sourceGraph(
   revision: WtfRevision,
   css: CssCascadeCapture,
   assets: AssetCapture,
+  stableNodes: Awaited<ReturnType<typeof buildResponsiveStableNodeEvidence>>,
 ): WtfSourceGraph {
   const styled = new Set(css.cascade.nodes.map((node) => node.sourceNodeId));
+  const stableByCapture = new Map(stableNodes.map((node) => [node.captureNodeId, node]));
   const assetRefs = new Map<string, string[]>();
   for (const asset of assets.assets) {
     for (const sourceNodeId of asset.sourceNodeIds) {
@@ -76,8 +79,18 @@ function sourceGraph(
   }
   const nodes: WtfSourceNode[] = snapshot.nodes.map((node) => {
     const refs = [...new Set(assetRefs.get(node.captureNodeId) ?? [])].sort();
+    const stable = stableByCapture.get(node.captureNodeId);
     return {
       captureNodeId: node.captureNodeId,
+      ...(stable
+        ? {
+            stableIdentity: {
+              id: stable.stableNodeId,
+              confidence: stable.confidence,
+              evidence: [`signature-hash:${stable.signatureHash}`],
+            },
+          }
+        : {}),
       kind: node.kind,
       relationships: { ...node.relationships },
       frameContext: { ...node.frameContext },
@@ -112,10 +125,16 @@ function sourceGraph(
   };
 }
 
-function captureEnvironment(evidence: EnvironmentCapture): WtfCaptureEnvironment {
+function captureEnvironment(
+  evidence: EnvironmentCapture,
+  overrides?: {
+    id?: string;
+    viewport?: { width: number; height: number; dpr: number };
+  },
+): WtfCaptureEnvironment {
   const environment = evidence.environment;
   return {
-    id: `env:${evidence.snapshotId}`,
+    id: overrides?.id ?? `env:${evidence.snapshotId}`,
     browserName: environment.browserName,
     browserVersion: environment.browserVersion,
     platform: environment.platform,
@@ -123,19 +142,32 @@ function captureEnvironment(evidence: EnvironmentCapture): WtfCaptureEnvironment
     direction: environment.direction,
     colorScheme: environment.colorScheme,
     reducedMotion: environment.reducedMotion,
-    viewportWidth: environment.viewportWidth,
-    viewportHeight: environment.viewportHeight,
-    dpr: environment.dpr,
+    viewportWidth: overrides?.viewport?.width ?? environment.viewportWidth,
+    viewportHeight: overrides?.viewport?.height ?? environment.viewportHeight,
+    dpr: overrides?.viewport?.dpr ?? environment.dpr,
     pageZoom: environment.pageZoom ?? 1,
     ...(environment.cssZoom !== undefined ? { cssZoom: environment.cssZoom } : {}),
   };
+}
+
+function responsiveEnvironmentRef(snapshotId: string): string {
+  return `env:responsive:${encodeURIComponent(snapshotId)}`;
 }
 
 function responsivePayload(
   environment: EnvironmentCapture,
   responsive: ResponsiveInferenceResult | undefined,
 ): WtfResponsivePayload {
-  if (responsive) return responsive.payload;
+  if (responsive) {
+    return {
+      ...responsive.payload,
+      snapshots: responsive.payload.snapshots.map((snapshot) => ({
+        ...snapshot,
+        viewport: { ...snapshot.viewport },
+        environmentRef: responsiveEnvironmentRef(snapshot.id),
+      })),
+    };
+  }
   return {
     snapshots: [],
     rules: [],
@@ -146,6 +178,27 @@ function responsivePayload(
     })),
     containerQueries: [],
   };
+}
+
+function documentEnvironments(
+  primary: WtfCaptureEnvironment,
+  responsive: WtfResponsivePayload,
+): WtfCaptureEnvironment[] {
+  const environments = new Map<string, WtfCaptureEnvironment>([[primary.id, primary]]);
+  for (const snapshot of responsive.snapshots) {
+    if (environments.has(snapshot.environmentRef)) continue;
+    environments.set(snapshot.environmentRef, {
+      ...primary,
+      id: snapshot.environmentRef,
+      viewportWidth: snapshot.viewport.width,
+      viewportHeight: snapshot.viewport.height,
+      dpr: snapshot.viewport.dpr,
+    });
+  }
+  const responsiveEnvironments = [...environments.values()]
+    .filter((environment) => environment.id !== primary.id)
+    .sort((left, right) => left.id.localeCompare(right.id));
+  return [primary, ...responsiveEnvironments];
 }
 
 function diagnostic(
@@ -234,7 +287,10 @@ function portableAssets(evidence: WtfPackageEvidence): {
   };
 }
 
-function featureEvidence(evidence: WtfPackageEvidence): {
+function featureEvidence(
+  evidence: WtfPackageEvidence,
+  source: WtfSourceGraph,
+): {
   capabilities: string[];
   features: WtfFeatureSet;
 } {
@@ -260,7 +316,7 @@ function featureEvidence(evidence: WtfPackageEvidence): {
     optional.add("token-graph");
     capabilities.add("token-graph");
   }
-  if (renderNodes.some((node) => (node.sourceStableIds?.length ?? 0) > 0)) {
+  if (source.nodes.some((node) => node.stableIdentity)) {
     optional.add("stable-identity");
     capabilities.add("stable-identity");
   }
@@ -314,8 +370,17 @@ export async function buildWtfPackageInput(
     sourceFingerprint: documentIdentity.sourceFingerprint,
     capturedAt: captureIdentity.capturedAt,
   };
-  const source = sourceGraph(evidence.snapshot, revision, evidence.css, evidence.assets);
+  const stableNodes = await buildResponsiveStableNodeEvidence(evidence.snapshot);
+  const source = sourceGraph(
+    evidence.snapshot,
+    revision,
+    evidence.css,
+    evidence.assets,
+    stableNodes,
+  );
   const environment = captureEnvironment(evidence.environment);
+  const responsive = responsivePayload(evidence.environment, evidence.responsive);
+  const environments = documentEnvironments(environment, responsive);
   const document: WtfDocumentPayload = {
     irVersion: WTF_IR_VERSION,
     documentId: revision.documentId,
@@ -324,17 +389,16 @@ export async function buildWtfPackageInput(
     sourceFingerprint: revision.sourceFingerprint,
     sourceGraphRootId: source.rootCaptureNodeId,
     renderTreeRootId: evidence.compositing.tree.rootId,
-    environmentRefs: [environment.id],
-    environments: [environment],
+    environmentRefs: environments.map((item) => item.id),
+    environments,
     animationCaptureMode: "freeze-current",
     visualState: environment.colorScheme,
   };
   const styles: WtfStylesPayload = { styles: evidence.css.styles };
-  const responsive = responsivePayload(evidence.environment, evidence.responsive);
   const states: WtfStatesPayload = { states: [] };
   const diagnostics = diagnosticsPayload(evidence);
   const portable = portableAssets(evidence);
-  const featureSet = featureEvidence(evidence);
+  const featureSet = featureEvidence(evidence, source);
   const relationships = {
     nodes: evidence.snapshot.nodes.map((node) => ({
       captureNodeId: node.captureNodeId,

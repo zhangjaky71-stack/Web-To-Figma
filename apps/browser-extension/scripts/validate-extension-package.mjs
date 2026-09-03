@@ -101,9 +101,10 @@ assert(
     : !permissions.includes("debugger"),
   "debugger permission must exist only in the High Fidelity profile",
 );
+const hostPermissions = [...(manifest.host_permissions ?? [])].sort();
 assert(
-  !("host_permissions" in manifest),
-  "capture profiles must not request broad host permissions",
+  JSON.stringify(hostPermissions) === JSON.stringify(["file:///*"]),
+  "capture profiles must request only file:///* host permission",
 );
 assert(!("content_scripts" in manifest), "content script must be injected only after user action");
 assert(

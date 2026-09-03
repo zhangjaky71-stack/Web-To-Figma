@@ -14,10 +14,24 @@ afterEach(() => {
   });
 });
 
-function installDebuggerMock() {
+function installDebuggerMock(options?: { attachedTabId?: number }) {
   const methods: string[] = [];
   const attach = vi.fn(async () => undefined);
   const detach = vi.fn(async () => undefined);
+  const getTargets = vi.fn(async () =>
+    options?.attachedTabId === undefined
+      ? []
+      : [
+          {
+            id: `target-${options.attachedTabId}`,
+            type: "page",
+            title: "occupied target",
+            url: "https://example.test/",
+            attached: true,
+            tabId: options.attachedTabId,
+          },
+        ],
+  );
   const sendCommand = vi.fn(async (_target: unknown, method: string) => {
     methods.push(method);
     if (method === "Page.captureScreenshot") return { data: "AQID" };
@@ -30,10 +44,10 @@ function installDebuggerMock() {
       runtime: {
         getManifest: () => ({ permissions: ["debugger"] }),
       },
-      debugger: { attach, detach, sendCommand },
+      debugger: { attach, detach, getTargets, sendCommand },
     },
   });
-  return { methods, attach, detach };
+  return { methods, attach, detach, getTargets };
 }
 
 describe("responsive CDP session orchestration", () => {
@@ -60,6 +74,7 @@ describe("responsive CDP session orchestration", () => {
     );
 
     expect(tiles[0]?.bytes).toEqual([1, 2, 3]);
+    expect(mock.getTargets).toHaveBeenCalledTimes(1);
     expect(mock.attach).toHaveBeenCalledTimes(1);
     expect(mock.detach).toHaveBeenCalledTimes(1);
     expect(mock.methods).toEqual([
@@ -82,5 +97,24 @@ describe("responsive CDP session orchestration", () => {
       "Emulation.clearDeviceMetricsOverride",
     ]);
     expect(mock.detach).toHaveBeenCalledTimes(1);
+  });
+
+  it("fails before attach when the target is already owned by another debugger", async () => {
+    const mock = installDebuggerMock({ attachedTabId: 42 });
+
+    await expect(
+      withHighFidelityViewportOverride(
+        42,
+        { width: 390, height: 800, dpr: 2 },
+        async () => undefined,
+      ),
+    ).rejects.toThrow(
+      "High Fidelity debugger transport is unavailable because tab 42 already has an attached debugger",
+    );
+
+    expect(mock.getTargets).toHaveBeenCalledTimes(1);
+    expect(mock.attach).not.toHaveBeenCalled();
+    expect(mock.detach).not.toHaveBeenCalled();
+    expect(mock.methods).toEqual([]);
   });
 });

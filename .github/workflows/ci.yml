@@ -12,7 +12,7 @@ permissions:
 jobs:
   quality:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -114,6 +114,20 @@ jobs:
         with:
           name: node31-level2-measurement-input
           path: artifacts/node31-measurement-input-level2/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: NODE-31 Class B measurement inputs
+        env:
+          W2F_NODE31_BRANCH_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: node scripts/run-node-31-measurement-input-classb.mjs
+
+      - name: Upload NODE-31 Class B measurement inputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: node31-classb-measurement-inputs
+          path: artifacts/node31-measurement-input-classb/
           if-no-files-found: warn
           retention-days: 14
 

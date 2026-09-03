@@ -203,7 +203,9 @@
   ],
   "knownLimitations": {
     "document": "docs/KNOWN_LIMITATIONS.md",
-    "status": "UNAVAILABLE"
+    "status": "PASS",
+    "evidenceArtifact": "docs/qa/results/NODE-31_KNOWN_LIMITATIONS_AUDIT_1125.json",
+    "note": "Currentness audit confirms all 37 documented limitations remain consistent with the audited implementation, runtime evidence and declared support classes. PASS means documentation currentness and absence of identified contradiction, not universal browser compatibility or satisfaction of Class A/B fidelity thresholds."
   },
   "p0": {
     "status": "PASS",

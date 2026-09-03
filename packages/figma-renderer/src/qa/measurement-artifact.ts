@@ -53,8 +53,7 @@ export interface W2fNode31UnavailableMetricEvidence {
 }
 
 export type W2fNode31MeasurementMetricEvidence =
-  | W2fNode31MeasuredMetricEvidence
-  | W2fNode31UnavailableMetricEvidence;
+  W2fNode31MeasuredMetricEvidence | W2fNode31UnavailableMetricEvidence;
 
 export interface W2fNode31MeasurementArtifact {
   version: typeof W2F_NODE31_MEASUREMENT_ARTIFACT_VERSION;
@@ -128,9 +127,7 @@ function validateStage(
     return;
   }
   if (stage.status === "UNAVAILABLE") {
-    unavailable.push(
-      `${label} is unavailable${stage.reason?.trim() ? `: ${stage.reason}` : ""}`,
-    );
+    unavailable.push(`${label} is unavailable${stage.reason?.trim() ? `: ${stage.reason}` : ""}`);
     return;
   }
   if (!stage.artifact?.trim()) failures.push(`${label} PASS requires an artifact`);

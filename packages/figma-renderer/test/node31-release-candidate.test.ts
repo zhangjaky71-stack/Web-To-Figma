@@ -149,12 +149,14 @@ describe("NODE-31 Release Candidate evaluator", () => {
 
   it("does not silently skip one deterministic sample with missing metric evidence", () => {
     const input = passingInput();
-    input.corpus = [deterministicSample("deterministic-secondary"), ...input.corpus].map((sample) => {
-      if (sample.id !== "deterministic-secondary") return sample;
-      const copy = { ...sample };
-      delete copy.textFidelity;
-      return copy;
-    });
+    input.corpus = [deterministicSample("deterministic-secondary"), ...input.corpus].map(
+      (sample) => {
+        if (sample.id !== "deterministic-secondary") return sample;
+        const copy = { ...sample };
+        delete copy.textFidelity;
+        return copy;
+      },
+    );
     const report = evaluateNode31ReleaseCandidate(input);
     expect(report.status).toBe("UNAVAILABLE");
     expect(report.releaseReady).toBe(false);

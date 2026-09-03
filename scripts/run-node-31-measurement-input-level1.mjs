@@ -34,16 +34,9 @@ function sha256(bytes) {
 }
 
 function checkoutRevision() {
-  if (process.env.GITHUB_HEAD_SHA && /^[a-f0-9]{40}$/.test(process.env.GITHUB_HEAD_SHA)) {
-    return process.env.GITHUB_HEAD_SHA;
-  }
-  if (process.env.GITHUB_EVENT_NAME === "pull_request") {
-    try {
-      const parent = execFileSync("git", ["rev-parse", "HEAD^2"], { encoding: "utf8" }).trim();
-      if (/^[a-f0-9]{40}$/.test(parent)) return parent;
-    } catch {
-      // Fall back to the checked-out revision below.
-    }
+  const explicitBranchHead = process.env.W2F_NODE31_BRANCH_HEAD;
+  if (explicitBranchHead && /^[a-f0-9]{40}$/.test(explicitBranchHead)) {
+    return explicitBranchHead;
   }
   const githubSha = process.env.GITHUB_SHA;
   if (githubSha && /^[a-f0-9]{40}$/.test(githubSha)) return githubSha;
@@ -263,7 +256,10 @@ async function openOptions(browser, extensionId) {
   const info = await extensionInfo(management.client, extensionId);
   assert(info?.state === "ENABLED", `Fresh High Fidelity extension is not enabled: ${info?.state}`);
   assert(info?.fileAccess?.isEnabled === true, "High Fidelity file-access toggle is unavailable");
-  assert(info?.fileAccess?.isActive === true, "Fresh High Fidelity extension lacks active file access");
+  assert(
+    info?.fileAccess?.isActive === true,
+    "Fresh High Fidelity extension lacks active file access",
+  );
 
   await evaluate(
     management.client,
@@ -336,7 +332,9 @@ async function createFixtureTab(browser, optionsClient) {
     }
     await delay(25);
   }
-  throw new Error(`Class A Level-1 file tab did not become production-injectable: ${JSON.stringify(last)}`);
+  throw new Error(
+    `Class A Level-1 file tab did not become production-injectable: ${JSON.stringify(last)}`,
+  );
 }
 
 async function readIndexedDb(optionsClient, databaseName, version, storeName, key, mapper) {
@@ -385,7 +383,10 @@ try {
     })()`,
   );
   assert(debuggerState, "Production chrome.debugger target for Level-1 file tab was not found");
-  assert(debuggerState.attached === false, "Harness unexpectedly attached Level-1 file target before capture");
+  assert(
+    debuggerState.attached === false,
+    "Harness unexpectedly attached Level-1 file target before capture",
+  );
 
   const production = await evaluate(
     options.client,
@@ -409,7 +410,10 @@ try {
   );
 
   assert(production?.capability?.ok === true, "Production source capability failed");
-  assert(production?.capability?.data?.provider === "file-tab", "Level-1 capability provider is not file-tab");
+  assert(
+    production?.capability?.data?.provider === "file-tab",
+    "Level-1 capability provider is not file-tab",
+  );
   assert(production?.capability?.data?.supported === true, "Level-1 file source is unsupported");
   assert(production?.capability?.data?.available === true, "Level-1 file source is unavailable");
   assert(production?.capability?.data?.code === "ready", "Level-1 file source is not ready");
@@ -426,8 +430,14 @@ try {
   assert(job?.source?.offline === true, "Class A Level-1 job lost offline file semantics");
   assert(job?.page?.url === fixtureUrl, "Class A Level-1 page URL mismatch");
   assert(job?.capture?.adapter === "cdp", "Class A Level-1 capture did not use high-fidelity CDP");
-  assert(job?.capture?.fallbackFromCdp !== true, "Class A Level-1 capture unexpectedly fell back from CDP");
-  assert(production?.exported?.ok === true, `Production WTF export failed: ${production?.exported?.error ?? "unknown"}`);
+  assert(
+    job?.capture?.fallbackFromCdp !== true,
+    "Class A Level-1 capture unexpectedly fell back from CDP",
+  );
+  assert(
+    production?.exported?.ok === true,
+    `Production WTF export failed: ${production?.exported?.error ?? "unknown"}`,
+  );
   const exportReceipt = production.exported.data;
   assert(exportReceipt?.archiveSha256, "Production WTF export did not return archive SHA-256");
 
@@ -475,7 +485,10 @@ try {
   assert(storedPackage?.bytes?.length > 0, "Persisted production WTF package bytes are missing");
   const wtfBytes = Uint8Array.from(storedPackage.bytes);
   const computedWtfSha = sha256(wtfBytes);
-  assert(computedWtfSha === exportReceipt.archiveSha256, "Export receipt SHA-256 disagrees with WTF bytes");
+  assert(
+    computedWtfSha === exportReceipt.archiveSha256,
+    "Export receipt SHA-256 disagrees with WTF bytes",
+  );
   assert(computedWtfSha === storedPackage.sha256, "Stored WTF SHA-256 disagrees with WTF bytes");
 
   const parsed = await parseWtfPackage(wtfBytes);
@@ -575,9 +588,15 @@ try {
   };
 
   const report = evaluateNode31MeasurementArtifact(measurementArtifact);
-  assert(report.status === "UNAVAILABLE", `Partial measurement must remain UNAVAILABLE, got ${report.status}`);
+  assert(
+    report.status === "UNAVAILABLE",
+    `Partial measurement must remain UNAVAILABLE, got ${report.status}`,
+  );
   assert(report.releaseEligible === false, "Partial measurement must not be release eligible");
-  assert(report.failures.length === 0, `Partial measurement has contract failures: ${report.failures.join("; ")}`);
+  assert(
+    report.failures.length === 0,
+    `Partial measurement has contract failures: ${report.failures.join("; ")}`,
+  );
   await writeFile(measurementPath, `${JSON.stringify(measurementArtifact, null, 2)}\n`);
 
   console.log(

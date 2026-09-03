@@ -14,7 +14,9 @@ function assert(condition, message) {
 }
 
 function sha256File(path) {
-  return createHash("sha256").update(readFileSync(resolve(root, path))).digest("hex");
+  return createHash("sha256")
+    .update(readFileSync(resolve(root, path)))
+    .digest("hex");
 }
 
 function loadArtifact(path) {
@@ -114,7 +116,9 @@ function validateEntry(entry, expectedClass) {
   } else if (entry.measurementStatus === "FAIL") {
     assert(report.status === "FAIL", `${entry.id} manifest FAIL must point to a failing artifact`);
   } else {
-    failures.push(`${entry.id} has unsupported measurementStatus ${String(entry.measurementStatus)}`);
+    failures.push(
+      `${entry.id} has unsupported measurementStatus ${String(entry.measurementStatus)}`,
+    );
   }
 }
 

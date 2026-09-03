@@ -76,8 +76,6 @@ jobs:
           scripts/run-node-31-measurement-input-level1.mjs
           scripts/run-node-31-measurement-provenance.mjs
           .github/workflows/ci.yml
-          .gitignore
-          .prettierignore
 
       - name: Commit hygiene changes
         shell: bash

@@ -90,6 +90,8 @@ jobs:
         run: node scripts/run-node-31-measurement-provenance.mjs
 
       - name: NODE-31 Level-1 measurement input
+        env:
+          W2F_NODE31_BRANCH_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
         run: node scripts/run-node-31-measurement-input-level1.mjs
 
       - name: Upload NODE-31 Level-1 measurement input

@@ -8,12 +8,11 @@
     "default_popup": "popup.html"
   },
   "commands": {
-    "capture-full-page": {
+    "_execute_action": {
       "suggested_key": {
         "default": "Ctrl+Shift+Y",
         "mac": "Command+Shift+Y"
-      },
-      "description": "Capture the current page for Web-To-Figma"
+      }
     }
   },
   "background": {

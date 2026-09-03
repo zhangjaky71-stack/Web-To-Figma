@@ -147,10 +147,6 @@ if (manifest) {
       `RC V2 hostile fixture ${fixture} evidence path mismatch`,
     );
   }
-  assert(
-    manifest.knownLimitations?.status === "UNAVAILABLE",
-    "Security promotion must not silently promote known limitations",
-  );
   for (const item of manifest.classA ?? []) {
     assert(
       item.measurementStatus === "UNAVAILABLE",

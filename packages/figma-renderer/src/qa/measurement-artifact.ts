@@ -154,9 +154,10 @@ function metricValue(
     unavailable.push(`${id} is unavailable: ${evidence.reason}`);
     return undefined;
   }
-  if (!Number.isFinite(evidence.value) || evidence.value < 0 || evidence.value > 1) {
+
+  const validValue = Number.isFinite(evidence.value) && evidence.value >= 0 && evidence.value <= 1;
+  if (!validValue) {
     failures.push(`${id} must be a normalized finite value between 0 and 1`);
-    return undefined;
   }
   const requiredMethod = W2F_NODE31_MEASUREMENT_METHODS[id];
   if (evidence.method !== requiredMethod) {
@@ -164,7 +165,8 @@ function metricValue(
   }
   if (!evidence.referenceArtifact.trim()) failures.push(`${id} requires a reference artifact`);
   if (!evidence.observedArtifact.trim()) failures.push(`${id} requires an observed artifact`);
-  return evidence.value;
+
+  return validValue ? evidence.value : undefined;
 }
 
 export function evaluateNode31MeasurementArtifact(

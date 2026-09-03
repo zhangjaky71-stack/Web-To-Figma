@@ -47,6 +47,9 @@ jobs:
       - name: Validate NODE-31 NODE-30 evidence
         run: node scripts/validate-node-31-node30-evidence.mjs
 
+      - name: Validate NODE-31 file protocol evidence
+        run: node scripts/validate-node-31-file-protocol-evidence.mjs
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:

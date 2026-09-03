@@ -3,19 +3,19 @@
   "status": "collecting",
   "contract": "docs/ACCEPTANCE_CONTRACT_V2.md",
   "baselineCommit": "28b52dc3e0d3074bf76205c8deb324a06dfe9e23",
-  "note": "Versioned RC evidence manifest. UNAVAILABLE means the declared measurement has not yet been produced and must never be interpreted as PASS. Class B sourceArtifact paths identify source inputs only; they do not constitute measurement evidence. PASS status gates require a separate evidenceArtifact; Class A/B measurements require measurementArtifact provenance.",
+  "note": "Versioned RC evidence manifest. UNAVAILABLE means the declared measurement has not yet been produced and must never be interpreted as PASS. Class A/B sourceArtifact paths identify source inputs only; they do not constitute measurement evidence. PASS status gates require a separate evidenceArtifact; Class A/B measurements require measurementArtifact provenance.",
   "classA": [
     {
       "id": "deterministic-level1-core",
       "level": 1,
       "measurementStatus": "UNAVAILABLE",
-      "sourceArtifact": null
+      "sourceArtifact": "qa/corpus/node31/class-a/level1-core.html"
     },
     {
       "id": "deterministic-level2-responsive",
       "level": 2,
       "measurementStatus": "UNAVAILABLE",
-      "sourceArtifact": null
+      "sourceArtifact": "qa/corpus/node31/class-a/level2-responsive.html"
     }
   ],
   "classB": [

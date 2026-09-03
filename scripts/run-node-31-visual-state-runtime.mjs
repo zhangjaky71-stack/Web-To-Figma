@@ -242,9 +242,27 @@ try {
     "Fixture media did not begin playback",
   );
 
+  await waitFor(
+    client,
+    `globalThis.__node31VisualState?.().ready === true && globalThis.__node31VisualState?.().mediaPaused === false`,
+    "Fixture media did not enter playing state",
+  );
+
   const beforeA = await readVisualState(client);
-  await delay(300);
-  const beforeB = await readVisualState(client);
+  let beforeB = beforeA;
+  for (let attempt = 0; attempt < 80; attempt += 1) {
+    await delay(100);
+    beforeB = await readVisualState(client);
+    if (
+      beforeB?.ready &&
+      animationProgressed(beforeA.animationTimes, beforeB.animationTimes) &&
+      (delta(beforeA.cssX, beforeB.cssX) >= 3 || delta(beforeA.waapiX, beforeB.waapiX) >= 3) &&
+      beforeB.mediaPaused === false &&
+      beforeB.mediaTime - beforeA.mediaTime >= 0.08
+    ) {
+      break;
+    }
+  }
   assert(beforeA?.ready && beforeB?.ready, "Fixture did not expose ready visual-state samples");
   assert(
     beforeA.animationTimes.length >= 2,

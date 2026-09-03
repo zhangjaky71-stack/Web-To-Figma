@@ -9,7 +9,6 @@ const requiredFiles = [
   "popup.html",
   "options.html",
   "shell.css",
-  "runtime/service-worker-entry.js",
   "runtime/service-worker.js",
   "runtime/source-runtime.js",
   "runtime/cdp-runtime.js",
@@ -79,22 +78,13 @@ for (const relativePath of requiredFiles) {
 const manifest = JSON.parse(await readFile(`${outputRoot}/manifest.json`, "utf8"));
 assert(manifest.manifest_version === 3, "manifest_version must be 3");
 assert(
-  manifest.background?.service_worker === "runtime/service-worker-entry.js",
-  "service worker entry path drift",
+  manifest.background?.service_worker === "runtime/service-worker.js",
+  "service worker path drift",
 );
 assert(manifest.background?.type === "module", "service worker must be an ES module");
 assert(manifest.action?.default_popup === "popup.html", "popup path drift");
 assert(manifest.options_ui?.page === "options.html", "options path drift");
 assert(manifest.options_ui?.open_in_tab === true, "options must open in a tab");
-assert(
-  manifest.commands?.["capture-full-page"]?.suggested_key?.default === "Ctrl+Shift+Y",
-  "full-page command shortcut drift",
-);
-assert(
-  typeof manifest.commands?.["capture-full-page"]?.description === "string" &&
-    manifest.commands["capture-full-page"].description.length > 0,
-  "full-page command description missing",
-);
 
 const expectedPermissions =
   profile === "high-fidelity"
@@ -145,17 +135,6 @@ assert(
   sourceRuntime.includes('from "./source-providers/index.js"'),
   "source runtime must use packaged relative source-provider modules",
 );
-
-const serviceWorkerEntry = await readFile(`${outputRoot}/runtime/service-worker-entry.js`, "utf8");
-for (const evidence of [
-  'import "./service-worker.js"',
-  "chrome.commands.onCommand.addListener",
-  'capture-full-page',
-  "chrome.scripting.executeScript",
-  "W2F_START_JOB",
-]) {
-  assert(serviceWorkerEntry.includes(evidence), `service worker entry missing ${evidence}`);
-}
 
 const serviceWorker = await readFile(`${outputRoot}/runtime/service-worker.js`, "utf8");
 for (const importPath of [

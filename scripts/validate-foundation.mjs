@@ -52,7 +52,6 @@ const requiredFiles = [
   "apps/browser-extension/src/runtime/region-selection.ts",
   "apps/browser-extension/src/runtime/source-runtime.ts",
   "apps/browser-extension/src/runtime/service-worker.ts",
-  "apps/browser-extension/src/runtime/service-worker-entry.ts",
   "apps/browser-extension/src/runtime/content-script.ts",
   "apps/browser-extension/src/runtime/popup.ts",
   "apps/browser-extension/src/runtime/options.ts",
@@ -239,13 +238,9 @@ if (failures.length === 0) {
   const browserManifest = readJson("apps/browser-extension/static/manifest.json");
   assert(browserManifest.manifest_version === 3, "browser extension must use Manifest V3");
   assert(
-    browserManifest.background?.service_worker === "runtime/service-worker-entry.js" &&
+    browserManifest.background?.service_worker === "runtime/service-worker.js" &&
       browserManifest.background?.type === "module",
-    "browser extension must use the module command bootstrap service worker entrypoint",
-  );
-  assert(
-    browserManifest.commands?.["capture-full-page"]?.suggested_key?.default === "Ctrl+Shift+Y",
-    "browser extension must register the full-page user-gesture command",
+    "browser extension must use the module service worker entrypoint",
   );
   assert(
     browserManifest.action?.default_popup === "popup.html",

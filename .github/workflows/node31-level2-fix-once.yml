@@ -1,0 +1,87 @@
+name: NODE-31 Level-2 Fix Once
+
+on:
+  push:
+    paths:
+      - ".github/workflows/node31-level2-fix-once.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v6
+        with:
+          ref: node-31-real-world-compatibility-release-candidate
+
+      - name: Correct Level-2 source contract
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("scripts/run-node-31-measurement-input-level2.mjs")
+          text = path.read_text()
+          old = '''  assert(production?.capability?.ok === true, "Production source capability request failed");
+          assert(production.capability.data?.available === true, "Level-2 file source capability is unavailable");
+          assert(production.capability.data?.protocol === "file", "Level-2 source capability is not file://");'''
+          new = '''  assert(production?.capability?.ok === true, "Production source capability request failed");
+          assert(production?.capability?.data?.provider === "file-tab", "Level-2 capability provider is not file-tab");
+          assert(production?.capability?.data?.supported === true, "Level-2 file source is unsupported");
+          assert(production?.capability?.data?.available === true, "Level-2 file source is unavailable");
+          assert(production?.capability?.data?.code === "ready", "Level-2 file source is not ready");'''
+          if old not in text:
+              raise SystemExit("expected Level-2 capability assertion block not found")
+          text = text.replace(old, new)
+
+          old = '''  assert(job?.source?.provider === "file-tab", "Level-2 job did not use the file-tab source provider");
+          assert(job?.source?.offline === true, "Level-2 job lost offline file semantics");
+          assert(job?.page?.url === fixtureUrl, "Level-2 job page URL mismatch");'''
+          new = '''  assert(job?.source?.provider === "file-tab", "Level-2 job did not use the file-tab source provider");
+          assert(job?.source?.sourceType === "file", "Level-2 job lost file source type");
+          assert(job?.source?.sourceUrl === fixtureUrl, "Level-2 job lost exact file URL");
+          assert(job?.source?.offline === true, "Level-2 job lost offline file semantics");
+          assert(job?.page?.url === fixtureUrl, "Level-2 job page URL mismatch");'''
+          if old not in text:
+              raise SystemExit("expected Level-2 job source assertion block not found")
+          text = text.replace(old, new)
+          text = text.replace(
+              "sourceProtocol: production.capability.data.protocol,",
+              "sourceProtocol: job.source.sourceType,",
+          )
+          path.write_text(text)
+          PY
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.22.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Format Level-2 collector
+        run: pnpm exec prettier --write scripts/run-node-31-measurement-input-level2.mjs
+
+      - name: Validate Level-2 collector syntax
+        run: node --check scripts/run-node-31-measurement-input-level2.mjs
+
+      - name: Commit correction
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/run-node-31-measurement-input-level2.mjs
+          git diff --cached --check
+          git commit -m "fix(node-31): align Level-2 source capability contract"
+          git push origin HEAD:node-31-real-world-compatibility-release-candidate

@@ -103,7 +103,11 @@ describe("responsive CDP session orchestration", () => {
     const mock = installDebuggerMock({ attachedTabId: 42 });
 
     await expect(
-      withHighFidelityViewportOverride(42, { width: 390, height: 800, dpr: 2 }, async () => undefined),
+      withHighFidelityViewportOverride(
+        42,
+        { width: 390, height: 800, dpr: 2 },
+        async () => undefined,
+      ),
     ).rejects.toThrow(
       "High Fidelity debugger transport is unavailable because tab 42 already has an attached debugger",
     );

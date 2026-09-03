@@ -59,7 +59,8 @@ class PipeCdpClient {
         if (!pending) continue;
         this.pending.delete(message.id);
         clearTimeout(pending.timeout);
-        if (message.error) pending.reject(new Error(`${message.error.code}: ${message.error.message}`));
+        if (message.error)
+          pending.reject(new Error(`${message.error.code}: ${message.error.message}`));
         else pending.resolve(message.result ?? {});
       }
     });
@@ -184,7 +185,12 @@ async function attachPageTarget(browser, targetId, label) {
   const client = browser.session(attached.sessionId);
   await client.send("Page.enable");
   await client.send("Runtime.enable");
-  await waitFor(client, `document.readyState === "complete"`, `${label} did not finish loading`, 400);
+  await waitFor(
+    client,
+    `document.readyState === "complete"`,
+    `${label} did not finish loading`,
+    400,
+  );
   return client;
 }
 
@@ -214,7 +220,11 @@ async function loadExtension(browser) {
 }
 
 async function createManagementSession(browser, extensionId) {
-  const management = await createPageSession(browser, "chrome://extensions/", "chrome://extensions");
+  const management = await createPageSession(
+    browser,
+    "chrome://extensions/",
+    "chrome://extensions",
+  );
   await waitFor(
     management.client,
     `typeof chrome?.developerPrivate?.getExtensionInfo === "function"`,
@@ -275,7 +285,9 @@ async function waitForFileAccess(client, extensionId, active) {
     if (last?.fileAccess?.isEnabled === true && last.fileAccess.isActive === active) return last;
     await delay(25);
   }
-  throw new Error(`File access did not become ${active ? "active" : "inactive"}: ${JSON.stringify(last)}`);
+  throw new Error(
+    `File access did not become ${active ? "active" : "inactive"}: ${JSON.stringify(last)}`,
+  );
 }
 
 async function openOptionsThroughChrome(browser, managementClient, extensionId) {
@@ -317,7 +329,10 @@ async function createUnattachedFileTarget(browser) {
     if (last?.url === fixtureUrl) break;
     await delay(25);
   }
-  assert(last?.url === fixtureUrl, `File target did not navigate to fixture: ${JSON.stringify(last)}`);
+  assert(
+    last?.url === fixtureUrl,
+    `File target did not navigate to fixture: ${JSON.stringify(last)}`,
+  );
   await browser.send("Target.activateTarget", { targetId: created.targetId });
   return { targetId: created.targetId, info: last };
 }
@@ -349,7 +364,9 @@ async function readIndexedDbValue(client, databaseName, version, storeName, key)
 async function provePermissionControl(chromePath) {
   const harness = await startRawChrome(chromePath, "permission");
   try {
-    console.log("NODE-31 file protocol v18: permission session loading unpacked extension through CDP");
+    console.log(
+      "NODE-31 file protocol v18: permission session loading unpacked extension through CDP",
+    );
     const extensionId = await loadExtension(harness.browser);
     const management = await createManagementSession(harness.browser, extensionId);
     const initial = await getExtensionInfo(management.client, extensionId);
@@ -379,12 +396,17 @@ async function provePermissionControl(chromePath) {
 async function proveProductionCapture(chromePath) {
   const harness = await startRawChrome(chromePath, "capture");
   try {
-    console.log("NODE-31 file protocol v18: fresh capture session loading extension without ChromeDriver");
+    console.log(
+      "NODE-31 file protocol v18: fresh capture session loading extension without ChromeDriver",
+    );
     const extensionId = await loadExtension(harness.browser);
     const management = await createManagementSession(harness.browser, extensionId);
     const fresh = await getExtensionInfo(management.client, extensionId);
     assert(fresh?.state === "ENABLED", `Fresh capture extension is not enabled: ${fresh?.state}`);
-    assert(fresh?.fileAccess?.isActive === true, "Fresh capture extension lacks active file access");
+    assert(
+      fresh?.fileAccess?.isActive === true,
+      "Fresh capture extension lacks active file access",
+    );
 
     const options = await openOptionsThroughChrome(harness.browser, management.client, extensionId);
     await waitFor(
@@ -409,7 +431,10 @@ async function proveProductionCapture(chromePath) {
       })()`,
       30000,
     );
-    assert(fileTab?.url === fixtureUrl, `Extension could not resolve real file tab: ${JSON.stringify(fileTab)}`);
+    assert(
+      fileTab?.url === fixtureUrl,
+      `Extension could not resolve real file tab: ${JSON.stringify(fileTab)}`,
+    );
     assert(typeof fileTab?.id === "number", "Resolved file tab has no numeric id");
 
     const debuggerState = await evaluate(
@@ -422,11 +447,18 @@ async function proveProductionCapture(chromePath) {
           : null;
       })()`,
     );
-    console.log(`NODE-31 file protocol v18: pre-capture debugger target ${JSON.stringify(debuggerState)}`);
+    console.log(
+      `NODE-31 file protocol v18: pre-capture debugger target ${JSON.stringify(debuggerState)}`,
+    );
     assert(debuggerState, "Production chrome.debugger target for file tab was not found");
-    assert(debuggerState.attached === false, "Harness unexpectedly attached the file target before production capture");
+    assert(
+      debuggerState.attached === false,
+      "Harness unexpectedly attached the file target before production capture",
+    );
 
-    console.log("NODE-31 file protocol v18: dispatching real production messages from file-tab extension world");
+    console.log(
+      "NODE-31 file protocol v18: dispatching real production messages from file-tab extension world",
+    );
     const productionResponses = await evaluate(
       options.client,
       `(async () => {
@@ -446,28 +478,55 @@ async function proveProductionCapture(chromePath) {
 
     const capabilityResponse = productionResponses.capability;
     assert(capabilityResponse?.ok === true, "Production source-capability request failed");
-    assert(capabilityResponse?.requestType === "W2F_GET_SOURCE_CAPABILITY", "Capability response type mismatch");
+    assert(
+      capabilityResponse?.requestType === "W2F_GET_SOURCE_CAPABILITY",
+      "Capability response type mismatch",
+    );
     const capability = capabilityResponse.data;
     assert(capability?.provider === "file-tab", "File source provider mismatch");
-    assert(capability?.supported === true && capability?.available === true, "File source is not supported/available");
-    assert(capability?.code === "ready", `File source capability is not ready: ${capability?.code}`);
+    assert(
+      capability?.supported === true && capability?.available === true,
+      "File source is not supported/available",
+    );
+    assert(
+      capability?.code === "ready",
+      `File source capability is not ready: ${capability?.code}`,
+    );
 
     const startJobResponse = productionResponses.job;
-    assert(startJobResponse?.ok === true, `Production W2F_START_JOB failed: ${startJobResponse?.error ?? "unknown"}`);
+    assert(
+      startJobResponse?.ok === true,
+      `Production W2F_START_JOB failed: ${startJobResponse?.error ?? "unknown"}`,
+    );
     assert(startJobResponse?.requestType === "W2F_START_JOB", "Capture response type mismatch");
     const job = startJobResponse.data;
-    assert(job?.status === "completed", `Production file capture is not completed: ${job?.error ?? job?.status}`);
+    assert(
+      job?.status === "completed",
+      `Production file capture is not completed: ${job?.error ?? job?.status}`,
+    );
     assert(job?.mode === "full-page", "Production file capture mode mismatch");
-    assert(job?.phase === "high-fidelity-capture-complete", `High Fidelity phase mismatch: ${job?.phase}`);
+    assert(
+      job?.phase === "high-fidelity-capture-complete",
+      `High Fidelity phase mismatch: ${job?.phase}`,
+    );
     assert(job?.source?.provider === "file-tab", "Completed job lost file-tab source provider");
     assert(job?.source?.sourceType === "file", "Completed job lost file source type");
     assert(job?.source?.sourceUrl === fixtureUrl, "Completed job lost real file URL");
     assert(job?.source?.offline === true, "Completed job lost offline file semantics");
     assert(job?.page?.url === fixtureUrl, "Completed job page URL mismatch");
-    assert(job?.capture?.adapter === "cdp", `High Fidelity file capture did not use CDP: ${job?.capture?.adapter}`);
-    assert(job?.capture?.fallbackFromCdp !== true, "Unexpected Standard fallback occurred in uncontended capture session");
+    assert(
+      job?.capture?.adapter === "cdp",
+      `High Fidelity file capture did not use CDP: ${job?.capture?.adapter}`,
+    );
+    assert(
+      job?.capture?.fallbackFromCdp !== true,
+      "Unexpected Standard fallback occurred in uncontended capture session",
+    );
     assert((job?.capture?.nodeCount ?? 0) > 0, "Completed file capture contains no nodes");
-    assert(typeof job?.capture?.storageKey === "string", "Completed capture did not persist RawSnapshot");
+    assert(
+      typeof job?.capture?.storageKey === "string",
+      "Completed capture did not persist RawSnapshot",
+    );
     assert(
       typeof job?.capture?.pixelGroundTruthStorageKey === "string",
       "Completed capture did not persist PixelGroundTruth",
@@ -481,11 +540,19 @@ async function proveProductionCapture(chromePath) {
       `raw-snapshot:${job.jobId}`,
     );
     assert(rawSnapshot, "Production RawSnapshot is missing");
-    assert(rawSnapshot.adapter === "cdp", `Persisted RawSnapshot adapter mismatch: ${rawSnapshot.adapter}`);
-    assert(rawSnapshot.url === fixtureUrl, "Persisted file snapshot URL mismatch");
-    assert(rawSnapshot.title === "NODE-31 File Protocol Runtime", "Persisted file snapshot title mismatch");
     assert(
-      !(rawSnapshot.diagnostics ?? []).some((item) => item.code === "CDP_CAPTURE_FALLBACK_STANDARD"),
+      rawSnapshot.adapter === "cdp",
+      `Persisted RawSnapshot adapter mismatch: ${rawSnapshot.adapter}`,
+    );
+    assert(rawSnapshot.url === fixtureUrl, "Persisted file snapshot URL mismatch");
+    assert(
+      rawSnapshot.title === "NODE-31 File Protocol Runtime",
+      "Persisted file snapshot title mismatch",
+    );
+    assert(
+      !(rawSnapshot.diagnostics ?? []).some(
+        (item) => item.code === "CDP_CAPTURE_FALLBACK_STANDARD",
+      ),
       "Uncontended capture unexpectedly persisted a CDP fallback diagnostic",
     );
 
@@ -539,8 +606,13 @@ async function proveProductionCapture(chromePath) {
     );
 
     const postTargets = await harness.browser.send("Target.getTargets");
-    const fileTargetInfo = postTargets.targetInfos?.find((item) => item.targetId === fileTarget.targetId);
-    assert(fileTargetInfo?.url === fixtureUrl, "Real file target disappeared or changed URL after capture");
+    const fileTargetInfo = postTargets.targetInfos?.find(
+      (item) => item.targetId === fileTarget.targetId,
+    );
+    assert(
+      fileTargetInfo?.url === fixtureUrl,
+      "Real file target disappeared or changed URL after capture",
+    );
 
     return {
       extensionId,
@@ -567,7 +639,10 @@ async function proveProductionCapture(chromePath) {
 await access(manifestPath);
 await access(fixturePath);
 const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
-assert(manifest.host_permissions?.includes("file:///*"), "Built extension lacks file:///* host permission");
+assert(
+  manifest.host_permissions?.includes("file:///*"),
+  "Built extension lacks file:///* host permission",
+);
 assert(manifest.permissions?.includes("debugger"), "High Fidelity build lacks debugger permission");
 const chromePath = await findChrome();
 
@@ -604,12 +679,12 @@ console.log(
         "production-full-page-job-completes-on-file-url",
         "completed-job-uses-high-fidelity-cdp-capture-adapter",
         "pixel-ground-truth-retains-viewport-and-full-page-raster-references",
-        "persisted-raw-snapshot-preserves-editable-text-structure"
+        "persisted-raw-snapshot-preserves-editable-text-structure",
       ],
       provesP0Items: ["file-protocol-explicit-permission"],
       prohibitedShortcutFlags: [
         "--allow-file-access-from-files",
-        "--disable-extensions-file-access-check"
+        "--disable-extensions-file-access-check",
       ],
       prohibitedLegacyInstallFlags: ["--load-extension", "--disable-extensions-except"],
       testOnlyChromeFlag: "--enable-unsafe-extension-debugging",
@@ -617,7 +692,8 @@ console.log(
       prohibitedSyntheticExtensionNavigation: "manual chrome-extension:// page navigation",
       prohibitedFileTargetHarnessAttachment: "Target.attachToTarget on the file fixture target",
       prohibitedWorkerHarnessDependency: "CDP direct service-worker target attach",
-      prohibitedEvidenceFabrication: "no mocked permission state or mocked production W2F responses"
+      prohibitedEvidenceFabrication:
+        "no mocked permission state or mocked production W2F responses",
     },
     null,
     2,

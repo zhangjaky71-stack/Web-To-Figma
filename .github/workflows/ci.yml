@@ -103,6 +103,20 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
+      - name: NODE-31 Level-2 responsive measurement input
+        env:
+          W2F_NODE31_BRANCH_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: node scripts/run-node-31-measurement-input-level2.mjs
+
+      - name: Upload NODE-31 Level-2 responsive measurement input
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: node31-level2-measurement-input
+          path: artifacts/node31-measurement-input-level2/
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: NODE-31 File protocol P0
         run: node scripts/run-node-31-file-protocol-runtime-v18.mjs
 

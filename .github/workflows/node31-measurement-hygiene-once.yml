@@ -17,7 +17,7 @@ jobs:
         with:
           ref: node-31-real-world-compatibility-release-candidate
 
-      - name: Bind measurement evidence to branch head
+      - name: Bind measurement collector to explicit branch head
         shell: bash
         run: |
           python - <<'PY'
@@ -37,20 +37,6 @@ jobs:
             return execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
           }'''
           collector.write_text(text[:start] + replacement + text[end:])
-
-          workflow = Path(".github/workflows/ci.yml")
-          text = workflow.read_text()
-          marker = "      - name: NODE-31 Level-1 measurement input\n"
-          start = text.index(marker)
-          end = text.index("\n      - name: Upload NODE-31 Level-1 measurement input", start)
-          expression = "$" + "{{ github.event.pull_request.head.sha || github.sha }}"
-          replacement = (
-              marker
-              + "        env:\n"
-              + f"          W2F_NODE31_BRANCH_HEAD: {expression}\n"
-              + "        run: node scripts/run-node-31-measurement-input-level1.mjs\n"
-          )
-          workflow.write_text(text[:start] + replacement + text[end:])
           PY
 
       - name: Setup pnpm
@@ -75,7 +61,6 @@ jobs:
           packages/figma-renderer/test/node31-release-candidate.test.ts
           scripts/run-node-31-measurement-input-level1.mjs
           scripts/run-node-31-measurement-provenance.mjs
-          .github/workflows/ci.yml
 
       - name: Commit hygiene changes
         shell: bash
@@ -86,10 +71,7 @@ jobs:
             packages/figma-renderer/src/qa/measurement-artifact.ts \
             packages/figma-renderer/test/node31-release-candidate.test.ts \
             scripts/run-node-31-measurement-input-level1.mjs \
-            scripts/run-node-31-measurement-provenance.mjs \
-            .github/workflows/ci.yml \
-            .gitignore \
-            .prettierignore
+            scripts/run-node-31-measurement-provenance.mjs
           if git diff --cached --quiet; then
             echo "No hygiene changes required."
             exit 0

@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node scripts/build-plugin.mjs && node scripts/validate-plugin-package.mjs && node scripts/build-node31-measurement-plugin.mjs && node scripts/validate-node31-measurement-package.mjs",
-    "validate:package": "node scripts/validate-plugin-package.mjs && node scripts/validate-node31-measurement-package.mjs",
+    "build": "node scripts/build-plugin.mjs && node scripts/validate-plugin-package.mjs",
+    "validate:package": "node scripts/validate-plugin-package.mjs",
     "build:node31-measurement": "node scripts/build-node31-measurement-plugin.mjs && node scripts/validate-node31-measurement-package.mjs",
     "lint": "eslint src test scripts --max-warnings=0",
     "typecheck": "tsc -p tsconfig.json --noEmit",

@@ -2,7 +2,7 @@ import {
   evaluateStructureAndEditabilityQa,
   W2F_PLUGIN_DATA_KEYS,
 } from "@w2f/figma-renderer";
-import type { WtfRenderNode } from "@w2f/w2f-ir";
+import type { WtfAssetRecord, WtfRenderNode } from "@w2f/w2f-ir";
 import { inspectFigmaSceneForQa } from "./figma-qa.js";
 import {
   isNode31UiToMainMessage,
@@ -13,6 +13,16 @@ import {
 } from "./node31-measurement-protocol.js";
 
 declare const __html__: string;
+
+const RASTER_MODE_KEY = "w2f.raster.mode";
+const FONT_SUBSTITUTION_COUNT_KEY = "w2f.font.substitutionCount";
+const VISUAL_ASSET_KINDS = new Set<WtfAssetRecord["kind"]>([
+  "image",
+  "svg",
+  "canvas-raster",
+  "video-frame",
+  "fallback-raster",
+]);
 
 function post(payload: Parameters<typeof node31MeasurementMessage>[0]): void {
   figma.ui.postMessage(node31MeasurementMessage(payload));
@@ -26,7 +36,11 @@ function error(code: string, cause: unknown): void {
   });
 }
 
-function selectedRoot(): SceneNode | null {
+function childNodes(node: SceneNode): readonly SceneNode[] {
+  return "children" in node ? (node as SceneNode & ChildrenMixin).children : [];
+}
+
+function selectedRoot(): FrameNode | null {
   const selection = figma.currentPage.selection;
   if (selection.length !== 1) return null;
   const node = selection[0];
@@ -81,18 +95,136 @@ function assertIdentity(root: SceneNode, expected: W2fNode31ExpectedDocumentIden
   }
 }
 
-function countSceneNodes(root: SceneNode): number {
-  let count = 0;
+function allSceneNodes(root: SceneNode): SceneNode[] {
+  const output: SceneNode[] = [];
   const stack: SceneNode[] = [root];
+  const seen = new Set<string>();
   while (stack.length > 0) {
     const node = stack.pop();
-    if (!node) continue;
-    count += 1;
-    if ("children" in node) {
-      for (const child of (node as SceneNode & ChildrenMixin).children) stack.push(child);
+    if (!node || seen.has(node.id)) continue;
+    seen.add(node.id);
+    output.push(node);
+    const children = childNodes(node);
+    for (let index = children.length - 1; index >= 0; index -= 1) {
+      const child = children[index];
+      if (child) stack.push(child);
     }
   }
-  return count;
+  return output;
+}
+
+function mappedSceneNodes(root: SceneNode): Map<string, SceneNode> {
+  const output = new Map<string, SceneNode>();
+  for (const node of allSceneNodes(root)) {
+    const renderNodeId = node.getPluginData(W2F_PLUGIN_DATA_KEYS.nodeId);
+    if (renderNodeId && !output.has(renderNodeId)) output.set(renderNodeId, node);
+  }
+  return output;
+}
+
+function absoluteBounds(node: SceneNode) {
+  const candidate = node as SceneNode & {
+    absoluteBoundingBox?: { x: number; y: number; width: number; height: number } | null;
+    absoluteTransform?: readonly [readonly [number, number, number], readonly [number, number, number]];
+  };
+  const box = candidate.absoluteBoundingBox;
+  if (
+    box &&
+    [box.x, box.y, box.width, box.height].every((value) => Number.isFinite(value)) &&
+    box.width >= 0 &&
+    box.height >= 0
+  ) {
+    return { x: box.x, y: box.y, width: box.width, height: box.height };
+  }
+  const transform = candidate.absoluteTransform;
+  return {
+    x: transform?.[0]?.[2] ?? node.x,
+    y: transform?.[1]?.[2] ?? node.y,
+    width: Math.max(0, node.width),
+    height: Math.max(0, node.height),
+  };
+}
+
+function geometryObservations(root: SceneNode) {
+  const output = [];
+  for (const [renderNodeId, node] of mappedSceneNodes(root)) {
+    output.push({ renderNodeId, bounds: absoluteBounds(node) });
+  }
+  return output;
+}
+
+function textObservations(root: SceneNode, request: W2fNode31MeasureRequest) {
+  const mapped = mappedSceneNodes(root);
+  const output = [];
+  for (const renderNode of request.renderTree.nodes) {
+    if (!renderNode.text) continue;
+    const node = mapped.get(renderNode.id);
+    if (!node || node.type !== "TEXT") continue;
+    const fontRunCount = renderNode.text.runs.length;
+    const substitutionCount = Math.max(
+      0,
+      Number.parseInt(node.getPluginData(FONT_SUBSTITUTION_COUNT_KEY) || "0", 10) || 0,
+    );
+    output.push({
+      renderNodeId: renderNode.id,
+      characters: node.characters,
+      fontRunCount,
+      matchedFontRunCount: Math.max(0, fontRunCount - Math.min(fontRunCount, substitutionCount)),
+    });
+  }
+  return output;
+}
+
+function hasImageFill(node: SceneNode): boolean {
+  const fills = (node as SceneNode & { fills?: unknown }).fills;
+  return (
+    Array.isArray(fills) &&
+    fills.some(
+      (paint) =>
+        typeof paint === "object" &&
+        paint !== null &&
+        "type" in paint &&
+        (paint as { type?: unknown }).type === "IMAGE",
+    )
+  );
+}
+
+function isVectorType(type: SceneNode["type"]): boolean {
+  return ["VECTOR", "BOOLEAN_OPERATION", "STAR", "LINE", "ELLIPSE", "POLYGON"].includes(type);
+}
+
+function sceneMatchesAsset(node: SceneNode, kind: WtfAssetRecord["kind"]): boolean {
+  const stack: SceneNode[] = [node];
+  while (stack.length > 0) {
+    const current = stack.pop();
+    if (!current) continue;
+    if (kind === "svg" && isVectorType(current.type)) return true;
+    if (kind !== "svg" && (hasImageFill(current) || Boolean(current.getPluginData(RASTER_MODE_KEY)))) {
+      return true;
+    }
+    stack.push(...childNodes(current));
+  }
+  return false;
+}
+
+function appliedAssetIds(root: SceneNode, request: W2fNode31MeasureRequest): string[] {
+  const mapped = mappedSceneNodes(root);
+  const assets = new Map(request.assets.map((asset) => [asset.id, asset]));
+  const output = new Set<string>();
+  for (const renderNode of request.renderTree.nodes) {
+    const node = mapped.get(renderNode.id);
+    if (!node) continue;
+    const candidates = new Set(renderNode.assetRefs ?? []);
+    for (const fill of renderNode.paint.fills) {
+      if (fill.type === "image") candidates.add(fill.assetId);
+    }
+    for (const assetId of candidates) {
+      const asset = assets.get(assetId);
+      if (!asset || !VISUAL_ASSET_KINDS.has(asset.kind)) continue;
+      if (sceneMatchesAsset(node, asset.kind)) output.add(assetId);
+    }
+  }
+  return [...output].sort();
 }
 
 async function exportTiles(
@@ -157,6 +289,9 @@ async function measure(request: W2fNode31MeasureRequest): Promise<void> {
     renderTree: request.renderTree,
     sceneNodes,
   });
+  const observedGeometry = geometryObservations(root);
+  const observedText = textObservations(root, request);
+  const observedAssetIds = appliedAssetIds(root, request);
 
   const tiles = await exportTiles(root, rootRenderNode.geometry.bounds, request);
   if (tiles.length !== request.reference.tiles.length) {
@@ -170,7 +305,7 @@ async function measure(request: W2fNode31MeasureRequest): Promise<void> {
     result: {
       sampleId: request.sampleId,
       rootNodeId: root.id,
-      createdNodeCount: countSceneNodes(root),
+      createdNodeCount: allSceneNodes(root).length,
       mappedRenderNodeCount: structureQa.metrics.mappedNodeCount,
       measurementStartedAt,
       measurementCompletedAt: new Date().toISOString(),
@@ -179,6 +314,9 @@ async function measure(request: W2fNode31MeasureRequest): Promise<void> {
         editorType: figma.editorType,
       },
       structureQa,
+      observedGeometry,
+      observedText,
+      appliedAssetIds: observedAssetIds,
       tiles,
     },
   });
@@ -187,7 +325,6 @@ async function measure(request: W2fNode31MeasureRequest): Promise<void> {
 figma.showUI(__html__, {
   width: 480,
   height: 640,
-  title: "W2F NODE-31 Desktop Measurement",
   themeColors: true,
 });
 

@@ -24,7 +24,8 @@ describe("createNode31DesktopEvidenceArchive", () => {
       byteLength: 4,
       sha256: "b".repeat(64),
     });
-    expect(Array.from(Buffer.from(archive.files[0]!.base64, "base64"))).toEqual([1, 2, 3, 4]);
+    const decoded = atob(archive.files[0]!.base64);
+    expect(Array.from(decoded, (character) => character.charCodeAt(0))).toEqual([1, 2, 3, 4]);
   });
 
   it("rejects duplicate evidence filenames", () => {

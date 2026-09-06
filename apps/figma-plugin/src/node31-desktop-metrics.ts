@@ -1,4 +1,4 @@
-import type { WtfRenderTree } from "@w2f/w2f-ir";
+import type { WtfAssetRecord, WtfRenderTree } from "@w2f/w2f-ir";
 
 export interface W2fNode31ObservedGeometryNode {
   renderNodeId: string;
@@ -132,24 +132,45 @@ export function measureNode31TextFidelity(
   return weightTotal > 0 ? clamp01(weighted / weightTotal) : 1;
 }
 
-function expectedVisualAssetIds(renderTree: WtfRenderTree): Set<string> {
+const VISUAL_ASSET_KINDS = new Set<WtfAssetRecord["kind"]>([
+  "image",
+  "svg",
+  "canvas-raster",
+  "video-frame",
+  "fallback-raster",
+]);
+
+function expectedVisualAssetIds(
+  renderTree: WtfRenderTree,
+  assets: readonly WtfAssetRecord[],
+): Set<string> {
+  const visualAssetIds = new Set(
+    assets.filter((asset) => VISUAL_ASSET_KINDS.has(asset.kind)).map((asset) => asset.id),
+  );
   const ids = new Set<string>();
   for (const node of renderTree.nodes) {
     if (node.renderStrategy === "unsupported") continue;
-    for (const id of node.assetRefs ?? []) ids.add(id);
+    for (const id of node.assetRefs ?? []) {
+      if (visualAssetIds.has(id)) ids.add(id);
+    }
     for (const fill of node.paint.fills) {
-      if (fill.type === "image") ids.add(fill.assetId);
+      if (fill.type === "image" && visualAssetIds.has(fill.assetId)) ids.add(fill.assetId);
     }
   }
   return ids;
 }
 
-/** Asset hash-presence fidelity over every visual asset referenced by the render tree. */
+/**
+ * Asset fidelity is hash-presence over visual assets actually referenced by the
+ * render tree. Font metadata and Pixel Ground Truth reference images are excluded
+ * because they have dedicated text/visual metrics and must not inflate the asset score.
+ */
 export function measureNode31AssetFidelity(
   renderTree: WtfRenderTree,
+  assets: readonly WtfAssetRecord[],
   appliedAssetIds: ReadonlySet<string>,
 ): number {
-  const expected = expectedVisualAssetIds(renderTree);
+  const expected = expectedVisualAssetIds(renderTree, assets);
   if (expected.size === 0) return 1;
   let present = 0;
   for (const id of expected) {

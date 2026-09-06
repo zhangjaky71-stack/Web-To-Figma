@@ -84,7 +84,19 @@ jobs:
         run: pnpm test
 
       - name: Build
+        env:
+          W2F_NODE31_BRANCH_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
         run: pnpm build
+
+      - name: Upload NODE-31 Figma Desktop measurement harness
+        uses: actions/upload-artifact@v4
+        with:
+          name: node31-figma-desktop-measurement-harness
+          path: |
+            apps/figma-plugin/manifest.node31-measurement.json
+            apps/figma-plugin/dist-node31-measurement/
+          if-no-files-found: error
+          retention-days: 14
 
       - name: NODE-31 Measurement provenance
         run: node scripts/run-node-31-measurement-provenance.mjs

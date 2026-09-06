@@ -1,6 +1,10 @@
 import type { WtfAssetRecord, WtfRenderTree } from "@w2f/w2f-ir";
 import type { Rect, WtfReferenceTileDescriptor } from "@w2f/w2f-schema";
 import type { W2fStructureQaReport } from "@w2f/figma-renderer";
+import type {
+  W2fNode31ObservedGeometryNode,
+  W2fNode31ObservedTextNode,
+} from "./node31-desktop-metrics.js";
 
 export const W2F_NODE31_MEASUREMENT_PROTOCOL = "w2f-node31-desktop-measurement" as const;
 export const W2F_NODE31_MEASUREMENT_PROTOCOL_VERSION = 1 as const;
@@ -56,6 +60,9 @@ export interface W2fNode31DesktopMeasurementResult {
     editorType: string;
   };
   structureQa: W2fStructureQaReport;
+  observedGeometry: readonly W2fNode31ObservedGeometryNode[];
+  observedText: readonly W2fNode31ObservedTextNode[];
+  appliedAssetIds: readonly string[];
   tiles: readonly W2fNode31ExportTile[];
 }
 

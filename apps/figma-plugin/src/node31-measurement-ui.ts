@@ -7,6 +7,11 @@ import { createNode31DesktopEvidenceArchive } from "./node31-desktop-archive.js"
 import { createNode31DesktopEvidenceBundle } from "./node31-desktop-evidence.js";
 import { detectNode31FigmaDesktopHost } from "./node31-desktop-host.js";
 import {
+  measureNode31AssetFidelity,
+  measureNode31GeometryFidelity,
+  measureNode31TextFidelity,
+} from "./node31-desktop-metrics.js";
+import {
   node31MeasurementMessage,
   W2F_NODE31_MEASUREMENT_PROTOCOL,
   W2F_NODE31_MEASUREMENT_PROTOCOL_VERSION,
@@ -226,6 +231,17 @@ async function finishMeasurement(result: W2fNode31DesktopMeasurementResult): Pro
     throw new Error(`Figma Desktop visual comparison unavailable: ${visual.detail}`);
   }
 
+  const geometryFidelity = measureNode31GeometryFidelity(
+    parsed.ir.renderTree,
+    result.observedGeometry,
+  );
+  const textFidelity = measureNode31TextFidelity(parsed.ir.renderTree, result.observedText);
+  const assetFidelity = measureNode31AssetFidelity(
+    parsed.ir.renderTree,
+    parsed.ir.assets.assets,
+    new Set(result.appliedAssetIds),
+  );
+
   const evidence = await createNode31DesktopEvidenceBundle({
     baseArtifact,
     host: {
@@ -245,6 +261,11 @@ async function finishMeasurement(result: W2fNode31DesktopMeasurementResult): Pro
     visualQa: visual.report,
     referenceId: reference.id,
     tiles: result.tiles,
+    additionalMetrics: {
+      geometryFidelity,
+      textFidelity,
+      assetFidelity,
+    },
   });
   const archive = createNode31DesktopEvidenceArchive({
     sampleId: baseArtifact.sample.id,
@@ -255,8 +276,12 @@ async function finishMeasurement(result: W2fNode31DesktopMeasurementResult): Pro
   downloadJson(`${safeSample}.node31-desktop-evidence.json`, archive);
 
   const report = evidence.completion.report;
+  const classABoundary =
+    baseArtifact.sample.testClass === "A" && report.status === "UNAVAILABLE"
+      ? ` · remaining Class A evidence: ${report.unavailable.join("; ")}`
+      : "";
   setStatus(
-    `Desktop evidence exported · artifact ${report.status} · visual ${(visual.report.metrics.normalizedSimilarity * 100).toFixed(2)}% · structure ${(result.structureQa.metrics.structureScore * 100).toFixed(2)}% · editable ${(result.structureQa.metrics.editableAreaRatio * 100).toFixed(2)}% · raster ${(result.structureQa.metrics.rasterAreaRatio * 100).toFixed(2)}%. RC thresholds are evaluated after evidence ingest.`,
+    `Desktop evidence exported · artifact ${report.status} · visual ${(visual.report.metrics.normalizedSimilarity * 100).toFixed(2)}% · geometry ${(geometryFidelity * 100).toFixed(2)}% · text ${(textFidelity * 100).toFixed(2)}% · assets ${(assetFidelity * 100).toFixed(2)}% · structure ${(result.structureQa.metrics.structureScore * 100).toFixed(2)}% · editable ${(result.structureQa.metrics.editableAreaRatio * 100).toFixed(2)}% · raster ${(result.structureQa.metrics.rasterAreaRatio * 100).toFixed(2)}%. RC thresholds are evaluated after evidence ingest.${classABoundary}`,
     report.failures.length > 0 ? "error" : "ok",
   );
 }

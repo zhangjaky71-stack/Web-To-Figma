@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { WtfRenderTree } from "@w2f/w2f-ir";
+import type { WtfAssetRecord, WtfRenderTree } from "@w2f/w2f-ir";
 import {
   measureNode31AssetFidelity,
   measureNode31GeometryFidelity,
@@ -99,6 +99,15 @@ function fixtureTree(): WtfRenderTree {
   };
 }
 
+function fixtureAssets(): WtfAssetRecord[] {
+  return [
+    { id: "font-meta", kind: "font-metadata", mediaType: "application/json" },
+    { id: "pixel-ref", kind: "pixel-reference", mediaType: "image/png" },
+    { id: "paint-image", kind: "image", mediaType: "image/png" },
+    { id: "node-image", kind: "image", mediaType: "image/webp" },
+  ];
+}
+
 describe("NODE-31 real Desktop metrics", () => {
   it("measures geometry root-relatively so Figma canvas placement does not change fidelity", () => {
     const score = measureNode31GeometryFidelity(fixtureTree(), [
@@ -128,10 +137,17 @@ describe("NODE-31 real Desktop metrics", () => {
     expect(degraded).toBeLessThan(exact);
   });
 
-  it("measures every render-tree visual asset instead of only successfully painted assets", () => {
-    const allAssets = new Set(["font-meta", "paint-image", "node-image"]);
-    expect(measureNode31AssetFidelity(fixtureTree(), allAssets)).toBe(1);
-    expect(measureNode31AssetFidelity(fixtureTree(), new Set(["paint-image"]))).toBeCloseTo(1 / 3);
+  it("uses only render-referenced visual assets in the asset fidelity denominator", () => {
+    expect(
+      measureNode31AssetFidelity(
+        fixtureTree(),
+        fixtureAssets(),
+        new Set(["paint-image", "node-image"]),
+      ),
+    ).toBe(1);
+    expect(
+      measureNode31AssetFidelity(fixtureTree(), fixtureAssets(), new Set(["paint-image"])),
+    ).toBe(0.5);
   });
 
   it("requires real responsive state observations and exact independent fingerprints", () => {

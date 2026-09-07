@@ -1,6 +1,11 @@
 import type { RawSnapshot } from "@w2f/capture-core";
 import type { ResponsiveInferenceResult } from "@w2f/responsive-inference";
-import type { WtfDocumentPayload, WtfResponsivePayload, WtfSourceGraph } from "@w2f/w2f-ir";
+import type {
+  WtfDocumentPayload,
+  WtfRenderTree,
+  WtfResponsivePayload,
+  WtfSourceGraph,
+} from "@w2f/w2f-ir";
 import { describe, expect, it } from "vitest";
 import { buildResponsiveStableNodeEvidence } from "../src/runtime/responsive-capture-runtime.js";
 import {
@@ -133,6 +138,15 @@ function evidence(raw: RawSnapshot, stableNodeId: string): WtfPackageEvidence {
             id: "render:root",
             kind: "document",
             sourceNodeIds: ["doc:root"],
+            sourceStableIds: ["stale:root"],
+            childIds: ["render:proof"],
+          },
+          {
+            id: "render:proof",
+            parentId: "render:root",
+            kind: "container",
+            sourceNodeIds: ["node:proof"],
+            sourceStableIds: ["stale:proof"],
             childIds: [],
           },
         ],
@@ -188,7 +202,7 @@ function jsonPayload<T>(input: Awaited<ReturnType<typeof buildWtfPackageInput>>,
 }
 
 describe("responsive .wtf package cross-reference contract", () => {
-  it("emits logical responsive environments and source stable identities", async () => {
+  it("emits logical responsive environments and canonical stable identities", async () => {
     const raw = snapshot();
     const stableNodes = await buildResponsiveStableNodeEvidence(raw);
     const proofStable = stableNodes.find((node) => node.captureNodeId === "node:proof");
@@ -198,6 +212,7 @@ describe("responsive .wtf package cross-reference contract", () => {
     const document = jsonPayload<WtfDocumentPayload>(input, "document");
     const responsive = jsonPayload<WtfResponsivePayload>(input, "responsive");
     const source = jsonPayload<WtfSourceGraph>(input, "source-graph");
+    const renderTree = jsonPayload<WtfRenderTree>(input, "render-tree");
 
     const environmentIds = new Set(document.environments.map((item) => item.id));
     expect(document.environmentRefs).toEqual(document.environments.map((item) => item.id));
@@ -218,6 +233,17 @@ describe("responsive .wtf package cross-reference contract", () => {
     expect(proofSource?.stableIdentity?.id).toBe(proofStable!.stableNodeId);
     expect(proofSource?.stableIdentity?.confidence).toBe(proofStable!.confidence);
     expect(responsive.rules[0]?.targetStableNodeId).toBe(proofSource?.stableIdentity?.id);
+
+    const proofRender = renderTree.nodes.find((node) => node.sourceNodeIds.includes("node:proof"));
+    expect(proofRender?.sourceStableIds).toContain(proofStable!.stableNodeId);
+    expect(proofRender?.sourceStableIds).not.toContain("stale:proof");
+    const renderStableIds = new Set(
+      renderTree.nodes.flatMap((node) => node.sourceStableIds ?? []),
+    );
+    for (const rule of responsive.rules) {
+      expect(renderStableIds.has(rule.targetStableNodeId)).toBe(true);
+    }
+
     expect(input.compatibility.capabilities).toContain("stable-identity");
     expect(input.compatibility.capabilities).toContain("responsive-snapshots");
   });

@@ -16,6 +16,7 @@ import type {
   WtfDiagnostic,
   WtfDiagnosticsPayload,
   WtfDocumentPayload,
+  WtfRenderTree,
   WtfResponsivePayload,
   WtfSourceGraph,
   WtfSourceNode,
@@ -347,6 +348,29 @@ function featureEvidence(
   };
 }
 
+function canonicalizeRenderTreeStableIds(
+  tree: WtfRenderTree,
+  stableNodes: Awaited<ReturnType<typeof buildResponsiveStableNodeEvidence>>,
+): WtfRenderTree {
+  const stableByCapture = new Map(
+    stableNodes.map((node) => [node.captureNodeId, node.stableNodeId] as const),
+  );
+  return {
+    ...tree,
+    nodes: tree.nodes.map((node) => ({
+      ...node,
+      sourceStableIds: [
+        ...new Set(
+          node.sourceNodeIds.flatMap((captureNodeId) => {
+            const stableNodeId = stableByCapture.get(captureNodeId);
+            return stableNodeId ? [stableNodeId] : [];
+          }),
+        ),
+      ].sort(),
+    })),
+  };
+}
+
 export async function buildWtfPackageInput(
   evidence: WtfPackageEvidence,
 ): Promise<WtfPackagerInput> {
@@ -371,6 +395,7 @@ export async function buildWtfPackageInput(
     capturedAt: captureIdentity.capturedAt,
   };
   const stableNodes = await buildResponsiveStableNodeEvidence(evidence.snapshot);
+  const renderTree = canonicalizeRenderTreeStableIds(evidence.compositing.tree, stableNodes);
   const source = sourceGraph(
     evidence.snapshot,
     revision,
@@ -388,7 +413,7 @@ export async function buildWtfPackageInput(
     revisionId: revision.revisionId,
     sourceFingerprint: revision.sourceFingerprint,
     sourceGraphRootId: source.rootCaptureNodeId,
-    renderTreeRootId: evidence.compositing.tree.rootId,
+    renderTreeRootId: renderTree.rootId,
     environmentRefs: environments.map((item) => item.id),
     environments,
     animationCaptureMode: "freeze-current",
@@ -412,7 +437,7 @@ export async function buildWtfPackageInput(
   };
   const revisions = {
     revisions: [revision],
-    renderNodes: evidence.compositing.tree.nodes.flatMap((node) =>
+    renderNodes: renderTree.nodes.flatMap((node) =>
       node.revisionHashes ? [{ renderNodeId: node.id, hashes: node.revisionHashes }] : [],
     ),
   };
@@ -424,7 +449,7 @@ export async function buildWtfPackageInput(
     {
       path: WTF_DEFAULT_ENTRYPOINTS.renderTree,
       role: "render-tree",
-      json: evidence.compositing.tree,
+      json: renderTree,
     },
     { path: WTF_DEFAULT_ENTRYPOINTS.styles, role: "styles", json: styles },
     { path: WTF_DEFAULT_ENTRYPOINTS.assets, role: "assets-index", json: portable.index },

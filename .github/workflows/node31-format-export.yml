@@ -1,0 +1,61 @@
+name: NODE-31 Format Export
+
+on:
+  push:
+    branches:
+      - node-31-real-world-compatibility-release-candidate
+
+permissions:
+  contents: read
+
+jobs:
+  format-export:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.22.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Format NODE-31 Desktop measurement sources
+        run: |
+          pnpm exec prettier --write \
+            apps/figma-plugin/scripts/build-node31-measurement-plugin.mjs \
+            apps/figma-plugin/scripts/validate-node31-measurement-package.mjs \
+            apps/figma-plugin/src/node31-desktop-evidence.ts \
+            apps/figma-plugin/src/node31-desktop-measurement.ts \
+            apps/figma-plugin/src/node31-desktop-metrics.ts \
+            apps/figma-plugin/src/node31-measurement-main.ts \
+            apps/figma-plugin/src/node31-measurement-ui.ts \
+            apps/figma-plugin/static/node31-measurement-ui.html \
+            scripts/ingest-node-31-desktop-evidence.mjs
+
+      - name: Upload formatted sources
+        uses: actions/upload-artifact@v4
+        with:
+          name: node31-formatted-sources
+          path: |
+            apps/figma-plugin/scripts/build-node31-measurement-plugin.mjs
+            apps/figma-plugin/scripts/validate-node31-measurement-package.mjs
+            apps/figma-plugin/src/node31-desktop-evidence.ts
+            apps/figma-plugin/src/node31-desktop-measurement.ts
+            apps/figma-plugin/src/node31-desktop-metrics.ts
+            apps/figma-plugin/src/node31-measurement-main.ts
+            apps/figma-plugin/src/node31-measurement-ui.ts
+            apps/figma-plugin/static/node31-measurement-ui.html
+            scripts/ingest-node-31-desktop-evidence.mjs
+          if-no-files-found: error
+          retention-days: 1

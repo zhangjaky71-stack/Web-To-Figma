@@ -234,7 +234,9 @@ describe("responsive .wtf package cross-reference contract", () => {
     expect(proofSource?.stableIdentity?.confidence).toBe(proofStable!.confidence);
     expect(responsive.rules[0]?.targetStableNodeId).toBe(proofSource?.stableIdentity?.id);
 
-    const proofRender = renderTree.nodes.find((node) => node.sourceNodeIds.includes("node:proof"));
+    const proofRender = renderTree.nodes.find((node) =>
+      node.sourceNodeIds.includes("node:proof"),
+    );
     expect(proofRender?.sourceStableIds).toContain(proofStable!.stableNodeId);
     expect(proofRender?.sourceStableIds).not.toContain("stale:proof");
     const renderStableIds = new Set(

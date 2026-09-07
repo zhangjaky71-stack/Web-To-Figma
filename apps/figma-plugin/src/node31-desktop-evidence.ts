@@ -1,6 +1,7 @@
 import type {
   W2fNode31MeasurementArtifact,
   W2fNode31MeasurementMetricId,
+  W2fResponsiveQaReport,
   W2fStructureQaReport,
   W2fVisualQaReport,
 } from "@w2f/figma-renderer";
@@ -30,6 +31,7 @@ export interface W2fNode31DesktopEvidenceInput {
   importStartedAt: string;
   importCompletedAt: string;
   structureQa: W2fStructureQaReport;
+  responsiveQa?: W2fResponsiveQaReport;
   visualQa: W2fVisualQaReport;
   referenceId: string;
   tiles: readonly W2fNode31DesktopExportTile[];
@@ -133,6 +135,7 @@ export async function createNode31DesktopEvidenceBundle(
       platform: input.host.platform,
     },
     structureQa: input.structureQa,
+    ...(input.responsiveQa ? { responsiveQa: input.responsiveQa } : {}),
     visualQa: input.visualQa,
   };
   const renderFile = await evidenceFile(renderName, "application/json", jsonBytes(renderDocument));
@@ -174,6 +177,11 @@ export async function createNode31DesktopEvidenceBundle(
     notes: [
       "Figma render/export evidence was recorded by the plugin runtime and bound to the CI-produced browser/WTF source hashes.",
       "Export manifest binds each observed PNG tile by SHA-256; raw PNG evidence is emitted alongside the measurement artifact.",
+      ...(input.responsiveQa
+        ? [
+            `Responsive QA used real Figma Desktop clones across ${input.responsiveQa.status === "UNAVAILABLE" ? 0 : "the parsed"} responsive viewports and the frozen NODE-30 property-level scorer.`,
+          ]
+        : []),
     ],
   });
   const measurementFile = await evidenceFile(

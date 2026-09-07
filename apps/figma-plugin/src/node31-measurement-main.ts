@@ -8,6 +8,10 @@ import {
   type W2fNode31MeasureRequest,
   type W2fNode31SelectedRootInfo,
 } from "./node31-measurement-protocol.js";
+import {
+  evaluateNode31DesktopResponsiveQa,
+  type W2fNode31ResponsiveSceneObservation,
+} from "./node31-responsive-measurement.js";
 
 declare const __html__: string;
 
@@ -230,6 +234,121 @@ function appliedAssetIds(root: SceneNode, request: W2fNode31MeasureRequest): str
   return [...output].sort();
 }
 
+function finiteNumber(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+function finiteOrNull(value: unknown): number | null | undefined {
+  if (value === null) return null;
+  return finiteNumber(value);
+}
+
+function responsiveObservation(
+  snapshotId: string,
+  viewportWidth: number,
+  renderNodeId: string,
+  node: SceneNode,
+): W2fNode31ResponsiveSceneObservation {
+  const candidate = node as SceneNode & Record<string, unknown>;
+  const constraints = candidate.constraints;
+  const constraintRecord =
+    typeof constraints === "object" && constraints !== null && !Array.isArray(constraints)
+      ? (constraints as Record<string, unknown>)
+      : undefined;
+  const observation: W2fNode31ResponsiveSceneObservation = {
+    snapshotId,
+    viewportWidth,
+    renderNodeId,
+    width: node.width,
+    height: node.height,
+    visible: node.visible,
+  };
+  for (const [source, target] of [
+    ["layoutMode", "layoutMode"],
+    ["layoutSizingHorizontal", "layoutSizingHorizontal"],
+    ["layoutSizingVertical", "layoutSizingVertical"],
+    ["layoutPositioning", "layoutPositioning"],
+  ] as const) {
+    const value = candidate[source];
+    if (typeof value === "string") observation[target] = value;
+  }
+  for (const [source, target] of [
+    ["paddingTop", "paddingTop"],
+    ["paddingRight", "paddingRight"],
+    ["paddingBottom", "paddingBottom"],
+    ["paddingLeft", "paddingLeft"],
+    ["itemSpacing", "itemSpacing"],
+    ["counterAxisSpacing", "counterAxisSpacing"],
+    ["gridColumnGap", "gridColumnGap"],
+    ["gridRowGap", "gridRowGap"],
+  ] as const) {
+    const value = finiteNumber(candidate[source]);
+    if (value !== undefined) observation[target] = value;
+  }
+  for (const [source, target] of [
+    ["minWidth", "minWidth"],
+    ["maxWidth", "maxWidth"],
+    ["minHeight", "minHeight"],
+    ["maxHeight", "maxHeight"],
+  ] as const) {
+    const value = finiteOrNull(candidate[source]);
+    if (value !== undefined) observation[target] = value;
+  }
+  if (constraintRecord) {
+    if (typeof constraintRecord.horizontal === "string") {
+      observation.constraintsHorizontal = constraintRecord.horizontal;
+    }
+    if (typeof constraintRecord.vertical === "string") {
+      observation.constraintsVertical = constraintRecord.vertical;
+    }
+  }
+  return observation;
+}
+
+async function measureResponsiveQa(root: FrameNode, request: W2fNode31MeasureRequest) {
+  if (request.responsive.snapshots.length === 0) {
+    return evaluateNode31DesktopResponsiveQa(request.renderTree, request.responsive, []);
+  }
+
+  let qaPage: PageNode | null = null;
+  try {
+    qaPage = figma.createPage();
+    qaPage.name = "__W2F_NODE31_RESPONSIVE_MEASUREMENT__";
+    await qaPage.loadAsync();
+    const observations: W2fNode31ResponsiveSceneObservation[] = [];
+    const snapshots = [...request.responsive.snapshots].sort(
+      (left, right) => left.viewport.width - right.viewport.width || left.id.localeCompare(right.id),
+    );
+
+    for (const snapshot of snapshots) {
+      const clone = root.clone();
+      qaPage.appendChild(clone);
+      try {
+        clone.x = 0;
+        clone.y = 0;
+        clone.resize(Math.max(0.01, snapshot.viewport.width), Math.max(0.01, clone.height));
+        for (const [renderNodeId, node] of mappedSceneNodes(clone)) {
+          observations.push(
+            responsiveObservation(snapshot.id, snapshot.viewport.width, renderNodeId, node),
+          );
+        }
+      } finally {
+        clone.remove();
+      }
+    }
+
+    return evaluateNode31DesktopResponsiveQa(request.renderTree, request.responsive, observations);
+  } finally {
+    if (qaPage) {
+      try {
+        qaPage.remove();
+      } catch {
+        // Responsive QA uses disposable clones and must never mutate the committed import.
+      }
+    }
+  }
+}
+
 async function exportTiles(
   root: FrameNode,
   rootBounds: WtfRenderNode["geometry"]["bounds"],
@@ -295,6 +414,7 @@ async function measure(request: W2fNode31MeasureRequest): Promise<void> {
   const observedGeometry = geometryObservations(root);
   const observedText = textObservations(root, request);
   const observedAssetIds = appliedAssetIds(root, request);
+  const responsiveQa = await measureResponsiveQa(root, request);
 
   const tiles = await exportTiles(root, rootRenderNode.geometry.bounds, request);
   if (tiles.length !== request.reference.tiles.length) {
@@ -317,6 +437,7 @@ async function measure(request: W2fNode31MeasureRequest): Promise<void> {
         editorType: figma.editorType,
       },
       structureQa,
+      responsiveQa,
       observedGeometry,
       observedText,
       appliedAssetIds: observedAssetIds,

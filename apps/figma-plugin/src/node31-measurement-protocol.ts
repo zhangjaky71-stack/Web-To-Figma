@@ -1,6 +1,6 @@
-import type { WtfAssetRecord, WtfRenderTree } from "@w2f/w2f-ir";
+import type { W2fResponsiveQaReport, W2fStructureQaReport } from "@w2f/figma-renderer";
+import type { WtfAssetRecord, WtfRenderTree, WtfResponsivePayload } from "@w2f/w2f-ir";
 import type { Rect, WtfReferenceTileDescriptor } from "@w2f/w2f-schema";
-import type { W2fStructureQaReport } from "@w2f/figma-renderer";
 import type {
   W2fNode31ObservedGeometryNode,
   W2fNode31ObservedTextNode,
@@ -27,6 +27,7 @@ export interface W2fNode31PixelReference {
 export interface W2fNode31MeasureRequest {
   sampleId: string;
   renderTree: WtfRenderTree;
+  responsive: WtfResponsivePayload;
   assets: readonly WtfAssetRecord[];
   expectedIdentity: W2fNode31ExpectedDocumentIdentity;
   reference: W2fNode31PixelReference;
@@ -60,6 +61,7 @@ export interface W2fNode31DesktopMeasurementResult {
     editorType: string;
   };
   structureQa: W2fStructureQaReport;
+  responsiveQa: W2fResponsiveQaReport;
   observedGeometry: readonly W2fNode31ObservedGeometryNode[];
   observedText: readonly W2fNode31ObservedTextNode[];
   appliedAssetIds: readonly string[];
@@ -131,6 +133,34 @@ function isReferenceTile(value: unknown): value is WtfReferenceTileDescriptor {
   );
 }
 
+function isResponsivePayload(value: unknown): value is WtfResponsivePayload {
+  if (!isRecord(value)) return false;
+  if (
+    !Array.isArray(value.snapshots) ||
+    !Array.isArray(value.rules) ||
+    !Array.isArray(value.mediaRules) ||
+    !Array.isArray(value.containerQueries)
+  ) {
+    return false;
+  }
+  return value.snapshots.every(
+    (snapshot) =>
+      isRecord(snapshot) &&
+      typeof snapshot.id === "string" &&
+      snapshot.id.length > 0 &&
+      isRecord(snapshot.viewport) &&
+      typeof snapshot.viewport.width === "number" &&
+      Number.isFinite(snapshot.viewport.width) &&
+      snapshot.viewport.width > 0 &&
+      typeof snapshot.viewport.height === "number" &&
+      Number.isFinite(snapshot.viewport.height) &&
+      snapshot.viewport.height > 0 &&
+      typeof snapshot.viewport.dpr === "number" &&
+      Number.isFinite(snapshot.viewport.dpr) &&
+      snapshot.viewport.dpr > 0,
+  );
+}
+
 function isMeasureRequest(value: unknown): value is W2fNode31MeasureRequest {
   if (!isRecord(value)) return false;
   if (
@@ -139,6 +169,7 @@ function isMeasureRequest(value: unknown): value is W2fNode31MeasureRequest {
     !isRecord(value.renderTree) ||
     typeof value.renderTree.rootId !== "string" ||
     !Array.isArray(value.renderTree.nodes) ||
+    !isResponsivePayload(value.responsive) ||
     !Array.isArray(value.assets) ||
     !isRecord(value.expectedIdentity) ||
     !isRecord(value.reference)

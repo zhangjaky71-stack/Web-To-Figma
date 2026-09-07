@@ -265,6 +265,7 @@ async function finishMeasurement(result: W2fNode31DesktopMeasurementResult): Pro
     importStartedAt: result.measurementStartedAt,
     importCompletedAt: result.measurementCompletedAt,
     structureQa: result.structureQa,
+    responsiveQa: result.responsiveQa,
     visualQa: visual.report,
     referenceId: reference.id,
     tiles: result.tiles,
@@ -272,6 +273,9 @@ async function finishMeasurement(result: W2fNode31DesktopMeasurementResult): Pro
       geometryFidelity,
       textFidelity,
       assetFidelity,
+      ...(result.responsiveQa.status === "UNAVAILABLE"
+        ? {}
+        : { responsiveFidelity: result.responsiveQa.compositeScore }),
     },
   });
   const archive = createNode31DesktopEvidenceArchive({
@@ -287,8 +291,12 @@ async function finishMeasurement(result: W2fNode31DesktopMeasurementResult): Pro
     baseArtifact.sample.testClass === "A" && report.status === "UNAVAILABLE"
       ? ` · remaining Class A evidence: ${report.unavailable.join("; ")}`
       : "";
+  const responsiveStatus =
+    result.responsiveQa.status === "UNAVAILABLE"
+      ? "n/a"
+      : `${(result.responsiveQa.compositeScore * 100).toFixed(2)}%`;
   setStatus(
-    `Desktop evidence exported · artifact ${report.status} · visual ${(visual.report.metrics.normalizedSimilarity * 100).toFixed(2)}% · geometry ${(geometryFidelity * 100).toFixed(2)}% · text ${(textFidelity * 100).toFixed(2)}% · assets ${(assetFidelity * 100).toFixed(2)}% · structure ${(result.structureQa.metrics.structureScore * 100).toFixed(2)}% · editable ${(result.structureQa.metrics.editableAreaRatio * 100).toFixed(2)}% · raster ${(result.structureQa.metrics.rasterAreaRatio * 100).toFixed(2)}%. RC thresholds are evaluated after evidence ingest.${classABoundary}`,
+    `Desktop evidence exported · artifact ${report.status} · visual ${(visual.report.metrics.normalizedSimilarity * 100).toFixed(2)}% · geometry ${(geometryFidelity * 100).toFixed(2)}% · text ${(textFidelity * 100).toFixed(2)}% · assets ${(assetFidelity * 100).toFixed(2)}% · responsive ${responsiveStatus} · structure ${(result.structureQa.metrics.structureScore * 100).toFixed(2)}% · editable ${(result.structureQa.metrics.editableAreaRatio * 100).toFixed(2)}% · raster ${(result.structureQa.metrics.rasterAreaRatio * 100).toFixed(2)}%. RC thresholds are evaluated after evidence ingest.${classABoundary}`,
     report.failures.length > 0 ? "error" : "ok",
   );
 }
@@ -324,12 +332,13 @@ measureButton.addEventListener("click", () => {
   if (!reference) return;
   measuring = true;
   refreshState();
-  setStatus("Exporting the selected Figma root and comparing real Desktop pixels…");
+  setStatus("Exporting the selected Figma root and measuring native responsive layout…");
   post({
     type: "NODE31_MEASURE",
     request: {
       sampleId: baseArtifact.sample.id,
       renderTree: parsed.ir.renderTree,
+      responsive: parsed.ir.responsive,
       assets: parsed.ir.assets.assets,
       expectedIdentity: {
         documentId: parsed.ir.document.documentId,

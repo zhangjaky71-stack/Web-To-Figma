@@ -10,6 +10,19 @@ function validMeasureMessage() {
     request: {
       sampleId: "landing-page",
       renderTree: { rootId: "root", nodes: [], sections: [] },
+      responsive: {
+        snapshots: [
+          {
+            id: "viewport:1440x900@1",
+            viewport: { width: 1440, height: 900, dpr: 1 },
+            rootNodeId: "root",
+            environmentRef: "env:responsive:1440",
+          },
+        ],
+        rules: [],
+        mediaRules: [],
+        containerQueries: [],
+      },
       assets: [],
       expectedIdentity: {
         documentId: "doc",
@@ -38,8 +51,16 @@ function validMeasureMessage() {
 }
 
 describe("NODE-31 Desktop measurement protocol", () => {
-  it("accepts a bounded measurement request with source identity and reference tiles", () => {
+  it("accepts a bounded measurement request with responsive source evidence", () => {
     expect(isNode31UiToMainMessage(validMeasureMessage())).toBe(true);
+  });
+
+  it("rejects measurement requests without a valid responsive payload", () => {
+    const message = validMeasureMessage();
+    (message.payload.request as unknown as Record<string, unknown>).responsive = {
+      snapshots: [],
+    };
+    expect(isNode31UiToMainMessage(message)).toBe(false);
   });
 
   it("rejects malformed reference tile digests", () => {

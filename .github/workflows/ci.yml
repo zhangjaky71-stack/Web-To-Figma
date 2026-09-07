@@ -86,6 +86,11 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: NODE-31 Desktop evidence CLI smoke
+        run: |
+          node scripts/promote-node-31-desktop-evidence.mjs --help
+          node scripts/ingest-node-31-desktop-evidence-batch.mjs --help
+
       - name: Build NODE-31 Figma Desktop measurement harness
         env:
           W2F_NODE31_BRANCH_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}

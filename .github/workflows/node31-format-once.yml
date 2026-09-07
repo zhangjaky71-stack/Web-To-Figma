@@ -1,0 +1,59 @@
+name: NODE-31 Format Once
+
+on:
+  push:
+    branches:
+      - node-31-real-world-compatibility-release-candidate
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v6
+        with:
+          ref: node-31-real-world-compatibility-release-candidate
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.22.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Format NODE-31 evidence files
+        run: |
+          pnpm exec prettier --write \
+            packages/figma-renderer/src/qa/evidence-promotion.ts \
+            scripts/ingest-node-31-desktop-evidence-batch.mjs \
+            scripts/promote-node-31-desktop-evidence.mjs
+
+      - name: Commit exact Prettier output
+        run: |
+          if git diff --quiet -- \
+            packages/figma-renderer/src/qa/evidence-promotion.ts \
+            scripts/ingest-node-31-desktop-evidence-batch.mjs \
+            scripts/promote-node-31-desktop-evidence.mjs; then
+            echo 'No formatting changes required.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            packages/figma-renderer/src/qa/evidence-promotion.ts \
+            scripts/ingest-node-31-desktop-evidence-batch.mjs \
+            scripts/promote-node-31-desktop-evidence.mjs
+          git commit -m 'style(node-31): format desktop evidence tooling'
+          git push origin HEAD:node-31-real-world-compatibility-release-candidate

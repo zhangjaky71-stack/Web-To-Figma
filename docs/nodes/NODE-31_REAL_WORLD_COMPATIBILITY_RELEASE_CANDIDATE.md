@@ -76,15 +76,11 @@ A missing P0 item or an `approved-adr` disposition without an ADR id fails the g
 
 ### Current P0 closure status
 
-The fail-closed audit `docs/qa/results/NODE-31_P0_AUDIT_882.json` now records `visual-state-freeze-and-restore` as PASS. CI #882 executes the final built visual-state runtime in real Chrome and proves CSS/WAAPI animations plus playing media inside an open ShadowRoot freeze during capture, then resume after restore with zero resume failures and no permanent DOM or inline-state mutation. Permanent read-only exact-head CI #886 then revalidates the repository with the 3-blocker P0 validator, full quality gates and all five NODE-31 runtime gates passing.
+P0 is now closed with versioned evidence. `docs/qa/results/NODE-31_P0_CLOSURE_1053.json` records zero remaining blockers, and `docs/qa/NODE-31_RC_EVIDENCE_V2.json` declares `p0.status` as `PASS` with `blockingUnavailableCount: 0`.
 
-NODE-31 remains `UNAVAILABLE` overall and is not Release Candidate ready. The remaining P0 blockers are exactly:
+The closure preserves the fail-closed history rather than rewriting earlier `UNAVAILABLE` results as passes. In particular, the final raster-text policy evidence proves that ordinary supported text is preserved as editable text for font, geometry, text-quality and pixel-score reasons, while raster text is authorized only for explicit visual/compositing dependencies under the selected profile.
 
-1. `file-protocol-explicit-permission`;
-2. `geometry-preserving-correction-policy`;
-3. `raster-text-only-when-policy-justifies`.
-
-These items remain blockers until direct repository evidence plus an exact-head CI run proves the declared behavior; implementation presence alone is insufficient.
+P0 closure does **not** make NODE-31 Release Candidate ready by itself. The remaining release blocker is evidence completeness: versioned Class A/B source fixtures exist, but their required Figma Desktop measurement artifacts are still `UNAVAILABLE` in the V2 RC evidence manifest and must not be inferred from browser, package, simulated-host or source-fixture success.
 
 ## 6. Security gate
 
@@ -156,6 +152,12 @@ The evaluator returns:
 - `UNAVAILABLE` — no known failure exists yet, but required evidence is missing.
 
 `releaseReady` is true only when there are no `FAIL` or `UNAVAILABLE` gates. A `WARNING` Release Candidate is allowed only for warning classes already defined as non-fatal; warnings stay visible in the report.
+
+### Current evidence boundary
+
+The current V2 evidence manifest remains in `collecting` state. Security, schema compatibility, known-limitations, P0, determinism and scale evidence are versioned as PASS, while all required Class A and Class B measurement rows remain `UNAVAILABLE` until real Figma Desktop render/measurement artifacts with provenance are produced and ingested.
+
+Browser/runtime, package-contract and simulated Desktop-host success are supporting evidence only. They cannot substitute for the required real Figma Desktop measurement artifacts, and NODE-31 must remain fail-closed until those artifacts exist.
 
 ## Exit gate
 

@@ -63,13 +63,22 @@ function snapshot(): RawSnapshot {
         frameContext: { frameId: "root" },
         source: {
           tagName: "DIV",
-          attributes: { id: "responsive-proof", "data-node31-role": "responsive-proof" },
+          attributes: {
+            id: "responsive-proof",
+            "data-node31-role": "responsive-proof",
+          },
         },
         textContent: "Responsive proof",
         geometry: { bounds: { x: 24, y: 24, width: 320, height: 80 } },
       },
     ],
-    frames: [{ context: { frameId: "root" }, rootCaptureNodeId: "doc:root", accessible: true }],
+    frames: [
+      {
+        context: { frameId: "root" },
+        rootCaptureNodeId: "doc:root",
+        accessible: true,
+      },
+    ],
     scrollContainers: [],
     diagnostics: [],
   };
@@ -194,7 +203,10 @@ function evidence(raw: RawSnapshot, stableNodeId: string): WtfPackageEvidence {
   } as unknown as WtfPackageEvidence;
 }
 
-function jsonPayload<T>(input: Awaited<ReturnType<typeof buildWtfPackageInput>>, role: string): T {
+function jsonPayload<T>(
+  input: Awaited<ReturnType<typeof buildWtfPackageInput>>,
+  role: string,
+): T {
   const payload = input.payloads.find((item) => item.role === role);
   expect(payload).toBeDefined();
   if (!payload || !("json" in payload)) throw new Error(`missing JSON payload: ${role}`);
@@ -205,17 +217,23 @@ describe("responsive .wtf package cross-reference contract", () => {
   it("emits logical responsive environments and canonical stable identities", async () => {
     const raw = snapshot();
     const stableNodes = await buildResponsiveStableNodeEvidence(raw);
-    const proofStable = stableNodes.find((node) => node.captureNodeId === "node:proof");
+    const proofStable = stableNodes.find(
+      (node) => node.captureNodeId === "node:proof",
+    );
     expect(proofStable).toBeDefined();
 
-    const input = await buildWtfPackageInput(evidence(raw, proofStable!.stableNodeId));
+    const input = await buildWtfPackageInput(
+      evidence(raw, proofStable!.stableNodeId),
+    );
     const document = jsonPayload<WtfDocumentPayload>(input, "document");
     const responsive = jsonPayload<WtfResponsivePayload>(input, "responsive");
     const source = jsonPayload<WtfSourceGraph>(input, "source-graph");
     const renderTree = jsonPayload<WtfRenderTree>(input, "render-tree");
 
     const environmentIds = new Set(document.environments.map((item) => item.id));
-    expect(document.environmentRefs).toEqual(document.environments.map((item) => item.id));
+    expect(document.environmentRefs).toEqual(
+      document.environments.map((item) => item.id),
+    );
     expect(responsive.snapshots).toHaveLength(3);
     for (const responsiveSnapshot of responsive.snapshots) {
       expect(responsiveSnapshot.environmentRef).toMatch(/^env:responsive:/);
@@ -229,7 +247,9 @@ describe("responsive .wtf package cross-reference contract", () => {
       expect(environment?.dpr).toBe(responsiveSnapshot.viewport.dpr);
     }
 
-    const proofSource = source.nodes.find((node) => node.captureNodeId === "node:proof");
+    const proofSource = source.nodes.find(
+      (node) => node.captureNodeId === "node:proof",
+    );
     expect(proofSource?.stableIdentity?.id).toBe(proofStable!.stableNodeId);
     expect(proofSource?.stableIdentity?.confidence).toBe(proofStable!.confidence);
     expect(responsive.rules[0]?.targetStableNodeId).toBe(proofSource?.stableIdentity?.id);

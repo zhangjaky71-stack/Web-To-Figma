@@ -25,16 +25,14 @@ function safeArtifactPath(value: string): string {
     path.includes("\\") ||
     path.split("/").includes("..")
   ) {
-    throw new Error("NODE31_E_PROMOTION_PATH: measurementArtifact must be a safe repository-relative path");
+    throw new Error(
+      "NODE31_E_PROMOTION_PATH: measurementArtifact must be a safe repository-relative path",
+    );
   }
   return path;
 }
 
-function assertFieldMatch(
-  label: string,
-  expected: unknown,
-  observed: unknown,
-): void {
+function assertFieldMatch(label: string, expected: unknown, observed: unknown): void {
   if (expected !== undefined && expected !== observed) {
     throw new Error(
       `NODE31_E_PROMOTION_MISMATCH: ${label} expected ${String(expected)} but measured ${String(observed)}`,

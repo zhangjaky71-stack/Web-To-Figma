@@ -12,9 +12,7 @@ if (process.argv.includes("--help") || process.argv.includes("-h")) {
   console.log(
     "Usage: node scripts/promote-node-31-desktop-evidence.mjs [measurement-file-or-dir] [manifest-path]",
   );
-  console.log(
-    "Defaults: docs/qa/results/node31-desktop and docs/qa/NODE-31_RC_EVIDENCE_V2.json",
-  );
+  console.log("Defaults: docs/qa/results/node31-desktop and docs/qa/NODE-31_RC_EVIDENCE_V2.json");
   process.exit(0);
 }
 
@@ -84,7 +82,10 @@ assert(
 );
 
 const measurementFiles = await collectMeasurementFiles(inputPath);
-assert(measurementFiles.length > 0, `NODE31_E_PROMOTION_INPUT: no measurement files found in ${inputPath}`);
+assert(
+  measurementFiles.length > 0,
+  `NODE31_E_PROMOTION_INPUT: no measurement files found in ${inputPath}`,
+);
 
 let manifest = parseJson(await readFile(manifestPath, "utf8"), repoRelative(manifestPath));
 const initialReport = evaluateNode31EvidenceManifest(manifest);
@@ -95,7 +96,10 @@ assert(
 
 const promoted = [];
 for (const measurementFile of measurementFiles.sort()) {
-  const artifact = parseJson(await readFile(measurementFile, "utf8"), repoRelative(measurementFile));
+  const artifact = parseJson(
+    await readFile(measurementFile, "utf8"),
+    repoRelative(measurementFile),
+  );
   manifest = applyNode31MeasurementArtifactToManifest(manifest, artifact, {
     measurementArtifact: repoRelative(measurementFile),
     expectedBranchHead: gitHead,

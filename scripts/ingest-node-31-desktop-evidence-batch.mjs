@@ -59,7 +59,10 @@ assert(
 );
 
 const archives = await collectArchives(inputPath);
-assert(archives.length > 0, `NODE31_E_BATCH_INPUT: no Desktop evidence archives found in ${inputPath}`);
+assert(
+  archives.length > 0,
+  `NODE31_E_BATCH_INPUT: no Desktop evidence archives found in ${inputPath}`,
+);
 
 for (const archive of archives.sort()) {
   execFileSync(process.execPath, [singleIngest, archive, outputRoot], {

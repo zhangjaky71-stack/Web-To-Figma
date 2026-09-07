@@ -135,7 +135,7 @@ function observations(): W2fNode31ResponsiveSceneObservation[] {
       height: 120,
       visible: true,
       layoutSizingHorizontal: "FILL",
-      layoutSizingVertical: "FIXED",
+      layoutSizingVertical: "FILL",
       layoutPositioning: "AUTO",
     },
     {
@@ -160,7 +160,7 @@ function observations(): W2fNode31ResponsiveSceneObservation[] {
       height: 120,
       visible: true,
       layoutSizingHorizontal: "FILL",
-      layoutSizingVertical: "FIXED",
+      layoutSizingVertical: "FILL",
       layoutPositioning: "AUTO",
     },
   ];

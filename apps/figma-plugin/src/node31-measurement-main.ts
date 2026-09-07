@@ -317,7 +317,8 @@ async function measureResponsiveQa(root: FrameNode, request: W2fNode31MeasureReq
     await qaPage.loadAsync();
     const observations: W2fNode31ResponsiveSceneObservation[] = [];
     const snapshots = [...request.responsive.snapshots].sort(
-      (left, right) => left.viewport.width - right.viewport.width || left.id.localeCompare(right.id),
+      (left, right) =>
+        left.viewport.width - right.viewport.width || left.id.localeCompare(right.id),
     );
 
     for (const snapshot of snapshots) {

@@ -180,7 +180,13 @@ function addStaticNativeChecks(
       for (const snapshot of responsive.snapshots) {
         const prefix = `${snapshot.id}:${renderNode.id}`;
         const container = observations.get(observationKey(snapshot.id, renderNode.id));
-        addCheck(checks, `${prefix}:layout-mode`, "layout", flexPlan.container.mode, container?.layoutMode);
+        addCheck(
+          checks,
+          `${prefix}:layout-mode`,
+          "layout",
+          flexPlan.container.mode,
+          container?.layoutMode,
+        );
         addCheck(
           checks,
           `${prefix}:padding-top`,
@@ -418,28 +424,14 @@ function addResponsiveRuleChecks(
           case "sizing.width.mode": {
             const sizing = figmaSizingMode(expected);
             if (sizing) {
-              addCheck(
-                checks,
-                prefix,
-                "sizing",
-                sizing,
-                observation?.layoutSizingHorizontal,
-                0,
-              );
+              addCheck(checks, prefix, "sizing", sizing, observation?.layoutSizingHorizontal, 0);
             }
             break;
           }
           case "sizing.height.mode": {
             const sizing = figmaSizingMode(expected);
             if (sizing) {
-              addCheck(
-                checks,
-                prefix,
-                "sizing",
-                sizing,
-                observation?.layoutSizingVertical,
-                0,
-              );
+              addCheck(checks, prefix, "sizing", sizing, observation?.layoutSizingVertical, 0);
             }
             break;
           }
@@ -479,7 +471,10 @@ function addResponsiveRuleChecks(
       if (renderNodeIds.length === 0) {
         checks.push({
           id: `${prefixMissing(snapshot.id, rule)}`,
-          domain: rule.property.includes("width") || rule.property.includes("height") ? "sizing" : "constraints",
+          domain:
+            rule.property.includes("width") || rule.property.includes("height")
+              ? "sizing"
+              : "constraints",
           matched: 0,
           total: 1,
           detail: "Responsive stable ID is missing from the canonical render-tree mapping.",

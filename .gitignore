@@ -1,8 +1,10 @@
 node_modules/
 dist/
 dist-high-fidelity/
+dist-node31-measurement/
 coverage/
 .turbo/
+artifacts/
 .DS_Store
 *.log
 .env

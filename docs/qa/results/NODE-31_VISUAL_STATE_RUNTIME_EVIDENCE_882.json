@@ -1,0 +1,66 @@
+{
+  "version": "1.0.0",
+  "evidenceType": "node31-visual-state-browser-runtime",
+  "status": "PASS",
+  "ci": {
+    "runNumber": 882,
+    "runId": 33160065371,
+    "jobId": 98812093098,
+    "branchHead": "913373bc7afd1d4add7165c693c2e69f10342181",
+    "mergeRef": "44f486945309acd3ab488c4418fc5eee3ec2519e",
+    "base": "28b52dc3e0d3074bf76205c8deb324a06dfe9e23",
+    "conclusion": "PASS",
+    "qualityChecks": {
+      "node31Validator": "PASS",
+      "node31CorpusValidator": "PASS",
+      "node31P0Validator": "PASS",
+      "lint": "PASS",
+      "typecheck": "PASS",
+      "tests": "PASS",
+      "build": "PASS",
+      "browserRuntime": "PASS",
+      "standardCaptureRuntime": "PASS",
+      "visualStateRuntime": "PASS",
+      "pluginUiChooseFileRuntime": "PASS",
+      "pluginCanvasDropRuntime": "PASS",
+      "format": "PASS"
+    }
+  },
+  "environment": {
+    "chrome": "Chrome/151.0.7922.173"
+  },
+  "moduleArtifact": "apps/browser-extension/dist/runtime/visual-state-runtime.js",
+  "sourceArtifacts": [
+    "apps/browser-extension/src/runtime/visual-state-runtime.ts",
+    "apps/browser-extension/src/runtime/service-worker.ts",
+    "apps/browser-extension/test/visual-state-runtime.test.ts"
+  ],
+  "runtimeHarness": "scripts/run-node-31-visual-state-runtime.mjs",
+  "fixtureArtifact": "qa/corpus/node31/p0/visual-state-runtime.html",
+  "assertions": [
+    "animations-advance-before-freeze",
+    "animated-geometry-advances-before-freeze",
+    "shadow-root-media-advances-before-freeze",
+    "freeze-receipt-valid",
+    "running-animations-paused-during-freeze",
+    "animation-timelines-stable-during-freeze",
+    "css-and-waapi-geometry-stable-during-freeze",
+    "shadow-root-media-paused-during-freeze",
+    "media-timeline-stable-during-freeze",
+    "freeze-does-not-mutate-dom-inline-state",
+    "restore-receipt-valid-zero-resume-failures",
+    "animations-resume-after-restore",
+    "animated-geometry-resumes-after-restore",
+    "shadow-root-media-resumes-after-restore",
+    "freeze-global-removed-after-restore",
+    "restore-leaves-no-permanent-dom-inline-mutation"
+  ],
+  "provesP0Items": [
+    "visual-state-freeze-and-restore"
+  ],
+  "notProvenByThisArtifact": [
+    "file-protocol-explicit-permission",
+    "geometry-preserving-correction-policy",
+    "raster-text-only-when-policy-justifies"
+  ]
+}

@@ -347,7 +347,7 @@ async function handleBasicRender(baseRequest: W2fBasicRenderRequest): Promise<vo
 
     const visual = await applyFigmaVisuals(
       result.nodesByRenderNodeId,
-      renderTreeForNativePass(request.renderTree),
+      renderTreeForNativePass(request.renderTree, request.profile),
       visualBundle(request),
     );
     const layout = applyFigmaLayouts(visual.nodesByRenderNodeId, request.renderTree);
@@ -368,10 +368,15 @@ async function handleBasicRender(baseRequest: W2fBasicRenderRequest): Promise<vo
       },
     });
 
-    const raster = applyFigmaHybridRasterFallbacks(visual.nodesByRenderNodeId, request.renderTree, {
-      references: request.rasterReferences ?? [],
-      tilePayloadsByPath: request.rasterTilePayloadsByPath ?? {},
-    });
+    const raster = applyFigmaHybridRasterFallbacks(
+      visual.nodesByRenderNodeId,
+      request.renderTree,
+      {
+        references: request.rasterReferences ?? [],
+        tilePayloadsByPath: request.rasterTilePayloadsByPath ?? {},
+      },
+      request.profile,
+    );
     if (cancelled) {
       renderedRoot.remove();
       return;

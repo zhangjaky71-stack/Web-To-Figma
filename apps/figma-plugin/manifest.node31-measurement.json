@@ -1,0 +1,12 @@
+{
+  "name": "W2F — NODE-31 Desktop Measurement",
+  "id": "1530000000000000031",
+  "api": "1.0.0",
+  "editorType": ["figma"],
+  "main": "dist-node31-measurement/code.js",
+  "ui": "dist-node31-measurement/ui.html",
+  "documentAccess": "dynamic-page",
+  "networkAccess": {
+    "allowedDomains": ["none"]
+  }
+}

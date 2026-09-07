@@ -1,0 +1,226 @@
+{
+  "version": "1.0.0",
+  "status": "collecting",
+  "contract": "docs/ACCEPTANCE_CONTRACT_V2.md",
+  "baselineCommit": "28b52dc3e0d3074bf76205c8deb324a06dfe9e23",
+  "note": "Versioned RC evidence manifest. UNAVAILABLE means the declared measurement has not yet been produced and must never be interpreted as PASS. Class A/B sourceArtifact paths identify source inputs only; they do not constitute measurement evidence. PASS status gates require a separate evidenceArtifact; Class A/B measurements require measurementArtifact provenance.",
+  "classA": [
+    {
+      "id": "deterministic-level1-core",
+      "level": 1,
+      "measurementStatus": "UNAVAILABLE",
+      "sourceArtifact": "qa/corpus/node31/class-a/level1-core.html"
+    },
+    {
+      "id": "deterministic-level2-responsive",
+      "level": 2,
+      "measurementStatus": "UNAVAILABLE",
+      "sourceArtifact": "qa/corpus/node31/class-a/level2-responsive.html"
+    }
+  ],
+  "classB": [
+    {
+      "id": "realistic-landing-page",
+      "category": "landing-page",
+      "supportClass": "native-supported",
+      "standardHtmlCss": true,
+      "measurementStatus": "UNAVAILABLE",
+      "sourceArtifact": "qa/corpus/node31/class-b/landing-page.html"
+    },
+    {
+      "id": "realistic-ecommerce",
+      "category": "ecommerce",
+      "supportClass": "native-supported",
+      "standardHtmlCss": true,
+      "measurementStatus": "UNAVAILABLE",
+      "sourceArtifact": "qa/corpus/node31/class-b/ecommerce.html"
+    },
+    {
+      "id": "realistic-docs",
+      "category": "docs",
+      "supportClass": "native-supported",
+      "standardHtmlCss": true,
+      "measurementStatus": "UNAVAILABLE",
+      "sourceArtifact": "qa/corpus/node31/class-b/docs.html"
+    },
+    {
+      "id": "realistic-dashboard",
+      "category": "dashboard",
+      "supportClass": "native-supported",
+      "standardHtmlCss": true,
+      "measurementStatus": "UNAVAILABLE",
+      "sourceArtifact": "qa/corpus/node31/class-b/dashboard.html"
+    },
+    {
+      "id": "realistic-table",
+      "category": "table",
+      "supportClass": "native-supported",
+      "standardHtmlCss": true,
+      "measurementStatus": "UNAVAILABLE",
+      "sourceArtifact": "qa/corpus/node31/class-b/table.html"
+    },
+    {
+      "id": "realistic-saas-shell",
+      "category": "saas-shell",
+      "supportClass": "native-supported",
+      "standardHtmlCss": true,
+      "measurementStatus": "UNAVAILABLE",
+      "sourceArtifact": "qa/corpus/node31/class-b/saas-shell.html"
+    },
+    {
+      "id": "realistic-local-site",
+      "category": "local-site",
+      "supportClass": "native-supported",
+      "standardHtmlCss": true,
+      "measurementStatus": "UNAVAILABLE",
+      "sourceArtifact": "qa/corpus/node31/class-b/local-site.html"
+    },
+    {
+      "id": "realistic-shadow-dom",
+      "category": "shadow-dom",
+      "supportClass": "native-supported",
+      "standardHtmlCss": true,
+      "measurementStatus": "UNAVAILABLE",
+      "sourceArtifact": "qa/corpus/node31/class-b/shadow-dom.html"
+    },
+    {
+      "id": "realistic-iframe",
+      "category": "iframe",
+      "supportClass": "native-supported",
+      "standardHtmlCss": true,
+      "measurementStatus": "UNAVAILABLE",
+      "sourceArtifact": "qa/corpus/node31/class-b/iframe.html"
+    },
+    {
+      "id": "realistic-canvas",
+      "category": "canvas",
+      "supportClass": "expected-fallback",
+      "standardHtmlCss": false,
+      "measurementStatus": "UNAVAILABLE",
+      "sourceArtifact": "qa/corpus/node31/class-b/canvas.html",
+      "fallbackContract": "docs/KNOWN_LIMITATIONS.md#14-canvas"
+    },
+    {
+      "id": "realistic-webgl",
+      "category": "webgl",
+      "supportClass": "expected-fallback",
+      "standardHtmlCss": false,
+      "measurementStatus": "UNAVAILABLE",
+      "sourceArtifact": "qa/corpus/node31/class-b/webgl.html",
+      "fallbackContract": "docs/KNOWN_LIMITATIONS.md#15-webgl"
+    },
+    {
+      "id": "realistic-responsive-app",
+      "category": "responsive-app",
+      "supportClass": "native-supported",
+      "standardHtmlCss": true,
+      "measurementStatus": "UNAVAILABLE",
+      "sourceArtifact": "qa/corpus/node31/class-b/responsive-app.html"
+    }
+  ],
+  "classC": [],
+  "security": {
+    "knownCriticalBlockers": 0,
+    "knownHighBlockers": 0,
+    "evidenceArtifact": "docs/qa/results/NODE-31_SECURITY_EVIDENCE_1125.json",
+    "note": "Scoped known/tracked blocker inventory only: exact-head CI #1125 dependency audit reported no known vulnerabilities, the hosted open GitHub issue inventory observed zero open issues, and all declared hostile parser/SVG fixtures remain PASS. This does not prove absence of undiscovered vulnerabilities or constitute an independent penetration test.",
+    "fixtures": [
+      {
+        "id": "malformed-archive",
+        "status": "PASS",
+        "source": "packages/wtf-parser/test/parser.test.ts",
+        "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json"
+      },
+      {
+        "id": "path-traversal",
+        "status": "PASS",
+        "source": "packages/wtf-parser/test/zip-reader.test.ts",
+        "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json"
+      },
+      {
+        "id": "oversized-expansion",
+        "status": "PASS",
+        "source": "packages/wtf-parser/test/zip-reader.test.ts",
+        "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json"
+      },
+      {
+        "id": "invalid-checksum",
+        "status": "PASS",
+        "source": "packages/wtf-parser/test/parser.test.ts",
+        "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json"
+      },
+      {
+        "id": "malformed-schema",
+        "status": "PASS",
+        "source": "packages/wtf-parser/test/parser.test.ts",
+        "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json"
+      },
+      {
+        "id": "hostile-svg",
+        "status": "PASS",
+        "source": "packages/wtf-parser/test/svg-sanitize.test.ts",
+        "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json"
+      }
+    ]
+  },
+  "schemaCompatibility": [
+    {
+      "id": "canonical-v2-manifest",
+      "status": "PASS",
+      "source": "packages/w2f-schema/test/index.test.ts",
+      "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json"
+    },
+    {
+      "id": "min-reader-enforced",
+      "status": "PASS",
+      "source": "packages/w2f-schema/test/index.test.ts",
+      "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json"
+    },
+    {
+      "id": "v2-current-noop",
+      "status": "PASS",
+      "source": "packages/wtf-parser/test/migrations.test.ts",
+      "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json"
+    },
+    {
+      "id": "v2-compatible-minor",
+      "status": "PASS",
+      "source": "packages/wtf-parser/test/migrations.test.ts",
+      "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json"
+    },
+    {
+      "id": "unsupported-major-rejected",
+      "status": "PASS",
+      "source": "packages/wtf-parser/test/migrations.test.ts",
+      "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json"
+    },
+    {
+      "id": "forward-optional-metadata-preserved",
+      "status": "PASS",
+      "source": "packages/w2f-schema/test/index.test.ts",
+      "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json"
+    }
+  ],
+  "knownLimitations": {
+    "document": "docs/KNOWN_LIMITATIONS.md",
+    "status": "PASS",
+    "evidenceArtifact": "docs/qa/results/NODE-31_KNOWN_LIMITATIONS_AUDIT_1125.json",
+    "note": "Currentness audit confirms all 37 documented limitations remain consistent with the audited implementation, runtime evidence and declared support classes. PASS means documentation currentness and absence of identified contradiction, not universal browser compatibility or satisfaction of Class A/B fidelity thresholds."
+  },
+  "p0": {
+    "status": "PASS",
+    "evidenceArtifact": "docs/qa/results/NODE-31_P0_CLOSURE_1053.json",
+    "blockingUnavailableCount": 0,
+    "note": "P0 is complete. The immutable CI #1034 audit preserves the last historical UNAVAILABLE raster-text blocker; exact-head CI #1053 then validates the production raster-text authorization policy and hybrid integration tests that preserve ordinary text for font/geometry/text-quality/pixel-score reasons and authorize raster text only for explicit visual/compositing dependencies under the selected profile. The closure evidence records zero remaining P0 blockers without treating UNAVAILABLE as PASS."
+  },
+  "determinism": {
+    "status": "PASS",
+    "source": "NODE-30 exact-head CI #715 versioned W2F IR ten-run determinism evidence",
+    "evidenceArtifact": "docs/qa/results/NODE-31_NODE30_DETERMINISM_EVIDENCE_715.json"
+  },
+  "scale": {
+    "status": "PASS",
+    "source": "NODE-30 10k renderer scale benchmark in CI #736",
+    "evidenceArtifact": "docs/qa/results/NODE-31_CI_CONTRACT_EVIDENCE_736.json"
+  }
+}

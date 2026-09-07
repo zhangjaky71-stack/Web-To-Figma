@@ -1,0 +1,94 @@
+{
+  "version": "1.0.0",
+  "evidenceType": "node31-file-protocol-runtime-evidence",
+  "status": "PASS",
+  "contract": "docs/ACCEPTANCE_CONTRACT_V2.md",
+  "ci": {
+    "runNumber": 1017,
+    "runId": 33609522169,
+    "jobId": 100181125296,
+    "branchHead": "0d569a8c57649fe7385eda2c5a780534491aa51d",
+    "mergeRef": "ec8fa8a141bc7fb9ae8c63b24ad161d452501805",
+    "base": "28b52dc3e0d3074bf76205c8deb324a06dfe9e23",
+    "conclusion": "PASS",
+    "tokenPermissions": {
+      "contents": "read",
+      "metadata": "read"
+    },
+    "qualityChecks": {
+      "node31Validator": "PASS",
+      "node31CorpusValidator": "PASS",
+      "node31P0Validator": "PASS",
+      "lint": "PASS",
+      "typecheck": "PASS",
+      "tests": "PASS",
+      "build": "PASS",
+      "fileProtocolRuntime": "PASS",
+      "browserRuntime": "PASS",
+      "standardCaptureRuntime": "PASS",
+      "visualStateRuntime": "PASS",
+      "pluginUiChooseFileRuntime": "PASS",
+      "pluginCanvasDropRuntime": "PASS",
+      "format": "PASS"
+    }
+  },
+  "environment": {
+    "os": "Ubuntu 24.04.4 LTS",
+    "runnerImage": "ubuntu-24.04",
+    "node": "v24.19.0",
+    "pnpm": "11.22.0",
+    "chrome": "Chrome/151.0.7922.173"
+  },
+  "harnessArtifact": "scripts/run-node-31-file-protocol-runtime.mjs",
+  "sourceArtifacts": [
+    "apps/browser-extension/static/manifest.json",
+    "apps/browser-extension/static/manifest.high-fidelity.json",
+    "apps/browser-extension/src/runtime/source-runtime.ts",
+    "apps/browser-extension/src/runtime/service-worker.ts",
+    "apps/browser-extension/src/runtime/snapshot-store.ts",
+    "qa/corpus/node31/p0/file-protocol-runtime.html"
+  ],
+  "builtArtifacts": [
+    "apps/browser-extension/dist-high-fidelity",
+    "apps/browser-extension/dist/runtime/service-worker.js",
+    "apps/browser-extension/dist/runtime/source-runtime.js",
+    "apps/browser-extension/dist/runtime/snapshot-store.js",
+    "apps/browser-extension/dist/runtime/standard-capture-adapter/capture.js"
+  ],
+  "runtimeResult": {
+    "version": "1.9.0",
+    "captureProfile": "high-fidelity",
+    "browserExecutable": "/usr/bin/google-chrome",
+    "assertions": [
+      "built-manifest-declares-file-scheme-host-permission",
+      "unpacked-extension-loaded-through-modern-cdp-in-real-chrome",
+      "chrome-management-state-explicitly-disables-file-access",
+      "chrome-management-state-explicitly-enables-file-access",
+      "real-file-url-fixture-loads-after-explicit-permission",
+      "trusted-chrome-extensions-ui-inspect-click-starts-inactive-extension-service-worker",
+      "inspected-high-fidelity-worker-resumes-and-exposes-required-extension-apis",
+      "final-service-worker-resolves-real-file-tab-for-message-injection",
+      "production-message-injection-targets-prevalidated-file-tab-id",
+      "file-tab-extension-world-dispatches-production-runtime-messages",
+      "production-source-capability-resolves-active-file-tab-ready",
+      "production-full-page-job-completes-on-file-url",
+      "completed-job-preserves-file-source-and-page-url",
+      "completed-job-uses-high-fidelity-cdp-capture-adapter",
+      "completed-job-persists-raw-snapshot",
+      "service-worker-origin-indexeddb-exposes-persisted-raw-snapshot",
+      "persisted-raw-snapshot-preserves-file-url-and-title",
+      "persisted-raw-snapshot-preserves-editable-text-structure"
+    ]
+  },
+  "provesP0Items": [
+    "file-protocol-explicit-permission"
+  ],
+  "notProvenByThisArtifact": [
+    "geometry-preserving-correction-policy",
+    "raster-text-only-when-policy-justifies"
+  ],
+  "prohibitedShortcutFlags": [
+    "--allow-file-access-from-files"
+  ],
+  "claimBoundary": "This evidence proves successful production capture of a versioned real file:// fixture after explicit Chrome extension file-access permission using the final High Fidelity extension profile, final MV3 service worker/source routing, production capture adapter, and persisted editable RawSnapshot structure. It does not claim the remaining font geometry or raster-text policy P0 items."
+}

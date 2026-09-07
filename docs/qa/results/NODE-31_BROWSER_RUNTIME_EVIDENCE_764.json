@@ -1,0 +1,83 @@
+{
+  "version": "1.0.0",
+  "evidenceType": "node31-browser-runtime",
+  "status": "PASS",
+  "scope": "Region-selector finally-equivalent cleanup in a real headless Chrome page using the final packaged browser content script.",
+  "ci": {
+    "runNumber": 764,
+    "runId": 32830737350,
+    "jobId": 97748603856,
+    "conclusion": "PASS",
+    "branchHead": "c5b3cbdbd0326951ceb23ff2271055c9acbaad19",
+    "mergeRef": "b4603e0e74e9b3c00f7355d01db9d710e9af7c74",
+    "base": "28b52dc3e0d3074bf76205c8deb324a06dfe9e23",
+    "qualityChecks": {
+      "node31Validator": "PASS",
+      "node31P0Validator": "PASS",
+      "lint": "PASS",
+      "typecheck": "PASS",
+      "tests": "PASS",
+      "build": "PASS",
+      "browserRuntime": "PASS",
+      "format": "PASS"
+    }
+  },
+  "environment": {
+    "os": "Ubuntu 24.04.4 LTS",
+    "runnerImage": "ubuntu-24.04",
+    "runnerImageVersion": "20260816.277.1",
+    "node": "24.19.0",
+    "pnpm": "11.22.0",
+    "chrome": "Chrome/151.0.7922.137"
+  },
+  "harnessArtifact": "scripts/run-node-31-browser-runtime.mjs",
+  "productSourceArtifact": "apps/browser-extension/src/runtime/content-script.ts",
+  "loadedBuiltArtifact": "apps/browser-extension/dist/runtime/content-script.js",
+  "transportBoundary": {
+    "mocked": ["chrome.runtime.onMessage message transport only"],
+    "real": [
+      "headless Chrome DOM",
+      "focus state",
+      "document scroll state",
+      "closed Shadow DOM selector overlay",
+      "inline scroll-behavior restoration",
+      "CDP mouse drag input",
+      "CDP keyboard Enter input"
+    ]
+  },
+  "assertions": [
+    "cancel-restores-scroll",
+    "cancel-restores-focus",
+    "cancel-restores-inline-scroll-behavior",
+    "cancel-removes-selector-overlay",
+    "confirm-restores-scroll",
+    "confirm-restores-focus",
+    "confirm-restores-inline-scroll-behavior",
+    "confirm-removes-selector-overlay",
+    "confirm-returns-region-result"
+  ],
+  "provesP0Items": ["finally-scroll-focus-temporary-style-restore"],
+  "notProvenByThisArtifact": [
+    "current-document-deterministic-online",
+    "file-protocol-explicit-permission",
+    "region-intersections-and-structural-ancestors",
+    "document-and-primary-app-scroll-root-semantics",
+    "open-shadow-dom-slot-composed-tree",
+    "same-origin-iframe",
+    "inaccessible-cross-origin-frame-diagnostic",
+    "visual-state-freeze-and-restore",
+    "profile-required-pixel-ground-truth-end-to-end",
+    "choose-file-path",
+    "drop-on-canvas-path",
+    "exact-available-font-preferred",
+    "nearest-mapping-with-diagnostic",
+    "geometry-preserving-correction-policy",
+    "raster-text-only-when-policy-justifies",
+    "zero-known-critical-security-blockers",
+    "zero-known-high-security-blockers",
+    "class-a-visual-geometry-text-asset-structure-measurements",
+    "class-b-browser-to-wtf-to-figma-measurements",
+    "class-b-editable-area-median",
+    "class-b-raster-area-median"
+  ]
+}

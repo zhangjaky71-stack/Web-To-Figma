@@ -120,6 +120,8 @@ export interface CdpCaptureEvidence {
   layoutMetrics: CdpLayoutMetricsResponse;
   frameTree: CdpFrameTreeResponse;
   screenshot: CdpScreenshotResponse;
+  viewportWidth?: number;
+  viewportHeight?: number;
   devicePixelRatio: number;
 }
 

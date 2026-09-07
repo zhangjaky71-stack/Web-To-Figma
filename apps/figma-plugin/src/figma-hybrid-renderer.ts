@@ -1,6 +1,12 @@
 import type { WtfRenderNode, WtfRenderTree } from "@w2f/w2f-ir";
 import type { WtfReferenceTileDescriptor } from "@w2f/w2f-schema";
-import type { W2fRasterReferenceEvidence } from "./protocol.js";
+import type { W2fImportProfile, W2fRasterReferenceEvidence } from "./protocol.js";
+import {
+  evaluateRasterTextPolicy,
+  rasterTextPolicyAllowsRaster,
+  W2F_RASTER_TEXT_POLICY_PLUGIN_DATA_KEYS,
+  type W2fRasterTextPolicyDecision,
+} from "./raster-text-policy.js";
 
 export const W2F_HYBRID_RASTER_VERSION = "1.0.0" as const;
 
@@ -41,11 +47,13 @@ export interface W2fHybridRasterSurfacePlan {
   sourceNodeId: string;
   reference: W2fRasterReferenceEvidence;
   tiles: readonly WtfReferenceTileDescriptor[];
+  textPolicy: W2fRasterTextPolicyDecision;
 }
 
 export interface W2fHybridRasterPlan {
   version: typeof W2F_HYBRID_RASTER_VERSION;
   surfaces: readonly W2fHybridRasterSurfacePlan[];
+  nativePreserved: readonly W2fRasterTextPolicyDecision[];
 }
 
 export interface W2fHybridRasterBundle {
@@ -57,6 +65,8 @@ export interface W2fHybridRasterStats {
   rasterNodeCount: number;
   rasterTileNodeCount: number;
   suppressedNativeDescendantCount: number;
+  rasterTextAuthorizedCount: number;
+  rasterTextNativePreservedCount: number;
 }
 
 function renderNodeMap(renderTree: WtfRenderTree): ReadonlyMap<string, WtfRenderNode> {
@@ -91,11 +101,18 @@ export function effectiveSelectedRootIds(
   ];
 }
 
-export function renderTreeForNativePass(renderTree: WtfRenderTree): WtfRenderTree {
+export function renderTreeForNativePass(
+  renderTree: WtfRenderTree,
+  profile: W2fImportProfile = "balanced",
+): WtfRenderTree {
   return {
     ...renderTree,
     nodes: renderTree.nodes.map((node) => {
       if (node.renderStrategy !== "raster") return node;
+      const textPolicy = evaluateRasterTextPolicy(renderTree, node.id, profile);
+      if (!rasterTextPolicyAllowsRaster(textPolicy)) {
+        return { ...node, renderStrategy: "native" as const };
+      }
       const clone: WtfRenderNode = { ...node, assetRefs: [] };
       delete clone.text;
       return clone;
@@ -165,11 +182,18 @@ export function createHybridRasterPlan(
   renderTree: WtfRenderTree,
   renderedNodeIds: readonly string[],
   bundle: W2fHybridRasterBundle,
+  profile: W2fImportProfile = "balanced",
 ): W2fHybridRasterPlan {
   const rendered = new Set(renderedNodeIds);
   const surfaces: W2fHybridRasterSurfacePlan[] = [];
+  const nativePreserved: W2fRasterTextPolicyDecision[] = [];
   for (const node of renderTree.nodes) {
     if (node.renderStrategy !== "raster" || !rendered.has(node.id)) continue;
+    const textPolicy = evaluateRasterTextPolicy(renderTree, node.id, profile);
+    if (!rasterTextPolicyAllowsRaster(textPolicy)) {
+      nativePreserved.push(textPolicy);
+      continue;
+    }
     const reference = selectReference(node, bundle.references);
     const tiles = [...reference.tiles].sort(tileOrder);
     if (tiles.length === 0) {
@@ -197,9 +221,10 @@ export function createHybridRasterPlan(
       sourceNodeId: reference.sourceNodeId,
       reference,
       tiles,
+      textPolicy,
     });
   }
-  return { version: W2F_HYBRID_RASTER_VERSION, surfaces };
+  return { version: W2F_HYBRID_RASTER_VERSION, surfaces, nativePreserved };
 }
 
 function countSuppressedDescendants(
@@ -226,6 +251,31 @@ function countSuppressedDescendants(
   return count;
 }
 
+function setRasterTextPolicyPluginData(
+  frame: FrameNode,
+  decision: W2fRasterTextPolicyDecision,
+): void {
+  frame.setPluginData(W2F_RASTER_TEXT_POLICY_PLUGIN_DATA_KEYS.version, decision.version);
+  frame.setPluginData(W2F_RASTER_TEXT_POLICY_PLUGIN_DATA_KEYS.status, decision.status);
+  frame.setPluginData(W2F_RASTER_TEXT_POLICY_PLUGIN_DATA_KEYS.profile, decision.profile);
+  frame.setPluginData(
+    W2F_RASTER_TEXT_POLICY_PLUGIN_DATA_KEYS.textNodeCount,
+    String(decision.textRenderNodeIds.length),
+  );
+  frame.setPluginData(
+    W2F_RASTER_TEXT_POLICY_PLUGIN_DATA_KEYS.visualJustifications,
+    JSON.stringify(decision.visualJustifications).slice(0, 4096),
+  );
+  frame.setPluginData(
+    W2F_RASTER_TEXT_POLICY_PLUGIN_DATA_KEYS.ignoredTextQualityReasons,
+    JSON.stringify(decision.ignoredTextQualityReasons).slice(0, 4096),
+  );
+  frame.setPluginData(
+    W2F_RASTER_TEXT_POLICY_PLUGIN_DATA_KEYS.reason,
+    decision.reason.slice(0, 1024),
+  );
+}
+
 function setSurfacePluginData(frame: FrameNode, surface: W2fHybridRasterSurfacePlan): void {
   frame.setPluginData(W2F_RASTER_PLUGIN_DATA_KEYS.mode, "minimal-local-fallback");
   frame.setPluginData(W2F_RASTER_PLUGIN_DATA_KEYS.version, W2F_HYBRID_RASTER_VERSION);
@@ -241,6 +291,7 @@ function setSurfacePluginData(frame: FrameNode, surface: W2fHybridRasterSurfaceP
       surface.reference.reason.slice(0, 1024),
     );
   }
+  setRasterTextPolicyPluginData(frame, surface.textPolicy);
 }
 
 function materializeTile(
@@ -271,9 +322,14 @@ export function applyFigmaHybridRasterFallbacks(
   nodesByRenderNodeId: ReadonlyMap<string, SceneNode>,
   renderTree: WtfRenderTree,
   bundle: W2fHybridRasterBundle,
+  profile: W2fImportProfile = "balanced",
 ): W2fHybridRasterStats {
-  const plan = createHybridRasterPlan(renderTree, [...nodesByRenderNodeId.keys()], bundle);
+  const plan = createHybridRasterPlan(renderTree, [...nodesByRenderNodeId.keys()], bundle, profile);
   const renderNodes = renderNodeMap(renderTree);
+  for (const decision of plan.nativePreserved) {
+    const target = nodesByRenderNodeId.get(decision.boundaryRenderNodeId);
+    if (target?.type === "FRAME") setRasterTextPolicyPluginData(target, decision);
+  }
   for (const surface of plan.surfaces) {
     const target = nodesByRenderNodeId.get(surface.renderNodeId);
     const renderNode = renderNodes.get(surface.renderNodeId);
@@ -313,5 +369,9 @@ export function applyFigmaHybridRasterFallbacks(
       renderedNodeIds,
       rasterNodeIds,
     ),
+    rasterTextAuthorizedCount: plan.surfaces.filter(
+      (surface) => surface.textPolicy.status === "raster-authorized",
+    ).length,
+    rasterTextNativePreservedCount: plan.nativePreserved.length,
   };
 }

@@ -3,10 +3,10 @@ import { readCompositingAnalysis } from "./compositing-store.js";
 import { readCssCascadeCapture } from "./css-cascade-store.js";
 import { readEnvironmentCapture } from "./environment-store.js";
 import { readPixelGroundTruth } from "./pixel-ground-truth-store.js";
+import { buildProfileCompliantWtfPackage } from "./profile-compliant-wtf-package.js";
 import { readResponsiveCapture } from "./responsive-capture-store.js";
 import { readResponsiveInference } from "./responsive-inference-store.js";
 import { readRawSnapshot } from "./snapshot-store.js";
-import { buildWtfPackage } from "./wtf-package-builder.js";
 import type { WtfExportReceipt } from "./wtf-export-contract.js";
 import { writeWtfPackage } from "./wtf-package-store.js";
 
@@ -40,7 +40,7 @@ export async function persistWtfExport(jobId: string): Promise<WtfExportReceipt>
     readCompositingAnalysis(artifactId),
     readResponsiveInference(normalized),
   ]);
-  const result = await buildWtfPackage({
+  const result = await buildProfileCompliantWtfPackage({
     jobId: normalized,
     snapshot: requireEvidence(snapshot, "RawSnapshot", artifactId),
     css: requireEvidence(css, "CssCascadeCapture", artifactId),

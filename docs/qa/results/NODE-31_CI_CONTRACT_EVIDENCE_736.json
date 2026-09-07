@@ -1,0 +1,108 @@
+{
+  "version": "1.0.0",
+  "evidenceType": "github-actions-ci",
+  "workflow": {
+    "name": "CI",
+    "runNumber": 736,
+    "runId": 32816187909,
+    "jobId": 97704841337,
+    "conclusion": "PASS"
+  },
+  "git": {
+    "branchHead": "8ea3bbde8580e97996e63c94fa0f08ea8f4ff63b",
+    "mergeRef": "3272a47d3b2c6ad79fb03c4170a8c9d7d5397110",
+    "baseCommit": "28b52dc3e0d3074bf76205c8deb324a06dfe9e23"
+  },
+  "environment": {
+    "runnerOs": "Ubuntu 24.04.4 LTS",
+    "runnerImage": "ubuntu-24.04",
+    "runnerImageVersion": "20260816.277.1",
+    "node": "24.19.0",
+    "pnpm": "11.22.0"
+  },
+  "qualityChecks": {
+    "foundation": "PASS",
+    "node27Validator": "PASS",
+    "node28Validator": "PASS",
+    "node29Validator": "PASS",
+    "node30Validator": "PASS",
+    "node31Validator": "PASS",
+    "frozenInstall": "PASS",
+    "lint": "PASS",
+    "typecheck": "PASS",
+    "tests": "PASS",
+    "build": "PASS",
+    "figmaPluginPackage": "PASS",
+    "browserExtensionStandardPackage": "PASS",
+    "browserExtensionHighFidelityPackage": "PASS",
+    "format": "PASS"
+  },
+  "schemaCompatibility": {
+    "source": "packages/w2f-schema/test/index.test.ts",
+    "testFileCount": 1,
+    "testCount": 15,
+    "status": "PASS",
+    "cases": [
+      "canonical-v2-manifest",
+      "min-reader-enforced",
+      "forward-optional-metadata-preserved"
+    ]
+  },
+  "parserAndSecurityFixtures": {
+    "testFileCount": 4,
+    "testCount": 20,
+    "status": "PASS",
+    "sources": {
+      "migrations": {
+        "path": "packages/wtf-parser/test/migrations.test.ts",
+        "tests": 3
+      },
+      "zipReader": {
+        "path": "packages/wtf-parser/test/zip-reader.test.ts",
+        "tests": 4
+      },
+      "parser": {
+        "path": "packages/wtf-parser/test/parser.test.ts",
+        "tests": 5
+      },
+      "svgSanitize": {
+        "path": "packages/wtf-parser/test/svg-sanitize.test.ts",
+        "tests": 8
+      }
+    },
+    "schemaCases": [
+      "v2-current-noop",
+      "v2-compatible-minor",
+      "unsupported-major-rejected"
+    ],
+    "securityFixtureCases": [
+      "malformed-archive",
+      "path-traversal",
+      "oversized-expansion",
+      "invalid-checksum",
+      "malformed-schema",
+      "hostile-svg"
+    ]
+  },
+  "node30Scale": {
+    "status": "PASS",
+    "benchmark": "10k-renderer-memory-adapter",
+    "environmentFingerprint": "linux-x64-node-24.19.0-memory-figma-v1",
+    "measuredRuns": 5,
+    "createdNodeTarget": 10000,
+    "fatalCrash": false,
+    "medianMs": 150.28,
+    "p95Ms": 195.10,
+    "hardMillisecondBudget": null
+  },
+  "notProvenByThisArtifact": [
+    "zero-known-critical-security-blockers",
+    "zero-known-high-security-blockers",
+    "P0-functional-completeness",
+    "known-limitations-currentness",
+    "Class-A-visual-geometry-text-asset-structure-measurements",
+    "Class-B-browser-to-wtf-to-Figma-measurements",
+    "Class-B-editable-area-median",
+    "Class-B-raster-area-median"
+  ]
+}

@@ -91,17 +91,53 @@ describe("NODE-28 hybrid raster planning", () => {
     expect(effectiveSelectedRootIds(tree(), "selected-roots", ["child"])).toEqual(["fallback"]);
   });
 
-  it("strips text/assets from raster nodes during the native visual pass", () => {
+  it("strips text/assets only when a balanced raster boundary has an explicit visual dependency", () => {
     const source = tree();
     const fallback = source.nodes.find((item) => item.id === "fallback")!;
     fallback.text = { value: "unsafe", runs: [], fragments: [] };
-    const nativePass = renderTreeForNativePass(source);
+    fallback.renderDecision.reasons = [
+      "mix-blend-mode depends on sibling/ancestor backdrop pixels",
+    ];
+    const nativePass = renderTreeForNativePass(source, "balanced");
     const sanitized = nativePass.nodes.find((item) => item.id === "fallback")!;
     expect(sanitized.text).toBeUndefined();
     expect(sanitized.assetRefs).toEqual([]);
     expect(source.nodes.find((item) => item.id === "fallback")?.assetRefs).toEqual([
       "asset-fallback",
     ]);
+  });
+
+  it("preserves text natively and omits the raster surface when only text-quality reasons exist", () => {
+    const source = tree();
+    const fallback = source.nodes.find((item) => item.id === "fallback")!;
+    fallback.text = { value: "editable", runs: [], fragments: [] };
+    fallback.renderDecision.reasons = [
+      "font substitution mismatch",
+      "pixel similarity score improved by raster",
+    ];
+
+    const nativePass = renderTreeForNativePass(source, "high-fidelity");
+    const preserved = nativePass.nodes.find((item) => item.id === "fallback")!;
+    expect(preserved.text?.value).toBe("editable");
+    expect(preserved.renderStrategy).toBe("native");
+    expect(preserved.assetRefs).toEqual(["asset-fallback"]);
+
+    const plan = createHybridRasterPlan(
+      source,
+      ["root", "fallback"],
+      {
+        references: [reference()],
+        tilePayloadsByPath: { "references/tiles/tile-1.png": new Uint8Array([1, 2, 3]) },
+      },
+      "high-fidelity",
+    );
+    expect(plan.surfaces).toEqual([]);
+    expect(plan.nativePreserved).toHaveLength(1);
+    expect(plan.nativePreserved[0]).toMatchObject({
+      boundaryRenderNodeId: "fallback",
+      status: "native-preserved",
+      profile: "high-fidelity",
+    });
   });
 
   it("binds a raster render node to source-scoped local evidence and verified tile bytes", () => {

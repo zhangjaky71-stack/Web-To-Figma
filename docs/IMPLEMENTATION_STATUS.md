@@ -4,7 +4,7 @@
 **Portable package:** `.wtf`  
 **MIME:** `application/x-wtf`  
 **Architecture:** FROZEN FOR IMPLEMENTATION  
-**Updated:** 2026-08-25
+**Updated:** 2026-08-28
 
 ## Roadmap
 
@@ -40,120 +40,81 @@
 | 27 | Figma Responsive Layout Renderer | DONE | Exact-head CI #667 PASS | PR #32 merged as `4aef2daa` |
 | 28 | Hybrid Native / Raster Renderer | DONE | Exact-head CI #685 PASS | PR #33 merged as `ec880c4f` |
 | 29 | Visual / Structure / Editability QA | DONE | Core CI #697 + closure CI #704 PASS | PR #35 + PR #36, merge `4f5c0ed3` |
-| 30 | Responsive / Determinism / Performance QA | IMPLEMENTING | Candidate exact-head CI #714 PASS; closure docs CI pending | PR #37 / `node-30-responsive-determinism-performance-qa` |
-| 31 | Real-world Compatibility & Release Candidate | TODO | - | - |
+| 30 | Responsive / Determinism / Performance QA | DONE | Exact-head CI #715 PASS | PR #37 merged as `28b52dc3` |
+| 31 | Real-world Compatibility & Release Candidate | IMPLEMENTING | P0 audit: 3 blockers remain; exact-head read-only CI #886 PASS | `node-31-real-world-compatibility-release-candidate` |
 
 ## Current Node
 
-`NODE-30 — Responsive / Determinism / Performance QA`
+`NODE-31 — Real-world Compatibility & Release Candidate`
 
 Entry baseline:
 
 ```text
-4f5c0ed3fa3ab2049b4516eab5f3e80388d87b90
+28b52dc3e0d3074bf76205c8deb324a06dfe9e23
 ```
 
 Working branch:
 
 ```text
-node-30-responsive-determinism-performance-qa
+node-31-real-world-compatibility-release-candidate
 ```
 
-Draft pull request:
+## NODE-30 Closure
+
+NODE-30 merged through PR #37 after exact-head CI #715 passed the permanent Foundation/NODE-27/NODE-28/NODE-29/NODE-30 validators, frozen dependency install, lint, strict typecheck, full tests, build/package validation and format checks.
+
+Merge commit:
 
 ```text
-PR #37
+28b52dc3e0d3074bf76205c8deb324a06dfe9e23
 ```
 
-## NODE-29 Closure
+NODE-30 adds and freezes the final repeatable pre-release QA layer:
 
-NODE-29 was completed in two merge steps:
+- supported responsive deterministic fixtures require composite fidelity >=90%;
+- responsive evidence covers FILL/HUG/FIXED sizing, spacing, min/max sizing, flex/grid relationships, constraints, breakpoints/visibility/layout changes and container-query metadata;
+- responsive composite math uses the documented arithmetic mean of active domains rather than hidden priority weights, while required-domain evidence cannot silently disappear;
+- determinism requires 10 same-environment runs with identical asset hashes, normalized Source Graph, Render Tree, stable identities and layout decisions/reasons;
+- performance functional scale bands are enforced from <2k through >50k render nodes;
+- a permanent real 10k renderer benchmark constructs 10,000 RenderNodes and SourceNodes and verifies five measured `renderBasicFigmaScene` runs complete without fatal crash;
+- timing aggregation is scoped to one declared benchmark environment and does not invent a cross-environment SLA.
 
-1. PR #35 merged the platform-neutral visual/structure/editability scoring core, Figma scene inspection and permanent NODE-29 QA guardrail after exact-head CI #697 passed.
-2. PR #36 closed the operational Pixel Ground Truth runtime gap: validated local `full-page` reference tiles are compared against Figma `SliceNode` tile exports in the plugin UI, results are persisted as `w2f.qa.visual*` evidence, and the entire path remains network-free.
-
-PR #36 exact-head CI #704 passed foundation/NODE-27/NODE-28/NODE-29 validators, frozen install, lint, typecheck, full tests, build, packaged Figma plugin validation and format checks. It merged to `main` as:
-
-```text
-4f5c0ed3fa3ab2049b4516eab5f3e80388d87b90
-```
-
-NODE-30 preserves this closure: PR #37 merge-ref CI #714 passed the permanent NODE-29 validator together with the NODE-30 validator, lint, typecheck, tests, build/package validation and format checks.
-
-## NODE-30 Frozen Scope
-
-The authoritative source is `docs/ACCEPTANCE_CONTRACT_V2.md`. NODE-30 does not lower or reinterpret release thresholds.
-
-### 1. Responsive QA
-
-Supported responsive deterministic fixtures require:
-
-```text
-composite responsive score >= 90%
-```
-
-Required evidence covers FILL/HUG/FIXED sizing, spacing, min/max sizing, flex/grid relationships, constraints, breakpoint/visibility/layout changes and container-query metadata. Structural breakpoint changes that Figma cannot execute still have to be detected and reported.
-
-The scorer uses the arithmetic mean of active responsive-domain scores instead of an undeclared priority model. Release-suite callers can require domain evidence explicitly; missing required evidence fails rather than disappearing from the denominator.
-
-### 2. Determinism QA
-
-For deterministic fixtures captured under the same environment, the gate requires ten repeated runs. Across the run set:
-
-```text
-asset hashes identical
-normalized Source Graph hashes identical
-normalized Render Tree hashes identical
-stable identities identical
-layout decisions/reasons identical
-```
-
-Each run requires the same non-empty `environmentFingerprint`. Intentionally volatile metadata must be named explicitly before exclusion from canonical hashing. Fewer than ten runs are `UNAVAILABLE`, never `PASS`.
-
-### 3. Performance / Scale QA
-
-Functional scale gates are frozen by the Acceptance Contract:
-
-```text
-<2k       normal path
-2k-5k     normal path
-5k-10k    chunking- or progress-capable path
-10k-20k   must complete without fatal crash; chunking/warning allowed
-20k-50k   warning + section/simplified recommendation
->50k      explicit confirmation or section/simplified strategy
-```
-
-A real 10k renderer benchmark is now permanent in the test suite. It constructs 10,000 W2F RenderNodes and SourceNodes, renders through `renderBasicFigmaScene` against the in-memory Figma adapter, performs a warm-up and five measured runs, and verifies all 10,000 target nodes are created without a fatal crash.
-
-Exact-head benchmark evidence in `linux-x64-node-24.19.0-memory-figma-v1`:
+Observed 10k calibration evidence on `linux-x64-node-24.19.0-memory-figma-v1`:
 
 ```text
 CI #712   median 243.32 ms   p95 269.11 ms   PASS
 CI #714   median 156.20 ms   p95 748.69 ms   PASS
+CI #715   median 155.42 ms   p95 318.58 ms   PASS
 ```
 
-Both runs satisfy the functional 10k completion gate, but the hosted runner's p95 variation is too large to justify a cross-environment product SLA. The benchmark also uses an in-memory Figma adapter rather than production Figma runtime timing. Therefore `calibratedHardBudgetMs` intentionally remains `null`; no hard millisecond threshold exists in the frozen Acceptance Contract, and NODE-30 does not invent one.
+The hosted-runner p95 variation and in-memory Figma adapter boundary are insufficient to justify a product hard-ms release gate, so `calibratedHardBudgetMs` correctly remains `null`. NODE-31 may collect production-environment evidence but must not reinterpret these values as a product SLA.
 
-## NODE-30 Implemented Guardrails
+## NODE-31 Entry Rules
 
-- permanent `validate-node-30.mjs` wired into CI;
-- responsive >=90% scoring with required-domain coverage;
-- container-query/breakpoint evidence;
-- ten-run same-environment determinism fingerprints;
-- performance scale-band enforcement from <2k through >50k;
-- environment-scoped timing aggregation;
-- real 10k renderer scale benchmark;
-- local-only QA guard with no network/eval primitives;
-- NODE-27/28/29 permanent validators preserved.
+NODE-31 is the Release Candidate closure node. It must consume the frozen Acceptance Contract and existing node evidence instead of lowering thresholds or creating screenshot-only shortcuts.
 
-Candidate exact-head CI #714 passed all validators, frozen install, lint, typecheck, full tests, build/Figma plugin and browser-extension package validation, and format checks at:
+Before implementation, NODE-31 must extract the exact real-world corpus, compatibility-matrix, known-limitations, package/release and final acceptance requirements from `docs/ACCEPTANCE_CONTRACT_V2.md` and related implementation documents. No acceptance threshold may be invented or weakened for convenience.
 
-```text
-ad8a578c029cef0a2cc885ec3179b943189665aa
-```
+The node must preserve:
 
-This evidence/status documentation update must itself pass a final exact-head CI before PR #37 is made ready and merged.
+- NODE-29 visual / structure / editability / anti-over-rasterization gates;
+- NODE-30 responsive / same-environment determinism / scale gates;
+- local `.wtf` evidence and no unauthorized external fetching during Figma import/QA;
+- editable native output for supported text/vector/layout/image content;
+- explicit reporting of unsupported/degraded features instead of hiding them as PASS.
+
+## NODE-31 Current Closure Status
+
+The fail-closed P0 audit is anchored to real-browser evidence and remains `UNAVAILABLE` overall. Exact-head read-only CI #886 validates the current repository state with all permanent validators, lint, typecheck, full tests, build/package checks, five NODE-31 runtime gates and format checks passing.
+
+`visual-state-freeze-and-restore` is now PASS based on the final built visual-state runtime executing in real Chrome and proving CSS/WAAPI animations plus open-ShadowRoot media freeze during capture and restore afterward without permanent DOM/inline-state mutation.
+
+Three P0 blockers remain and must not be treated as PASS until direct evidence exists:
+
+1. `file-protocol-explicit-permission`;
+2. `geometry-preserving-correction-policy`;
+3. `raster-text-only-when-policy-justifies`.
 
 ## Next
 
-Run final closure-doc exact-head CI, merge PR #37 only if all gates remain green, then begin NODE-31 Real-world Compatibility & Release Candidate.
+Close the remaining three P0 blockers without weakening the frozen acceptance contract, beginning with real unpacked-extension `file://` permission/capture evidence, then finish the font geometry-correction and raster-text justification policies. Merge only after the final exact-head Release Candidate gates are green.

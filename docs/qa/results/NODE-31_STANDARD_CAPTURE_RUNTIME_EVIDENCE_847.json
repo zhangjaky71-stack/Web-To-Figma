@@ -1,0 +1,106 @@
+{
+  "version": "1.1.0",
+  "evidenceType": "node31-standard-capture-browser-runtime",
+  "status": "PASS",
+  "contract": "docs/ACCEPTANCE_CONTRACT_V2.md",
+  "ci": {
+    "runNumber": 847,
+    "runId": 33049035729,
+    "jobId": 98439753613,
+    "branchHead": "a563cf2046b613d64ba7402034979c70e567bd7a",
+    "mergeRef": "778f68f85c9b4032b39dc8053c7496a743fe5322",
+    "base": "28b52dc3e0d3074bf76205c8deb324a06dfe9e23",
+    "conclusion": "PASS",
+    "qualityChecks": {
+      "node31Validator": "PASS",
+      "node31CorpusValidator": "PASS",
+      "node31P0Validator": "PASS",
+      "lint": "PASS",
+      "typecheck": "PASS",
+      "tests": "PASS",
+      "build": "PASS",
+      "browserRuntime": "PASS",
+      "standardCaptureRuntime": "PASS",
+      "pluginUiChooseFileRuntime": "PASS",
+      "format": "PASS"
+    }
+  },
+  "environment": {
+    "runner": "ubuntu-24.04",
+    "os": "Ubuntu 24.04.4",
+    "node": "24.19.0",
+    "pnpm": "11.22.0",
+    "chrome": "Chrome/151.0.7922.137"
+  },
+  "harnessArtifact": "scripts/run-node-31-standard-capture-runtime.mjs",
+  "loadedBuiltArtifact": "apps/browser-extension/dist/runtime/standard-capture-adapter/capture.js",
+  "fixtureArtifacts": [
+    "qa/corpus/node31/class-b/shadow-dom.html",
+    "qa/corpus/node31/class-b/iframe.html",
+    "qa/corpus/node31/p0/standard-capture-runtime.html"
+  ],
+  "supportingSourceArtifacts": [
+    "packages/standard-capture-adapter/src/capture.ts",
+    "packages/standard-capture-adapter/test/capture-contract.test.ts",
+    "scripts/validate-node-31-corpus.mjs"
+  ],
+  "transportBoundary": {
+    "mocked": []
+  },
+  "assertions": [
+    "open-shadow-root-captured",
+    "shadow-host-relationship-preserved",
+    "named-slot-captured",
+    "slotted-light-dom-source-parent-preserved",
+    "slotted-light-dom-composed-parent-remapped",
+    "slotted-light-dom-assigned-slot-id-preserved",
+    "shadow-root-editable-text-captured",
+    "same-origin-iframe-accessible-child-frame-captured",
+    "same-origin-iframe-root-linked-to-boundary",
+    "same-origin-iframe-editable-text-captured",
+    "same-origin-iframe-no-inaccessible-diagnostic",
+    "current-http-document-capture-repeat-10-normalized-identical",
+    "document-scroll-root-live-position-preserved",
+    "primary-app-scroll-root-identified",
+    "primary-app-scroll-root-live-position-preserved",
+    "cross-origin-iframe-inaccessible-frame-recorded",
+    "cross-origin-iframe-diagnostic-linked-to-boundary",
+    "cross-origin-iframe-no-editable-child-subtree-fabricated",
+    "region-partial-intersection-retained",
+    "region-geometry-free-structural-ancestor-retained",
+    "region-non-intersecting-sibling-excluded",
+    "region-relationship-closure-preserved"
+  ],
+  "suiteEvidence": {
+    "browserExtension": {
+      "testFiles": 27,
+      "testCount": 74,
+      "status": "PASS"
+    },
+    "standardCaptureAdapter": {
+      "testFiles": 2,
+      "testCount": 7,
+      "status": "PASS"
+    }
+  },
+  "provesP0Items": [
+    "current-document-deterministic-online",
+    "region-intersections-and-structural-ancestors",
+    "document-and-primary-app-scroll-root-semantics",
+    "open-shadow-dom-slot-composed-tree",
+    "same-origin-iframe",
+    "inaccessible-cross-origin-frame-diagnostic"
+  ],
+  "notProvenByThisArtifact": [
+    "file-protocol-explicit-permission",
+    "visual-state-freeze-and-restore",
+    "choose-file-path",
+    "drop-on-canvas-path",
+    "geometry-preserving-correction-policy",
+    "raster-text-only-when-policy-justifies",
+    "zero-known-critical-security-blockers",
+    "zero-known-high-security-blockers",
+    "class-a-visual-geometry-text-asset-structure-measurements",
+    "class-b-browser-to-wtf-to-figma-measurements"
+  ]
+}

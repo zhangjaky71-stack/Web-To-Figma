@@ -19,9 +19,19 @@ interface ChromeDebuggee {
   sessionId?: string;
 }
 
+interface ChromeDebuggerTarget {
+  id: string;
+  type: string;
+  title: string;
+  url: string;
+  attached: boolean;
+  tabId?: number;
+}
+
 interface ChromeDebuggerApi {
   attach(target: ChromeDebuggee, requiredVersion: string): Promise<void>;
   detach(target: ChromeDebuggee): Promise<void>;
+  getTargets?(): Promise<ChromeDebuggerTarget[]>;
   sendCommand(
     target: ChromeDebuggee,
     method: string,
@@ -111,6 +121,16 @@ async function command<T>(
   return (await api.sendCommand(target, method, params)) as T;
 }
 
+async function assertDebuggerTargetAvailable(api: ChromeDebuggerApi, tabId: number): Promise<void> {
+  if (!api.getTargets) return;
+  const targets = await api.getTargets();
+  const target = targets.find((candidate) => candidate.tabId === tabId);
+  if (!target?.attached) return;
+  throw new Error(
+    `High Fidelity debugger transport is unavailable because tab ${tabId} already has an attached debugger. Close DevTools or the other debugger and retry.`,
+  );
+}
+
 async function withCdpSession<T>(
   tabId: number,
   operation: (session: ActiveCdpSession) => Promise<T>,
@@ -124,6 +144,7 @@ async function withCdpSession<T>(
   const target: ChromeDebuggee = { tabId };
   let attached = false;
   try {
+    await assertDebuggerTargetAvailable(api, tabId);
     await api.attach(target, CDP_REQUIRED_PROTOCOL_VERSION);
     attached = true;
     const session = { api, target } satisfies ActiveCdpSession;
@@ -176,11 +197,13 @@ export async function withHighFidelityViewportOverride<T>(
   });
 }
 
-function readDevicePixelRatio(value: Record<string, unknown>): number {
+function readPositiveRuntimeNumber(value: Record<string, unknown>): number | undefined {
   const result = value.result;
-  if (typeof result !== "object" || result === null || Array.isArray(result)) return 1;
+  if (typeof result !== "object" || result === null || Array.isArray(result)) return undefined;
   const observed = (result as Record<string, unknown>).value;
-  return typeof observed === "number" && Number.isFinite(observed) && observed > 0 ? observed : 1;
+  return typeof observed === "number" && Number.isFinite(observed) && observed > 0
+    ? observed
+    : undefined;
 }
 
 function decodeBase64Bytes(value: string): number[] {
@@ -317,7 +340,15 @@ export async function captureHighFidelityWithCdp(
       command(api, target, "DOMSnapshot.enable"),
     ]);
 
-    const [domSnapshot, layoutMetrics, frameTree, dprEvaluation, screenshot] = await Promise.all([
+    const [
+      domSnapshot,
+      layoutMetrics,
+      frameTree,
+      dprEvaluation,
+      widthEvaluation,
+      heightEvaluation,
+      screenshot,
+    ] = await Promise.all([
       command<CdpDomSnapshotResponse>(api, target, "DOMSnapshot.captureSnapshot", {
         computedStyles: [...CDP_COMPUTED_STYLE_PROPERTIES],
         includePaintOrder: true,
@@ -329,6 +360,16 @@ export async function captureHighFidelityWithCdp(
       command<CdpFrameTreeResponse>(api, target, "Page.getFrameTree"),
       command<Record<string, unknown>>(api, target, "Runtime.evaluate", {
         expression: "window.devicePixelRatio",
+        returnByValue: true,
+        silent: true,
+      }),
+      command<Record<string, unknown>>(api, target, "Runtime.evaluate", {
+        expression: "window.innerWidth",
+        returnByValue: true,
+        silent: true,
+      }),
+      command<Record<string, unknown>>(api, target, "Runtime.evaluate", {
+        expression: "window.innerHeight",
         returnByValue: true,
         silent: true,
       }),
@@ -359,7 +400,17 @@ export async function captureHighFidelityWithCdp(
         layoutMetrics,
         frameTree,
         screenshot,
-        devicePixelRatio: readDevicePixelRatio(dprEvaluation),
+        viewportWidth:
+          readPositiveRuntimeNumber(widthEvaluation) ??
+          layoutMetrics.cssVisualViewport?.clientWidth ??
+          layoutMetrics.cssLayoutViewport?.clientWidth ??
+          0,
+        viewportHeight:
+          readPositiveRuntimeNumber(heightEvaluation) ??
+          layoutMetrics.cssVisualViewport?.clientHeight ??
+          layoutMetrics.cssLayoutViewport?.clientHeight ??
+          0,
+        devicePixelRatio: readPositiveRuntimeNumber(dprEvaluation) ?? 1,
       },
       ...(fallbackUrl === undefined ? {} : { fallbackUrl }),
       ...(fallbackTitle === undefined ? {} : { fallbackTitle }),

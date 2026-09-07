@@ -1,0 +1,99 @@
+{
+  "version": "1.0.0",
+  "evidenceType": "node31-profile-pixel-ground-truth",
+  "status": "PASS",
+  "acceptanceContract": {
+    "path": "docs/ACCEPTANCE_CONTRACT_V2.md",
+    "section": "7 .wtf package acceptance",
+    "requirement": "pixel ground truth required by the capture profile"
+  },
+  "ci": {
+    "runNumber": 798,
+    "runId": 32852849393,
+    "jobId": 97817648113,
+    "conclusion": "PASS",
+    "branchHead": "281b193027202eaea4a0b4ca9c21bf8e15e66c06",
+    "mergeRef": "8ae000a9adc256c006cbd0844a258bad067820c3",
+    "base": "28b52dc3e0d3074bf76205c8deb324a06dfe9e23",
+    "qualityChecks": {
+      "node31Validator": "PASS",
+      "node31P0Validator": "PASS",
+      "lint": "PASS",
+      "typecheck": "PASS",
+      "tests": "PASS",
+      "build": "PASS",
+      "browserRuntime": "PASS",
+      "format": "PASS"
+    }
+  },
+  "environment": {
+    "os": "Ubuntu 24.04.4",
+    "node": "24.19.0",
+    "pnpm": "11.22.0",
+    "chrome": "Chrome/151.0.7922.137"
+  },
+  "sourceArtifacts": [
+    "apps/browser-extension/src/runtime/pixel-ground-truth-runtime.ts",
+    "apps/browser-extension/src/runtime/pixel-ground-truth-contract.ts",
+    "apps/browser-extension/src/runtime/profile-compliant-wtf-package.ts",
+    "apps/browser-extension/src/runtime/wtf-export-runtime.ts",
+    "apps/browser-extension/src/runtime/wtf-package-builder.ts",
+    "apps/browser-extension/scripts/validate-node-21-package.mjs"
+  ],
+  "testArtifacts": [
+    {
+      "path": "apps/browser-extension/test/profile-compliant-wtf-package.test.ts",
+      "testCount": 4,
+      "status": "PASS",
+      "assertions": [
+        "standard-profile-requires-viewport-reference",
+        "high-fidelity-document-requires-viewport-and-full-page-references",
+        "missing-high-fidelity-full-page-reference-fails-closed",
+        "missing-required-reference-tile-resource-fails-closed"
+      ]
+    },
+    {
+      "path": "apps/browser-extension/test/pixel-ground-truth-runtime.test.ts",
+      "testCount": 4,
+      "status": "PASS"
+    }
+  ],
+  "browserExtensionSuite": {
+    "testFiles": 27,
+    "testCount": 74,
+    "status": "PASS"
+  },
+  "packageValidation": {
+    "standard": {
+      "extension": "PASS",
+      "node14PixelGroundTruth": "PASS",
+      "node21WtfExport": "PASS"
+    },
+    "highFidelity": {
+      "extension": "PASS",
+      "node14PixelGroundTruth": "PASS",
+      "node21WtfExport": "PASS"
+    }
+  },
+  "provesP0Items": [
+    "profile-required-pixel-ground-truth-end-to-end"
+  ],
+  "notProvenByThisArtifact": [
+    "current-document-deterministic-online",
+    "file-protocol-explicit-permission",
+    "region-intersections-and-structural-ancestors",
+    "document-and-primary-app-scroll-root-semantics",
+    "open-shadow-dom-slot-composed-tree",
+    "same-origin-iframe",
+    "inaccessible-cross-origin-frame-diagnostic",
+    "visual-state-freeze-and-restore",
+    "choose-file-path",
+    "drop-on-canvas-path",
+    "geometry-preserving-correction-policy",
+    "raster-text-only-when-policy-justifies",
+    "zero-known-critical-security-blockers",
+    "zero-known-high-security-blockers",
+    "class-a-visual-geometry-text-asset-structure-measurements",
+    "class-b-browser-to-wtf-to-figma-measurements"
+  ]
+}

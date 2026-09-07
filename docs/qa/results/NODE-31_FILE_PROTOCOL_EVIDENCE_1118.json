@@ -1,0 +1,132 @@
+{
+  "version": "1.0.0",
+  "evidenceType": "node31-file-protocol-p0-promotion",
+  "contract": "docs/ACCEPTANCE_CONTRACT_V2.md",
+  "sourceRuntime": "scripts/run-node-31-file-protocol-runtime-v18.mjs",
+  "sourcePullRequest": 38,
+  "baselineCommit": "28b52dc3e0d3074bf76205c8deb324a06dfe9e23",
+  "ci": {
+    "runNumber": 1118,
+    "runId": 33737113028,
+    "jobId": 100590179059,
+    "branch": "node-31-real-world-compatibility-release-candidate",
+    "branchHead": "6e807625d4dc4e557da2fce05bf623a1d8eb9dde",
+    "pullRequestMergeCheckout": "7a85da128b2d6a5ca72743c4b855f25355c41f22",
+    "conclusion": "PASS",
+    "runner": {
+      "os": "Ubuntu 24.04.4 LTS",
+      "image": "ubuntu-24.04",
+      "imageVersion": "20260823.283.1",
+      "node": "24.19.0",
+      "pnpm": "11.22.0",
+      "chrome": "Chrome/151.0.7922.173"
+    },
+    "qualityChecks": {
+      "foundation": "PASS",
+      "node27Validator": "PASS",
+      "node28Validator": "PASS",
+      "node29Validator": "PASS",
+      "node30Validator": "PASS",
+      "node31Validator": "PASS",
+      "classBCorpusValidator": "PASS",
+      "p0HistoricalValidator": "PASS",
+      "p0ClosureValidator": "PASS",
+      "node30EvidenceValidator": "PASS",
+      "lint": "PASS",
+      "typecheck": "PASS",
+      "tests": "PASS",
+      "build": "PASS",
+      "fileProtocolRuntimeV18": "PASS",
+      "browserRuntime": "PASS",
+      "standardCaptureRuntime": "PASS",
+      "visualStateRuntime": "PASS",
+      "pluginChooseFileRuntime": "PASS",
+      "pluginCanvasDropRuntime": "PASS",
+      "fontGeometryRuntime": "PASS",
+      "format": "PASS"
+    }
+  },
+  "runtime": {
+    "status": "PASS",
+    "version": "18.0.0",
+    "captureProfile": "high-fidelity",
+    "extensionArtifact": "apps/browser-extension/dist-high-fidelity",
+    "fixtureArtifact": "qa/corpus/node31/p0/file-protocol-runtime.html",
+    "proofArchitecture": "two-fresh-native-chrome-cdp-sessions-with-unattached-file-target",
+    "permission": {
+      "initialFileAccessActive": true,
+      "disabledFileAccessActive": false,
+      "reenabledFileAccessActive": true,
+      "fileAccessControlAvailable": true
+    },
+    "capture": {
+      "preCaptureDebuggerAttached": false,
+      "adapter": "cdp",
+      "phase": "high-fidelity-capture-complete",
+      "nodeCount": 26,
+      "rasterReferenceCount": 2,
+      "hasViewportReference": true,
+      "hasFullPageReference": true,
+      "editableProofText": true
+    },
+    "assertions": [
+      "fresh-unpacked-extension-starts-enabled-with-explicit-file-access-active",
+      "chrome-file-access-setting-can-be-explicitly-disabled",
+      "chrome-file-access-setting-can-be-explicitly-reenabled",
+      "fresh-capture-session-does-not-mutate-file-access-setting",
+      "chrome-opens-real-authorized-extension-options-page",
+      "harness-never-attaches-real-file-page-target",
+      "harness-never-attaches-extension-service-worker-target",
+      "production-debugger-target-is-unattached-before-capture",
+      "production-extension-injects-into-real-file-tab",
+      "file-tab-extension-world-dispatches-production-runtime-messages",
+      "production-source-capability-resolves-file-tab-ready",
+      "production-full-page-job-completes-on-file-url",
+      "completed-job-uses-high-fidelity-cdp-capture-adapter",
+      "pixel-ground-truth-retains-viewport-and-full-page-raster-references",
+      "persisted-raw-snapshot-preserves-editable-text-structure"
+    ],
+    "provesP0Items": [
+      "file-protocol-explicit-permission"
+    ],
+    "prohibitedShortcutFlags": [
+      "--allow-file-access-from-files",
+      "--disable-extensions-file-access-check"
+    ],
+    "prohibitedLegacyInstallFlags": [
+      "--load-extension",
+      "--disable-extensions-except"
+    ],
+    "testOnlyChromeFlag": "--enable-unsafe-extension-debugging",
+    "prohibitedHarnessDependencies": [
+      "chrome://extensions inspect-view click",
+      "manual chrome-extension:// page navigation",
+      "Target.attachToTarget on the file fixture target",
+      "CDP direct service-worker target attach",
+      "mocked permission state",
+      "mocked production W2F responses"
+    ]
+  },
+  "sourceArtifacts": [
+    "scripts/run-node-31-file-protocol-runtime-v18.mjs",
+    "qa/corpus/node31/p0/file-protocol-runtime.html",
+    "apps/browser-extension/static/manifest.high-fidelity.json",
+    "apps/browser-extension/src/runtime/source-runtime.ts",
+    "apps/browser-extension/src/runtime/service-worker.ts",
+    "apps/browser-extension/src/runtime/cdp-runtime.ts",
+    "apps/browser-extension/src/runtime/pixel-ground-truth-runtime.ts"
+  ],
+  "notProvenByThisArtifact": [
+    "Class-A-visual-similarity",
+    "Class-A-geometry-text-asset-structure-fidelity",
+    "Class-B-browser-to-wtf-to-Figma-measurements",
+    "standard-html-css-editable-area-median",
+    "standard-html-css-raster-area-median",
+    "zero-known-critical-security-blockers",
+    "zero-known-high-security-blockers",
+    "absence-of-undiscovered-vulnerabilities",
+    "penetration-test-completeness",
+    "known-limitations-currentness",
+    "final-release-readiness"
+  ]
+}

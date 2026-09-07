@@ -1,0 +1,108 @@
+{
+  "version": "1.0.0",
+  "evidenceType": "node31-standard-capture-browser-runtime",
+  "status": "PASS",
+  "scope": "Open Shadow DOM with slot composed-tree capture and same-origin iframe structured capture in real headless Chrome using the final packaged Standard capture adapter.",
+  "ci": {
+    "runNumber": 825,
+    "runId": 32913639837,
+    "jobId": 98012597167,
+    "conclusion": "PASS",
+    "branchHead": "739629071978778ef9110477002fd53c7387e61f",
+    "mergeRef": "19181cbd3819f784e43b8d5f2e201a87415f1d9a",
+    "base": "28b52dc3e0d3074bf76205c8deb324a06dfe9e23",
+    "qualityChecks": {
+      "node31Validator": "PASS",
+      "node31CorpusValidator": "PASS",
+      "node31P0Validator": "PASS",
+      "lint": "PASS",
+      "typecheck": "PASS",
+      "tests": "PASS",
+      "build": "PASS",
+      "browserRuntime": "PASS",
+      "standardCaptureRuntime": "PASS",
+      "format": "PASS"
+    }
+  },
+  "environment": {
+    "os": "Ubuntu 24.04.4 LTS",
+    "runnerImage": "ubuntu-24.04",
+    "runnerImageVersion": "20260816.277.1",
+    "node": "24.19.0",
+    "pnpm": "11.22.0",
+    "chrome": "Chrome/151.0.7922.137"
+  },
+  "harnessArtifact": "scripts/run-node-31-standard-capture-runtime.mjs",
+  "loadedBuiltArtifact": "apps/browser-extension/dist/runtime/standard-capture-adapter/capture.js",
+  "fixtureArtifacts": [
+    "qa/corpus/node31/class-b/shadow-dom.html",
+    "qa/corpus/node31/class-b/iframe.html"
+  ],
+  "supportingSourceArtifacts": [
+    "packages/standard-capture-adapter/src/capture.ts",
+    "scripts/validate-node-31-corpus.mjs"
+  ],
+  "transportBoundary": {
+    "mocked": [],
+    "real": [
+      "headless Chrome DOM",
+      "open ShadowRoot",
+      "HTMLSlotElement assignedNodes composed-tree semantics",
+      "same-origin srcdoc iframe Document/Window access",
+      "packaged Standard capture adapter module",
+      "local HTTP fixture delivery",
+      "Chrome DevTools Protocol navigation and Runtime.evaluate"
+    ]
+  },
+  "assertions": [
+    "open-shadow-root-captured",
+    "shadow-host-relationship-preserved",
+    "named-slot-captured",
+    "slotted-light-dom-source-parent-preserved",
+    "slotted-light-dom-composed-parent-remapped",
+    "slotted-light-dom-assigned-slot-id-preserved",
+    "shadow-root-editable-text-captured",
+    "same-origin-iframe-accessible-child-frame-captured",
+    "same-origin-iframe-root-linked-to-boundary",
+    "same-origin-iframe-editable-text-captured",
+    "same-origin-iframe-no-inaccessible-diagnostic"
+  ],
+  "suiteEvidence": {
+    "browserExtension": {
+      "testFiles": 27,
+      "testCount": 74,
+      "status": "PASS"
+    },
+    "standardCaptureAdapter": {
+      "testFiles": 2,
+      "testCount": 6,
+      "status": "PASS"
+    }
+  },
+  "provesP0Items": [
+    "open-shadow-dom-slot-composed-tree",
+    "same-origin-iframe"
+  ],
+  "notProvenByThisArtifact": [
+    "current-document-deterministic-online",
+    "file-protocol-explicit-permission",
+    "region-intersections-and-structural-ancestors",
+    "document-and-primary-app-scroll-root-semantics",
+    "inaccessible-cross-origin-frame-diagnostic",
+    "visual-state-freeze-and-restore",
+    "finally-scroll-focus-temporary-style-restore",
+    "profile-required-pixel-ground-truth-end-to-end",
+    "choose-file-path",
+    "drop-on-canvas-path",
+    "exact-available-font-preferred",
+    "nearest-mapping-with-diagnostic",
+    "geometry-preserving-correction-policy",
+    "raster-text-only-when-policy-justifies",
+    "zero-known-critical-security-blockers",
+    "zero-known-high-security-blockers",
+    "class-a-visual-geometry-text-asset-structure-measurements",
+    "class-b-browser-to-wtf-to-figma-measurements",
+    "class-b-editable-area-median",
+    "class-b-raster-area-median"
+  ]
+}

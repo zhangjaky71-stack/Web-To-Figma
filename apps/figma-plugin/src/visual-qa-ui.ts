@@ -16,7 +16,7 @@ export interface W2fQaVisualExportTile {
 
 export interface W2fQaVisualExportPayload {
   referenceId: string;
-  tiles: W2fQaVisualExportTile[];
+  tiles: readonly W2fQaVisualExportTile[];
 }
 
 export interface W2fQaVisualUiResult {

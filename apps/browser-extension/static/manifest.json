@@ -12,6 +12,7 @@
     "type": "module"
   },
   "permissions": ["activeTab", "scripting", "storage", "downloads"],
+  "host_permissions": ["file:///*"],
   "options_ui": {
     "page": "options.html",
     "open_in_tab": true

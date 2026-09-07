@@ -1,0 +1,71 @@
+{
+  "version": "1.0.0",
+  "evidenceType": "node31-font-geometry-policy-runtime-evidence",
+  "status": "PASS",
+  "contract": "docs/ACCEPTANCE_CONTRACT_V2.md",
+  "ci": {
+    "runNumber": 1034,
+    "runId": 33618824110,
+    "jobId": 100210838008,
+    "branchHead": "5bb72a8e34f0ab2b78dea4dbf12bc2d7f85192dc",
+    "mergeRef": "5c32e4076c8c5c68cc11e4adbc20d554193552c0",
+    "base": "28b52dc3e0d3074bf76205c8deb324a06dfe9e23",
+    "conclusion": "PASS",
+    "tokenPermissions": {
+      "contents": "read",
+      "metadata": "read"
+    },
+    "qualityChecks": {
+      "node31Validator": "PASS",
+      "node31CorpusValidator": "PASS",
+      "node31P0Validator": "PASS",
+      "lint": "PASS",
+      "typecheck": "PASS",
+      "tests": "PASS",
+      "build": "PASS",
+      "fileProtocolRuntime": "PASS",
+      "browserRuntime": "PASS",
+      "standardCaptureRuntime": "PASS",
+      "visualStateRuntime": "PASS",
+      "pluginUiChooseFileRuntime": "PASS",
+      "pluginCanvasDropRuntime": "PASS",
+      "fontGeometryRuntime": "PASS",
+      "format": "PASS"
+    }
+  },
+  "environment": {
+    "os": "Ubuntu 24.04.4 LTS",
+    "node": "24.19.0",
+    "pnpm": "11.22.0"
+  },
+  "productionSource": "apps/figma-plugin/src/font-diagnostics.ts",
+  "runtimeHarness": "scripts/run-node-31-font-geometry-runtime.mjs",
+  "finalPluginArtifact": "apps/figma-plugin/dist/code.js",
+  "productionSourceSha256": "b19670a1095581fe8aa8ab1d633f2fa7e614103efa5f267885ca10350852a1b0",
+  "compiledPolicySha256": "ea07fc3b7b2456e9e0337b3c00e4c086feb35db7afe226e2c17a693cff061365",
+  "finalPluginSha256": "2828fdc84b71c5e3bd081a6ae010097f0d37adf0871909f9882b7faf37ea490a",
+  "hostBoundary": {
+    "figmaApi": "simulated-text-metrics",
+    "note": "The production font geometry policy is compiled with the plugin package's pinned esbuild and executed against a deterministic narrow TextNode metric simulator. The final built plugin bundle is independently checked for the production geometry diagnostic markers. This does not claim Figma Desktop font rasterization or metric parity."
+  },
+  "assertions": [
+    "production-policy-version-is-1.0.0",
+    "final-plugin-bundle-contains-geometry-policy-markers",
+    "fallback-natural-height-measured-before-correction",
+    "drift-over-two-percent-triggers-correction",
+    "correction-scale-bounded-between-0.85-and-1.15",
+    "only-substituted-range-font-size-adjusted",
+    "successful-correction-remeasured-within-two-percent",
+    "successful-correction-restores-exact-fixed-bounds",
+    "uncorrectable-drift-emits-attempted-unvalidated",
+    "uncorrectable-drift-restores-exact-fixed-bounds",
+    "geometry-failure-does-not-authorize-raster-text",
+    "within-tolerance-drift-does-not-rescale-text"
+  ],
+  "provesP0Items": [
+    "geometry-preserving-correction-policy"
+  ],
+  "notProvenByThisArtifact": [
+    "raster-text-only-when-policy-justifies"
+  ]
+}

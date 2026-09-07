@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>W2F NODE-31 Desktop Measurement</title>
+    <style>
+      :root {
+        font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+        color: var(--figma-color-text, #1f1f1f);
+        background: var(--figma-color-bg, #fff);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 16px;
+        font-size: 12px;
+      }
+      .shell {
+        display: grid;
+        gap: 12px;
+      }
+      h1 {
+        margin: 0;
+        font-size: 16px;
+      }
+      .muted {
+        color: var(--figma-color-text-secondary, #6b6b6b);
+        line-height: 1.45;
+      }
+      .panel {
+        border: 1px solid var(--figma-color-border, #ddd);
+        border-radius: 9px;
+        padding: 12px;
+        display: grid;
+        gap: 8px;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .file {
+        display: grid;
+        gap: 5px;
+      }
+      input[type="file"] {
+        width: 100%;
+      }
+      button {
+        font: inherit;
+        border-radius: 7px;
+        padding: 8px 10px;
+        cursor: pointer;
+      }
+      .primary {
+        border: 0;
+        background: var(--figma-color-bg-brand, #0d99ff);
+        color: var(--figma-color-text-onbrand, #fff);
+      }
+      .secondary {
+        border: 1px solid var(--figma-color-border, #ccc);
+        background: var(--figma-color-bg, #fff);
+        color: inherit;
+      }
+      button:disabled {
+        opacity: 0.45;
+        cursor: default;
+      }
+      #node31-host-label[data-ok="true"] {
+        color: var(--figma-color-text-success, #14853d);
+      }
+      #node31-host-label[data-ok="false"],
+      #node31-status[data-kind="error"] {
+        color: var(--figma-color-text-danger, #d92d20);
+      }
+      #node31-status[data-kind="ok"] {
+        color: var(--figma-color-text-success, #14853d);
+      }
+      #node31-status {
+        min-height: 54px;
+        line-height: 1.45;
+        white-space: pre-wrap;
+      }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 11px;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <div>
+        <h1>NODE-31 Desktop Measurement</h1>
+        <div class="muted">
+          Fail-closed bridge from CI capture evidence to real Figma Desktop render/export evidence.
+        </div>
+      </div>
+
+      <section class="panel">
+        <strong>1. Desktop host</strong>
+        <div id="node31-host-label" class="muted">Inspecting host…</div>
+        <div class="muted">
+          Web Figma, Headless Chrome and simulator hosts cannot generate release evidence.
+        </div>
+      </section>
+
+      <section class="panel">
+        <strong>2. Exact CI inputs</strong>
+        <label class="file">
+          <span>Captured <code>.wtf</code></span>
+          <input id="node31-wtf-file" type="file" accept=".wtf,application/x-wtf" />
+          <span id="node31-wtf-label" class="muted">No WTF loaded</span>
+        </label>
+        <label class="file">
+          <span>Partial <code>.measurement.json</code></span>
+          <input id="node31-measurement-file" type="file" accept=".json,application/json" />
+          <span id="node31-measurement-label" class="muted">No measurement sidecar loaded</span>
+        </label>
+      </section>
+
+      <section class="panel">
+        <div class="row">
+          <strong>3. Imported Figma root</strong>
+          <button id="node31-refresh" class="secondary" type="button">Refresh selection</button>
+        </div>
+        <div id="node31-selection-label" class="muted">
+          Select the root Frame created by the normal W2F importer.
+        </div>
+      </section>
+
+      <section class="panel">
+        <strong>4. Measure and export</strong>
+        <div id="node31-status" class="muted">
+          Load the exact CI artifacts and select the matching imported root.
+        </div>
+        <button id="node31-measure" class="primary" type="button" disabled>
+          Measure real Desktop output
+        </button>
+      </section>
+
+      <div class="row">
+        <span class="muted"
+          >Output: one self-contained <code>.node31-desktop-evidence.json</code> archive.</span
+        >
+        <button id="node31-close" class="secondary" type="button">Close</button>
+      </div>
+    </main>
+    <!-- W2F_NODE31_UI_SCRIPT -->
+  </body>
+</html>

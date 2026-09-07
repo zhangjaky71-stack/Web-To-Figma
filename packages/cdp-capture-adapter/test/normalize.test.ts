@@ -318,6 +318,22 @@ describe("CDP capture adapter", () => {
     expect(result.screenshot).toMatchObject({ format: "png", captureBeyondViewport: true });
   });
 
+  it("uses CSS viewport dimensions while retaining scrollbar-excluding client width", () => {
+    const evidence = fixture();
+    evidence.viewportWidth = 1440;
+    evidence.viewportHeight = 900;
+    evidence.layoutMetrics.cssLayoutViewport!.clientWidth = 1425;
+    evidence.layoutMetrics.cssVisualViewport!.clientWidth = 1425;
+    const result = normalizeCdpCapture({
+      captureTarget: { type: "document" },
+      evidence,
+      capturedAt: "2026-09-03T00:00:00.000Z",
+    });
+    expect(result.snapshot.environment.viewportWidth).toBe(1440);
+    expect(result.snapshot.environment.viewportHeight).toBe(900);
+    expect(result.snapshot.scrollContainers[0]?.clientWidth).toBe(1425);
+  });
+
   it("normalizes NODE-10 text fragments, baseline provenance, pseudo text and safe form state", () => {
     const result = normalizeCdpCapture({
       captureTarget: { type: "document" },

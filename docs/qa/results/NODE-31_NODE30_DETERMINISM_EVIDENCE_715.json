@@ -1,0 +1,72 @@
+{
+  "version": "1.0.0",
+  "evidenceType": "node31-node30-determinism-promotion",
+  "contract": "docs/ACCEPTANCE_CONTRACT_V2.md",
+  "sourceNode": "NODE-30",
+  "sourcePullRequest": 37,
+  "sourceMergeCommit": "28b52dc3e0d3074bf76205c8deb324a06dfe9e23",
+  "ci": {
+    "runNumber": 715,
+    "runId": 32806697455,
+    "jobId": 97678100089,
+    "branch": "node-30-responsive-determinism-performance-qa",
+    "branchHead": "fc2a56022084bdff459fbe312e0f5ce7969d32c5",
+    "conclusion": "PASS",
+    "qualityChecks": {
+      "foundation": "PASS",
+      "node27Validator": "PASS",
+      "node28Validator": "PASS",
+      "node29Validator": "PASS",
+      "node30Validator": "PASS",
+      "lint": "PASS",
+      "typecheck": "PASS",
+      "tests": "PASS",
+      "build": "PASS",
+      "format": "PASS"
+    }
+  },
+  "measurement": {
+    "status": "PASS",
+    "class": "A",
+    "kind": "versioned-w2f-ir-determinism-fixture",
+    "requiredRuns": 10,
+    "observedRuns": 10,
+    "environmentFingerprint": "ubuntu-24-node-24-node30-v1",
+    "comparedFingerprints": [
+      "assetHash",
+      "sourceGraphHash",
+      "renderTreeHash",
+      "stableIdentityHash",
+      "layoutDecisionHash"
+    ],
+    "volatileSourceGraphKeysExcluded": [
+      "capturedAt",
+      "captureId",
+      "revisionId",
+      "parentRevisionId"
+    ],
+    "failureSemantics": [
+      "fewer-than-ten-runs-is-UNAVAILABLE",
+      "missing-or-different-environment-is-FAIL",
+      "semantic-fingerprint-mismatch-is-FAIL"
+    ]
+  },
+  "sourceArtifacts": [
+    "packages/figma-renderer/src/qa/determinism.ts",
+    "packages/figma-renderer/src/qa/determinism-input.ts",
+    "packages/figma-renderer/test/node30-qa.test.ts",
+    "packages/figma-renderer/test/node30-integration.test.ts",
+    "scripts/validate-node-30.mjs",
+    "docs/nodes/NODE-30_RESPONSIVE_DETERMINISM_PERFORMANCE_QA.md"
+  ],
+  "notProvenByThisArtifact": [
+    "browser-runtime-repeat-capture-determinism",
+    "Class-A-visual-similarity",
+    "Class-A-geometry-text-asset-structure-fidelity",
+    "Class-B-browser-to-wtf-to-Figma-measurements",
+    "zero-known-critical-security-blockers",
+    "zero-known-high-security-blockers",
+    "known-limitations-currentness",
+    "final-release-readiness"
+  ]
+}

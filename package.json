@@ -15,6 +15,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "validate:foundation": "node scripts/validate-foundation.mjs",
+    "node31:promote-desktop-evidence": "pnpm --filter @w2f/figma-renderer build && node scripts/promote-node-31-desktop-evidence.mjs",
+    "node31:ingest-desktop-evidence-batch": "pnpm --filter @w2f/figma-renderer build && node scripts/ingest-node-31-desktop-evidence-batch.mjs",
     "check": "pnpm validate:foundation && pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm format:check"
   },
   "devDependencies": {

@@ -76,11 +76,9 @@ A missing P0 item or an `approved-adr` disposition without an ADR id fails the g
 
 ### Current P0 closure status
 
-P0 is now closed with versioned evidence. `docs/qa/results/NODE-31_P0_CLOSURE_1053.json` records zero remaining blockers, and `docs/qa/NODE-31_RC_EVIDENCE_V2.json` declares `p0.status` as `PASS` with `blockingUnavailableCount: 0`.
+P0 is closed. `docs/qa/results/NODE-31_P0_CLOSURE_1053.json` and the current V2 evidence manifest record `status: PASS` with `blockingUnavailableCount: 0`. File-protocol permission handling, geometry-preserving correction policy, raster-text authorization, visual-state freeze/restore and the remaining declared P0 runtime paths are all covered by permanent validators or runtime evidence and are re-executed by exact-head CI.
 
-The closure preserves the fail-closed history rather than rewriting earlier `UNAVAILABLE` results as passes. In particular, the final raster-text policy evidence proves that ordinary supported text is preserved as editable text for font, geometry, text-quality and pixel-score reasons, while raster text is authorized only for explicit visual/compositing dependencies under the selected profile.
-
-P0 closure does **not** make NODE-31 Release Candidate ready by itself. The remaining release blocker is evidence completeness: versioned Class A/B source fixtures exist, but their required Figma Desktop measurement artifacts are still `UNAVAILABLE` in the V2 RC evidence manifest and must not be inferred from browser, package, simulated-host or source-fixture success.
+P0 closure does **not** make NODE-31 Release Candidate ready by itself. The remaining release boundary is the required real Figma Desktop Class A/B fidelity evidence described below.
 
 ## 6. Security gate
 
@@ -142,7 +140,28 @@ Every corpus sample produces a matrix row with:
 
 For Class B, FAIL/UNAVAILABLE rows or undocumented non-native behavior block the release. For Class C, third-party drift is a warning signal unless it contradicts P0 or declared support.
 
-## 11. Overall Release Candidate status
+## 11. Real Figma Desktop measurement boundary
+
+The browser/runtime and package stages now generate exact-head measurement inputs for both deterministic Class A samples and all twelve Class B corpus samples. Those inputs are not release evidence by themselves.
+
+A Class A/B row may be promoted from `UNAVAILABLE` to `PASS` only after the NODE-31 Figma Desktop harness produces a measurement artifact whose evaluator reports `releaseEligible: true`. The harness requires:
+
+- verified `figma-desktop` host provenance;
+- exact branch-head match;
+- matching `.wtf` SHA-256;
+- matching imported document/capture/revision/source identity;
+- real Figma render and export artifacts;
+- raw PNG output used by the pixel comparison;
+- measured metrics required by the sample class;
+- zero anti-cheating violations.
+
+The versioned operating procedure is `docs/qa/NODE-31_DESKTOP_EVIDENCE_RUNBOOK.md`.
+
+After real Desktop archives are collected, `pnpm node31:ingest-desktop-evidence-batch <archive-directory>` performs fail-closed archive validation and promotion. The promotion layer refuses stale branch heads, simulator evidence, source mismatches, unsafe paths and conflicting measurements, and rewrites the evidence manifest only after the full promotion set succeeds. It intentionally does not set the manifest to `ready`.
+
+Exact-head CI #1247 on `fac0551f3766980f362c86bd4d67342f4980629c` verifies the promotion tests, both Desktop evidence command entry points, the Desktop measurement harness, all Class A/B input generators, the existing P0 runtime gates and `Format check`.
+
+## 12. Overall Release Candidate status
 
 The evaluator returns:
 
@@ -153,11 +172,7 @@ The evaluator returns:
 
 `releaseReady` is true only when there are no `FAIL` or `UNAVAILABLE` gates. A `WARNING` Release Candidate is allowed only for warning classes already defined as non-fatal; warnings stay visible in the report.
 
-### Current evidence boundary
-
-The current V2 evidence manifest remains in `collecting` state. Security, schema compatibility, known-limitations, P0, determinism and scale evidence are versioned as PASS, while all required Class A and Class B measurement rows remain `UNAVAILABLE` until real Figma Desktop render/measurement artifacts with provenance are produced and ingested.
-
-Browser/runtime, package-contract and simulated Desktop-host success are supporting evidence only. They cannot substitute for the required real Figma Desktop measurement artifacts, and NODE-31 must remain fail-closed until those artifacts exist.
+NODE-31 currently remains `UNAVAILABLE` overall because the fourteen required real Figma Desktop Class A/B measurement rows have not yet been versioned. Browser/runtime evidence, generated sidecars and simulator-host tests cannot replace that evidence.
 
 ## Exit gate
 
@@ -174,6 +189,7 @@ NODE-31 is complete only when:
 9. `docs/KNOWN_LIMITATIONS.md` is current and consistent with implementation diagnostics;
 10. `.wtf` schema/version compatibility cases pass;
 11. permanent NODE-31 validation is wired into CI;
-12. exact-head lint, typecheck, tests, build/package validation and format checks pass.
+12. exact-head lint, typecheck, tests, build/package validation and format checks pass;
+13. all required Class A/B real Figma Desktop measurement artifacts are versioned and pass their frozen thresholds.
 
 Only after those conditions are met may the project label the branch/build as a V2 Release Candidate.

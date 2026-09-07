@@ -6,7 +6,7 @@ on:
       - node-31-real-world-compatibility-release-candidate
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   format-export:
@@ -14,6 +14,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          ref: node-31-real-world-compatibility-release-candidate
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -43,19 +45,32 @@ jobs:
             apps/figma-plugin/static/node31-measurement-ui.html \
             scripts/ingest-node-31-desktop-evidence.mjs
 
-      - name: Upload formatted sources
-        uses: actions/upload-artifact@v4
-        with:
-          name: node31-formatted-sources
-          path: |
-            apps/figma-plugin/scripts/build-node31-measurement-plugin.mjs
-            apps/figma-plugin/scripts/validate-node31-measurement-package.mjs
-            apps/figma-plugin/src/node31-desktop-evidence.ts
-            apps/figma-plugin/src/node31-desktop-measurement.ts
-            apps/figma-plugin/src/node31-desktop-metrics.ts
-            apps/figma-plugin/src/node31-measurement-main.ts
-            apps/figma-plugin/src/node31-measurement-ui.ts
-            apps/figma-plugin/static/node31-measurement-ui.html
+      - name: Commit exact Prettier output
+        run: |
+          if git diff --quiet -- \
+            apps/figma-plugin/scripts/build-node31-measurement-plugin.mjs \
+            apps/figma-plugin/scripts/validate-node31-measurement-package.mjs \
+            apps/figma-plugin/src/node31-desktop-evidence.ts \
+            apps/figma-plugin/src/node31-desktop-measurement.ts \
+            apps/figma-plugin/src/node31-desktop-metrics.ts \
+            apps/figma-plugin/src/node31-measurement-main.ts \
+            apps/figma-plugin/src/node31-measurement-ui.ts \
+            apps/figma-plugin/static/node31-measurement-ui.html \
+            scripts/ingest-node-31-desktop-evidence.mjs; then
+            echo "NODE-31 sources already match Prettier."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            apps/figma-plugin/scripts/build-node31-measurement-plugin.mjs \
+            apps/figma-plugin/scripts/validate-node31-measurement-package.mjs \
+            apps/figma-plugin/src/node31-desktop-evidence.ts \
+            apps/figma-plugin/src/node31-desktop-measurement.ts \
+            apps/figma-plugin/src/node31-desktop-metrics.ts \
+            apps/figma-plugin/src/node31-measurement-main.ts \
+            apps/figma-plugin/src/node31-measurement-ui.ts \
+            apps/figma-plugin/static/node31-measurement-ui.html \
             scripts/ingest-node-31-desktop-evidence.mjs
-          if-no-files-found: error
-          retention-days: 1
+          git commit -m "style(node-31): format desktop measurement harness"
+          git push origin HEAD:node-31-real-world-compatibility-release-candidate

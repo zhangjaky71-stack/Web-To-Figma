@@ -1,7 +1,4 @@
-import {
-  evaluateStructureAndEditabilityQa,
-  W2F_PLUGIN_DATA_KEYS,
-} from "@w2f/figma-renderer";
+import { evaluateStructureAndEditabilityQa, W2F_PLUGIN_DATA_KEYS } from "@w2f/figma-renderer";
 import type { WtfAssetRecord, WtfRenderNode } from "@w2f/w2f-ir";
 import { inspectFigmaSceneForQa } from "./figma-qa.js";
 import {
@@ -125,7 +122,10 @@ function mappedSceneNodes(root: SceneNode): Map<string, SceneNode> {
 function absoluteBounds(node: SceneNode) {
   const candidate = node as SceneNode & {
     absoluteBoundingBox?: { x: number; y: number; width: number; height: number } | null;
-    absoluteTransform?: readonly [readonly [number, number, number], readonly [number, number, number]];
+    absoluteTransform?: readonly [
+      readonly [number, number, number],
+      readonly [number, number, number],
+    ];
   };
   const box = candidate.absoluteBoundingBox;
   if (
@@ -199,7 +199,10 @@ function sceneMatchesAsset(node: SceneNode, kind: WtfAssetRecord["kind"]): boole
     const current = stack.pop();
     if (!current) continue;
     if (kind === "svg" && isVectorType(current.type)) return true;
-    if (kind !== "svg" && (hasImageFill(current) || Boolean(current.getPluginData(RASTER_MODE_KEY)))) {
+    if (
+      kind !== "svg" &&
+      (hasImageFill(current) || Boolean(current.getPluginData(RASTER_MODE_KEY)))
+    ) {
       return true;
     }
     stack.push(...childNodes(current));

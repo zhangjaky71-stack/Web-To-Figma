@@ -10,7 +10,9 @@ const branchHead =
   execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8", cwd: appRoot }).trim();
 
 if (!/^[a-f0-9]{40}$/.test(branchHead)) {
-  throw new Error(`NODE-31 measurement harness requires a 40-character branch head, got ${branchHead}`);
+  throw new Error(
+    `NODE-31 measurement harness requires a 40-character branch head, got ${branchHead}`,
+  );
 }
 
 await rm(distRoot, { recursive: true, force: true });

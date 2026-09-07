@@ -105,7 +105,8 @@ export function measureNode31TextFidelity(
   observedNodes: readonly W2fNode31ObservedTextNode[],
 ): number {
   const expected = renderTree.nodes.filter(
-    (node) => node.text && node.renderStrategy !== "raster" && node.renderStrategy !== "unsupported",
+    (node) =>
+      node.text && node.renderStrategy !== "raster" && node.renderStrategy !== "unsupported",
   );
   if (expected.length === 0) return 1;
   const observedById = new Map(observedNodes.map((node) => [node.renderNodeId, node]));

@@ -114,20 +114,24 @@ function refreshState(): void {
     selectionLabel.textContent = selection.reason ?? "Selection is not a W2F import root";
   } else {
     selectionLabel.textContent = `${selection.nodeName ?? "W2F root"} · ${selection.nodeId ?? ""}${
-      parsed ? (identityMatchesSelection() ? " · source identity matched" : " · source identity mismatch") : ""
+      parsed
+        ? identityMatchesSelection()
+          ? " · source identity matched"
+          : " · source identity mismatch"
+        : ""
     }`;
   }
 
   const partialPipelineReady = Boolean(
     baseArtifact &&
-      baseArtifact.pipeline.browserCapture.status === "PASS" &&
-      baseArtifact.pipeline.wtfPackage.status === "PASS" &&
-      baseArtifact.pipeline.secureParse.status === "PASS",
+    baseArtifact.pipeline.browserCapture.status === "PASS" &&
+    baseArtifact.pipeline.wtfPackage.status === "PASS" &&
+    baseArtifact.pipeline.secureParse.status === "PASS",
   );
   const exactHead = Boolean(
     baseArtifact &&
-      /^[a-f0-9]{40}$/.test(__W2F_NODE31_BRANCH_HEAD__) &&
-      baseArtifact.provenance.branchHead === __W2F_NODE31_BRANCH_HEAD__,
+    /^[a-f0-9]{40}$/.test(__W2F_NODE31_BRANCH_HEAD__) &&
+    baseArtifact.provenance.branchHead === __W2F_NODE31_BRANCH_HEAD__,
   );
   const pairedWtf = Boolean(
     baseArtifact && wtfSha256 && baseArtifact.pipeline.wtfPackage.sha256 === wtfSha256,
@@ -150,7 +154,8 @@ async function loadWtf(file: File): Promise<void> {
     const bytes = bytesFromArrayBuffer(await file.arrayBuffer());
     const [nextParsed, digest] = await Promise.all([parseWtfPackage(bytes), sha256(bytes)]);
     const reference = node29PixelQaReference(nextParsed);
-    if (!reference) throw new Error("WTF package has no complete full-page Pixel Ground Truth reference");
+    if (!reference)
+      throw new Error("WTF package has no complete full-page Pixel Ground Truth reference");
     parsed = nextParsed;
     wtfBytes = bytes;
     wtfSha256 = digest;
@@ -181,7 +186,9 @@ async function loadMeasurement(file: File): Promise<void> {
       value.pipeline.wtfPackage.status !== "PASS" ||
       value.pipeline.secureParse.status !== "PASS"
     ) {
-      throw new Error("Partial measurement must contain real PASS browser/WTF/secure-parse provenance");
+      throw new Error(
+        "Partial measurement must contain real PASS browser/WTF/secure-parse provenance",
+      );
     }
     if (value.provenance.branchHead !== __W2F_NODE31_BRANCH_HEAD__) {
       throw new Error(
@@ -286,9 +293,7 @@ async function finishMeasurement(result: W2fNode31DesktopMeasurementResult): Pro
   );
 }
 
-function isMainMessage(
-  value: unknown,
-): value is { payload: W2fNode31MainToUiPayload } {
+function isMainMessage(value: unknown): value is { payload: W2fNode31MainToUiPayload } {
   if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
   const message = value as Record<string, unknown>;
   if (
@@ -350,7 +355,9 @@ window.addEventListener("message", (event: MessageEvent) => {
     case "NODE31_MEASUREMENT_RESULT":
       measuring = false;
       void finishMeasurement(payload.result)
-        .catch((cause) => setStatus(cause instanceof Error ? cause.message : String(cause), "error"))
+        .catch((cause) =>
+          setStatus(cause instanceof Error ? cause.message : String(cause), "error"),
+        )
         .finally(refreshState);
       return;
     case "NODE31_ERROR":

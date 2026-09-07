@@ -85,7 +85,9 @@ export function completeNode31DesktopMeasurement(
 ): W2fNode31DesktopMeasurementCompletion {
   const baseReport = evaluateNode31MeasurementArtifact(base);
   if (baseReport.failures.length > 0) {
-    throw new TypeError(`base measurement has contract failures: ${baseReport.failures.join("; ")}`);
+    throw new TypeError(
+      `base measurement has contract failures: ${baseReport.failures.join("; ")}`,
+    );
   }
   assertBasePipeline(base);
   assertNonEmpty(observation.figmaHostVersion, "figmaHostVersion");

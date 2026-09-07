@@ -52,6 +52,9 @@ for (const evidence of [
 ]) {
   assert(ui.includes(evidence), `NODE-31 UI bundle missing ${evidence}`);
 }
-assert(!ui.includes("figma-host-simulator"), "Desktop evidence UI must not relabel simulator output");
+assert(
+  !ui.includes("figma-host-simulator"),
+  "Desktop evidence UI must not relabel simulator output",
+);
 
 console.log("W2F NODE-31 Desktop measurement package validation passed.");

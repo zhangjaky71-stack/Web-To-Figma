@@ -51,7 +51,10 @@ export interface W2fNode31DesktopEvidenceBundle {
 const encoder = new TextEncoder();
 
 function safeName(value: string): string {
-  const normalized = value.trim().replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "");
+  const normalized = value
+    .trim()
+    .replace(/[^a-zA-Z0-9._-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
   return normalized || "node31-sample";
 }
 

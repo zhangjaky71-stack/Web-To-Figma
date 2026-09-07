@@ -1,0 +1,186 @@
+name: NODE-31 Canonical Stable ID Fix
+
+on:
+  push:
+    branches:
+      - node-31-real-world-compatibility-release-candidate
+
+permissions:
+  contents: write
+
+jobs:
+  canonical-stable-id-fix:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: node-31-real-world-compatibility-release-candidate
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.22.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply canonical stable identity fix
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(text: str, old: str, new: str, label: str) -> str:
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{label}: expected exactly one match, found {count}")
+              return text.replace(old, new, 1)
+
+          helper_path = Path("apps/browser-extension/src/runtime/canonical-render-tree-stable-ids.ts")
+          helper_path.write_text('''import type { WtfRenderTree } from "@w2f/w2f-ir";
+
+export interface W2fCanonicalStableNodeEvidence {
+  captureNodeId: string;
+  stableNodeId: string;
+}
+
+function uniqueSorted(values: readonly string[]): string[] {
+  return [...new Set(values.filter(Boolean))].sort();
+}
+
+/**
+ * Rebinds portable render-tree source identities to the canonical stable IDs
+ * already used by source-graph and responsive inference. The render-tree
+ * optimizer may use internal identities while optimizing hierarchy, but the
+ * final .wtf contract must expose one stable-ID namespace across source,
+ * responsive rules, and Figma plugin metadata.
+ */
+export function canonicalizeRenderTreeStableIds(
+  tree: WtfRenderTree,
+  stableNodes: readonly W2fCanonicalStableNodeEvidence[],
+): WtfRenderTree {
+  const stableByCapture = new Map(
+    stableNodes.map((node) => [node.captureNodeId, node.stableNodeId] as const),
+  );
+
+  return {
+    ...tree,
+    nodes: tree.nodes.map((node) => {
+      const canonicalStableIds = uniqueSorted(
+        node.sourceNodeIds.flatMap((captureNodeId) => {
+          const stableNodeId = stableByCapture.get(captureNodeId);
+          return stableNodeId ? [stableNodeId] : [];
+        }),
+      );
+      const { sourceStableIds: staleSourceStableIds, ...withoutStableIds } = node;
+      void staleSourceStableIds;
+      return canonicalStableIds.length > 0
+        ? { ...withoutStableIds, sourceStableIds: canonicalStableIds }
+        : withoutStableIds;
+    }),
+  };
+}
+''', encoding="utf-8")
+
+          builder_path = Path("apps/browser-extension/src/runtime/wtf-package-builder.ts")
+          builder = builder_path.read_text(encoding="utf-8")
+          if 'from "./canonical-render-tree-stable-ids.js"' not in builder:
+              builder = replace_once(
+                  builder,
+                  'import { buildResponsiveStableNodeEvidence } from "./responsive-capture-runtime.js";\n',
+                  'import { canonicalizeRenderTreeStableIds } from "./canonical-render-tree-stable-ids.js";\nimport { buildResponsiveStableNodeEvidence } from "./responsive-capture-runtime.js";\n',
+                  "builder import",
+              )
+              builder = replace_once(
+                  builder,
+                  '  const stableNodes = await buildResponsiveStableNodeEvidence(evidence.snapshot);\n  const source = sourceGraph(\n',
+                  '  const stableNodes = await buildResponsiveStableNodeEvidence(evidence.snapshot);\n  const renderTree = canonicalizeRenderTreeStableIds(evidence.compositing.tree, stableNodes);\n  const source = sourceGraph(\n',
+                  "builder canonical tree",
+              )
+              builder = replace_once(
+                  builder,
+                  '    renderTreeRootId: evidence.compositing.tree.rootId,\n',
+                  '    renderTreeRootId: renderTree.rootId,\n',
+                  "builder document root",
+              )
+              builder = replace_once(
+                  builder,
+                  '    renderNodes: evidence.compositing.tree.nodes.flatMap((node) =>\n',
+                  '    renderNodes: renderTree.nodes.flatMap((node) =>\n',
+                  "builder revisions",
+              )
+              builder = replace_once(
+                  builder,
+                  '      json: evidence.compositing.tree,\n',
+                  '      json: renderTree,\n',
+                  "builder render payload",
+              )
+              builder_path.write_text(builder, encoding="utf-8")
+
+          test_path = Path("apps/browser-extension/test/wtf-responsive-package-contract.test.ts")
+          test = test_path.read_text(encoding="utf-8")
+          if 'const renderTree = jsonPayload<WtfRenderTree>' not in test:
+              test = replace_once(
+                  test,
+                  'import type { WtfDocumentPayload, WtfResponsivePayload, WtfSourceGraph } from "@w2f/w2f-ir";\n',
+                  'import type {\n  WtfDocumentPayload,\n  WtfRenderTree,\n  WtfResponsivePayload,\n  WtfSourceGraph,\n} from "@w2f/w2f-ir";\n',
+                  "test import",
+              )
+              test = replace_once(
+                  test,
+                  '''        nodes: [\n          {\n            id: "render:root",\n            kind: "document",\n            sourceNodeIds: ["doc:root"],\n            childIds: [],\n          },\n        ],\n''',
+                  '''        nodes: [\n          {\n            id: "render:root",\n            kind: "document",\n            sourceNodeIds: ["doc:root"],\n            sourceStableIds: ["stale:root"],\n            childIds: ["render:proof"],\n          },\n          {\n            id: "render:proof",\n            parentId: "render:root",\n            kind: "container",\n            sourceNodeIds: ["node:proof"],\n            sourceStableIds: ["stale:proof"],\n            childIds: [],\n          },\n        ],\n''',
+                  "test stale render tree",
+              )
+              test = replace_once(
+                  test,
+                  '    const responsive = jsonPayload<WtfResponsivePayload>(input, "responsive");\n    const source = jsonPayload<WtfSourceGraph>(input, "source-graph");\n',
+                  '    const responsive = jsonPayload<WtfResponsivePayload>(input, "responsive");\n    const source = jsonPayload<WtfSourceGraph>(input, "source-graph");\n    const renderTree = jsonPayload<WtfRenderTree>(input, "render-tree");\n',
+                  "test render payload",
+              )
+              test = replace_once(
+                  test,
+                  '''    expect(responsive.rules[0]?.targetStableNodeId).toBe(proofSource?.stableIdentity?.id);\n    expect(input.compatibility.capabilities).toContain("stable-identity");\n''',
+                  '''    expect(responsive.rules[0]?.targetStableNodeId).toBe(proofSource?.stableIdentity?.id);\n\n    const proofRender = renderTree.nodes.find((node) => node.sourceNodeIds.includes("node:proof"));\n    expect(proofRender?.sourceStableIds).toContain(proofStable!.stableNodeId);\n    expect(proofRender?.sourceStableIds).not.toContain("stale:proof");\n    const renderStableIds = new Set(\n      renderTree.nodes.flatMap((node) => node.sourceStableIds ?? []),\n    );\n    for (const rule of responsive.rules) {\n      expect(renderStableIds.has(rule.targetStableNodeId)).toBe(true);\n    }\n\n    expect(input.compatibility.capabilities).toContain("stable-identity");\n''',
+                  "test canonical assertions",
+              )
+              test_path.write_text(test, encoding="utf-8")
+          PY
+
+      - name: Format changed sources
+        run: |
+          pnpm exec prettier --write \
+            apps/browser-extension/src/runtime/canonical-render-tree-stable-ids.ts \
+            apps/browser-extension/src/runtime/wtf-package-builder.ts \
+            apps/browser-extension/test/wtf-responsive-package-contract.test.ts
+
+      - name: Targeted browser-extension test
+        run: pnpm --filter @w2f/browser-extension test -- wtf-responsive-package-contract.test.ts
+
+      - name: Browser-extension typecheck
+        run: pnpm --filter @w2f/browser-extension typecheck
+
+      - name: Commit production fix
+        run: |
+          if git diff --quiet -- \
+            apps/browser-extension/src/runtime/canonical-render-tree-stable-ids.ts \
+            apps/browser-extension/src/runtime/wtf-package-builder.ts \
+            apps/browser-extension/test/wtf-responsive-package-contract.test.ts; then
+            echo "Canonical stable-ID fix is already applied."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            apps/browser-extension/src/runtime/canonical-render-tree-stable-ids.ts \
+            apps/browser-extension/src/runtime/wtf-package-builder.ts \
+            apps/browser-extension/test/wtf-responsive-package-contract.test.ts
+          git commit -m "fix(node-31): canonicalize responsive stable identities"
+          git push origin HEAD:node-31-real-world-compatibility-release-candidate
